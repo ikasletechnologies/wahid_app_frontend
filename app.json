@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "Wahid",
+    "name": "wahid",
     "slug": "Wahid_Mobile_Frontend",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/configicons.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -19,7 +19,7 @@
     "android": {
       "package": "com.wahid.mobile",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/configicons.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true

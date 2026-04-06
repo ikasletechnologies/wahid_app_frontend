@@ -123,6 +123,7 @@ export const NamesProvider = ({ children }) => {
   const [learnedIds, setLearnedIds] = useState([]);
   const [masteredIds, setMasteredIds] = useState([]);
   const [streak, setStreak] = useState(0);
+  const [revisitCounts, setRevisitCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -153,10 +154,11 @@ export const NamesProvider = ({ children }) => {
         }
       }
       if (cachedProgress) {
-        const { learned, mastered, streak: s } = JSON.parse(cachedProgress);
+        const { learned, mastered, streak: s, revisits } = JSON.parse(cachedProgress);
         setLearnedIds(learned || []);
         setMasteredIds(mastered || []);
         setStreak(s || 0);
+        if (revisits) setRevisitCounts(revisits);
       }
 
       await syncWithBackend();
@@ -182,14 +184,16 @@ export const NamesProvider = ({ children }) => {
       }
 
       if (progressRes.data?.success && progressRes.data?.data) {
-        const { learned, mastered, streak: s } = progressRes.data.data;
+        const { learned, mastered, streak: s, revisits } = progressRes.data.data;
         setLearnedIds(learned || []);
         setMasteredIds(mastered || []);
         setStreak(s || 0);
+        if (revisits) setRevisitCounts(revisits);
         AsyncStorage.setItem('progress_cache', JSON.stringify({
           learned: learned || [],
           mastered: mastered || [],
           streak: s || 0,
+          revisits: revisits || {},
         }));
       }
     } catch (error) {
@@ -259,6 +263,7 @@ export const NamesProvider = ({ children }) => {
       learnedIds,
       masteredIds,
       streak,
+      revisitCounts,
       loading,
       refreshing,
       syncWithBackend,

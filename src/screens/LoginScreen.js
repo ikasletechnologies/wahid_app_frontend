@@ -9,25 +9,25 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
   Animated,
   StatusBar,
   Pressable,
-  Image,
   Dimensions,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS, SHADOW } from '../theme';
 import { useAuth } from '../context/AuthContext';
 
-const { width, height } = Dimensions.get('window');
+Dimensions.get('window');
 
 const LoginScreen = ({ navigation }) => {
-  const [email, setEmail]       = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading]   = useState(false);
-  const [focusedField, setFocused] = useState(null);
+  const [email, setEmail]             = useState('');
+  const [password, setPassword]       = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading]         = useState(false);
+  const [focusedField, setFocused]    = useState(null);
   const { login } = useAuth();
 
   const emailInput    = useRef(null);
@@ -39,14 +39,16 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
-      Alert.alert('Incomplete Fields', 'Please enter both your email and password.');
+      Toast.show({ type: 'error', text1: 'Incomplete Fields', text2: 'Please enter both your email and password.' });
       return;
     }
     setLoading(true);
     const result = await login(email.trim(), password);
     setLoading(false);
     if (!result.success) {
-      Alert.alert('Login Error', result.message || 'The credentials you entered are incorrect.');
+      Toast.show({ type: 'error', text1: 'Login Error', text2: result.message || 'The credentials you entered are incorrect.' });
+    } else {
+      Toast.show({ type: 'success', text1: 'Welcome back!', text2: 'Signed in successfully.' });
     }
   };
 
@@ -61,7 +63,6 @@ const LoginScreen = ({ navigation }) => {
 
       {/* Decorative Elements */}
       <View style={styles.glowTop} />
-      <View style={styles.glowBottom} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -132,19 +133,28 @@ const LoginScreen = ({ navigation }) => {
                   PASSWORD
                 </Text>
               </View>
-              <TextInput
-                ref={passwordInput}
-                style={styles.input}
-                placeholder="••••••••"
-                placeholderTextColor={COLORS.dimmed}
-                value={password}
-                onChangeText={setPassword}
-                onFocus={() => setFocused('password')}
-                onBlur={() => setFocused(null)}
-                selectionColor="#c9a84c"
-                cursorColor="#c9a84c"
-                secureTextEntry
-              />
+              <View style={styles.passwordRow}>
+                <TextInput
+                  ref={passwordInput}
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="••••••••"
+                  placeholderTextColor={COLORS.dimmed}
+                  value={password}
+                  onChangeText={setPassword}
+                  onFocus={() => setFocused('password')}
+                  onBlur={() => setFocused(null)}
+                  selectionColor="#c9a84c"
+                  cursorColor="#c9a84c"
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn}>
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={18}
+                    color={COLORS.muted}
+                  />
+                </TouchableOpacity>
+              </View>
             </Pressable>
 
             {/* Action Button */}
@@ -209,15 +219,6 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     backgroundColor: 'rgba(201, 168, 76, 0.05)',
-    filter: 'blur(50px)',
-  },
-  glowBottom: {
-    position: 'absolute',
-    bottom: -50,
-    left: -50,
-    width: 200,
-    height: 200,
-    backgroundColor: 'rgba(45, 156, 150, 0.05)',
     filter: 'blur(50px)',
   },
 
@@ -307,6 +308,14 @@ const styles = StyleSheet.create({
     fontSize: SIZES.base,
     color: COLORS.white,
     minHeight: 40,
+  },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  eyeBtn: {
+    paddingHorizontal: 4,
+    paddingVertical: 8,
   },
 
   // Button

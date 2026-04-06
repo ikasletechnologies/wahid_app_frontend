@@ -1,0 +1,121 @@
+const fs = require('fs');
+const path = require('path');
+
+// All 99 learning insights
+const learningInsights = {
+  1: "Ar-Rahman teaches that mercy precedes all worthiness. When you accept that grace finds you before you deserve it, you begin to live without shame and extend unconditional mercy to others.",
+  2: "Ar-Raheem teaches that mercy is intimately tailored to your personal journey. When you recognize that Allah knows exactly what you need and responds with specific mercy, you move from generic gratitude to deeply personal connection.",
+  3: "Al-Malik teaches that true authority belongs only to Allah. When you release your need to control, you paradoxically gain freedom and peace. This insight is most liberating when you stop fighting for power and trust His governance.",
+  4: "Al-Quddus teaches that perfection is not about human achievement but divine purity. When you accept your imperfection as the starting point for spiritual growth, you stop performing and start genuinely transforming.",
+  5: "As-Salam teaches that true peace is an internal state, not an external circumstance. When you source peace from Allah rather than situations, you become unshakeable regardless of chaos around you.",
+  6: "Al-Mu'min teaches that security is not the absence of danger but the presence of trust. When you place your ultimate trust in Allah, fear loses its grip because you know you are divinely protected.",
+  7: "Al-Muhaymin teaches that feeling watched is a gift, not a burden. When you internalize that Allah's oversight is an act of care and protection, you shift from fear to gratitude.",
+  8: "Al-Aziz teaches that true strength comes from surrender, not resistance. When you align your will with Allah's undefeatable power, you access a strength beyond your own.",
+  9: "Al-Jabbar teaches that restoration is possible even when everything seems broken. When you bring your fragmented self to Allah, He doesn't just fix you—He transforms you into something stronger.",
+  10: "Al-Mutakabbir teaches that true greatness is humbling, not elevating. When you recognize that only Allah is truly supreme, human pride becomes transparent and meaningless.",
+  11: "Al-Khaliq teaches that you are not accidental but intentionally created. When you move from viewing yourself as random to understanding you are divinely designed with purpose, your entire self-image transforms.",
+  12: "Al-Bari teaches that your differences are divine gifts, not flaws. When you celebrate what makes you distinct instead of conforming, you honor the Creator's artistry in you.",
+  13: "Al-Musawwir teaches that your physical form is a masterpiece of divine artistry. When you view your body and appearance as Allah's handiwork rather than your judgment, self-criticism transforms to gratitude.",
+  14: "Al-Ghaffar teaches that forgiveness has no limit, no timer, no conditions. When you truly believe you can return infinitely without exhausting His patience, shame loses power over you.",
+  15: "Al-Qahhar teaches that oppression will never outlast Allah's justice. When you truly believe in divine supremacy over all tyrants, you can resist without rage and wait without despair.",
+  16: "Al-Wahhab teaches that gifts come without condition and without debt. When you receive blessings as pure gifts rather than wages earned, gratitude becomes your natural response.",
+  17: "Ar-Razzaq teaches that your provision is already decreed and secured. When you release the anxiety of provision and trust the Provider, you access energy for what truly matters.",
+  18: "Al-Fattah teaches that doors you've knocked on for years can open in an instant. When you stop measuring time by human timelines and trust divine timing, patience becomes peaceful.",
+  19: "Al-Alim teaches that you don't need to explain yourself to Allah—He already knows. When you accept that your deepest pain and secret struggles are already known, shame dissolves and authentic connection begins.",
+  20: "Al-Qabid teaches that withholding is sometimes the greatest mercy. When you trust that delays and scarcity serve your ultimate growth, you move from resentment to acceptance.",
+  21: "Al-Basit teaches that expansion always follows contraction. When you understand the cycle of constriction and expansion as divine timing, you wait for abundance with quiet certainty.",
+  22: "Al-Khafid teaches that pride always precedes a fall. When you internalize that humility before Allah is the safest position, you release the exhausting performance of arrogance.",
+  23: "Ar-Rafi teaches that true elevation comes through submission, not resistance. When you humble yourself before Allah, He raises you in ways others cannot.",
+  24: "Al-Mu'izz teaches that dignity comes only from Allah, not from wealth or status. When you source your honor from the divine, human disrespect loses power over you.",
+  25: "Al-Mudhill teaches that disgrace eventually comes to those who persist in transgression. When you trust in divine justice against oppressors, you can stop seeking revenge.",
+  26: "As-Sami teaches that your quietest prayer, your most private cry, is perfectly heard. When you internalize that no sound is too small for Allah's attention, loneliness transforms to connection.",
+  27: "Al-Basir teaches that nothing you do in private escapes Allah's sight. When you live with the awareness that you are always seen, integrity becomes effortless and performance becomes unnecessary.",
+  28: "Al-Hakam teaches that justice will eventually be served, even if courts fail. When you trust in Allah's ultimate judgment, you can release the burden of personal vengeance.",
+  29: "Al-Adl teaches that divine justice is perfect even when invisible. When you accept that what seems unfair is part of a perfectly just decree you don't yet understand, rebellion transforms to surrender.",
+  30: "Al-Latif teaches that divine care arrives in ways you never orchestrated. When you notice how blessings come through unexpected channels, you begin to see the gentle hand of Allah everywhere.",
+  31: "Al-Khabir teaches that Allah knows not just your actions but your intentions. When you internalize that motivations matter more than appearances, you stop performing and start genuinely transforming.",
+  32: "Al-Halim teaches that divine patience is the model for human patience. When you observe how Allah withholds punishment despite seeing every sin, you learn to extend patience to others.",
+  33: "Al-Azim teaches that your problems are infinitely smaller than Allah's magnificence. When you truly grasp the vastness of Allah, your worries shrink to proper proportion.",
+  34: "Al-Ghafur teaches that forgiveness means complete covering, not conditional coverage. When you believe your sins are not just forgiven but completely hidden from even the angels' record, shame releases completely.",
+  35: "Ash-Shakur teaches that small deeds matter infinitely. When you believe Allah rewards a single sincere act beyond measure, consistency in small good becomes natural.",
+  36: "Al-Ali teaches that true aspiration points to the highest, not the worldly high. When you direct your ambitions toward Allah rather than position, your drive becomes sacred.",
+  37: "Al-Kabir teaches that Allahu Akbar means something greater than all your fears combined. When you declare this during hardship, your problem suddenly finds its right size relative to the All-Great.",
+  38: "Al-Hafiz teaches that your deeds are safely kept in the best possible hands. When you trust that nothing you do for Allah's sake is ever lost, you work without the anxiety of irrelevance.",
+  39: "Al-Muqit teaches that your existence itself is sustained moment by moment. When you become aware of your radical dependence on divine sustenance, gratitude becomes constant.",
+  40: "Al-Hasib teaches that Allah keeps perfect account without human error. When you trust in His perfect reckoning, you can be honest about yourself without fear of miscalculation.",
+  41: "Al-Jalil teaches that majesty is magnetic, not distant. When you approach Allah with awe but without fear, worship becomes intimate reverence.",
+  42: "Al-Karim teaches that divine generosity responds to asking with greater giving. When you ask boldly without shame, you move from scarcity thinking to abundance thinking.",
+  43: "Ar-Raqib teaches that being watched is actually being cared for. When you shift from surveillance anxiety to protective comfort, you become naturally honest and conscious.",
+  44: "Al-Mujib teaches that every prayer receives an answer in the form best suited to you. When you accept that no means as valid an answer as yes, you release attachment to specific outcomes.",
+  45: "Al-Wasi teaches that no situation is too big or too far from Allah's mercy. When you grasp the boundlessness of divine encompassing, claustrophobia of hopelessness dissolves.",
+  46: "Al-Hakim teaches that what seems painful may be wisdom in disguise. When you trust the Creator's wisdom over your understanding, acceptance becomes possible even without explanation.",
+  47: "Al-Wadud teaches that Allah's love for you is independent of your worthiness. When you truly believe you are loved unconditionally, you begin to love others similarly.",
+  48: "Al-Majid teaches that divine generosity combines with supreme majesty. When you approach Allah with both reverence and bold hope, your du'a becomes powerful and your character becomes noble.",
+  49: "Al-Ba'ith teaches that death is not ending but transition. When you believe in resurrection with certainty, you live with purpose and urgency different from those fearing final darkness.",
+  50: "Ash-Shahid teaches that nothing is truly private from divine witness. When you internalize this, you naturally act with integrity regardless of audience.",
+  51: "Al-Haqq teaches that reality itself is grounded in divine truth. When you anchor yourself in this absolute truth, illusions lose power and false certainties crumble.",
+  52: "Al-Wakil teaches that perfect trust means releasing outcomes to the Trustworthy. When you practice tawakkul by doing your part and surrendering results, you access peace amid uncertainty.",
+  53: "Al-Qawiyy teaches that strength comes through alignment with divine power. When you lean on Allah's strength instead of your own, you access resources beyond your capacity.",
+  54: "Al-Matin teaches that there is one unwavering foundation in a shifting universe. When you build your life on Allah's unshakeable firmness, external instability doesn't shake your inner ground.",
+  55: "Al-Waliyy teaches that you have a friend closer than any human can be. When you experience Allah's friendship as intimate and responsive, loneliness loses its sting.",
+  56: "Al-Hamid teaches that praise is your gift to Allah, not His need. When you understand that praising creates you more than it honors Him, gratitude becomes your path to wholeness.",
+  57: "Al-Muhsi teaches that the smallest deed is counted and rewarded. When you trust that consistency matters more than scale, you commit to small acts sincerely.",
+  58: "Al-Mubdi teaches that existence from nothing is Allah's exclusive domain. When you grasp that creation ex nihilo is divine prerogative, creation itself becomes proof of His uniqueness.",
+  59: "Al-Mu'id teaches that death is not the end but the beginning of restoration. When you believe resurrection is certain, you live differently and prepare differently.",
+  60: "Al-Muhyi teaches that spiritual deadness can be revived. When you believe your hardened or dormant heart can come alive, you seek revival actively.",
+  61: "Al-Mumit teaches that every life has an appointed time. When you accept mortality as divine mercy and not cruelty, you live with urgency and presence.",
+  62: "Al-Hayy teaches that God is eternally alive and present, never absent. When you grasp that Allah was before everything and will remain after everything, your faith anchors in eternity.",
+  63: "Al-Qayyum teaches that the universe is held together by divine sustenance moment by moment. When you become conscious of this radical dependency, gratitude becomes your constant state.",
+  64: "Al-Wajid teaches that Allah always finds what He seeks and needs nothing. When you understand your neediness contrasts His self-sufficiency, you seek Him more genuinely.",
+  65: "Al-Majid teaches that nobility means giving freely without condition. When you understand divine nobility as both generous and majestic, you aspire to character reflecting both qualities.",
+  66: "Al-Wahid teaches that monotheism is not just belief but entire life reorganization. When your whole existence orients around One, partnerships with idols dissolve.",
+  67: "Al-Ahad teaches that Allah cannot even theoretically be divided or compared. When you grasp His absolute singularity and uniqueness, comparison and competition with others becomes meaningless.",
+  68: "As-Samad teaches that every need ultimately routes to Allah. When you stop at intermediate sources and go directly to the Source, you waste no energy and find instant relief.",
+  69: "Al-Qadir teaches that nothing is impossible with Allah's power. When you believe this in your bones, you ask boldly and expect answers.",
+  70: "Al-Muqtadir teaches that divine power operates with perfect precision and control. When you trust that nothing in the universe happens outside His exact orchestration, you release micromanagement anxiety.",
+  71: "Al-Muqaddim teaches that early gifts come from divine wisdom. When you receive blessings ahead of schedule, you recognize divine thoughtfulness.",
+  72: "Al-Mu'akhkhir teaches that delays serve wisdom you may not yet see. When you wait patiently for divine timing, your faith is tested and strengthened.",
+  73: "Al-Awwal teaches that eternality is Allah's exclusive attribute. When you contemplate infinity backward to the Source, you ground yourself in ultimate reality.",
+  74: "Al-Akhir teaches that everything temporary eventually disappears into eternity. When you truly believe all will return to Allah, attachment to worldly permanence dissolves.",
+  75: "Az-Zahir teaches that creation is Allah's proclamation of His existence. When you read creation as divine signs, you move from atheism or doubt to certainty.",
+  76: "Al-Batin teaches that reality has hidden depths beyond perception. When you acknowledge mystery and unknowability, you approach spirituality with humility.",
+  77: "Al-Wali teaches that divine governance is just and omniscient. When you trust in His management of world affairs, anxiety about global chaos releases.",
+  78: "Al-Muta'ali teaches that Allah transcends all human categories and comprehension. When you release your need to fully understand Him, you access deeper faith.",
+  79: "Al-Barr teaches that goodness flows toward both grateful and ungrateful. When you witness rain falling on all lands equally, you grasp the universality of divine goodness.",
+  80: "At-Tawwab teaches that the door of repentance never closes. When you believe you can return infinitely, you stop wallowing in past sins.",
+  81: "Al-Muntaqim teaches that oppressors cannot escape justice forever. When you trust divine vengeance against wrongdoers, you can release personal revenge.",
+  82: "Al-Afuww teaches that forgiveness means complete erasure, not coverage. When you believe your sins are utterly erased from the record, shame transforms to liberation.",
+  83: "Ar-Ra'uf teaches that divine kindness especially targets the vulnerable. When you feel Allah's tender care for your weakness, you become tender to others' vulnerability.",
+  84: "Malik al-Mulk teaches that all kingdoms and powers are on loan from Allah. When you understand worldly authority as temporary delegation, you neither cling to it nor rebel against it obsessively.",
+  85: "Dhul-Jalal wal-Ikram teaches that majesty and generosity flow together in divine nature. When you approach Allah with both awe and bold hope, your relationship deepens.",
+  86: "Al-Muqsit teaches that divine fairness is beyond corruption or favoritism. When you trust that justice will be perfectly served, you release the burden of personal vindication.",
+  87: "Al-Jami teaches that all will ultimately gather before Allah. When you believe in inevitable gathering and reckoning, you live with accountability and hope.",
+  88: "Al-Ghani teaches that your worship enriches you, not Allah. When you shift from transactional worship to transformational worship, your practice deepens.",
+  89: "Al-Mughni teaches that enrichment happens in many forms beyond money. When you recognize enrichment of heart, relationships, and soul, wealth becomes less central.",
+  90: "Al-Mani teaches that every withholding serves a purpose. When you trust that what is denied is denied for your protection, you stop resenting refusal.",
+  91: "Ad-Darr teaches that hardship comes from Allah and serves His wisdom. When you accept difficulty as divine curriculum, you learn from it instead of only suffering it.",
+  92: "An-Nafi teaches that all good ultimately comes from Allah's will. When you source all benefit exclusively from Him, gratitude becomes universal.",
+  93: "An-Nur teaches that spiritual illumination comes from turning toward Allah. When you seek light in darkness through His guidance, confusion clears.",
+  94: "Al-Hadi teaches that guidance is a gift to be asked for, not assumed. When you actively seek guidance and receive it, you walk the straight path.",
+  95: "Al-Badi teaches that creation is Allah's unique art, never repeated. When you celebrate human creativity as reflecting divine originality, innovation becomes spiritual.",
+  96: "Al-Baqi teaches that only what is done for Allah's sake lasts. When you invest in eternal rather than temporal, your priorities align with eternity.",
+  97: "Al-Warith teaches that all will ultimately return to Allah. When you understand yourself as temporary steward, not owner, you release attachment.",
+  98: "Ar-Rashid teaches that guidance perfectly directs toward the best outcome. When you surrender to divine direction over personal planning, life flows with less resistance.",
+  99: "As-Sabur teaches that divine patience models human patience. When you learn from Allah's endless patience despite seeing all sins, you become patient with others."
+};
+
+const filePath = path.join(__dirname, 'src/data/namesData.js');
+let content = fs.readFileSync(filePath, 'utf8');
+
+// For each name, add learning_insight if not present
+for (let i = 1; i <= 99; i++) {
+  const pattern = `{ n:${i},`;
+  if (content.includes(pattern)) {
+    // Find the quran field and insert learning_insight before it
+    const regex = new RegExp(`({ n:${i},[^}]*?)( quran:)`, 'g');
+    content = content.replace(regex, `$1, learning_insight:"${learningInsights[i]}"$2`);
+  }
+}
+
+fs.writeFileSync(filePath, content, 'utf8');
+console.log('✅ Learning insights added to all 99 names!');

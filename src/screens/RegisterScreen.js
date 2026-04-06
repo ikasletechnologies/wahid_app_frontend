@@ -9,23 +9,21 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
   Animated,
   StatusBar,
   Pressable,
-  Dimensions,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS, SHADOW } from '../theme';
 import { useAuth } from '../context/AuthContext';
 
-const { width } = Dimensions.get('window');
-
 const RegisterScreen = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocused] = useState(null);
   const { register } = useAuth();
@@ -40,18 +38,20 @@ const RegisterScreen = ({ navigation }) => {
 
   const handleRegister = async () => {
     if (!name.trim() || !email.trim() || !password) {
-      Alert.alert('Missing Info', 'Please fill in all the details to continue.');
+      Toast.show({ type: 'error', text1: 'Missing Info', text2: 'Please fill in all the details to continue.' });
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Weak Password', 'Your password should be at least 6 characters long.');
+      Toast.show({ type: 'error', text1: 'Weak Password', text2: 'Password should be at least 6 characters long.' });
       return;
     }
     setLoading(true);
     const result = await register(name.trim(), email.trim(), password);
     setLoading(false);
     if (!result.success) {
-      Alert.alert('Registration Error', result.message || 'Something went wrong. Please try again.');
+      Toast.show({ type: 'error', text1: 'Registration Error', text2: result.message || 'Something went wrong. Please try again.' });
+    } else {
+      Toast.show({ type: 'success', text1: 'Account Created!', text2: 'Welcome to your spiritual journey.' });
     }
   };
 
@@ -165,19 +165,28 @@ const RegisterScreen = ({ navigation }) => {
                   SECURE PASSWORD
                 </Text>
               </View>
-              <TextInput
-                ref={passwordInput}
-                style={styles.input}
-                placeholder="••••••••"
-                placeholderTextColor={COLORS.dimmed}
-                value={password}
-                onChangeText={setPassword}
-                onFocus={() => setFocused('password')}
-                onBlur={() => setFocused(null)}
-                selectionColor="#c9a84c"
-                cursorColor="#c9a84c"
-                secureTextEntry
-              />
+              <View style={styles.passwordRow}>
+                <TextInput
+                  ref={passwordInput}
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="••••••••"
+                  placeholderTextColor={COLORS.dimmed}
+                  value={password}
+                  onChangeText={setPassword}
+                  onFocus={() => setFocused('password')}
+                  onBlur={() => setFocused(null)}
+                  selectionColor="#c9a84c"
+                  cursorColor="#c9a84c"
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn}>
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={18}
+                    color={COLORS.muted}
+                  />
+                </TouchableOpacity>
+              </View>
             </Pressable>
 
             {/* Action Button */}
@@ -315,6 +324,14 @@ const styles = StyleSheet.create({
     fontSize: SIZES.base,
     color: COLORS.white,
     minHeight: 40,
+  },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  eyeBtn: {
+    paddingHorizontal: 4,
+    paddingVertical: 8,
   },
 
   // Button

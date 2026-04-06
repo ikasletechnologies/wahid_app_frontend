@@ -25,7 +25,7 @@ const TabNavigator = () => {
           else if (route.name === 'Profile') iconName = focused ? 'person'        : 'person-outline';
 
           return (
-            <View style={focused ? styles.activeTab : null}>
+            <View style={[styles.iconWrapper, focused && styles.activeTab]}>
               <Ionicons name={iconName} size={focused ? 22 : 20} color={color} />
             </View>
           );
@@ -50,8 +50,8 @@ const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
     bottom: Platform.OS === 'ios' ? 25 : 15,
-    left: 16,
-    right: 16,
+    alignSelf: 'center',
+    width: '92%',
     backgroundColor: 'rgba(15, 17, 25, 0.97)',
     borderRadius: 20,
     height: 68,
@@ -72,10 +72,16 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     marginBottom: 6,
   },
+  iconWrapper: {
+    width: 40,
+    height: 34,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
+    marginTop: 4,
+  },
   activeTab: {
     backgroundColor: 'rgba(201, 168, 76, 0.12)',
-    padding: 7,
-    borderRadius: 12,
   },
 });
 
