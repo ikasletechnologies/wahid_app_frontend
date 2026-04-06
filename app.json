@@ -4,13 +4,13 @@
     "slug": "Wahid_Mobile_Frontend",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/configicons.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/logoWhite.png",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/logoWhite.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#050505"
     },
     "ios": {
       "supportsTablet": true,
@@ -19,8 +19,8 @@
     "android": {
       "package": "com.wahid.mobile",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/configicons.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/logoWhite.png",
+        "backgroundColor": "#050505"
       },
       "edgeToEdgeEnabled": true
     },
