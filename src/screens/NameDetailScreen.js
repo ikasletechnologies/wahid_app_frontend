@@ -119,14 +119,14 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   const slidesData = useMemo(() => {
     const data = [
-      { id: 'hero' },
-      { id: 'progress' }
+      { id: 'hero' }
     ];
     if (benefits.length > 0) data.push({ id: 'benefits' });
-    if (quranicRefs.length > 0) data.push({ id: 'quran' });
+    if (quranicRefs.map(r => r.arabic || r.translation).filter(Boolean).length > 0) data.push({ id: 'quran' });
     if (reflection) data.push({ id: 'reflection' });
     if (learningInsight && learningInsight !== reflection) data.push({ id: 'insight' });
     data.push({ id: 'mcq' });
+    data.push({ id: 'progress' });
     return data;
   }, [benefits, quranicRefs, reflection, learningInsight, name]);
 
@@ -140,46 +140,62 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   const renderSlide = ({ item }) => {
     return (
-      <View style={{ width }}>
+      <View style={{ width, flex: 1 }}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.scrollContent, { flexGrow: 1, justifyContent: 'center' }]}
         >
           {item.id === 'hero' && (
             <View style={styles.hero}>
-              <Text style={styles.heroNumber}>#{name.number}</Text>
+              <View style={styles.heroBadge}>
+                <Text style={styles.heroNumber}>#{name.number}</Text>
+              </View>
               <Text style={[styles.heroArabic, { color: colors.primary }]}>{name.arabic}</Text>
               <Text style={[styles.heroTrans, { color: colors.text }]}>{name.transliteration}</Text>
+              <View style={[styles.heroDivider, { backgroundColor: colors.primary, opacity: 0.3 }]} />
               <Text style={[styles.heroMeaning, { color: colors.textMuted }]}>{name.meaning}</Text>
+              
+              <View style={styles.heroIconDecoration}>
+                <Ionicons name="book-outline" size={120} color={colors.primary} style={{ opacity: 0.03 }} />
+              </View>
             </View>
           )}
 
           {item.id === 'progress' && (
             <View style={[styles.section, { marginTop: 0 }]}>
               <View style={styles.sectionHeader}>
+                <Ionicons name="stats-chart" size={18} color={colors.primary} />
                 <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>YOUR PROGRESS</Text>
                 <View style={[styles.sectionLine, { backgroundColor: colors.borderStrong }]} />
               </View>
               <View style={styles.progressRow}>
-                <View style={[styles.progressCard, { backgroundColor: colors.glass, borderColor: colors.border }, isLearned && styles.progressCardLearned]}>
-                  <Ionicons
-                    name={isLearned ? 'checkmark-circle' : 'checkmark-circle-outline'}
-                    size={28}
-                    color={isLearned ? '#2d9c96' : colors.textDimmed}
-                  />
-                  <Text style={[styles.progressLabel, { color: colors.textMuted }, isLearned && { color: '#2d9c96' }]}>Learned</Text>
-                  <Text style={styles.progressSub}>
-                    {isLearned ? 'Completed' : 'Not yet learned'}
+                <TouchableOpacity 
+                  onPress={handleMarkLearned}
+                  style={[styles.progressCard, { backgroundColor: colors.glass, borderColor: colors.border }, isLearned && styles.progressCardLearned]}
+                >
+                  <View style={[styles.progressIconCircle, isLearned && { backgroundColor: 'rgba(45, 156, 150, 0.1)' }]}>
+                    <Ionicons
+                      name={isLearned ? 'checkmark-circle' : 'ellipse-outline'}
+                      size={32}
+                      color={isLearned ? '#2d9c96' : colors.textDimmed}
+                    />
+                  </View>
+                  <Text style={[styles.progressLabel, { color: colors.text }, isLearned && { color: '#2d9c96' }]}>Learned</Text>
+                  <Text style={[styles.progressSub, { color: colors.textMuted }]}>
+                    {isLearned ? 'Completed' : 'Tap to mark'}
                   </Text>
-                </View>
+                </TouchableOpacity>
+                
                 <View style={[styles.progressCard, { backgroundColor: colors.glass, borderColor: colors.border }, isMastered && styles.progressCardMastered]}>
-                  <Ionicons
-                    name={isMastered ? 'star' : 'star-outline'}
-                    size={28}
-                    color={isMastered ? colors.primary : colors.textDimmed}
-                  />
-                  <Text style={[styles.progressLabel, { color: colors.textMuted }, isMastered && { color: colors.primary }]}>Mastered</Text>
-                  <Text style={styles.progressSub}>Revisits: {revisitCount} / 3</Text>
+                  <View style={[styles.progressIconCircle, isMastered && { backgroundColor: 'rgba(201, 168, 76, 0.1)' }]}>
+                    <Ionicons
+                      name={isMastered ? 'ribbon' : 'ribbon-outline'}
+                      size={32}
+                      color={isMastered ? colors.primary : colors.textDimmed}
+                    />
+                  </View>
+                  <Text style={[styles.progressLabel, { color: colors.text }, isMastered && { color: colors.primary }]}>Mastered</Text>
+                  <Text style={[styles.progressSub, { color: colors.textMuted }]}>Revisits: {revisitCount} / 3</Text>
                 </View>
               </View>
             </View>
@@ -188,34 +204,43 @@ const NameDetailScreen = ({ route, navigation }) => {
           {item.id === 'benefits' && (
             <View style={[styles.section, { marginTop: 0 }]}>
               <View style={styles.sectionHeader}>
+                <Ionicons name="heart" size={18} color={colors.primary} />
                 <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>BENEFITS OF LEARNING</Text>
                 <View style={[styles.sectionLine, { backgroundColor: colors.borderStrong }]} />
               </View>
-              {benefits.map((benefit, idx) => (
-                <View key={idx} style={styles.benefitItem}>
-                  <View style={[styles.benefitDot, { backgroundColor: colors.primary }]} />
-                  <Text style={[styles.benefitText, { color: colors.text }]}>{benefit}</Text>
-                </View>
-              ))}
+              <View style={styles.benefitsContainer}>
+                {benefits.map((benefit, idx) => (
+                  <View key={idx} style={[styles.benefitItem, { backgroundColor: colors.glass, borderColor: colors.border }]}>
+                    <View style={[styles.benefitIconBox, { backgroundColor: colors.primary + '10' }]}>
+                      <Ionicons name="sparkles" size={16} color={colors.primary} />
+                    </View>
+                    <Text style={[styles.benefitText, { color: colors.text }]}>{benefit}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
           )}
 
           {item.id === 'quran' && (
             <View style={[styles.section, { marginTop: 0 }]}>
               <View style={styles.sectionHeader}>
+                <Ionicons name="book" size={18} color={colors.primary} />
                 <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>QUR'ANIC REFERENCES</Text>
                 <View style={[styles.sectionLine, { backgroundColor: colors.borderStrong }]} />
               </View>
               {quranicRefs.map((ref, idx) => (
-                <View key={idx} style={[styles.quranCard, { backgroundColor: colors.glass, borderColor: colors.border }, idx > 0 && { marginTop: SPACE.sm }]}>
+                <View key={idx} style={[styles.quranCard, { backgroundColor: colors.glass, borderColor: colors.border }, idx > 0 && { marginTop: SPACE.md }]}>
+                  <Ionicons name="chatbubbles" size={40} color={colors.primary} style={styles.quoteIconWatermark} />
                   {ref.arabic ? (
                     <Text style={[styles.quranArabic, { color: colors.primary }]}>{ref.arabic}</Text>
                   ) : null}
                   {ref.translation ? (
-                    <Text style={[styles.quranTrans, { color: colors.text }]}>"{ref.translation}"</Text>
+                    <Text style={[styles.quranTrans, { color: colors.text }]}>“{ref.translation}”</Text>
                   ) : null}
                   {ref.reference ? (
-                    <Text style={[styles.quranRef, { color: colors.primary }]}>{ref.reference}</Text>
+                    <View style={styles.quranRefBadge}>
+                      <Text style={[styles.quranRef, { color: colors.primary }]}>{ref.reference}</Text>
+                    </View>
                   ) : null}
                 </View>
               ))}
@@ -225,10 +250,12 @@ const NameDetailScreen = ({ route, navigation }) => {
           {item.id === 'reflection' && (
             <View style={[styles.section, { marginTop: 0 }]}>
               <View style={styles.sectionHeader}>
+                <Ionicons name="bulb" size={18} color={colors.primary} />
                 <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>REFLECTION</Text>
                 <View style={[styles.sectionLine, { backgroundColor: colors.borderStrong }]} />
               </View>
-              <View style={[styles.reflectionBox, { backgroundColor: colors.glass, borderLeftColor: colors.primary }]}>
+              <View style={[styles.reflectionBox, { backgroundColor: colors.glass }]}>
+                <Ionicons name="chatbubble-ellipses" size={60} color={colors.primary} style={styles.reflectionWatermark} />
                 <Text style={[styles.reflectionText, { color: colors.text }]}>{reflection}</Text>
               </View>
             </View>
@@ -237,10 +264,12 @@ const NameDetailScreen = ({ route, navigation }) => {
           {item.id === 'insight' && (
             <View style={[styles.section, { marginTop: 0 }]}>
               <View style={styles.sectionHeader}>
+                <Ionicons name="school" size={18} color={colors.primary} />
                 <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>LEARNING INSIGHT</Text>
                 <View style={[styles.sectionLine, { backgroundColor: colors.borderStrong }]} />
               </View>
               <View style={[styles.reflectionBox, { backgroundColor: colors.glass, borderLeftColor: colors.primary }]}>
+                <Ionicons name="star" size={60} color={colors.primary} style={styles.reflectionWatermark} />
                 <Text style={[styles.reflectionText, { color: colors.text }]}>{learningInsight}</Text>
               </View>
             </View>
@@ -249,16 +278,17 @@ const NameDetailScreen = ({ route, navigation }) => {
           {item.id === 'mcq' && (
             <View style={[styles.section, { marginTop: 0 }]}>
               <View style={styles.sectionHeader}>
+                <Ionicons name="help-circle" size={18} color={colors.primary} />
                 <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>MATCH THE QUALITY</Text>
                 <View style={[styles.sectionLine, { backgroundColor: colors.borderStrong }]} />
               </View>
               <View style={[styles.mcqCard, { backgroundColor: colors.glass, borderColor: colors.border }]}>
                 <View style={styles.mcqBadge}>
-                  <Ionicons name="flash" size={12} color={colors.primary} />
-                  <Text style={[styles.mcqBadgeText, { color: colors.primary }]}>Quick Match</Text>
+                  <Ionicons name="flash" size={14} color={colors.primary} />
+                  <Text style={[styles.mcqBadgeText, { color: colors.primary }]}>Quick Knowledge Check</Text>
                 </View>
                 <Text style={[styles.mcqSubtitle, { color: colors.textMuted }]}>
-                  Connect each quality on the <Text style={{ color: colors.text, fontWeight: 'bold' }}>left</Text> with how it applies on the <Text style={{ color: colors.text, fontWeight: 'bold' }}>right</Text>
+                  Test your understanding of <Text style={{ color: colors.text, fontWeight: 'bold' }}>{name.transliteration}</Text>
                 </Text>
                 <Text style={[styles.mcqQuestion, { color: colors.text }]}>{mcq.q}</Text>
                 <View style={styles.optionsWrap}>
@@ -286,7 +316,10 @@ const NameDetailScreen = ({ route, navigation }) => {
                           {opt}
                         </Text>
                         {showFeedback && idx === mcq.ans && (
-                          <Ionicons name="checkmark-circle" size={16} color="#2d9c96" />
+                          <Ionicons name="checkmark-circle" size={20} color="#2d9c96" />
+                        )}
+                        {showFeedback && selectedOption === idx && idx !== mcq.ans && (
+                          <Ionicons name="close-circle" size={20} color="#ff4444" />
                         )}
                       </TouchableOpacity>
                     );
@@ -296,6 +329,7 @@ const NameDetailScreen = ({ route, navigation }) => {
             </View>
           )}
         </ScrollView>
+        <View style={styles.bookBinder} />
       </View>
     );
   };
@@ -364,12 +398,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACE.md,
-    height: 60,
+    height: 70,
   },
   iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: 'rgba(255,255,255,0.05)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -377,279 +411,355 @@ const styles = StyleSheet.create({
   headerTitle: {
     color: COLORS.white,
     fontFamily: FONTS.bold,
-    fontSize: SIZES.base,
-    letterSpacing: 1,
+    fontSize: SIZES.base + 2,
+    letterSpacing: 1.2,
   },
   learnBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: RADIUS.full,
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
   learnedBadgeActive: {
-    backgroundColor: 'rgba(45, 156, 150, 0.1)',
-    borderColor: 'rgba(45, 156, 150, 0.3)',
+    backgroundColor: 'rgba(45, 156, 150, 0.15)',
+    borderColor: 'rgba(45, 156, 150, 0.4)',
   },
   learnBadgeText: {
     color: COLORS.muted,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
   },
   scrollContent: {
-    padding: SPACE.md,
+    padding: SPACE.lg,
+    paddingBottom: SPACE.xxl,
   },
 
   // Hero
   hero: {
     alignItems: 'center',
     paddingVertical: SPACE.xl,
+    position: 'relative',
+  },
+  heroBadge: {
+    backgroundColor: 'rgba(201, 168, 76, 0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: RADIUS.full,
+    marginBottom: SPACE.md,
   },
   heroNumber: {
-    color: 'rgba(201, 168, 76, 0.2)',
+    color: COLORS.primary,
     fontFamily: FONTS.bold,
-    fontSize: 14,
+    fontSize: 16,
     letterSpacing: 4,
-    marginBottom: SPACE.sm,
   },
   heroArabic: {
     color: '#c9a84c',
     fontFamily: FONTS.arabic,
-    fontSize: 64,
+    fontSize: 84,
     textAlign: 'center',
+    lineHeight: 110,
   },
   heroTrans: {
     color: COLORS.white,
     fontFamily: FONTS.bold,
-    fontSize: SIZES.xxl,
-    marginTop: SPACE.sm,
+    fontSize: 42,
+    marginTop: SPACE.xs,
+    textAlign: 'center',
+  },
+  heroDivider: {
+    width: 60,
+    height: 3,
+    borderRadius: 2,
+    marginVertical: SPACE.lg,
   },
   heroMeaning: {
     color: COLORS.muted,
     fontFamily: FONTS.regular,
-    fontSize: SIZES.md,
+    fontSize: 24,
     fontStyle: 'italic',
     textAlign: 'center',
-    marginTop: 4,
+    lineHeight: 32,
+    paddingHorizontal: SPACE.md,
+  },
+  heroIconDecoration: {
+    position: 'absolute',
+    top: '20%',
+    zIndex: -1,
   },
 
   // Section
   section: {
     marginTop: SPACE.xl,
+    width: '100%',
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: SPACE.md,
+    marginBottom: SPACE.lg,
   },
   sectionTitle: {
     color: COLORS.muted,
-    fontSize: 10,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '900',
     letterSpacing: 2.5,
   },
   sectionLine: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
 
   // Progress
   progressRow: {
     flexDirection: 'row',
-    gap: SPACE.sm,
+    gap: SPACE.md,
   },
   progressCard: {
     flex: 1,
     backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
-    padding: SPACE.md,
+    padding: SPACE.lg,
     alignItems: 'center',
-    gap: 6,
+    gap: 10,
+  },
+  progressIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   progressCardLearned: {
-    backgroundColor: 'rgba(45, 156, 150, 0.05)',
-    borderColor: 'rgba(45, 156, 150, 0.2)',
+    backgroundColor: 'rgba(45, 156, 150, 0.08)',
+    borderColor: 'rgba(45, 156, 150, 0.3)',
   },
   progressCardMastered: {
-    backgroundColor: 'rgba(201, 168, 76, 0.05)',
-    borderColor: 'rgba(201, 168, 76, 0.2)',
+    backgroundColor: 'rgba(201, 168, 76, 0.08)',
+    borderColor: 'rgba(201, 168, 76, 0.3)',
   },
   progressLabel: {
-    color: COLORS.muted,
+    color: COLORS.white,
     fontFamily: FONTS.bold,
-    fontSize: 13,
+    fontSize: 16,
   },
   progressSub: {
-    color: COLORS.dimmed,
-    fontSize: 11,
+    color: COLORS.muted,
+    fontSize: 13,
+    textAlign: 'center',
   },
 
   // Benefits
+  benefitsContainer: {
+    gap: SPACE.md,
+  },
   benefitItem: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: SPACE.sm,
+    alignItems: 'center',
+    gap: 14,
+    padding: SPACE.md,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
-  benefitDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#c9a84c',
-    marginTop: 8,
+  benefitIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   benefitText: {
     flex: 1,
     color: COLORS.white,
-    fontSize: 14,
-    lineHeight: 22,
-    opacity: 0.8,
+    fontSize: 18,
+    lineHeight: 26,
+    fontWeight: '500',
   },
 
   // Quranic references
   quranCard: {
     backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: RADIUS.md,
-    padding: SPACE.md,
+    borderRadius: RADIUS.xl,
+    padding: SPACE.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.1)',
+    overflow: 'hidden',
+  },
+  quoteIconWatermark: {
+    position: 'absolute',
+    top: -10,
+    left: -10,
+    opacity: 0.1,
+    transform: [{ rotate: '180deg' }],
   },
   quranArabic: {
     color: '#8b5cf6',
     fontFamily: FONTS.arabic,
-    fontSize: 22,
+    fontSize: 32,
     textAlign: 'right',
-    lineHeight: 38,
-    marginBottom: 8,
+    lineHeight: 52,
+    marginBottom: SPACE.md,
   },
   quranTrans: {
     color: COLORS.white,
-    fontSize: 13,
+    fontSize: 18,
     fontStyle: 'italic',
-    lineHeight: 20,
-    opacity: 0.7,
+    lineHeight: 28,
+    opacity: 0.9,
+    textAlign: 'center',
+  },
+  quranRefBadge: {
+    alignSelf: 'center',
+    marginTop: SPACE.lg,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(45, 156, 150, 0.1)',
+    borderRadius: RADIUS.full,
   },
   quranRef: {
     color: '#2d9c96',
-    fontSize: 10,
-    fontWeight: '700',
-    marginTop: 10,
-    letterSpacing: 0.5,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
 
   // Reflection / Learning Insight
   reflectionBox: {
     backgroundColor: 'rgba(255,255,255,0.03)',
-    borderLeftWidth: 3,
-    borderLeftColor: '#c9a84c',
-    padding: SPACE.md,
-    borderRadius: RADIUS.sm,
+    padding: SPACE.xl,
+    borderRadius: RADIUS.xl,
+    minHeight: 200,
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  reflectionWatermark: {
+    position: 'absolute',
+    right: -10,
+    bottom: -10,
+    opacity: 0.05,
   },
   reflectionText: {
     color: COLORS.white,
-    fontSize: 14,
+    fontSize: 22,
     fontStyle: 'italic',
-    lineHeight: 22,
-    opacity: 0.9,
+    lineHeight: 34,
+    opacity: 1,
+    textAlign: 'center',
+    fontWeight: '400',
   },
 
   // Match the Quality / MCQ
   mcqCard: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: RADIUS.md,
-    padding: SPACE.md,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: RADIUS.xl,
+    padding: SPACE.xl,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   mcqBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
+    gap: 8,
+    marginBottom: 8,
   },
   mcqBadgeText: {
     color: '#c9a84c',
     fontFamily: FONTS.bold,
-    fontSize: 13,
+    fontSize: 15,
   },
   mcqSubtitle: {
     color: COLORS.muted,
-    fontSize: 12,
-    lineHeight: 18,
-    marginBottom: SPACE.md,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: SPACE.xl,
   },
   mcqQuestion: {
     color: COLORS.white,
     fontFamily: FONTS.bold,
-    fontSize: 14,
-    marginBottom: SPACE.md,
-    lineHeight: 20,
+    fontSize: 20,
+    marginBottom: SPACE.xl,
+    lineHeight: 28,
   },
   optionsWrap: {
-    gap: 10,
+    gap: 12,
   },
   option: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: SPACE.md,
+    padding: SPACE.lg,
     backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: RADIUS.sm,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   optionSelected: {
     borderColor: '#c9a84c',
-    backgroundColor: 'rgba(201, 168, 76, 0.05)',
+    backgroundColor: 'rgba(201, 168, 76, 0.1)',
   },
   optionCorrect: {
     borderColor: '#2d9c96',
-    backgroundColor: 'rgba(45, 156, 150, 0.05)',
+    backgroundColor: 'rgba(45, 156, 150, 0.1)',
   },
   optionWrong: {
     borderColor: '#ff4444',
-    backgroundColor: 'rgba(255, 68, 68, 0.05)',
+    backgroundColor: 'rgba(255, 68, 68, 0.1)',
   },
   optionText: {
     color: COLORS.white,
-    fontSize: 13,
-    opacity: 0.8,
+    fontSize: 16,
+    opacity: 1,
     flex: 1,
+    fontWeight: '500',
   },
   textCorrect: {
     color: '#2d9c96',
     fontWeight: 'bold',
-    opacity: 1,
   },
   textWrong: {
     color: '#ff4444',
-    opacity: 1,
+    fontWeight: 'bold',
   },
   pagination: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: SPACE.md,
-    paddingBottom: SPACE.xl,
-    gap: 8,
+    paddingVertical: SPACE.lg,
+    paddingBottom: SPACE.xxl,
+    gap: 10,
   },
   dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: 'rgba(255,255,255,0.2)',
   },
   activeDot: {
-    width: 20,
+    width: 24,
     backgroundColor: '#c9a84c',
+  },
+  bookBinder: {
+    position: 'absolute',
+    left: 0,
+    top: '20%',
+    bottom: '20%',
+    width: 4,
+    backgroundColor: 'rgba(201, 168, 76, 0.1)',
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
   },
 });
 
