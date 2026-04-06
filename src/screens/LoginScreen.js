@@ -77,11 +77,11 @@ const LoginScreen = ({ navigation }) => {
         >
           {/* Header */}
           <View style={styles.header}>
-            <View style={[styles.logoWrap, { backgroundColor: isDark ? 'rgba(201, 168, 76, 0.1)' : 'rgba(184, 150, 61, 0.1)', borderColor: isDark ? 'rgba(201, 168, 76, 0.2)' : 'rgba(184, 150, 61, 0.2)' }]}>
+            <View style={[styles.logoWrap, { backgroundColor: isDark ? 'rgba(201, 168, 76, 0.1)' : 'rgba(184, 150, 61, 0.15)', borderColor: isDark ? 'rgba(201, 168, 76, 0.2)' : 'rgba(184, 150, 61, 0.3)' }]}>
               <Ionicons name="sparkles" size={32} color={colors.primary} />
             </View>
             <Text style={[styles.brandName, { color: colors.text }]}>WAHID</Text>
-            <Text style={[styles.arabicHeader, { color: colors.primary }]}>بِسْمِ ٱللَّهِ</Text>
+            <Text style={[styles.arabicHeader, { color: colors.primary, opacity: isDark ? 0.8 : 1.0 }]}>بِسْمِ ٱللَّهِ</Text>
           </View>
 
           {/* Login Card (Glassmorphic) */}
@@ -169,17 +169,17 @@ const LoginScreen = ({ navigation }) => {
                 activeOpacity={0.9}
               >
                 <LinearGradient
-                  colors={[colors.primary, isDark ? '#8a6d1e' : '#e6c867']}
-                  style={[styles.button, !isDark && { shadowColor: colors.primary, elevation: 4 }]}
+                  colors={[colors.primary, isDark ? '#8a6d1e' : '#B8963D']}
+                  style={[styles.button, !isDark && { shadowColor: colors.primary, elevation: 6 }]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
                   {loading ? (
-                    <ActivityIndicator color={COLORS.black} size="small" />
+                    <ActivityIndicator color={isDark ? COLORS.black : COLORS.white} size="small" />
                   ) : (
                     <>
-                      <Text style={[styles.buttonText, { color: isDark ? COLORS.black : COLORS.white }]}>SIGN IN</Text>
-                      <Ionicons name="arrow-forward" size={16} color={isDark ? COLORS.black : COLORS.white} />
+                      <Text style={[styles.buttonText, { color: COLORS.white }]}>SIGN IN</Text>
+                      <Ionicons name="arrow-forward" size={16} color={COLORS.white} />
                     </>
                   )}
                 </LinearGradient>
@@ -327,7 +327,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 10,
-    ...SHADOW.card,
   },
   buttonText: {
     fontFamily: FONTS.bold,

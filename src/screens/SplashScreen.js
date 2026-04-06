@@ -51,18 +51,24 @@ const SplashScreen = () => {
             loop
             style={styles.lottie}
             resizeMode="contain"
+            colorFilters={[
+              {
+                keypath: '**', // Apply to all paths
+                color: COLORS.primary,
+              },
+            ]}
           />
         </View>
 
         {/* Text section */}
         <View style={styles.textWrap}>
-          <View style={[styles.dividerWrap, { opacity: isDark ? 0.6 : 0.8 }]}>
-            <View style={[styles.line, { backgroundColor: colors.primary }]} />
-            <Ionicons name="sparkles" size={12} color={colors.primary} />
-            <View style={[styles.line, { backgroundColor: colors.primary }]} />
+          <View style={[styles.dividerWrap, { opacity: isDark ? 0.6 : 1.0 }]}>
+            <View style={[styles.line, { backgroundColor: COLORS.primary }]} />
+            <Ionicons name="sparkles" size={12} color={COLORS.primary} />
+            <View style={[styles.line, { backgroundColor: COLORS.primary }]} />
           </View>
 
-          <Text style={[styles.arabicTitle, { color: colors.primary, textShadowColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'transparent' }]}>أسماء الله الحسنى</Text>
+          <Text style={[styles.arabicTitle, { color: COLORS.primary, textShadowColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(0, 0, 0, 0.1)' }]}>أسماء الله الحسنى</Text>
           <Text style={[styles.englishTitle, { color: colors.textMuted }]}>The 99 Names of Allah</Text>
 
           <View style={styles.loaderWrap}>

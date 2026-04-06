@@ -77,8 +77,8 @@ const RegisterScreen = ({ navigation }) => {
         >
           {/* Header */}
           <View style={styles.header}>
-            <Text style={[styles.arabicHeader, { color: colors.primary }]}>بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</Text>
-            <View style={[styles.dividerWrap, { opacity: isDark ? 0.6 : 0.8 }]}>
+            <Text style={[styles.arabicHeader, { color: colors.primary, opacity: isDark ? 0.9 : 1.0 }]}>بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</Text>
+            <View style={[styles.dividerWrap, { opacity: isDark ? 0.6 : 1.0 }]}>
               <View style={[styles.line, { backgroundColor: colors.primary }]} />
               <Ionicons name="moon" size={14} color={colors.primary} />
               <View style={[styles.line, { backgroundColor: colors.primary }]} />
@@ -201,15 +201,15 @@ const RegisterScreen = ({ navigation }) => {
                 activeOpacity={0.9}
               >
                 <LinearGradient
-                  colors={[colors.primary, isDark ? '#8a6d1e' : '#e6c867']}
-                  style={[styles.button, !isDark && { shadowColor: colors.primary, elevation: 4 }]}
+                  colors={[colors.primary, isDark ? '#8a6d1e' : '#B8963D']}
+                  style={[styles.button, !isDark && { shadowColor: colors.primary, elevation: 6 }]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
                   {loading ? (
-                    <ActivityIndicator color={COLORS.black} size="small" />
+                    <ActivityIndicator color={isDark ? COLORS.black : COLORS.white} size="small" />
                   ) : (
-                    <Text style={[styles.buttonText, { color: isDark ? COLORS.black : COLORS.white }]}>CREATE ACCOUNT</Text>
+                    <Text style={[styles.buttonText, { color: COLORS.white }]}>CREATE ACCOUNT</Text>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
@@ -276,7 +276,6 @@ const styles = StyleSheet.create({
     padding: SPACE.xl,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    ...SHADOW.card,
   },
   cardTitle: {
     fontFamily: FONTS.bold,
@@ -341,7 +340,6 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     justifyContent: 'center',
     alignItems: 'center',
-    ...SHADOW.neon,
   },
   buttonText: {
     fontFamily: FONTS.bold,

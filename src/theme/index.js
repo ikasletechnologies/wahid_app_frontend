@@ -51,13 +51,13 @@ export const PALETTE = {
     card: COLORS.lightCard,
     
     text: '#1A1A1A', // Dark gray/black text
-    textMuted: '#6B7280', // Medium gray
-    textDimmed: '#D1D5DB', // Light gray
+    textMuted: '#4B5563', // Darker gray for readability
+    textDimmed: '#9CA3AF', // Darker gray for labels
     
-    border: 'rgba(0, 0, 0, 0.08)',
-    borderStrong: 'rgba(0, 0, 0, 0.15)',
+    border: 'rgba(0, 0, 0, 0.12)',
+    borderStrong: 'rgba(0, 0, 0, 0.20)',
     
-    glass: 'rgba(0, 0, 0, 0.03)',
+    glass: 'rgba(0, 0, 0, 0.04)',
     overlay: COLORS.overlayLight,
     
     primary: COLORS.primaryDark, // Darker gold for better contrast on white
