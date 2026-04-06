@@ -10,9 +10,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNames, CATEGORIES } from '../context/NamesContext';
+import { useAppTheme } from '../context/ThemeContext';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS } from '../theme';
 const JourneyScreen = () => {
   const { names, learnedIds, masteredIds, streak } = useNames();
+  const { colors, isDark } = useAppTheme();
 
   const stats = useMemo(() => {
     const total = 99;
@@ -45,39 +47,39 @@ const JourneyScreen = () => {
   ];
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>My Journey</Text>
-            <Text style={styles.subtitle}>Track your spiritual growth</Text>
+            <Text style={[styles.title, { color: colors.text }]}>My Journey</Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>Track your spiritual growth</Text>
           </View>
         </View>
 
         {/* Total Progress Ring Area */}
-        <View style={styles.progressSection}>
-          <View style={styles.ringContainer}>
-            <View style={styles.ringBase} />
-            <Text style={styles.ringPercent}>{Math.round(stats.progress)}%</Text>
-            <Text style={styles.ringLabel}>OVERALL</Text>
+        <View style={[styles.progressSection, { backgroundColor: colors.glass, borderColor: colors.border }]}>
+          <View style={[styles.ringContainer, { borderColor: isDark ? 'rgba(201, 168, 76, 0.1)' : 'rgba(184, 150, 61, 0.15)' }]}>
+            <View style={[styles.ringBase, { borderTopColor: colors.primary }]} />
+            <Text style={[styles.ringPercent, { color: colors.primary }]}>{Math.round(stats.progress)}%</Text>
+            <Text style={[styles.ringLabel, { color: colors.textMuted }]}>OVERALL</Text>
           </View>
           
           <View style={styles.statsInfo}>
             <View style={[styles.statRow, { marginBottom: SPACE.md }]}>
               <View style={[styles.statDot, { backgroundColor: '#2d9c96' }]} />
               <View style={styles.statTextWrap}>
-                <Text style={styles.statVal}>{stats.learned}</Text>
-                <Text style={styles.statLab}>LEARNED</Text>
+                <Text style={[styles.statVal, { color: colors.text }]}>{stats.learned}</Text>
+                <Text style={[styles.statLab, { color: colors.textMuted }]}>LEARNED</Text>
               </View>
             </View>
             <View style={styles.statRow}>
-              <View style={[styles.statDot, { backgroundColor: '#c9a84c' }]} />
+              <View style={[styles.statDot, { backgroundColor: colors.primary }]} />
               <View style={styles.statTextWrap}>
-                <Text style={styles.statVal}>{stats.mastered}</Text>
-                <Text style={styles.statLab}>MASTERED</Text>
+                <Text style={[styles.statVal, { color: colors.text }]}>{stats.mastered}</Text>
+                <Text style={[styles.statLab, { color: colors.textMuted }]}>MASTERED</Text>
               </View>
             </View>
           </View>
@@ -85,35 +87,35 @@ const JourneyScreen = () => {
 
         {/* Streak Box */}
         <LinearGradient
-          colors={['rgba(201, 168, 76, 0.15)', 'rgba(0, 0, 0, 0.2)']}
-          style={styles.streakBox}
+          colors={isDark ? ['rgba(201, 168, 76, 0.15)', 'rgba(0, 0, 0, 0.2)'] : ['rgba(184, 150, 61, 0.15)', 'rgba(255, 255, 255, 0.2)']}
+          style={[styles.streakBox, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)' }]}
         >
-          <View style={styles.streakIconWrap}>
-            <Ionicons name="flame" size={32} color="#c9a84c" />
+          <View style={[styles.streakIconWrap, { backgroundColor: isDark ? 'rgba(201, 168, 76, 0.1)' : 'rgba(184, 150, 61, 0.1)' }]}>
+            <Ionicons name="flame" size={32} color={colors.primary} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.streakVal}>{streak} Day Streak</Text>
-            <Text style={styles.streakSub}>Keep learning every day!</Text>
+            <Text style={[styles.streakVal, { color: colors.primary }]}>{streak} Day Streak</Text>
+            <Text style={[styles.streakSub, { color: colors.textMuted }]}>Keep learning every day!</Text>
           </View>
-          <View style={styles.streakBest}>
-            <Text style={styles.bestNum}>{streak}</Text>
-            <Text style={styles.bestLabel}>BEST</Text>
+          <View style={[styles.streakBest, { borderLeftColor: colors.borderStrong }]}>
+            <Text style={[styles.bestNum, { color: colors.text }]}>{streak}</Text>
+            <Text style={[styles.bestLabel, { color: colors.textMuted }]}>BEST</Text>
           </View>
         </LinearGradient>
 
         {/* Category Breakdown */}
-        <Text style={styles.sectionTitle}>CATEGORY PROGRESS</Text>
-        <View style={styles.catStatsContainer}>
+        <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>CATEGORY PROGRESS</Text>
+        <View style={[styles.catStatsContainer, { backgroundColor: colors.glass }]}>
           {stats.catStats.map((cat) => (
             <View key={cat.id} style={styles.catRow}>
               <View style={styles.catHeader}>
                 <View style={styles.catNameWrap}>
                   <Ionicons name={cat.icon} size={14} color={cat.color} />
-                  <Text style={styles.catName}>{cat.name}</Text>
+                  <Text style={[styles.catName, { color: colors.text }]}>{cat.name}</Text>
                 </View>
-                <Text style={styles.catCount}>{cat.count}/{cat.total}</Text>
+                <Text style={[styles.catCount, { color: colors.textMuted }]}>{cat.count}/{cat.total}</Text>
               </View>
-              <View style={styles.barBg}>
+              <View style={[styles.barBg, { backgroundColor: colors.border }]}>
                 <View 
                   style={[
                     styles.barFill, 
@@ -126,7 +128,7 @@ const JourneyScreen = () => {
         </View>
 
         {/* Milestones */}
-        <Text style={[styles.sectionTitle, { marginTop: SPACE.lg }]}>MILESTONES</Text>
+        <Text style={[styles.sectionTitle, { marginTop: SPACE.lg, color: colors.textMuted }]}>MILESTONES</Text>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
@@ -135,16 +137,16 @@ const JourneyScreen = () => {
           {milestones.map((m) => {
             const isUnlocked = m.type === 'streak' ? streak >= m.threshold : stats.learned >= m.threshold;
             return (
-              <View key={m.id} style={[styles.milestoneCard, !isUnlocked && styles.milestoneLocked]}>
-                <View style={styles.milestoneIconWrap}>
+              <View key={m.id} style={[styles.milestoneCard, { backgroundColor: colors.glass, borderColor: colors.border }, !isUnlocked && styles.milestoneLocked]}>
+                <View style={[styles.milestoneIconWrap, { backgroundColor: colors.border }]}>
                   <Ionicons 
                     name={isUnlocked ? m.icon : 'lock-closed'} 
                     size={24} 
-                    color={isUnlocked ? '#c9a84c' : COLORS.muted} 
+                    color={isUnlocked ? colors.primary : colors.textDimmed} 
                   />
                 </View>
-                <Text style={[styles.milestoneTitle, !isUnlocked && { color: COLORS.muted }]}>{m.title}</Text>
-                <Text style={styles.milestoneDesc}>{m.desc}</Text>
+                <Text style={[styles.milestoneTitle, { color: colors.primary }, !isUnlocked && { color: colors.textMuted }]}>{m.title}</Text>
+                <Text style={[styles.milestoneDesc, { color: colors.textMuted }]}>{m.desc}</Text>
               </View>
             );
           })}
@@ -159,7 +161,6 @@ const JourneyScreen = () => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.dark.black,
   },
   scrollContent: {
     padding: SPACE.md,

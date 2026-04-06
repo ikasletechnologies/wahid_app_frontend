@@ -6,6 +6,7 @@ import Toast from 'react-native-toast-message';
 import { AuthProvider } from './src/context/AuthContext';
 import { LanguageProvider } from './src/context/LanguageContext';
 import { NamesProvider } from './src/context/NamesContext';
+import { ThemeProvider } from './src/context/ThemeContext';
 import AppNavigator from './src/navigation/AppNavigator';
 
 const toastConfig = {
@@ -55,14 +56,16 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <NavigationContainer>
-        <AuthProvider>
-          <LanguageProvider>
-            <NamesProvider>
-              <AppNavigator />
-              <Toast config={toastConfig} />
-            </NamesProvider>
-          </LanguageProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <LanguageProvider>
+              <NamesProvider>
+                <AppNavigator />
+                <Toast config={toastConfig} />
+              </NamesProvider>
+            </LanguageProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </NavigationContainer>
     </GestureHandlerRootView>
   );

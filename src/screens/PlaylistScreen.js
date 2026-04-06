@@ -12,10 +12,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Speech from 'expo-speech';
 import { useNames, MOODS } from '../context/NamesContext';
+import { useAppTheme } from '../context/ThemeContext';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS } from '../theme';
 
 const PlaylistScreen = ({ navigation }) => {
   const { names: allNames, getMoodPlaylist, loading } = useNames();
+  const { colors, isDark } = useAppTheme();
   const [selectedMood, setSelectedMood] = useState(MOODS[0]);
   const [playingId, setPlayingId] = useState(null);
 
@@ -97,18 +99,18 @@ const PlaylistScreen = ({ navigation }) => {
     const isPlaying = playingId === item.number;
     return (
       <TouchableOpacity
-        style={[styles.playlistItem, isPlaying && styles.playlistItemActive]}
+        style={[styles.playlistItem, { backgroundColor: colors.glass, borderColor: colors.border }, isPlaying && styles.playlistItemActive]}
         onPress={() => navigation.navigate('NameDetail', { name: item })}
       >
         <View style={styles.itemIndex}>
-          <Text style={styles.indexText}>{index + 1}</Text>
+          <Text style={[styles.indexText, { color: colors.textDimmed }]}>{index + 1}</Text>
         </View>
 
         <View style={styles.itemInfo}>
-          <Text style={styles.itemArabic}>{item.arabic}</Text>
+          <Text style={[styles.itemArabic, { color: colors.primary }]}>{item.arabic}</Text>
           <View style={styles.itemTextWrap}>
-            <Text style={styles.itemTrans}>{item.transliteration}</Text>
-            <Text style={styles.itemMeaning} numberOfLines={1}>{item.meaning}</Text>
+            <Text style={[styles.itemTrans, { color: colors.text }]}>{item.transliteration}</Text>
+            <Text style={[styles.itemMeaning, { color: colors.textMuted }]} numberOfLines={1}>{item.meaning}</Text>
           </View>
         </View>
 
@@ -117,14 +119,14 @@ const PlaylistScreen = ({ navigation }) => {
             <Text style={styles.categoryText}>{item.category?.toUpperCase()}</Text>
           </View>
           <TouchableOpacity
-            style={[styles.playBtn, isPlaying && styles.playBtnActive]}
+            style={[styles.playBtn, { backgroundColor: colors.glass, borderColor: colors.borderStrong }, isPlaying && [styles.playBtnActive, { backgroundColor: 'rgba(45,156,150,0.1)', borderColor: 'rgba(45,156,150,0.3)' }]]}
             onPress={() => handlePlay(item)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons
               name={isPlaying ? 'stop' : 'volume-high-outline'}
               size={16}
-              color={isPlaying ? '#2d9c96' : COLORS.muted}
+              color={isPlaying ? '#2d9c96' : colors.textMuted}
             />
           </TouchableOpacity>
         </View>
@@ -133,22 +135,22 @@ const PlaylistScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top']}>
       <View style={styles.container}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>How are you feeling?</Text>
-            <Text style={styles.subtitle}>Discover names for your soul's state</Text>
+            <Text style={[styles.title, { color: colors.text }]}>How are you feeling?</Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>Discover names for your soul's state</Text>
           </View>
           {playlist.length > 0 && (
             <TouchableOpacity
-              style={[styles.playAllBtn, playingId === 'ALL' && styles.playAllBtnActive]}
+              style={[styles.playAllBtn, { backgroundColor: isDark ? 'rgba(201,168,76,0.08)' : 'rgba(184,150,61,0.08)', borderColor: isDark ? 'rgba(201,168,76,0.2)' : 'rgba(184,150,61,0.2)' }, playingId === 'ALL' && styles.playAllBtnActive]}
               onPress={handlePlayAll}
             >
               <Ionicons
                 name={playingId === 'ALL' ? 'stop-circle' : 'play-circle'}
                 size={20}
-                color={playingId === 'ALL' ? '#2d9c96' : '#c9a84c'}
+                color={playingId === 'ALL' ? '#2d9c96' : colors.primary}
               />
               <Text style={[styles.playAllText, playingId === 'ALL' && { color: '#2d9c96' }]}>
                 {playingId === 'ALL' ? 'STOP' : 'PLAY ALL'}
@@ -167,10 +169,10 @@ const PlaylistScreen = ({ navigation }) => {
             {MOODS.map((mood) => (
               <TouchableOpacity
                 key={mood}
-                style={[styles.moodChip, selectedMood === mood && styles.moodChipActive]}
+                style={[styles.moodChip, { backgroundColor: colors.glass, borderColor: colors.border }, selectedMood === mood && styles.moodChipActive]}
                 onPress={() => setSelectedMood(mood)}
               >
-                <Text style={[styles.moodText, selectedMood === mood && styles.moodTextActive]}>
+                <Text style={[styles.moodText, { color: colors.textMuted }, selectedMood === mood && styles.moodTextActive]}>
                   {mood.toUpperCase()}
                 </Text>
               </TouchableOpacity>
@@ -194,8 +196,8 @@ const PlaylistScreen = ({ navigation }) => {
         {/* Playlist */}
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator color="#c9a84c" />
-            <Text style={styles.loadingText}>Loading...</Text>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading...</Text>
           </View>
         ) : (
           <FlatList
@@ -206,15 +208,15 @@ const PlaylistScreen = ({ navigation }) => {
             showsVerticalScrollIndicator={false}
             ListHeaderComponent={() =>
               playlist.length > 0 ? (
-                <Text style={styles.resultCount}>
+                <Text style={[styles.resultCount, { color: colors.textMuted }]}>
                   {playlist.length} NAME{playlist.length !== 1 ? 'S' : ''} FOR "{selectedMood.toUpperCase()}"
                 </Text>
               ) : null
             }
             ListEmptyComponent={() => (
               <View style={styles.emptyContainer}>
-                <Ionicons name="musical-notes-outline" size={48} color={COLORS.dimmed} />
-                <Text style={styles.emptyText}>
+                <Ionicons name="musical-notes-outline" size={48} color={colors.textDimmed} />
+                <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                   {allNames.length === 0
                     ? 'Names are being loaded. Check your connection.'
                     : 'No names curated for this mood yet.'}
@@ -231,7 +233,6 @@ const PlaylistScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.dark.black,
   },
   container: {
     flex: 1,
@@ -297,9 +298,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: RADIUS.sm,
-    backgroundColor: 'rgba(255,255,255,0.03)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
   },
   moodChipActive: {
     backgroundColor: 'rgba(45, 156, 150, 0.1)',
@@ -353,12 +352,10 @@ const styles = StyleSheet.create({
   playlistItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.03)',
     padding: SPACE.md,
     borderRadius: RADIUS.md,
     marginBottom: SPACE.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
   },
   playlistItemActive: {
     borderColor: 'rgba(45,156,150,0.3)',

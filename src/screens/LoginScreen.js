@@ -16,9 +16,9 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS, SHADOW } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import { useAppTheme } from '../context/ThemeContext';
 
 Dimensions.get('window');
 
@@ -29,6 +29,7 @@ const LoginScreen = ({ navigation }) => {
   const [loading, setLoading]         = useState(false);
   const [focusedField, setFocused]    = useState(null);
   const { login } = useAuth();
+  const { colors, isDark } = useAppTheme();
 
   const emailInput    = useRef(null);
   const passwordInput = useRef(null);
@@ -53,11 +54,11 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
       
       <LinearGradient
-        colors={['rgba(20, 22, 33, 1)', 'rgba(0, 0, 0, 1)']}
+        colors={isDark ? ['rgba(20, 22, 33, 1)', 'rgba(0, 0, 0, 1)'] : [colors.surface, colors.background]}
         style={StyleSheet.absoluteFill}
       />
 
@@ -75,38 +76,38 @@ const LoginScreen = ({ navigation }) => {
         >
           {/* Header */}
           <View style={styles.header}>
-            <View style={styles.logoWrap}>
-              <Ionicons name="sparkles" size={32} color="#c9a84c" />
+            <View style={[styles.logoWrap, { backgroundColor: isDark ? 'rgba(201, 168, 76, 0.1)' : 'rgba(184, 150, 61, 0.1)', borderColor: isDark ? 'rgba(201, 168, 76, 0.2)' : 'rgba(184, 150, 61, 0.2)' }]}>
+              <Ionicons name="sparkles" size={32} color={colors.primary} />
             </View>
-            <Text style={styles.brandName}>WAHID</Text>
-            <Text style={styles.arabicHeader}>بِسْمِ ٱللَّهِ</Text>
+            <Text style={[styles.brandName, { color: colors.text }]}>WAHID</Text>
+            <Text style={[styles.arabicHeader, { color: colors.primary }]}>بِسْمِ ٱللَّهِ</Text>
           </View>
 
           {/* Login Card (Glassmorphic) */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Welcome Back</Text>
-            <Text style={styles.cardSub}>Sign in to continue your spiritual journey</Text>
+          <View style={[styles.card, { backgroundColor: colors.glass, borderColor: colors.border }]}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Welcome Back</Text>
+            <Text style={[styles.cardSub, { color: colors.textMuted }]}>Sign in to continue your spiritual journey</Text>
 
             {/* Email Field */}
             <Pressable 
               onPress={() => emailInput.current?.focus()}
-              style={[styles.inputWrap, focusedField === 'email' && styles.inputFocused]}
+              style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'email' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
             >
               <View style={styles.inputHeader}>
                 <Ionicons 
                   name="mail-outline" 
                   size={14} 
-                  color={focusedField === 'email' ? '#c9a84c' : COLORS.muted} 
+                  color={focusedField === 'email' ? colors.primary : colors.textMuted} 
                 />
-                <Text style={[styles.inputLabel, focusedField === 'email' && { color: '#c9a84c' }]}>
+                <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'email' && { color: colors.primary }]}>
                   EMAIL ADDRESS
                 </Text>
               </View>
               <TextInput
                 ref={emailInput}
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="your@email.com"
-                placeholderTextColor={COLORS.dimmed}
+                placeholderTextColor={colors.textDimmed}
                 value={email}
                 onChangeText={setEmail}
                 onFocus={() => setFocused('email')}
@@ -121,24 +122,24 @@ const LoginScreen = ({ navigation }) => {
             {/* Password Field */}
             <Pressable 
               onPress={() => passwordInput.current?.focus()}
-              style={[styles.inputWrap, focusedField === 'password' && styles.inputFocused]}
+              style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'password' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
             >
               <View style={styles.inputHeader}>
                 <Ionicons 
                   name="lock-closed-outline" 
                   size={14} 
-                  color={focusedField === 'password' ? '#c9a84c' : COLORS.muted} 
+                  color={focusedField === 'password' ? colors.primary : colors.textMuted} 
                 />
-                <Text style={[styles.inputLabel, focusedField === 'password' && { color: '#c9a84c' }]}>
+                <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'password' && { color: colors.primary }]}>
                   PASSWORD
                 </Text>
               </View>
               <View style={styles.passwordRow}>
                 <TextInput
                   ref={passwordInput}
-                  style={[styles.input, { flex: 1 }]}
+                  style={[styles.input, { flex: 1, color: colors.text }]}
                   placeholder="••••••••"
-                  placeholderTextColor={COLORS.dimmed}
+                  placeholderTextColor={colors.textDimmed}
                   value={password}
                   onChangeText={setPassword}
                   onFocus={() => setFocused('password')}
@@ -151,7 +152,7 @@ const LoginScreen = ({ navigation }) => {
                   <Ionicons
                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                     size={18}
-                    color={COLORS.muted}
+                    color={colors.textMuted}
                   />
                 </TouchableOpacity>
               </View>
@@ -167,17 +168,17 @@ const LoginScreen = ({ navigation }) => {
                 activeOpacity={0.9}
               >
                 <LinearGradient
-                  colors={['#c9a84c', '#8a6d1e']}
-                  style={styles.button}
+                  colors={[colors.primary, isDark ? '#8a6d1e' : '#e6c867']}
+                  style={[styles.button, !isDark && { shadowColor: colors.primary, elevation: 4 }]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
                   {loading ? (
-                    <ActivityIndicator color={COLORS.dark.black} size="small" />
+                    <ActivityIndicator color={COLORS.black} size="small" />
                   ) : (
                     <>
-                      <Text style={styles.buttonText}>SIGN IN</Text>
-                      <Ionicons name="arrow-forward" size={16} color={COLORS.dark.black} />
+                      <Text style={[styles.buttonText, { color: isDark ? COLORS.black : COLORS.white }]}>SIGN IN</Text>
+                      <Ionicons name="arrow-forward" size={16} color={isDark ? COLORS.black : COLORS.white} />
                     </>
                   )}
                 </LinearGradient>
@@ -186,9 +187,9 @@ const LoginScreen = ({ navigation }) => {
 
             {/* Footer */}
             <View style={styles.footer}>
-              <Text style={styles.footerText}>New to Wahid?</Text>
+              <Text style={[styles.footerText, { color: colors.textMuted }]}>New to Wahid?</Text>
               <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                <Text style={styles.footerLink}>Create Account</Text>
+                <Text style={[styles.footerLink, { color: colors.primary }]}>Create Account</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -201,7 +202,7 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.dark.black,
+    backgroundColor: COLORS.black,
   },
   kav: {
     flex: 1,
@@ -248,7 +249,6 @@ const styles = StyleSheet.create({
   arabicHeader: {
     fontFamily: FONTS.arabicBold,
     fontSize: SIZES.arabic.sm,
-    color: '#c9a84c',
     marginTop: SPACE.xs,
     opacity: 0.8,
   },
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontFamily: FONTS.bold,
     fontSize: SIZES.base,
-    color: COLORS.dark.black,
+    color: COLORS.black,
     letterSpacing: 1,
   },
 

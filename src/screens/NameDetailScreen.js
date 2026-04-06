@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useNames } from '../context/NamesContext';
+import { useAppTheme } from '../context/ThemeContext';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS } from '../theme';
 
 // Safely get a field from the name object, trying multiple key names
@@ -51,6 +52,7 @@ const parseQuranicRefs = (name) => {
 const NameDetailScreen = ({ route, navigation }) => {
   const { name } = route.params;
   const { markAsLearned, learnedIds, masteredIds, revisitCounts } = useNames();
+  const { colors, isDark } = useAppTheme();
 
   const { width } = useWindowDimensions();
   const [selectedOption, setSelectedOption] = useState(null);
@@ -146,37 +148,37 @@ const NameDetailScreen = ({ route, navigation }) => {
           {item.id === 'hero' && (
             <View style={styles.hero}>
               <Text style={styles.heroNumber}>#{name.number}</Text>
-              <Text style={styles.heroArabic}>{name.arabic}</Text>
-              <Text style={styles.heroTrans}>{name.transliteration}</Text>
-              <Text style={styles.heroMeaning}>{name.meaning}</Text>
+              <Text style={[styles.heroArabic, { color: colors.primary }]}>{name.arabic}</Text>
+              <Text style={[styles.heroTrans, { color: colors.text }]}>{name.transliteration}</Text>
+              <Text style={[styles.heroMeaning, { color: colors.textMuted }]}>{name.meaning}</Text>
             </View>
           )}
 
           {item.id === 'progress' && (
             <View style={[styles.section, { marginTop: 0 }]}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>YOUR PROGRESS</Text>
-                <View style={styles.sectionLine} />
+                <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>YOUR PROGRESS</Text>
+                <View style={[styles.sectionLine, { backgroundColor: colors.borderStrong }]} />
               </View>
               <View style={styles.progressRow}>
-                <View style={[styles.progressCard, isLearned && styles.progressCardLearned]}>
+                <View style={[styles.progressCard, { backgroundColor: colors.glass, borderColor: colors.border }, isLearned && styles.progressCardLearned]}>
                   <Ionicons
                     name={isLearned ? 'checkmark-circle' : 'checkmark-circle-outline'}
                     size={28}
-                    color={isLearned ? '#2d9c96' : COLORS.dimmed}
+                    color={isLearned ? '#2d9c96' : colors.textDimmed}
                   />
-                  <Text style={[styles.progressLabel, isLearned && { color: '#2d9c96' }]}>Learned</Text>
+                  <Text style={[styles.progressLabel, { color: colors.textMuted }, isLearned && { color: '#2d9c96' }]}>Learned</Text>
                   <Text style={styles.progressSub}>
                     {isLearned ? 'Completed' : 'Not yet learned'}
                   </Text>
                 </View>
-                <View style={[styles.progressCard, isMastered && styles.progressCardMastered]}>
+                <View style={[styles.progressCard, { backgroundColor: colors.glass, borderColor: colors.border }, isMastered && styles.progressCardMastered]}>
                   <Ionicons
                     name={isMastered ? 'star' : 'star-outline'}
                     size={28}
-                    color={isMastered ? '#c9a84c' : COLORS.dimmed}
+                    color={isMastered ? colors.primary : colors.textDimmed}
                   />
-                  <Text style={[styles.progressLabel, isMastered && { color: '#c9a84c' }]}>Mastered</Text>
+                  <Text style={[styles.progressLabel, { color: colors.textMuted }, isMastered && { color: colors.primary }]}>Mastered</Text>
                   <Text style={styles.progressSub}>Revisits: {revisitCount} / 3</Text>
                 </View>
               </View>
@@ -186,13 +188,13 @@ const NameDetailScreen = ({ route, navigation }) => {
           {item.id === 'benefits' && (
             <View style={[styles.section, { marginTop: 0 }]}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>BENEFITS OF LEARNING</Text>
-                <View style={styles.sectionLine} />
+                <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>BENEFITS OF LEARNING</Text>
+                <View style={[styles.sectionLine, { backgroundColor: colors.borderStrong }]} />
               </View>
               {benefits.map((benefit, idx) => (
                 <View key={idx} style={styles.benefitItem}>
-                  <View style={styles.benefitDot} />
-                  <Text style={styles.benefitText}>{benefit}</Text>
+                  <View style={[styles.benefitDot, { backgroundColor: colors.primary }]} />
+                  <Text style={[styles.benefitText, { color: colors.text }]}>{benefit}</Text>
                 </View>
               ))}
             </View>
@@ -201,19 +203,19 @@ const NameDetailScreen = ({ route, navigation }) => {
           {item.id === 'quran' && (
             <View style={[styles.section, { marginTop: 0 }]}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>QUR'ANIC REFERENCES</Text>
-                <View style={styles.sectionLine} />
+                <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>QUR'ANIC REFERENCES</Text>
+                <View style={[styles.sectionLine, { backgroundColor: colors.borderStrong }]} />
               </View>
               {quranicRefs.map((ref, idx) => (
-                <View key={idx} style={[styles.quranCard, idx > 0 && { marginTop: SPACE.sm }]}>
+                <View key={idx} style={[styles.quranCard, { backgroundColor: colors.glass, borderColor: colors.border }, idx > 0 && { marginTop: SPACE.sm }]}>
                   {ref.arabic ? (
-                    <Text style={styles.quranArabic}>{ref.arabic}</Text>
+                    <Text style={[styles.quranArabic, { color: colors.primary }]}>{ref.arabic}</Text>
                   ) : null}
                   {ref.translation ? (
-                    <Text style={styles.quranTrans}>"{ref.translation}"</Text>
+                    <Text style={[styles.quranTrans, { color: colors.text }]}>"{ref.translation}"</Text>
                   ) : null}
                   {ref.reference ? (
-                    <Text style={styles.quranRef}>{ref.reference}</Text>
+                    <Text style={[styles.quranRef, { color: colors.primary }]}>{ref.reference}</Text>
                   ) : null}
                 </View>
               ))}
@@ -223,11 +225,11 @@ const NameDetailScreen = ({ route, navigation }) => {
           {item.id === 'reflection' && (
             <View style={[styles.section, { marginTop: 0 }]}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>REFLECTION</Text>
-                <View style={styles.sectionLine} />
+                <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>REFLECTION</Text>
+                <View style={[styles.sectionLine, { backgroundColor: colors.borderStrong }]} />
               </View>
-              <View style={styles.reflectionBox}>
-                <Text style={styles.reflectionText}>{reflection}</Text>
+              <View style={[styles.reflectionBox, { backgroundColor: colors.glass, borderLeftColor: colors.primary }]}>
+                <Text style={[styles.reflectionText, { color: colors.text }]}>{reflection}</Text>
               </View>
             </View>
           )}
@@ -235,11 +237,11 @@ const NameDetailScreen = ({ route, navigation }) => {
           {item.id === 'insight' && (
             <View style={[styles.section, { marginTop: 0 }]}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>LEARNING INSIGHT</Text>
-                <View style={styles.sectionLine} />
+                <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>LEARNING INSIGHT</Text>
+                <View style={[styles.sectionLine, { backgroundColor: colors.borderStrong }]} />
               </View>
-              <View style={styles.reflectionBox}>
-                <Text style={styles.reflectionText}>{learningInsight}</Text>
+              <View style={[styles.reflectionBox, { backgroundColor: colors.glass, borderLeftColor: colors.primary }]}>
+                <Text style={[styles.reflectionText, { color: colors.text }]}>{learningInsight}</Text>
               </View>
             </View>
           )}
@@ -247,21 +249,21 @@ const NameDetailScreen = ({ route, navigation }) => {
           {item.id === 'mcq' && (
             <View style={[styles.section, { marginTop: 0 }]}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>MATCH THE QUALITY</Text>
-                <View style={styles.sectionLine} />
+                <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>MATCH THE QUALITY</Text>
+                <View style={[styles.sectionLine, { backgroundColor: colors.borderStrong }]} />
               </View>
-              <View style={styles.mcqCard}>
+              <View style={[styles.mcqCard, { backgroundColor: colors.glass, borderColor: colors.border }]}>
                 <View style={styles.mcqBadge}>
-                  <Ionicons name="flash" size={12} color="#c9a84c" />
-                  <Text style={styles.mcqBadgeText}>Quick Match</Text>
+                  <Ionicons name="flash" size={12} color={colors.primary} />
+                  <Text style={[styles.mcqBadgeText, { color: colors.primary }]}>Quick Match</Text>
                 </View>
-                <Text style={styles.mcqSubtitle}>
-                  Connect each quality on the <Text style={{ color: COLORS.white }}>left</Text> with how it applies on the <Text style={{ color: COLORS.white }}>right</Text>
+                <Text style={[styles.mcqSubtitle, { color: colors.textMuted }]}>
+                  Connect each quality on the <Text style={{ color: colors.text, fontWeight: 'bold' }}>left</Text> with how it applies on the <Text style={{ color: colors.text, fontWeight: 'bold' }}>right</Text>
                 </Text>
-                <Text style={styles.mcqQuestion}>{mcq.q}</Text>
+                <Text style={[styles.mcqQuestion, { color: colors.text }]}>{mcq.q}</Text>
                 <View style={styles.optionsWrap}>
                   {(mcq.opts || []).map((opt, idx) => {
-                    let optStyle = styles.option;
+                    let optStyle = [styles.option, { backgroundColor: colors.glass, borderColor: colors.border }];
                     if (showFeedback) {
                       if (idx === mcq.ans) optStyle = [styles.option, styles.optionCorrect];
                       else if (selectedOption === idx) optStyle = [styles.option, styles.optionWrong];
@@ -277,6 +279,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                       >
                         <Text style={[
                           styles.optionText,
+                          { color: colors.text },
                           showFeedback && idx === mcq.ans && styles.textCorrect,
                           showFeedback && selectedOption === idx && idx !== mcq.ans && styles.textWrong,
                         ]}>
@@ -298,30 +301,30 @@ const NameDetailScreen = ({ route, navigation }) => {
   };
 
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" />
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <LinearGradient
-        colors={['rgba(20, 22, 33, 1)', 'rgba(0, 0, 0, 1)']}
+        colors={isDark ? ['rgba(20, 22, 33, 1)', 'rgba(0, 0, 0, 1)'] : [colors.surface, colors.background]}
         style={StyleSheet.absoluteFill}
       />
 
       <SafeAreaView style={{ flex: 1 }}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconBtn, { backgroundColor: colors.glass }]}>
+            <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Details</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Details</Text>
           <TouchableOpacity
             onPress={handleMarkLearned}
-            style={[styles.learnBadge, isLearned && styles.learnedBadgeActive]}
+            style={[styles.learnBadge, { backgroundColor: colors.glass, borderColor: colors.borderStrong }, isLearned && styles.learnedBadgeActive]}
           >
             <Ionicons
               name={isLearned ? 'checkmark-circle' : 'add-circle-outline'}
               size={16}
-              color={isLearned ? '#2d9c96' : COLORS.muted}
+              color={isLearned ? '#2d9c96' : colors.textMuted}
             />
-            <Text style={[styles.learnBadgeText, isLearned && { color: '#2d9c96' }]}>
+            <Text style={[styles.learnBadgeText, { color: colors.textMuted }, isLearned && { color: '#2d9c96' }]}>
               {isLearned ? 'LEARNED' : 'MARK'}
             </Text>
           </TouchableOpacity>
@@ -343,7 +346,7 @@ const NameDetailScreen = ({ route, navigation }) => {
         {/* Pagination Dots */}
         <View style={styles.pagination}>
           {slidesData.map((_, idx) => (
-            <View key={idx} style={[styles.dot, currentIndex === idx && styles.activeDot]} />
+            <View key={idx} style={[styles.dot, { backgroundColor: colors.borderStrong }, currentIndex === idx && [styles.activeDot, { backgroundColor: colors.primary }]]} />
           ))}
         </View>
       </SafeAreaView>
@@ -354,7 +357,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.dark.black,
+    backgroundColor: COLORS.black,
   },
   header: {
     flexDirection: 'row',

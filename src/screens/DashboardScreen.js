@@ -138,7 +138,7 @@ const DashboardScreen = () => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.dark.black,
+    backgroundColor: COLORS.black,
   },
   container: {
     flex: 1,

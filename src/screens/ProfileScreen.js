@@ -13,12 +13,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useNames } from '../context/NamesContext';
+import { useAppTheme } from '../context/ThemeContext';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS } from '../theme';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 const ProfileScreen = () => {
   const { user, updateProfile, logout } = useAuth();
   const { learnedIds, masteredIds, streak } = useNames();
+  const { colors, isDark, toggleTheme } = useAppTheme();
 
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
@@ -56,14 +58,14 @@ const ProfileScreen = () => {
   const progress = Math.round((learnedIds.length / 99) * 100);
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Header ── */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
         </View>
 
         {/* ── Avatar + Name ── */}
@@ -78,11 +80,11 @@ const ProfileScreen = () => {
           {editing ? (
             <View style={styles.editRow}>
               <TextInput
-                style={styles.nameInput}
+                style={[styles.nameInput, { color: colors.text, backgroundColor: colors.glass, borderColor: colors.border }]}
                 value={editName}
                 onChangeText={setEditName}
                 placeholder="Your name"
-                placeholderTextColor={COLORS.dimmed}
+                placeholderTextColor={colors.textDimmed}
                 autoFocus
               />
               <TouchableOpacity
@@ -91,7 +93,7 @@ const ProfileScreen = () => {
                 disabled={saving}
               >
                 {saving ? (
-                  <ActivityIndicator size="small" color={COLORS.dark.black} />
+                  <ActivityIndicator size="small" color={COLORS.black} />
                 ) : (
                   <Text style={styles.saveBtnText}>SAVE</Text>
                 )}
@@ -105,38 +107,38 @@ const ProfileScreen = () => {
             </View>
           ) : (
             <View style={styles.nameRow}>
-              <Text style={styles.userName}>{user?.name || 'User'}</Text>
+              <Text style={[styles.userName, { color: colors.text }]}>{user?.name || 'User'}</Text>
               <TouchableOpacity onPress={() => setEditing(true)} style={styles.editIcon}>
-                <Ionicons name="pencil-outline" size={16} color={COLORS.muted} />
+                <Ionicons name="pencil-outline" size={16} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
           )}
 
-          <Text style={styles.userEmail}>{user?.email || ''}</Text>
+          <Text style={[styles.userEmail, { color: colors.textMuted }]}>{user?.email || ''}</Text>
         </View>
 
         {/* ── Stats Row ── */}
         <View style={styles.statsRow}>
           {stats.map((s) => (
-            <View key={s.label} style={styles.statCard}>
+            <View key={s.label} style={[styles.statCard, { backgroundColor: colors.glass, borderColor: colors.border }]}>
               <Ionicons name={s.icon} size={18} color={s.color} style={{ marginBottom: 6 }} />
               <Text style={[styles.statValue, { color: s.color }]}>{s.value}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>{s.label}</Text>
             </View>
           ))}
         </View>
 
         {/* ── Overall Progress ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>OVERALL JOURNEY</Text>
-          <View style={styles.progressCard}>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>OVERALL JOURNEY</Text>
+          <View style={[styles.progressCard, { backgroundColor: colors.glass, borderColor: colors.border }]}>
             <View style={styles.progressTop}>
-              <Text style={styles.progressLabel}>
+              <Text style={[styles.progressLabel, { color: colors.text }]}>
                 {learnedIds.length} of 99 Names Learned
               </Text>
-              <Text style={styles.progressPct}>{progress}%</Text>
+              <Text style={[styles.progressPct, { color: colors.primary }]}>{progress}%</Text>
             </View>
-            <View style={styles.progressBg}>
+            <View style={[styles.progressBg, { backgroundColor: colors.borderStrong }]}>
               <LinearGradient
                 colors={['#2d9c96', '#c9a84c']}
                 style={[styles.progressFill, { width: `${progress}%` }]}
@@ -152,27 +154,32 @@ const ProfileScreen = () => {
 
         {/* ── Settings ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>SETTINGS</Text>
-          <View style={styles.settingsCard}>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>SETTINGS</Text>
+          <View style={[styles.settingsCard, { backgroundColor: colors.glass, borderColor: colors.border }]}>
             <SettingRow
+              colors={colors}
               icon="person-outline"
               label="Edit Name"
               onPress={() => setEditing(true)}
             />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: colors.borderStrong }]} />
             <SettingRow
+              colors={colors}
               icon="notifications-outline"
               label="Daily Reminders"
               note="Coming soon"
             />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: colors.borderStrong }]} />
             <SettingRow
-              icon="moon-outline"
-              label="Dark Mode"
-              note="Always on"
+              colors={colors}
+              icon={isDark ? "moon-outline" : "sunny-outline"}
+              label={isDark ? "Dark Mode" : "Light Mode"}
+              note="Toggle Theme"
+              onPress={toggleTheme}
             />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: colors.borderStrong }]} />
             <SettingRow
+              colors={colors}
               icon="language-outline"
               label="Arabic Script"
               note="Enabled"
@@ -182,14 +189,16 @@ const ProfileScreen = () => {
 
         {/* ── Account ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>ACCOUNT</Text>
-          <View style={styles.settingsCard}>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>ACCOUNT</Text>
+          <View style={[styles.settingsCard, { backgroundColor: colors.glass, borderColor: colors.border }]}>
             <SettingRow
+              colors={colors}
               icon="shield-checkmark-outline"
               label="Privacy Policy"
             />
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: colors.borderStrong }]} />
             <SettingRow
+              colors={colors}
               icon="information-circle-outline"
               label="About Wahid"
               note="v1.0.0"
@@ -232,17 +241,17 @@ const ProfileScreen = () => {
   );
 };
 
-const SettingRow = ({ icon, label, note, onPress }) => (
+const SettingRow = ({ icon, label, note, onPress, colors }) => (
   <TouchableOpacity style={styles.settingRow} onPress={onPress} disabled={!onPress}>
     <View style={styles.settingLeft}>
-      <View style={styles.settingIconWrap}>
-        <Ionicons name={icon} size={16} color={COLORS.muted} />
+      <View style={[styles.settingIconWrap, { backgroundColor: colors.border }]}>
+        <Ionicons name={icon} size={16} color={colors.textMuted} />
       </View>
-      <Text style={styles.settingLabel}>{label}</Text>
+      <Text style={[styles.settingLabel, { color: colors.text }]}>{label}</Text>
     </View>
     <View style={styles.settingRight}>
-      {note && <Text style={styles.settingNote}>{note}</Text>}
-      {onPress && <Ionicons name="chevron-forward" size={14} color={COLORS.dimmed} />}
+      {note && <Text style={[styles.settingNote, { color: colors.textMuted }]}>{note}</Text>}
+      {onPress && <Ionicons name="chevron-forward" size={14} color={colors.textDimmed} />}
     </View>
   </TouchableOpacity>
 );
@@ -250,7 +259,7 @@ const SettingRow = ({ icon, label, note, onPress }) => (
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.dark.black,
+    backgroundColor: COLORS.black,
   },
   scrollContent: {
     paddingHorizontal: SPACE.md,
@@ -344,7 +353,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveBtnText: {
-    color: COLORS.dark.black,
+    color: COLORS.black,
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1,

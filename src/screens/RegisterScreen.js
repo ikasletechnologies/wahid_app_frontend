@@ -15,9 +15,9 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS, SHADOW } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import { useAppTheme } from '../context/ThemeContext';
 
 const RegisterScreen = ({ navigation }) => {
   const [name, setName] = useState('');
@@ -27,6 +27,7 @@ const RegisterScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocused] = useState(null);
   const { register } = useAuth();
+  const { colors, isDark } = useAppTheme();
 
   const nameInput     = useRef(null);
   const emailInput    = useRef(null);
@@ -56,11 +57,11 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
       
       <LinearGradient
-        colors={['rgba(20, 22, 33, 1)', 'rgba(0, 0, 0, 1)']}
+        colors={isDark ? ['rgba(20, 22, 33, 1)', 'rgba(0, 0, 0, 1)'] : [colors.surface, colors.background]}
         style={StyleSheet.absoluteFill}
       />
 
@@ -75,40 +76,40 @@ const RegisterScreen = ({ navigation }) => {
         >
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.arabicHeader}>بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</Text>
-            <View style={styles.dividerWrap}>
-              <View style={styles.line} />
-              <Ionicons name="moon" size={14} color="#c9a84c" />
-              <View style={styles.line} />
+            <Text style={[styles.arabicHeader, { color: colors.primary }]}>بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</Text>
+            <View style={[styles.dividerWrap, { opacity: isDark ? 0.6 : 0.8 }]}>
+              <View style={[styles.line, { backgroundColor: colors.primary }]} />
+              <Ionicons name="moon" size={14} color={colors.primary} />
+              <View style={[styles.line, { backgroundColor: colors.primary }]} />
             </View>
-            <Text style={styles.headerSub}>JOIN THE JOURNEY</Text>
+            <Text style={[styles.headerSub, { color: colors.textMuted }]}>JOIN THE JOURNEY</Text>
           </View>
 
           {/* Registration Card */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Create Account</Text>
-            <Text style={styles.cardSub}>Start your exploration of the 99 Divine Names</Text>
+          <View style={[styles.card, { backgroundColor: colors.glass, borderColor: colors.border }]}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Create Account</Text>
+            <Text style={[styles.cardSub, { color: colors.textMuted }]}>Start your exploration of the 99 Divine Names</Text>
 
             {/* Name Input */}
             <Pressable 
               onPress={() => nameInput.current?.focus()}
-              style={[styles.inputWrap, focusedField === 'name' && styles.inputFocused]}
+              style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'name' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
             >
               <View style={styles.inputHeader}>
                 <Ionicons 
                   name="person-outline" 
                   size={14} 
-                  color={focusedField === 'name' ? '#c9a84c' : COLORS.muted} 
+                  color={focusedField === 'name' ? colors.primary : colors.textMuted} 
                 />
-                <Text style={[styles.inputLabel, focusedField === 'name' && { color: '#c9a84c' }]}>
+                <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'name' && { color: colors.primary }]}>
                   FULL NAME
                 </Text>
               </View>
               <TextInput
                 ref={nameInput}
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="How should we call you?"
-                placeholderTextColor={COLORS.dimmed}
+                placeholderTextColor={colors.textDimmed}
                 value={name}
                 onChangeText={setName}
                 onFocus={() => setFocused('name')}
@@ -122,23 +123,23 @@ const RegisterScreen = ({ navigation }) => {
             {/* Email Input */}
             <Pressable 
               onPress={() => emailInput.current?.focus()}
-              style={[styles.inputWrap, focusedField === 'email' && styles.inputFocused]}
+              style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'email' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
             >
               <View style={styles.inputHeader}>
                 <Ionicons 
                   name="mail-outline" 
                   size={14} 
-                  color={focusedField === 'email' ? '#c9a84c' : COLORS.muted} 
+                  color={focusedField === 'email' ? colors.primary : colors.textMuted} 
                 />
-                <Text style={[styles.inputLabel, focusedField === 'email' && { color: '#c9a84c' }]}>
+                <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'email' && { color: colors.primary }]}>
                   EMAIL ADDRESS
                 </Text>
               </View>
               <TextInput
                 ref={emailInput}
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="your@email.com"
-                placeholderTextColor={COLORS.dimmed}
+                placeholderTextColor={colors.textDimmed}
                 value={email}
                 onChangeText={setEmail}
                 onFocus={() => setFocused('email')}
@@ -153,24 +154,24 @@ const RegisterScreen = ({ navigation }) => {
             {/* Password Input */}
             <Pressable 
               onPress={() => passwordInput.current?.focus()}
-              style={[styles.inputWrap, focusedField === 'password' && styles.inputFocused]}
+              style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'password' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
             >
               <View style={styles.inputHeader}>
                 <Ionicons 
                   name="lock-closed-outline" 
                   size={14} 
-                  color={focusedField === 'password' ? '#c9a84c' : COLORS.muted} 
+                  color={focusedField === 'password' ? colors.primary : colors.textMuted} 
                 />
-                <Text style={[styles.inputLabel, focusedField === 'password' && { color: '#c9a84c' }]}>
+                <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'password' && { color: colors.primary }]}>
                   SECURE PASSWORD
                 </Text>
               </View>
               <View style={styles.passwordRow}>
                 <TextInput
                   ref={passwordInput}
-                  style={[styles.input, { flex: 1 }]}
+                  style={[styles.input, { flex: 1, color: colors.text }]}
                   placeholder="••••••••"
-                  placeholderTextColor={COLORS.dimmed}
+                  placeholderTextColor={colors.textDimmed}
                   value={password}
                   onChangeText={setPassword}
                   onFocus={() => setFocused('password')}
@@ -183,7 +184,7 @@ const RegisterScreen = ({ navigation }) => {
                   <Ionicons
                     name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                     size={18}
-                    color={COLORS.muted}
+                    color={colors.textMuted}
                   />
                 </TouchableOpacity>
               </View>
@@ -199,15 +200,15 @@ const RegisterScreen = ({ navigation }) => {
                 activeOpacity={0.9}
               >
                 <LinearGradient
-                  colors={['#c9a84c', '#8a6d1e']}
-                  style={styles.button}
+                  colors={[colors.primary, isDark ? '#8a6d1e' : '#e6c867']}
+                  style={[styles.button, !isDark && { shadowColor: colors.primary, elevation: 4 }]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
                   {loading ? (
-                    <ActivityIndicator color={COLORS.dark.black} size="small" />
+                    <ActivityIndicator color={COLORS.black} size="small" />
                   ) : (
-                    <Text style={styles.buttonText}>CREATE ACCOUNT</Text>
+                    <Text style={[styles.buttonText, { color: isDark ? COLORS.black : COLORS.white }]}>CREATE ACCOUNT</Text>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
@@ -215,9 +216,9 @@ const RegisterScreen = ({ navigation }) => {
 
             {/* Footer */}
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Already part of WAHID?</Text>
+              <Text style={[styles.footerText, { color: colors.textMuted }]}>Already part of WAHID?</Text>
               <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={styles.footerLink}>Sign In</Text>
+                <Text style={[styles.footerLink, { color: colors.primary }]}>Sign In</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -228,7 +229,7 @@ const RegisterScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: COLORS.dark.black },
+  root: { flex: 1, backgroundColor: COLORS.black },
   kav: { flex: 1 },
   scroll: {
     flexGrow: 1,
@@ -245,7 +246,6 @@ const styles = StyleSheet.create({
   arabicHeader: {
     fontFamily: FONTS.arabicBold,
     fontSize: SIZES.arabic.sm,
-    color: '#edca66',
     textAlign: 'center',
     marginBottom: 8,
   },
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontFamily: FONTS.bold,
     fontSize: SIZES.base,
-    color: COLORS.dark.black,
+    color: COLORS.black,
     letterSpacing: 1,
   },
 

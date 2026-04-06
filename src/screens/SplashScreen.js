@@ -9,11 +9,14 @@ import {
 } from 'react-native';
 import LottieView from 'lottie-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { useAppTheme } from '../context/ThemeContext';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS } from '../theme';
 
 const { width, height } = Dimensions.get('window');
 
 const SplashScreen = () => {
+  const { colors, isDark } = useAppTheme();
   const animation = useRef(null);
   const fadeAnim  = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
@@ -26,11 +29,11 @@ const SplashScreen = () => {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
       
       <LinearGradient
-        colors={['rgba(20, 22, 33, 1)', 'rgba(0, 0, 0, 1)']}
+        colors={isDark ? ['rgba(20, 22, 33, 1)', 'rgba(0, 0, 0, 1)'] : [colors.surface, colors.background]}
         style={StyleSheet.absoluteFill}
       />
 
@@ -53,19 +56,19 @@ const SplashScreen = () => {
 
         {/* Text section */}
         <View style={styles.textWrap}>
-          <View style={styles.dividerWrap}>
-            <View style={styles.line} />
-            <Ionicons name="sparkles" size={12} color="#c9a84c" />
-            <View style={styles.line} />
+          <View style={[styles.dividerWrap, { opacity: isDark ? 0.6 : 0.8 }]}>
+            <View style={[styles.line, { backgroundColor: colors.primary }]} />
+            <Ionicons name="sparkles" size={12} color={colors.primary} />
+            <View style={[styles.line, { backgroundColor: colors.primary }]} />
           </View>
 
-          <Text style={styles.arabicTitle}>أسماء الله الحسنى</Text>
-          <Text style={styles.englishTitle}>The 99 Names of Allah</Text>
+          <Text style={[styles.arabicTitle, { color: colors.primary, textShadowColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'transparent' }]}>أسماء الله الحسنى</Text>
+          <Text style={[styles.englishTitle, { color: colors.textMuted }]}>The 99 Names of Allah</Text>
 
           <View style={styles.loaderWrap}>
-            <View style={styles.loaderDot} />
-            <View style={[styles.loaderDot, styles.loaderDotActive]} />
-            <View style={styles.loaderDot} />
+            <View style={[styles.loaderDot, { backgroundColor: colors.borderStrong }]} />
+            <View style={[styles.loaderDot, styles.loaderDotActive, { backgroundColor: colors.primary }]} />
+            <View style={[styles.loaderDot, { backgroundColor: colors.borderStrong }]} />
           </View>
         </View>
       </Animated.View>
@@ -73,12 +76,11 @@ const SplashScreen = () => {
   );
 };
 
-import { Ionicons } from '@expo/vector-icons';
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.dark.black,
+    backgroundColor: COLORS.black,
     justifyContent: 'center',
     alignItems: 'center',
   },

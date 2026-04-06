@@ -14,12 +14,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNames, CATEGORIES } from '../context/NamesContext';
 import { useAuth } from '../context/AuthContext';
+import { useAppTheme } from '../context/ThemeContext';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS } from '../theme';
 
 const { width } = Dimensions.get('window');
 
 const HomeScreen = ({ navigation }) => {
   const { user } = useAuth();
+  const { colors, isDark } = useAppTheme();
   const { names, learnedIds, masteredIds, streak, getNameOfDay, refresh, refreshing } = useNames();
 
   const nameOfDay = useMemo(() => getNameOfDay(), [getNameOfDay]);
@@ -50,8 +52,8 @@ const HomeScreen = ({ navigation }) => {
   }, [names, learnedIds]);
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
-      <StatusBar barStyle="light-content" />
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top']}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -67,18 +69,18 @@ const HomeScreen = ({ navigation }) => {
         {/* ── Header ── */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.welcomeText}>Assalamu Alaikum,</Text>
-            <Text style={styles.userName}>{user?.name || 'Brother/Sister'}</Text>
+            <Text style={[styles.welcomeText, { color: colors.textMuted }]}>Assalamu Alaikum,</Text>
+            <Text style={[styles.userName, { color: colors.text }]}>{user?.name || 'Brother/Sister'}</Text>
           </View>
           <TouchableOpacity style={styles.streakBadge}>
             <LinearGradient
-              colors={['#c9a84c', '#8a6d1e']}
+              colors={[colors.primary, isDark ? '#8a6d1e' : '#e6c867']}
               style={styles.streakGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Ionicons name="flame" size={16} color={COLORS.dark.black} />
-              <Text style={styles.streakText}>{streak}</Text>
+              <Ionicons name="flame" size={16} color={isDark ? COLORS.black : COLORS.white} />
+              <Text style={[styles.streakText, { color: isDark ? COLORS.black : COLORS.white }]}>{streak}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -90,22 +92,22 @@ const HomeScreen = ({ navigation }) => {
             onPress={() => navigation.navigate('NameDetail', { name: nameOfDay })}
           >
             <LinearGradient
-              colors={['rgba(20, 22, 33, 1)', 'rgba(15, 17, 25, 1)']}
-              style={styles.notdCard}
+              colors={isDark ? ['rgba(20, 22, 33, 1)', 'rgba(15, 17, 25, 1)'] : [colors.card, colors.surface]}
+              style={[styles.notdCard, { borderColor: colors.borderStrong }]}
             >
               <View style={styles.notdLabelWrap}>
-                <Text style={styles.notdLabel}>NAME OF THE DAY</Text>
+                <Text style={[styles.notdLabel, { color: colors.primary }]}>NAME OF THE DAY</Text>
               </View>
 
-              <Text style={styles.arabicName}>{nameOfDay.arabic}</Text>
-              <Text style={styles.transName}>{nameOfDay.transliteration}</Text>
-              <Text style={styles.meaningText}>{nameOfDay.meaning}</Text>
+              <Text style={[styles.arabicName, { color: colors.primary }]}>{nameOfDay.arabic}</Text>
+              <Text style={[styles.transName, { color: colors.text }]}>{nameOfDay.transliteration}</Text>
+              <Text style={[styles.meaningText, { color: colors.textMuted }]}>{nameOfDay.meaning}</Text>
 
-              <Text style={styles.bgNumber}>{nameOfDay.number}</Text>
+              <Text style={[styles.bgNumber, { color: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)' }]}>{nameOfDay.number}</Text>
 
               <View style={styles.notdFooter}>
-                <View style={styles.learnBtn}>
-                  <Text style={styles.learnBtnText}>STUDY NOW</Text>
+                <View style={[styles.learnBtn, { backgroundColor: colors.primary }]}>
+                  <Text style={[styles.learnBtnText, { color: isDark ? COLORS.black : COLORS.white }]}>STUDY NOW</Text>
                 </View>
               </View>
             </LinearGradient>
@@ -114,24 +116,24 @@ const HomeScreen = ({ navigation }) => {
 
         {/* ── Progress Summary ── */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>YOUR PROGRESS</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>YOUR PROGRESS</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Journey')}>
-            <Text style={styles.seeAllText}>DASHBOARD</Text>
+            <Text style={[styles.seeAllText, { color: colors.primary }]}>DASHBOARD</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.metricsGrid}>
-          <View style={styles.metricCard}>
+          <View style={[styles.metricCard, { backgroundColor: colors.glass, borderColor: colors.border }]}>
             <Text style={styles.metricValue}>{stats.learned}</Text>
-            <Text style={styles.metricLabel}>LEARNED</Text>
+            <Text style={[styles.metricLabel, { color: colors.textMuted }]}>LEARNED</Text>
           </View>
-          <View style={styles.metricCard}>
-            <Text style={[styles.metricValue, { color: '#c9a84c' }]}>{stats.mastered}</Text>
-            <Text style={styles.metricLabel}>MASTERED</Text>
+          <View style={[styles.metricCard, { backgroundColor: colors.glass, borderColor: colors.border }]}>
+            <Text style={[styles.metricValue, { color: colors.primary }]}>{stats.mastered}</Text>
+            <Text style={[styles.metricLabel, { color: colors.textMuted }]}>MASTERED</Text>
           </View>
-          <View style={styles.metricCard}>
-            <Text style={[styles.metricValue, { color: COLORS.muted }]}>{stats.remaining}</Text>
-            <Text style={styles.metricLabel}>REMAINING</Text>
+          <View style={[styles.metricCard, { backgroundColor: colors.glass, borderColor: colors.border }]}>
+            <Text style={[styles.metricValue, { color: colors.textMuted }]}>{stats.remaining}</Text>
+            <Text style={[styles.metricLabel, { color: colors.textMuted }]}>REMAINING</Text>
           </View>
         </View>
 
@@ -140,9 +142,9 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.progressTop}>
             <Text style={styles.progressPercent}>{Math.round(stats.progress)}% COMPLETED</Text>
           </View>
-          <View style={styles.progressBg}>
+          <View style={[styles.progressBg, { backgroundColor: colors.borderSolid || colors.borderStrong }]}>
             <LinearGradient
-              colors={['#2d9c96', '#c9a84c']}
+              colors={['#2d9c96', colors.primary]}
               style={[styles.progressFill, { width: `${stats.progress}%` }]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -152,9 +154,9 @@ const HomeScreen = ({ navigation }) => {
 
         {/* ── Categories 2-Column Grid ── */}
         <View style={[styles.sectionHeader, { marginTop: SPACE.sm }]}>
-          <Text style={styles.sectionTitle}>CATEGORIES</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>CATEGORIES</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Names')}>
-            <Text style={styles.seeAllText}>SEE ALL</Text>
+            <Text style={[styles.seeAllText, { color: colors.primary }]}>SEE ALL</Text>
           </TouchableOpacity>
         </View>
 
@@ -165,7 +167,7 @@ const HomeScreen = ({ navigation }) => {
             return (
               <TouchableOpacity
                 key={cat.id}
-                style={styles.catCard}
+                style={[styles.catCard, { backgroundColor: colors.glass, borderColor: colors.border }]}
                 activeOpacity={0.82}
                 onPress={() => navigation.navigate('Names', { filter: cat.id })}
               >
@@ -181,15 +183,15 @@ const HomeScreen = ({ navigation }) => {
                   <Ionicons name={cat.icon} size={20} color={cat.color} />
                 </View>
 
-                <Text style={styles.catName} numberOfLines={2}>
+                <Text style={[styles.catName, { color: colors.text }]} numberOfLines={2}>
                   {cat.name}
                 </Text>
 
-                <Text style={styles.catMeta}>
+                <Text style={[styles.catMeta, { color: colors.textMuted }]}>
                   {cs.total > 0 ? `${cs.total} names` : '– names'} · {pct}%
                 </Text>
 
-                <View style={styles.catProgressBg}>
+                <View style={[styles.catProgressBg, { backgroundColor: colors.borderStrong }]}>
                   <View
                     style={[
                       styles.catProgressFill,
@@ -211,7 +213,7 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.dark.black,
+    backgroundColor: COLORS.black,
   },
   scrollContent: {
     paddingHorizontal: SPACE.md,
@@ -249,7 +251,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   streakText: {
-    color: COLORS.dark.black,
+    color: COLORS.black,
     fontFamily: FONTS.bold,
     fontSize: SIZES.base,
   },
@@ -320,7 +322,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   learnBtnText: {
-    color: COLORS.dark.black,
+    color: COLORS.black,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1,

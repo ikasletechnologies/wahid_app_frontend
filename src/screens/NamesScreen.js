@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNames, CATEGORIES } from '../context/NamesContext';
+import { useAppTheme } from '../context/ThemeContext';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS } from '../theme';
 
 const { width } = Dimensions.get('window');
@@ -21,6 +22,7 @@ const CARD_WIDTH = (width - SPACE.md * 3) / COLUMN_COUNT;
 
 const NamesScreen = ({ navigation, route }) => {
   const { names, learnedIds, masteredIds, loading } = useNames();
+  const { colors, isDark } = useAppTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(route.params?.filter || null);
 
@@ -51,11 +53,11 @@ const NamesScreen = ({ navigation, route }) => {
 
     return (
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, { backgroundColor: colors.glass, borderColor: colors.border }]}
         onPress={() => navigation.navigate('NameDetail', { name: item })}
       >
         <View style={styles.cardHeader}>
-          <Text style={styles.nameNumber}>{item.number}</Text>
+          <Text style={[styles.nameNumber, { color: colors.textMuted }]}>{item.number}</Text>
           <View style={styles.badgeRow}>
             {isMastered ? (
               <View style={[styles.statusBadge, styles.masteredBadge]}>
@@ -69,23 +71,23 @@ const NamesScreen = ({ navigation, route }) => {
           </View>
         </View>
 
-        <Text style={styles.arabicName}>{item.arabic}</Text>
-        <Text style={styles.transName} numberOfLines={1}>{item.transliteration}</Text>
-        <Text style={styles.meaningText} numberOfLines={2}>{item.meaning}</Text>
+        <Text style={[styles.arabicName, { color: colors.primary }]}>{item.arabic}</Text>
+        <Text style={[styles.transName, { color: colors.text }]} numberOfLines={1}>{item.transliteration}</Text>
+        <Text style={[styles.meaningText, { color: colors.textMuted }]} numberOfLines={2}>{item.meaning}</Text>
       </TouchableOpacity>
     );
   };
 
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
+    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top']}>
       <View style={styles.container}>
         {/* Search Header */}
-        <View style={styles.searchWrap}>
-          <Ionicons name="search" size={18} color={COLORS.muted} style={styles.searchIcon} />
+        <View style={[styles.searchWrap, { backgroundColor: colors.glass, borderColor: colors.border }]}>
+          <Ionicons name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.text }]}
             placeholder="Search by name or meaning..."
-            placeholderTextColor={COLORS.dimmed}
+            placeholderTextColor={colors.textDimmed}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
@@ -104,19 +106,25 @@ const NamesScreen = ({ navigation, route }) => {
             contentContainerStyle={styles.filterScroll}
           >
             <TouchableOpacity
-              style={[styles.filterChip, !selectedCategory && styles.filterChipActive]}
+              style={[
+                styles.filterChip, { backgroundColor: colors.glass, borderColor: colors.border },
+                !selectedCategory && [styles.filterChipActive, { backgroundColor: isDark ? 'rgba(201, 168, 76, 0.1)' : 'rgba(184, 150, 61, 0.1)', borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)' }]
+              ]}
               onPress={() => setSelectedCategory(null)}
             >
-              <Text style={[styles.filterText, !selectedCategory && styles.filterTextActive]}>ALL</Text>
+              <Text style={[styles.filterText, { color: colors.textMuted }, !selectedCategory && [styles.filterTextActive, { color: colors.primary }]]}>ALL</Text>
             </TouchableOpacity>
 
             {Object.values(CATEGORIES).map((cat) => (
               <TouchableOpacity
                 key={cat.id}
-                style={[styles.filterChip, selectedCategory === cat.id && styles.filterChipActive]}
+                style={[
+                  styles.filterChip, { backgroundColor: colors.glass, borderColor: colors.border },
+                  selectedCategory === cat.id && [styles.filterChipActive, { backgroundColor: isDark ? 'rgba(201, 168, 76, 0.1)' : 'rgba(184, 150, 61, 0.1)', borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)' }]
+                ]}
                 onPress={() => setSelectedCategory(cat.id)}
               >
-                <Text style={[styles.filterText, selectedCategory === cat.id && styles.filterTextActive]}>
+                <Text style={[styles.filterText, { color: colors.textMuted }, selectedCategory === cat.id && [styles.filterTextActive, { color: colors.primary }]]}>
                   {cat.id.toUpperCase()}
                 </Text>
               </TouchableOpacity>
@@ -127,8 +135,8 @@ const NamesScreen = ({ navigation, route }) => {
         {/* Names Grid */}
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator color="#c9a84c" />
-            <Text style={styles.loadingText}>Loading names...</Text>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading names...</Text>
           </View>
         ) : (
           <FlatList
@@ -140,8 +148,8 @@ const NamesScreen = ({ navigation, route }) => {
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={() => (
               <View style={styles.emptyContainer}>
-                <Ionicons name="search-outline" size={48} color={COLORS.dimmed} />
-                <Text style={styles.emptyText}>
+                <Ionicons name="search-outline" size={48} color={colors.textDimmed} />
+                <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                   {names.length === 0
                     ? 'Names are being loaded. Please check your connection.'
                     : 'No names found matching your search.'}
@@ -158,7 +166,7 @@ const NamesScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.dark.black,
+    backgroundColor: COLORS.black,
   },
   container: {
     flex: 1,

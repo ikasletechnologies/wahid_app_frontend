@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { useAppTheme } from '../context/ThemeContext';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS } from '../theme';
 
 const { width } = Dimensions.get('window');
@@ -41,6 +42,8 @@ const ConfirmDialog = ({
   onConfirm,
   onCancel,
 }) => {
+  const { colors, isDark } = useAppTheme();
+
   return (
     <Modal
       transparent
@@ -55,12 +58,12 @@ const ConfirmDialog = ({
         activeOpacity={1}
         onPress={onCancel}
       >
-        <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={isDark ? 20 : 40} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
       </TouchableOpacity>
 
       {/* Dialog Card */}
       <View style={styles.centeredView}>
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: isDark ? 'rgba(20, 22, 32, 0.98)' : 'rgba(255, 255, 255, 0.98)', borderColor: colors.borderStrong }]}>
           {/* Decorative top border */}
           <View style={[styles.topAccent, { backgroundColor: iconColor + '40' }]} />
 
@@ -70,16 +73,16 @@ const ConfirmDialog = ({
           </View>
 
           {/* Text */}
-          <Text style={styles.title}>{title}</Text>
-          {message ? <Text style={styles.message}>{message}</Text> : null}
+          <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+          {message ? <Text style={[styles.message, { color: colors.textMuted }]}>{message}</Text> : null}
 
           {/* Divider */}
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.borderStrong }]} />
 
           {/* Buttons */}
           <View style={styles.btnRow}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onCancel} activeOpacity={0.7}>
-              <Text style={styles.cancelLabel}>{cancelLabel}</Text>
+            <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: colors.glass, borderColor: colors.border }]} onPress={onCancel} activeOpacity={0.7}>
+              <Text style={[styles.cancelLabel, { color: colors.textMuted }]}>{cancelLabel}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
