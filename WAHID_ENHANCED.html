@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WAHID — 99 Names of Allah</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Nunito:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #08090f;
+  --surface: #0f1119;
+  --surface2: #161824;
+  --surface3: #1c1f2e;
+  --border: rgba(255,255,255,0.06);
+  --border2: rgba(255,255,255,0.1);
+  --gold: #c9a84c;
+  --gold2: #e2c06a;
+  --gold-dim: rgba(201,168,76,0.12);
+  --gold-border: rgba(201,168,76,0.25);
+  --teal: #2d9c96;
+  --teal2: #3db8b1;
+  --teal-dim: rgba(45,156,150,0.1);
+  --teal-border: rgba(45,156,150,0.25);
+  --text: #dde1ec;
+  --text2: #8b95ad;
+  --text3: #525c72;
+  --learned: #2d9c96;
+  --mastered: #c9a84c;
+  --streak: #c2703a;
+  --red: #c0392b;
+  --green: #27ae60;
+  --radius: 14px;
+  --radius-sm: 9px;
+  --shadow: 0 12px 40px rgba(0,0,0,0.5);
+}
+.light {
+  --bg: #f2efe8;
+  --surface: #faf8f3;
+  --surface2: #ede9e0;
+  --surface3: #e3ddd2;
+  --border: rgba(0,0,0,0.07);
+  --border2: rgba(0,0,0,0.12);
+  --text: #1a1c26;
+  --text2: #4a5068;
+  --text3: #8a91a8;
+  --gold-dim: rgba(201,168,76,0.07);
+  --teal-dim: rgba(45,156,150,0.07);
+  --shadow: 0 8px 32px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.3s,color 0.3s;overflow-x:hidden}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--gold);border-radius:3px;opacity:0.5}
+svg{display:block;flex-shrink:0}
+
+/* ── LAYOUT ── */
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:252px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;transition:transform 0.3s}
+.main{flex:1;overflow-y:auto;position:relative}
+
+/* ── SIDEBAR ── */
+.sidebar-logo{padding:28px 20px 20px;border-bottom:1px solid var(--border);text-align:center}
+.logo-mark{width:36px;height:2px;background:var(--gold);margin:0 auto 14px;border-radius:2px}
+.logo-arabic{font-family:'Amiri',serif;font-size:26px;color:var(--gold);line-height:1.3;margin-bottom:6px}
+.logo-en{font-size:10px;color:var(--text3);letter-spacing:3px;text-transform:uppercase}
+
+.streak-bar{margin:16px;background:var(--surface2);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--border)}
+.streak-inner{display:flex;align-items:center;gap:12px}
+.streak-icon{width:36px;height:36px;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.streak-info{flex:1}
+.streak-count{font-size:20px;font-weight:800;color:var(--streak);font-family:'Playfair Display',serif;letter-spacing:-0.5px}
+.streak-label{font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;margin-top:1px}
+.streak-best{text-align:right}
+.streak-best-num{font-size:14px;font-weight:800;color:var(--gold2);font-family:'Playfair Display',serif}
+.streak-best-lbl{font-size:9px;color:var(--text3);letter-spacing:1px;text-transform:uppercase}
+
+.progress-summary{margin:0 16px 8px;background:var(--surface2);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--border)}
+.progress-row{display:flex;justify-content:space-between;margin-bottom:10px}
+.prog-stat{text-align:center}
+.prog-num{font-size:17px;font-weight:800;color:var(--gold);font-family:'Playfair Display',serif}
+.prog-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-top:1px}
+.prog-bar-wrap{background:var(--surface3);border-radius:3px;height:3px;overflow:hidden}
+.prog-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--teal),var(--gold));transition:width 0.7s cubic-bezier(0.4,0,0.2,1)}
+
+.nav-section{padding:18px 16px 6px;font-size:9px;color:var(--text3);letter-spacing:2.5px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-radius:var(--radius-sm);margin:1px 8px;transition:all 0.18s;font-size:13px;font-weight:600;color:var(--text2)}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border)}
+.nav-icon{width:20px;display:flex;align-items:center;justify-content:center}
+
+.cat-section{padding:16px 16px 6px;font-size:9px;color:var(--text3);letter-spacing:2.5px;text-transform:uppercase}
+.cat-chip{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;border-radius:var(--radius-sm);margin:1px 8px;transition:all 0.18s;font-size:12px;font-weight:500;color:var(--text2)}
+.cat-chip:hover{background:var(--surface2);color:var(--text)}
+.cat-chip.active{background:var(--teal-dim);color:var(--teal)}
+.cat-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.cat-count{margin-left:auto;font-size:10px;color:var(--text3);background:var(--surface3);border-radius:20px;padding:2px 7px}
+
+.sidebar-footer{margin-top:auto;padding:14px 16px;border-top:1px solid var(--border);display:flex;gap:8px}
+.theme-btn{flex:1;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);font-size:12px;font-weight:600;font-family:inherit;transition:all 0.18s;letter-spacing:0.5px}
+.theme-btn:hover{background:var(--surface3);color:var(--text)}
+
+/* ── TOPBAR ── */
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:14px;backdrop-filter:blur(16px)}
+.topbar-title{font-size:18px;font-weight:800;flex:1;letter-spacing:-0.3px}
+.search-wrap{position:relative;flex:1;max-width:340px}
+.search-input{width:100%;padding:9px 16px 9px 38px;background:var(--surface);border:1px solid var(--border);border-radius:40px;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border 0.2s}
+.search-input:focus{border-color:var(--gold)}
+.search-input::placeholder{color:var(--text3)}
+.search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text3)}
+.icon-btn{width:38px;height:38px;border-radius:50%;background:var(--surface);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.18s;color:var(--text2)}
+.icon-btn:hover{background:var(--surface2);border-color:var(--gold-border);color:var(--gold)}
+.menu-btn{display:none}
+
+/* ── CONTENT ── */
+.content{padding:24px}
+
+/* ── NAME OF THE DAY ── */
+.notd{background:linear-gradient(145deg,var(--surface) 0%,var(--surface2) 100%);border:1px solid var(--border2);border-radius:18px;padding:32px;margin-bottom:24px;position:relative;overflow:hidden}
+.notd::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,var(--gold-dim) 0%,transparent 70%);pointer-events:none}
+.notd::after{content:'';position:absolute;bottom:-40px;left:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,var(--teal-dim) 0%,transparent 70%);pointer-events:none}
+.notd-badge{display:inline-flex;align-items:center;gap:6px;background:var(--gold-dim);border:1px solid var(--gold-border);border-radius:4px;padding:4px 12px;font-size:10px;font-weight:700;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:20px}
+.notd-badge-line{width:16px;height:1px;background:var(--gold)}
+.notd-arabic{font-family:'Amiri',serif;font-size:52px;color:var(--gold);text-align:center;margin:8px 0 6px;line-height:1.3;direction:rtl}
+.notd-transliteration{text-align:center;font-size:22px;font-weight:700;color:var(--text);margin-bottom:5px;font-family:'Playfair Display',serif;letter-spacing:-0.3px}
+.notd-meaning{text-align:center;font-size:14px;color:var(--text2);margin-bottom:20px;font-style:italic;max-width:420px;margin-left:auto;margin-right:auto;line-height:1.6}
+.notd-number{font-family:'Playfair Display',serif;font-size:88px;font-weight:600;color:rgba(255,255,255,0.03);position:absolute;right:24px;bottom:-12px;line-height:1;user-select:none}
+.notd-actions{display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1}
+
+/* ── BUTTONS ── */
+.btn{padding:9px 20px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit;transition:all 0.18s;display:inline-flex;align-items:center;gap:7px;letter-spacing:0.8px;text-transform:uppercase}
+.btn-gold{background:var(--gold);color:#08090f}
+.btn-gold:hover{background:var(--gold2);transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2)}
+.btn-outline:hover{border-color:var(--gold-border);color:var(--gold)}
+.btn-teal{background:var(--teal-dim);border:1px solid var(--teal-border);color:var(--teal)}
+.btn-teal:hover{background:rgba(45,156,150,0.18)}
+.btn-unlearn{background:transparent;border:1px solid var(--gold-border);color:var(--gold);font-size:11px}
+.btn-unlearn:hover{background:var(--gold-dim);color:var(--gold2)}
+
+/* ── SECTION TITLE ── */
+.section-title{font-size:11px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:12px;color:var(--text3);letter-spacing:2.5px;text-transform:uppercase}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── CATEGORY GRID ── */
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin-bottom:28px}
+.cat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px;cursor:pointer;transition:all 0.22s;position:relative;overflow:hidden}
+.cat-card:hover{transform:translateY(-2px);border-color:var(--border2);box-shadow:0 8px 28px rgba(0,0,0,0.3)}
+.cat-card-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;flex-shrink:0}
+.cat-card-name{font-size:13px;font-weight:700;margin-bottom:3px;color:var(--text)}
+.cat-card-count{font-size:11px;color:var(--text3)}
+.cat-card-prog{margin-top:12px;background:var(--surface3);border-radius:2px;height:2px;overflow:hidden}
+.cat-card-fill{height:100%;border-radius:2px;transition:width 0.5s}
+
+/* ── NAMES GRID ── */
+.names-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.name-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:all 0.22s;position:relative;overflow:hidden}
+.name-card:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--border2)}
+.name-card-num{font-size:10px;color:var(--text3);font-weight:700;letter-spacing:2px;margin-bottom:10px;text-transform:uppercase}
+.name-card-arabic{font-family:'Amiri',serif;font-size:28px;color:var(--gold);direction:rtl;line-height:1.4;margin-bottom:8px}
+.name-card-trans{font-size:15px;font-weight:700;margin-bottom:4px;font-family:'Playfair Display',serif;letter-spacing:-0.2px}
+.name-card-meaning{font-size:12px;color:var(--text2);line-height:1.55}
+.name-card-badges{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap;align-items:center}
+.badge{padding:3px 9px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase}
+.badge-new{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+.badge-learned{background:var(--teal-dim);color:var(--teal);border:1px solid var(--teal-border)}
+.badge-mastered{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border)}
+.cat-tag{padding:3px 9px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+
+/* ── DETAIL PANEL ── */
+.detail-panel{position:fixed;right:0;top:0;height:100vh;width:440px;background:var(--surface);border-left:1px solid var(--border);z-index:100;overflow-y:auto;transform:translateX(100%);transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);box-shadow:-12px 0 50px rgba(0,0,0,0.4)}
+.detail-panel.open{transform:translateX(0)}
+.detail-header{padding:24px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:5}
+.detail-close{width:34px;height:34px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;margin-bottom:18px;color:var(--text2);transition:all 0.18s}
+.detail-close:hover{border-color:var(--border2);color:var(--text)}
+.detail-num{font-size:10px;color:var(--text3);letter-spacing:2.5px;text-transform:uppercase;margin-bottom:6px}
+.detail-arabic{font-family:'Amiri',serif;font-size:48px;color:var(--gold);direction:rtl;line-height:1.3;margin-bottom:10px}
+.detail-trans{font-size:24px;font-weight:700;margin-bottom:5px;font-family:'Playfair Display',serif;letter-spacing:-0.3px}
+.detail-meaning{font-size:14px;color:var(--text2);font-style:italic;margin-bottom:16px;line-height:1.6}
+.detail-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.detail-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+.detail-body{padding:24px}
+.detail-section{margin-bottom:26px}
+.detail-section-title{font-size:9px;color:var(--text3);letter-spacing:2.5px;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.detail-section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.benefit-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.benefit-item:last-child{border-bottom:none}
+.benefit-bullet{width:4px;height:4px;background:var(--gold);border-radius:50%;margin-top:7px;flex-shrink:0}
+.benefit-text{font-size:13px;color:var(--text2);line-height:1.65}
+
+.reflection-box{background:var(--surface2);border-left:2px solid var(--gold);border-radius:0 8px 8px 0;padding:16px 18px;font-size:13px;color:var(--text2);line-height:1.75;font-style:italic}
+
+.quran-ref{background:var(--surface2);border-radius:var(--radius-sm);padding:16px;margin-bottom:10px;border:1px solid var(--border)}
+.quran-arabic{font-family:'Amiri',serif;font-size:19px;color:var(--gold);direction:rtl;line-height:1.9;margin-bottom:10px;text-align:right}
+.quran-trans{font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:8px;font-style:italic}
+.quran-ref-tag{font-size:10px;color:var(--teal);font-weight:700;letter-spacing:1px;text-transform:uppercase}
+
+/* ── MCQ ── */
+.mcq-wrap{background:var(--surface2);border-radius:var(--radius);padding:18px;border:1px solid var(--border)}
+.mcq-q{font-size:13px;font-weight:700;margin-bottom:14px;line-height:1.55;color:var(--text)}
+.mcq-options{display:flex;flex-direction:column;gap:8px}
+.mcq-opt{padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:12px;transition:all 0.18s;text-align:left;color:var(--text2);font-family:inherit;font-weight:600}
+.mcq-opt:hover{border-color:var(--teal-border);color:var(--teal)}
+.mcq-opt.correct{background:rgba(39,174,96,0.08);border-color:var(--green);color:var(--green)}
+.mcq-opt.wrong{background:rgba(192,57,43,0.08);border-color:var(--red);color:var(--red)}
+.mcq-feedback{margin-top:12px;padding:10px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:700;display:none;letter-spacing:0.3px}
+.mcq-feedback.show{display:block}
+.mcq-feedback.correct{background:rgba(39,174,96,0.08);color:var(--green);border:1px solid rgba(39,174,96,0.2)}
+.mcq-feedback.wrong{background:rgba(192,57,43,0.08);color:var(--red);border:1px solid rgba(192,57,43,0.2)}
+.mcq-next{margin-top:12px;display:none}
+.mcq-next.show{display:block}
+
+/* ── MATCH ── */
+.match-guide{font-size:12px;color:var(--text3);margin-bottom:12px;padding:10px;background:var(--surface2);border-radius:var(--radius-sm);border-left:3px solid var(--teal)}
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.match-column{display:flex;flex-direction:column;gap:8px}
+.match-column-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px}
+.match-item{padding:11px 13px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:12px;transition:all 0.2s;text-align:center;color:var(--text2);font-weight:600;min-height:44px;display:flex;align-items:center;justify-content:center;line-height:1.4}
+.match-item:hover{border-color:var(--teal-border);background:var(--surface2)}
+.match-item.selected{border-color:var(--gold);background:var(--gold-dim);color:var(--gold);font-weight:700;box-shadow:0 0 8px rgba(201,168,76,0.15)}
+.match-item.matched{border-color:var(--green);background:rgba(39,174,96,0.12);color:var(--green);pointer-events:none;font-weight:700;box-shadow:0 0 8px rgba(39,174,96,0.2)}
+.match-item.wrong-flash{animation:shake 0.4s;border-color:var(--red);background:rgba(192,57,43,0.1)}
+@keyframes shake{0%,100%{transform:translateX(0)};25%{transform:translateX(-4px)};75%{transform:translateX(4px)}}
+
+/* ── PLAYLIST ── */
+.playlist-panel{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px;margin-bottom:24px}
+.mood-chips{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.mood-chip{padding:7px 16px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-size:12px;font-weight:700;transition:all 0.18s;font-family:inherit;letter-spacing:0.5px;text-transform:uppercase}
+.mood-chip:hover{border-color:var(--teal-border);color:var(--teal)}
+.mood-chip.active{background:var(--teal-dim);border-color:var(--teal-border);color:var(--teal)}
+.playlist-items{display:flex;flex-direction:column;gap:6px;margin-top:16px}
+.pl-item{display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--surface2);border-radius:var(--radius-sm);cursor:pointer;transition:all 0.18s;border:1px solid transparent}
+.pl-item:hover{border-color:var(--border);background:var(--surface3)}
+.pl-item.playing{border-color:var(--teal-border);background:var(--teal-dim)}
+.pl-num{font-size:11px;color:var(--text3);width:24px;text-align:center;font-weight:700;font-family:'Playfair Display',serif}
+.pl-arabic{font-family:'Amiri',serif;font-size:20px;color:var(--gold);direction:rtl;width:48px;text-align:right}
+.pl-info{flex:1}
+.pl-trans{font-size:13px;font-weight:700;font-family:'Playfair Display',serif;letter-spacing:-0.1px}
+.pl-meaning{font-size:11px;color:var(--text2);margin-top:2px}
+.pl-cat{font-size:9px;color:var(--teal);font-weight:700;padding:3px 9px;background:var(--teal-dim);border-radius:4px;letter-spacing:1px;text-transform:uppercase;border:1px solid var(--teal-border)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:12px 20px;font-size:12px;font-weight:700;z-index:999;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;white-space:nowrap;letter-spacing:0.5px;text-transform:uppercase}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.gold{border-color:var(--gold-border);color:var(--gold)}
+.toast.teal{border-color:var(--teal-border);color:var(--teal)}
+.toast.streak{border-color:rgba(194,112,58,0.4);color:var(--streak)}
+
+/* ── REMINDER ── */
+.reminder-banner{background:var(--surface2);border:1px solid rgba(194,112,58,0.25);border-left:3px solid var(--streak);border-radius:var(--radius-sm);padding:16px 18px;margin-bottom:20px;display:flex;align-items:center;gap:14px}
+.reminder-icon-wrap{width:36px;height:36px;background:rgba(194,112,58,0.1);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.reminder-text{flex:1}
+.reminder-title{font-weight:800;color:var(--streak);margin-bottom:3px;font-size:13px;letter-spacing:0.3px}
+.reminder-sub{font-size:12px;color:var(--text2)}
+.dismiss-btn{background:none;border:none;color:var(--text3);cursor:pointer;padding:4px;transition:color 0.18s;display:flex;align-items:center;justify-content:center}
+.dismiss-btn:hover{color:var(--text)}
+
+/* ── STUDY MODES ── */
+.study-modes{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.mode-btn{padding:10px 18px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;color:var(--text2);font-size:12px;font-weight:700;font-family:inherit;transition:all 0.18s;letter-spacing:0.5px;text-transform:uppercase}
+.mode-btn:hover{background:var(--surface3);border-color:var(--teal-border);color:var(--teal)}
+.mode-btn.active{background:var(--teal-dim);border-color:var(--teal-border);color:var(--teal);font-weight:800}
+
+/* ── INSIGHTS & STATS ── */
+.insight-card{background:linear-gradient(135deg,var(--surface2) 0%,var(--surface3) 100%);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;margin-bottom:12px}
+.insight-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;font-weight:700}
+.insight-value{font-size:18px;color:var(--gold);font-weight:800;font-family:'Playfair Display',serif;margin-bottom:4px}
+.insight-meta{font-size:11px;color:var(--text2)}
+
+.milestone-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px}
+.milestone{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;text-align:center;transition:all 0.2s}
+.milestone.unlocked{border-color:var(--gold-border);background:var(--gold-dim)}
+.milestone.locked{opacity:0.5}
+.milestone-icon{font-size:24px;margin-bottom:6px;height:28px;display:flex;align-items:center;justify-content:center}
+.milestone-text{font-size:11px;font-weight:700;color:var(--text2)}
+.milestone.unlocked .milestone-text{color:var(--gold)}
+
+/* ── SPACED REPETITION ── */
+.repet-box{background:var(--surface2);border-left:3px solid var(--teal);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px;font-size:12px;color:var(--text2)}
+.repet-label{font-weight:700;color:var(--teal);margin-bottom:4px}
+
+/* ── PROGRESS RINGS ── */
+.progress-ring-wrap{display:flex;align-items:center;gap:16px;background:var(--surface2);border-radius:var(--radius-sm);padding:16px;margin-bottom:14px}
+.progress-ring-visual{position:relative;width:80px;height:80px;flex-shrink:0}
+.progress-ring-bg{width:100%;height:100%;border-radius:50%;border:3px solid var(--surface3)}
+.progress-ring-fill{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:50%;border:3px solid transparent;border-top-color:var(--teal);border-right-color:var(--gold);transform:rotate(-90deg);transition:all 0.8s}
+.progress-ring-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.progress-ring-num{font-size:18px;font-weight:800;color:var(--gold);font-family:'Playfair Display',serif}
+.progress-ring-lbl{font-size:9px;color:var(--text3);text-transform:uppercase}
+.progress-info{flex:1}
+.progress-info-row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px}
+.progress-info-label{color:var(--text2)}
+.progress-info-value{font-weight:700;color:var(--text)}
+
+/* ── LEARNING JOURNEY ── */
+.journey-timeline{margin-top:12px}
+.journey-marker{display:flex;gap:12px;margin-bottom:14px;position:relative;padding-left:24px}
+.journey-marker::before{content:'';position:absolute;left:8px;top:8px;width:8px;height:8px;background:var(--teal);border-radius:50%}
+.journey-marker.current::before{background:var(--gold);width:12px;height:12px;top:5px;left:6px;box-shadow:0 0 12px rgba(201,168,76,0.4)}
+.journey-marker.future::before{background:var(--text3);opacity:0.3}
+.journey-date{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+.journey-action{font-size:12px;color:var(--text);font-weight:600}
+
+/* ── ENCOURAGEMENT ── */
+.encouragement-box{background:linear-gradient(135deg,var(--teal-dim) 0%,rgba(45,156,150,0.05) 100%);border:1px solid var(--teal-border);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px;font-size:12px;color:var(--text);line-height:1.6;font-weight:600;letter-spacing:0.3px}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center}
+.stat-icon-wrap{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+.stat-num{font-size:28px;font-weight:800;font-family:'Playfair Display',serif;letter-spacing:-1px}
+.stat-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-top:3px}
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:24px}
+.day-dot{aspect-ratio:1;border-radius:var(--radius-sm);background:var(--surface);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.day-dot.done{background:var(--gold-dim);border-color:var(--gold-border)}
+.day-dot.today{border-color:var(--teal-border);background:var(--teal-dim)}
+.day-name{font-size:8px;text-transform:uppercase;letter-spacing:1px;color:var(--text3)}
+.day-check{font-size:11px;font-weight:800}
+.day-dot.done .day-name,.day-dot.done .day-check{color:var(--gold)}
+.day-dot.today .day-name,.day-dot.today .day-check{color:var(--teal)}
+
+/* ── PROGRESS IN STATS ── */
+.cat-progress-row{margin-bottom:16px}
+.cat-progress-label{display:flex;justify-content:space-between;margin-bottom:6px;align-items:center}
+.cat-progress-name{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.cat-progress-frac{font-size:11px;color:var(--text3)}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:56px 24px;color:var(--text3)}
+.empty-icon{width:48px;height:48px;margin:0 auto 16px;opacity:0.4}
+.empty-text{font-size:14px;letter-spacing:0.3px}
+
+/* ── OVERLAY ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;display:none;backdrop-filter:blur(2px)}
+.overlay.show{display:block}
+
+/* ── LEARN PROGRESS BOX ── */
+.learn-progress-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.learn-stage{padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center}
+.learn-stage-icon{font-size:20px;margin-bottom:6px}
+.learn-stage-title{font-size:11px;font-weight:700;margin-bottom:3px;letter-spacing:0.5px}
+.learn-stage-desc{font-size:10px;color:var(--text3)}
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:200;transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .menu-btn{display:flex}
+  .detail-panel{width:100vw}
+  .names-grid{grid-template-columns:1fr 1fr}
+  .cat-grid{grid-template-columns:repeat(3,1fr)}
+  .notd-number{display:none}
+}
+@media(max-width:480px){
+  .names-grid{grid-template-columns:1fr}
+  .cat-grid{grid-template-columns:repeat(2,1fr)}
+  .content{padding:16px}
+  .topbar{padding:12px 16px}
+}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" style="width:100%;height:auto;max-width:120px;margin-bottom:12px">
+      <div class="logo-en" style="font-size:18px;font-weight:800;letter-spacing:4px">WAHID</div>
+    </div>
+
+    <div class="streak-bar">
+      <div class="streak-inner">
+        <div class="streak-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div class="streak-info">
+          <div class="streak-count" id="streakCount">0</div>
+          <div class="streak-label">Day Streak</div>
+        </div>
+        <div class="streak-best">
+          <div class="streak-best-num" id="bestStreak">0</div>
+          <div class="streak-best-lbl">Best</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-summary">
+      <div class="progress-row">
+        <div class="prog-stat"><div class="prog-num" id="learnedCount">0</div><div class="prog-lbl">Learned</div></div>
+        <div class="prog-stat"><div class="prog-num" id="masteredCount" style="color:var(--gold)">0</div><div class="prog-lbl">Mastered</div></div>
+        <div class="prog-stat"><div class="prog-num" id="remainCount" style="color:var(--text3)">99</div><div class="prog-lbl">Left</div></div>
+      </div>
+      <div class="prog-bar-wrap"><div class="prog-bar-fill" id="mainProgBar" style="width:0%"></div></div>
+    </div>
+
+    <div class="nav-section">Navigate</div>
+    <div class="nav-item active" onclick="showPage('home')" id="nav-home">
+      <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+      Home
+    </div>
+    <div class="nav-item" onclick="showPage('names')" id="nav-names">
+      <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+      All Names
+    </div>
+    <div class="nav-item" onclick="showPage('playlist')" id="nav-playlist">
+      <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></span>
+      Playlists
+    </div>
+    <div class="nav-item" onclick="showPage('stats')" id="nav-stats">
+      <span class="nav-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+      My Journey
+    </div>
+
+    <div class="cat-section">Categories</div>
+    <div id="sidebarCats"></div>
+
+    <div class="sidebar-footer">
+      <button class="theme-btn" onclick="toggleTheme()">Light / Dark</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="mainArea">
+    <div class="topbar">
+      <button class="icon-btn menu-btn" onclick="toggleSidebar()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-title" id="topbarTitle">Home</div>
+      <div class="search-wrap">
+        <span class="search-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input class="search-input" id="searchInput" placeholder="Search by name or meaning…" oninput="handleSearch(this.value)">
+      </div>
+    </div>
+    <div class="content" id="pageContent"></div>
+  </div>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-header">
+    <button class="detail-close" onclick="closeDetail()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="detail-num" id="dNum"></div>
+    <div class="detail-arabic" id="dArabic"></div>
+    <div class="detail-trans" id="dTrans"></div>
+    <div class="detail-meaning" id="dMeaning"></div>
+    <div class="detail-badges" id="dBadges"></div>
+    <div class="detail-actions">
+      <button class="btn btn-gold" onclick="markCurrentLearned()" id="learnBtn">Mark Learned</button>
+      <button class="btn btn-unlearn" onclick="unlearnCurrent()" id="unlearnBtn" style="display:none">Unlearn</button>
+      <button class="btn btn-teal" onclick="addToPlaylistFromDetail()">Add to Playlist</button>
+    </div>
+  </div>
+  <div class="detail-body" id="detailBody"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ------------------------------------------
+// CATEGORIES
+// ------------------------------------------
+const CATEGORIES = {
+  mercy:    { name:"Mercy & Compassion",    icon:"M", color:"#2d9c96", names:[] },
+  majesty:  { name:"Majesty & Power",       icon:"M", color:"#8b5cf6", names:[] },
+  wisdom:   { name:"Wisdom & Knowledge",    icon:"W", color:"#3b82f6", names:[] },
+  kindness: { name:"Kindness & Gentleness", icon:"K", color:"#c9a84c", names:[] },
+  creator:  { name:"Creator & Provider",    icon:"C", color:"#f59e0b", names:[] },
+  guardian: { name:"Guardian & Protector",  icon:"G", color:"#2d9c96", names:[] },
+  forgiver: { name:"Forgiver & Pardoner",   icon:"F", color:"#94a3b8", names:[] },
+  exalted:  { name:"The Exalted & Supreme", icon:"E", color:"#c9a84c", names:[] },
+};
+
+// ------------------------------------------
+// ALL 99 NAMES
+// ------------------------------------------
+const NAMES = [
+  { n:1, ar:"الرَّحْمَنُ", tr:"Ar-Rahman", en:"The Most Gracious — the One whose mercy is vast and encompasses all of creation without exception.", cat:"mercy", benefits:["Reciting this name brings peace and calm to an anxious heart.","It opens the doors of mercy in one's daily life.","Reminds us that every blessing we have comes from His grace."], reflection:"Every breath we take is a mercy from Ar-Rahman. He did not wait for us to ask — His mercy arrives before any deed of ours.", quran:[{ar:"بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",tr:"In the name of Allah, the Most Gracious, the Most Merciful.",ref:"Surah Al-Fatiha 1:1"},{ar:"الرَّحْمَٰنُ عَلَى الْعَرْشِ اسْتَوَىٰ",tr:"The Most Gracious rose over the Throne.",ref:"Surah Ta-Ha 20:5"}], mcq:[{q:"What does Ar-Rahman primarily signify?",opts:["Power over all","All-encompassing mercy","The Creator","The Judge"],ans:1},{q:"In which surah's opening verse does Ar-Rahman appear?",opts:["Al-Baqarah","Al-Imran","Al-Fatiha","Ya-Sin"],ans:2}], moods:["anxious","sad","seeking peace","lonely"] },
+  { n:2, ar:"الرَّحِيمُ", tr:"Ar-Raheem", en:"The Most Merciful — the One whose mercy is specific, sustained, and especially bestowed upon the believers.", cat:"mercy", benefits:["Strengthens the believer's hope in Allah's personal forgiveness.","A reminder that mercy is not just general but deeply personal.","Brings comfort when feeling unworthy or spiritually distant."], reflection:"While Ar-Rahman's mercy covers all creation, Ar-Raheem's mercy is a special ongoing gift reserved for those who believe and strive.", quran:[{ar:"وَكَانَ بِالْمُؤْمِنِينَ رَحِيمًا",tr:"And He is ever Merciful to the believers.",ref:"Surah Al-Ahzab 33:43"}], mcq:[{q:"How does Ar-Raheem differ from Ar-Rahman?",opts:["It means creator","It is specific mercy for believers","It means all-knowing","It means the Sustainer"],ans:1}], moods:["anxious","seeking forgiveness","lonely","sad"] },
+  { n:3, ar:"الْمَلِكُ", tr:"Al-Malik", en:"The King — the One who possesses absolute sovereignty and dominion over all of existence.", cat:"majesty", benefits:["Reminds us that no human authority is ultimate or permanent.","Frees the heart from fear of worldly rulers and powers.","Encourages full submission to Allah alone in all matters."], reflection:"When we feel powerless before people, remembering Al-Malik reminds us that all true power belongs only to Allah.", quran:[{ar:"فَتَعَالَى اللَّهُ الْمَلِكُ الْحَقُّ",tr:"So exalted is Allah, the True King.",ref:"Surah Ta-Ha 20:114"}], mcq:[{q:"Al-Malik means?",opts:["The Merciful","The King","The Creator","The Healer"],ans:1}], moods:["overwhelmed","powerless","anxious"] },
+  { n:4, ar:"الْقُدُّوسُ", tr:"Al-Quddus", en:"The Most Holy — the One who is completely pure and far above any imperfection, deficiency, or flaw.", cat:"exalted", benefits:["Inspires purity of heart and sincerity of intention.","Reminds us to purify our deeds before presenting them to Allah.","Brings deep humility by recognizing Allah's absolute perfection."], reflection:"We are imperfect beings standing before a perfectly pure Lord — this is precisely why we must begin every act with seeking His forgiveness.", quran:[{ar:"يُسَبِّحُ لِلَّهِ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ الْمَلِكِ الْقُدُّوسِ",tr:"Whatever is in the heavens and earth glorifies Allah — the King, the Most Holy.",ref:"Surah Al-Jumu'ah 62:1"}], mcq:[{q:"Al-Quddus means?",opts:["The Forgiving","The Sustainer","The Most Holy","The All-Knowing"],ans:2}], moods:["seeking purity","spiritually low","distracted"] },
+  { n:5, ar:"السَّلَامُ", tr:"As-Salam", en:"The Source of Peace — the One from whom all true peace flows and who is entirely free from all flaws.", cat:"kindness", benefits:["Reciting this name brings inner tranquility and calm.","Helps during times of conflict, anxiety, or distress.","Reminds us that lasting peace comes only from Allah."], reflection:"We chase peace in people, places, and things — yet As-Salam tells us the source of all peace is Allah Himself.", quran:[{ar:"هُوَ اللَّهُ الَّذِي لَا إِلَٰهَ إِلَّا هُوَ الْمَلِكُ الْقُدُّوسُ السَّلَامُ",tr:"He is Allah, other than whom there is no deity — the King, the Most Holy, the Source of Peace.",ref:"Surah Al-Hashr 59:23"}], mcq:[{q:"As-Salam means?",opts:["The Creator","Source of Peace","The Forgiving","The Generous"],ans:1}], moods:["anxious","stressed","seeking peace","lonely"] },
+  { n:6, ar:"الْمُؤْمِنُ", tr:"Al-Mu'min", en:"The Granter of Security — the One who gives safety, affirms the truth of His messengers, and keeps His promises.", cat:"guardian", benefits:["Grants a sense of true safety and security beyond the physical.","Helps those facing fear, uncertainty, or danger.","Strengthens complete trust in Allah's protection."], reflection:"When the world feels unsafe, Al-Mu'min is the reminder that our real security is not in walls or wealth, but in Him alone.", quran:[{ar:"الْمَلِكُ الْقُدُّوسُ السَّلَامُ الْمُؤْمِنُ الْمُهَيْمِنُ",tr:"The King, the Most Holy, the Source of Peace, the Granter of Security, the Overseer.",ref:"Surah Al-Hashr 59:23"}], mcq:[{q:"Al-Mu'min primarily refers to?",opts:["All-Knowing","Granter of Security","The Wise","The Just"],ans:1}], moods:["fearful","anxious","unsafe","worried"] },
+  { n:7, ar:"الْمُهَيْمِنُ", tr:"Al-Muhaymin", en:"The Overseer — the One who watches over, protects, and preserves all things with perfect and constant care.", cat:"guardian", benefits:["Strengthens the feeling of being watched over and cared for.","Encourages accountability knowing Allah sees everything.","Brings profound comfort in moments of vulnerability."], reflection:"Nothing slips past Al-Muhaymin. Every tear, every hidden struggle, every silent prayer — He is watching over all of it.", quran:[{ar:"الْمُهَيْمِنُ الْعَزِيزُ الْجَبَّارُ الْمُتَكَبِّرُ",tr:"The Overseer, the Exalted in Might, the Compeller, the Superior.",ref:"Surah Al-Hashr 59:23"}], mcq:[{q:"What does Al-Muhaymin mean?",opts:["The Generous","The Overseer","The Forgiving","The Creator"],ans:1}], moods:["lonely","anxious","feeling unseen","burdened"] },
+  { n:8, ar:"الْعَزِيزُ", tr:"Al-Aziz", en:"The Almighty — the One possessing perfect and absolute power who can never be overcome or weakened.", cat:"majesty", benefits:["Inspires strength when facing opposition or hardship.","Reminds us that those who rely on Allah cannot truly be defeated.","Helps when feeling weak, humiliated, or powerless."], reflection:"The believer's strength is not their own — it is borrowed from Al-Aziz. When we lean on Him, we lean on the undefeatable.", quran:[{ar:"وَاللَّهُ عَزِيزٌ حَكِيمٌ",tr:"And Allah is Almighty, All-Wise.",ref:"Surah Al-Baqarah 2:228"}], mcq:[{q:"Al-Aziz means?",opts:["The Generous","The Almighty","The Merciful","The Trustworthy"],ans:1}], moods:["weak","defeated","overwhelmed","powerless"] },
+  { n:9, ar:"الْجَبَّارُ", tr:"Al-Jabbar", en:"The Compeller — the One who restores what is broken and whose will cannot be resisted by anyone.", cat:"majesty", benefits:["Provides hope that Allah can restore what is broken in our lives.","Removes arrogance by recognizing the only true compeller is Allah.","Helps in times of injustice and oppression."], reflection:"Al-Jabbar mends broken bones, broken hearts, and broken lives. His compulsion is not cruelty — it is the ultimate restoration.", quran:[{ar:"الْعَزِيزُ الْجَبَّارُ الْمُتَكَبِّرُ",tr:"The Exalted in Might, the Compeller, the Superior.",ref:"Surah Al-Hashr 59:23"}], mcq:[{q:"Al-Jabbar can also mean?",opts:["The Restorer of broken things","The Creator","The Forgiving","The Merciful"],ans:0}], moods:["broken","hopeless","grieving","oppressed"] },
+  { n:10, ar:"الْمُتَكَبِّرُ", tr:"Al-Mutakabbir", en:"The Supreme — the One who is rightfully and uniquely above all, the only one deserving of true greatness.", cat:"exalted", benefits:["Removes false pride by acknowledging only Allah's greatness is real.","Inspires deep humility before the Creator.","Helps let go of ego and arrogance in worship and life."], reflection:"Every human's pride is borrowed pride. Al-Mutakabbir is the reminder that true supremacy belongs only to Allah.", quran:[{ar:"الْجَبَّارُ الْمُتَكَبِّرُ ۚ سُبْحَانَ اللَّهِ عَمَّا يُشْرِكُونَ",tr:"The Compeller, the Superior — Glorified is Allah above what they associate with Him.",ref:"Surah Al-Hashr 59:23"}], mcq:[{q:"Al-Mutakabbir means?",opts:["The Gentle","The Supreme","The Forgiving","The Guardian"],ans:1}], moods:["proud","arrogant","spiritually disconnected"] },
+  { n:11, ar:"الْخَالِقُ", tr:"Al-Khaliq", en:"The Creator — the One who brings everything into existence from nothing according to His perfect and eternal plan.", cat:"creator", benefits:["Inspires awe of Allah's creative power visible in all nature.","Encourages reflection on creation as a direct path to faith.","Reminds us that we ourselves were created with divine purpose."], reflection:"Look at your own hand — Al-Khaliq made every fingerprint unique. You were not a mistake; you were intentionally crafted.", quran:[{ar:"هُوَ اللَّهُ الْخَالِقُ الْبَارِئُ الْمُصَوِّرُ",tr:"He is Allah, the Creator, the Originator, the Fashioner.",ref:"Surah Al-Hashr 59:24"}], mcq:[{q:"Al-Khaliq refers to?",opts:["The Forgiver","The Creator","The Sustainer","The Wise"],ans:1}], moods:["purposeless","wondering","curious","questioning"] },
+  { n:12, ar:"الْبَارِئُ", tr:"Al-Bari", en:"The Originator — the One who creates with perfect distinction, giving each creation its unique form and identity.", cat:"creator", benefits:["Deepens appreciation for the uniqueness of every created thing.","Encourages gratitude for our own individuality and distinctiveness.","Reminds us that Allah's creation has infinite variety."], reflection:"Al-Bari is the one who gave distinct form to each creature. No two snowflakes, no two souls — ever exactly alike.", quran:[{ar:"هُوَ اللَّهُ الْخَالِقُ الْبَارِئُ الْمُصَوِّرُ",tr:"He is Allah, the Creator, the Originator, the Fashioner.",ref:"Surah Al-Hashr 59:24"}], mcq:[{q:"Al-Bari's root meaning relates to?",opts:["Forgiving","Separating and distinguishing creation","Sustaining","Guiding"],ans:1}], moods:["purposeless","curious","self-doubt"] },
+  { n:13, ar:"الْمُصَوِّرُ", tr:"Al-Musawwir", en:"The Fashioner — the One who gives shape and unique form to all things in the most perfect and deliberate way.", cat:"creator", benefits:["Encourages gratitude for physical beauty and design in the world.","Inspires creativity as a reflection of divine attributes in us.","Helps overcome body image issues and self-comparison."], reflection:"When you look in the mirror, you are seeing the work of Al-Musawwir. He fashioned your face — it is His art, uniquely yours.", quran:[{ar:"هُوَ الَّذِي يُصَوِّرُكُمْ فِي الْأَرْحَامِ كَيْفَ يَشَاءُ",tr:"He is the one who shapes you in the wombs however He wills.",ref:"Surah Aal-e-Imran 3:6"}], mcq:[{q:"Al-Musawwir means?",opts:["The Healer","The Fashioner of Forms","The Generous","The Protector"],ans:1}], moods:["purposeless","self-doubt","struggling"] },
+  { n:14, ar:"الْغَفَّارُ", tr:"Al-Ghaffar", en:"The Repeatedly Forgiving — the One who forgives sins again and again, without limit, no matter how many times one returns.", cat:"forgiver", benefits:["Brings profound relief to those burdened with guilt and shame.","Encourages returning to Allah no matter how many mistakes.","Completely removes despair and hopelessness about past sins."], reflection:"Al-Ghaffar doesn't just forgive once. He forgives the same person, the same sin, the same regret — over and over, without ever tiring.", quran:[{ar:"إِنَّهُ كَانَ غَفَّارًا",tr:"Indeed, He is ever-forgiving.",ref:"Surah Nuh 71:10"}], mcq:[{q:"What makes Al-Ghaffar unique in forgiveness?",opts:["He forgives once only","He forgives repeatedly and continuously","He only forgives major sins","He forgives only the righteous"],ans:1}], moods:["guilty","seeking forgiveness","burdened","hopeless"] },
+  { n:15, ar:"الْقَهَّارُ", tr:"Al-Qahhar", en:"The Subduer — the One who overpowers all things absolutely and whose will cannot be resisted by any force.", cat:"majesty", benefits:["Helps when oppressed by others or feeling overpowered.","Reminds us that no power or tyranny stands against Allah.","Reduces crippling fear of worldly powers and authorities."], reflection:"Al-Qahhar subdues pharaohs, empires, and the greatest powers in history. Whatever feels undefeatable to you — it is nothing before Him.", quran:[{ar:"وَهُوَ الْقَاهِرُ فَوْقَ عِبَادِهِ",tr:"And He is the Supreme over His servants.",ref:"Surah Al-An'am 6:18"}], mcq:[{q:"Al-Qahhar means?",opts:["The Generous","The Subduer","The Merciful","The Creator"],ans:1}], moods:["oppressed","powerless","angry at injustice"] },
+  { n:16, ar:"الْوَهَّابُ", tr:"Al-Wahhab", en:"The Bestower of Gifts — the One who gives freely and abundantly without expecting anything in return.", cat:"kindness", benefits:["Inspires deep gratitude for every blessing received.","Encourages asking Allah for gifts without hesitation or embarrassment.","Removes miserliness by reflecting on divine generosity."], reflection:"Al-Wahhab gives without being asked, gives without reason, gives without limit. Every good thing in your life is His gift.", quran:[{ar:"رَبَّنَا لَا تُزِغْ قُلُوبَنَا بَعْدَ إِذْ هَدَيْتَنَا وَهَبْ لَنَا مِن لَّدُنكَ رَحْمَةً",tr:"Our Lord, do not let our hearts deviate after You have guided us, and grant us from Yourself mercy.",ref:"Surah Aal-e-Imran 3:8"}], mcq:[{q:"Al-Wahhab means?",opts:["The Forgiver","The Bestower of Gifts","The All-Knowing","The Judge"],ans:1}], moods:["grateful","hopeful","seeking blessings"] },
+  { n:17, ar:"الرَّزَّاقُ", tr:"Ar-Razzaq", en:"The Provider — the One who provides all forms of sustenance and provision to every single creation.", cat:"creator", benefits:["Reduces anxiety and stress about livelihood and finances.","Encourages reliance on Allah rather than obsessive worldly planning.","Helps in times of financial difficulty and uncertainty."], reflection:"Ar-Razzaq provides for the ant deep underground and the eagle high in the sky. Your provision is already written — trust Him.", quran:[{ar:"إِنَّ اللَّهَ هُوَ الرَّزَّاقُ ذُو الْقُوَّةِ الْمَتِينُ",tr:"Indeed, it is Allah who is the Provider, the Firm Possessor of Strength.",ref:"Surah Adh-Dhariyat 51:58"}], mcq:[{q:"Ar-Razzaq refers to?",opts:["The Forgiver","The Provider","The All-Seeing","The Wise"],ans:1}], moods:["financial stress","worried","hopeless about future","anxious"] },
+  { n:18, ar:"الْفَتَّاحُ", tr:"Al-Fattah", en:"The Opener — the One who opens all doors of provision, mercy, judgment, and guidance that were closed.", cat:"kindness", benefits:["Helps when feeling stuck or when all doors seem closed.","Encourages trust that Allah can open what humans never can.","Brings genuine hope in seemingly hopeless situations."], reflection:"Al-Fattah opens doors that have been shut for years. The door you've been knocking on — He can open it at any moment.", quran:[{ar:"وَهُوَ الْفَتَّاحُ الْعَلِيمُ",tr:"And He is the Opener, the Knowing.",ref:"Surah Saba 34:26"}], mcq:[{q:"Al-Fattah means?",opts:["The Closer","The Opener","The Judge","The Holy"],ans:1}], moods:["stuck","hopeless","seeking breakthrough","frustrated"] },
+  { n:19, ar:"الْعَلِيمُ", tr:"Al-Alim", en:"The All-Knowing — the One whose knowledge encompasses everything hidden and apparent, past, present, and future.", cat:"wisdom", benefits:["Brings humility about our own severely limited knowledge.","Encourages sincerity since Allah knows all intentions completely.","Gives comfort that Allah knows our silent struggles without us saying a word."], reflection:"You don't need to explain your situation to Al-Alim. He already knows. The pain you've never said out loud — He knows it perfectly.", quran:[{ar:"وَاللَّهُ بِكُلِّ شَيْءٍ عَلِيمٌ",tr:"And Allah is All-Knowing of everything.",ref:"Surah Al-Baqarah 2:282"}], mcq:[{q:"Al-Alim means?",opts:["The All-Knowing","The Creator","The Generous","The Source of Peace"],ans:0}], moods:["misunderstood","lonely","burdened","anxious"] },
+  { n:20, ar:"الْقَابِضُ", tr:"Al-Qabid", en:"The Withholder — the One who withholds and constricts provision and blessings by His perfect and wise decree.", cat:"wisdom", benefits:["Helps understand why blessings are sometimes restricted or delayed.","Builds essential patience during periods of scarcity and difficulty.","Encourages trust in Allah's plan even when life feels constricted."], reflection:"Al-Qabid constricts not to punish but to perfect. Sometimes what is withheld from us is mercy in the most profound disguise.", quran:[{ar:"وَاللَّهُ يَقْبِضُ وَيَبْسُطُ",tr:"And Allah withholds and extends.",ref:"Surah Al-Baqarah 2:245"}], mcq:[{q:"Al-Qabid means?",opts:["The Giver","The Withholder","The Forgiving","The Exalted"],ans:1}], moods:["struggling","in difficulty","confused about fate"] },
+  { n:21, ar:"الْبَاسِطُ", tr:"Al-Basit", en:"The Extender — the One who expands provision, mercy, and sustenance abundantly for whom He wills.", cat:"kindness", benefits:["Inspires strong hope for expansion of blessings in life.","Encourages deep gratitude during times of abundance.","Paired with Al-Qabid, helps understand the perfect balance of life."], reflection:"Just as night always gives way to dawn, Al-Basit always follows Al-Qabid. Expansion always comes after constriction — trust the cycle.", quran:[{ar:"وَاللَّهُ يَقْبِضُ وَيَبْسُطُ وَإِلَيْهِ تُرْجَعُونَ",tr:"And Allah withholds and extends, and to Him you will be returned.",ref:"Surah Al-Baqarah 2:245"}], mcq:[{q:"Al-Basit means?",opts:["The Withholder","The Extender","The Creator","The Source of Peace"],ans:1}], moods:["hopeful","grateful","recovering","seeking blessings"] },
+  { n:22, ar:"الْخَافِضُ", tr:"Al-Khafid", en:"The Abaser — the One who lowers the arrogant and humbles those who transgress beyond their limits.", cat:"majesty", benefits:["Removes arrogance and false pride from the heart.","Reminds us that worldly status is entirely temporary.","Encourages genuine humility before Allah and people."], reflection:"No matter how high a person rises in arrogance, Al-Khafid can bring them low in an instant. True elevation is only in submission.", quran:[{ar:"تِلْكَ الدَّارُ الْآخِرَةُ نَجْعَلُهَا لِلَّذِينَ لَا يُرِيدُونَ عُلُوًّا فِي الْأَرْضِ",tr:"That home of the Hereafter — We assign it to those who do not desire exaltedness on earth.",ref:"Surah Al-Qasas 28:83"}], mcq:[{q:"Al-Khafid means?",opts:["The Exalter","The Abaser","The Creator","The Guide"],ans:1}], moods:["proud","arrogant","spiritually disconnected"] },
+  { n:23, ar:"الرَّافِعُ", tr:"Ar-Rafi", en:"The Exalter — the One who raises the ranks of the believers and elevates the righteous in status.", cat:"majesty", benefits:["Inspires hope that Allah raises whoever He wills in rank.","Encourages sincerity since only Allah can grant true and lasting elevation.","Brings comfort to those who feel overlooked or undervalued."], reflection:"The believer who is humble before Allah will be raised. Ar-Rafi's elevation is the only elevation that truly and permanently lasts.", quran:[{ar:"يَرْفَعِ اللَّهُ الَّذِينَ آمَنُوا مِنكُمْ وَالَّذِينَ أُوتُوا الْعِلْمَ دَرَجَاتٍ",tr:"Allah will raise those who have believed among you and those who were given knowledge by degrees.",ref:"Surah Al-Mujadila 58:11"}], mcq:[{q:"Ar-Rafi means?",opts:["The Lowerer","The Exalter","The Provider","The Holy"],ans:1}], moods:["overlooked","hopeless","weak","disrespected"] },
+  { n:24, ar:"الْمُعِزُّ", tr:"Al-Mu'izz", en:"The Honourer — the One who grants honour and dignity to whomever He wills.", cat:"majesty", benefits:["Real honour comes only from Allah, not from status or wealth.","Helps those feeling humiliated or deeply disrespected.","Encourages seeking dignity through righteousness, not worldly position."], reflection:"People chase honour through wealth, fame, and power. But Al-Mu'izz reminds us — true dignity is bestowed only by Allah alone.", quran:[{ar:"قُلِ اللَّهُمَّ مَالِكَ الْمُلْكِ تُؤْتِي الْمُلْكَ مَن تَشَاءُ",tr:"Say: O Allah, Owner of Sovereignty, You give sovereignty to whom You will.",ref:"Surah Aal-e-Imran 3:26"}], mcq:[{q:"Al-Mu'izz means?",opts:["The Dishonorer","The Honourer","The Creator","The Wise"],ans:1}], moods:["humiliated","disrespected","weak","defeated"] },
+  { n:25, ar:"الْمُذِلُّ", tr:"Al-Mudhill", en:"The Dishonorer — the One who humiliates and disgraces those who persist in opposing His truth.", cat:"majesty", benefits:["Warns against arrogance and persistent opposition to truth.","Reminds oppressors that disgrace awaits those who do not repent.","Encourages reliance on Allah for protection from humiliation."], reflection:"Those who build their dignity on oppression and falsehood will be humbled. Al-Mudhill is the reminder that disgrace without repentance has a Lord.", quran:[{ar:"وَتُعِزُّ مَن تَشَاءُ وَتُذِلُّ مَن تَشَاءُ",tr:"You honour whom You will and humiliate whom You will.",ref:"Surah Aal-e-Imran 3:26"}], mcq:[{q:"Al-Mudhill is paired with which name?",opts:["Al-Ghaffar","Al-Mu'izz","Al-Khaliq","Al-Fattah"],ans:1}], moods:["angry at injustice","oppressed","powerless"] },
+  { n:26, ar:"السَّمِيعُ", tr:"As-Sami", en:"The All-Hearing — the One who hears every sound, whisper, thought, and prayer without a single exception.", cat:"wisdom", benefits:["Encourages du'a knowing Allah hears absolutely everything.","Removes loneliness — your voice is always perfectly heard.","Promotes mindfulness of the words we speak."], reflection:"You don't need a microphone or an audience for As-Sami. Every whispered prayer in the darkest night is heard perfectly by Him.", quran:[{ar:"إِنَّهُ سَمِيعٌ قَرِيبٌ",tr:"Indeed, He is All-Hearing, Near.",ref:"Surah Saba 34:50"}], mcq:[{q:"As-Sami means?",opts:["All-Seeing","All-Hearing","All-Knowing","The Guide"],ans:1}], moods:["lonely","unheard","sad","anxious"] },
+  { n:27, ar:"الْبَصِيرُ", tr:"Al-Basir", en:"The All-Seeing — the One who sees all things, visible and hidden, in every corner of existence.", cat:"wisdom", benefits:["Brings accountability — Allah sees every single action we do.","Provides comfort that our unseen struggles are witnessed by Him.","Encourages sincerity and quality in our private deeds."], reflection:"Every act of kindness done in secret, every tear shed alone — Al-Basir sees it all. Nothing is ever truly hidden from His sight.", quran:[{ar:"إِنَّ اللَّهَ كَانَ سَمِيعًا بَصِيرًا",tr:"Indeed, Allah is ever All-Hearing and All-Seeing.",ref:"Surah An-Nisa 4:58"}], mcq:[{q:"Al-Basir means?",opts:["All-Hearing","All-Knowing","All-Seeing","The Wise"],ans:2}], moods:["feeling unseen","lonely","burdened","unheard"] },
+  { n:28, ar:"الْحَكَمُ", tr:"Al-Hakam", en:"The Judge — the One who judges with absolute perfect justice and whose ruling is always final and correct.", cat:"wisdom", benefits:["Provides deep peace when human justice completely fails.","Encourages leaving personal revenge entirely to Allah.","Removes anxiety about unresolved injustice in the world."], reflection:"When courts fail and oppressors escape, Al-Hakam remains. No case is ever truly closed before the ultimate Judge.", quran:[{ar:"أَفَغَيْرَ اللَّهِ أَبْتَغِي حَكَمًا",tr:"Then is it other than Allah I should seek as judge?",ref:"Surah Al-An'am 6:114"}], mcq:[{q:"Al-Hakam means?",opts:["The Merciful","The Judge","The Provider","The Creator"],ans:1}], moods:["angry at injustice","oppressed","grieving","troubled"] },
+  { n:29, ar:"الْعَدْلُ", tr:"Al-Adl", en:"The Utterly Just — the One who is perfectly fair in all His decrees and judgements without any bias or error.", cat:"wisdom", benefits:["Builds deep trust that everything happens with divine fairness.","Helps accept hardship as part of a perfectly just and wise plan.","Encourages justice and fairness in our own daily dealings."], reflection:"Al-Adl means not a single atom of injustice exists in any of Allah's decrees — even when we cannot fully see the wisdom behind them.", quran:[{ar:"وَتَمَّتْ كَلِمَتُ رَبِّكَ صِدْقًا وَعَدْلًا",tr:"The word of your Lord is complete in truth and justice.",ref:"Surah Al-An'am 6:115"}], mcq:[{q:"Al-Adl means?",opts:["The Forgiving","The Utterly Just","The Creator","The Sustainer"],ans:1}], moods:["confused about fate","troubled","hopeless","questioning"] },
+  { n:30, ar:"اللَّطِيفُ", tr:"Al-Latif", en:"The Subtle and Kind — the One aware of the finest details whose kindness reaches in ways completely unseen.", cat:"kindness", benefits:["Encourages noticing and appreciating the small blessings in life.","Provides comfort that Allah's care is precise, personal, and intimate.","Helps in moments when no one else seems to understand your situation."], reflection:"Al-Latif knows what you need before you do. His kindness arrives in ways you didn't plan, through doors you didn't even knock on.", quran:[{ar:"اللَّهُ لَطِيفٌ بِعِبَادِهِ يَرْزُقُ مَن يَشَاءُ",tr:"Allah is Subtle with His servants; He provides for whom He wills.",ref:"Surah Ash-Shura 42:19"}], mcq:[{q:"Al-Latif means?",opts:["The Generous","The Subtle and Kind","The Judge","The All-Seeing"],ans:1}], moods:["anxious","lonely","overlooked","sad"] },
+  { n:31, ar:"الْخَبِيرُ", tr:"Al-Khabir", en:"The All-Aware — the One who has complete and deep awareness of all inner and outer realities.", cat:"wisdom", benefits:["Promotes honesty since Allah knows our innermost states fully.","Brings comfort that our hidden efforts and struggles are known.","Encourages sincerity in all actions over outward performance."], reflection:"Al-Khabir is not just aware of what you do — He is aware of precisely why you do it. Your intention is never hidden from Him.", quran:[{ar:"إِنَّ اللَّهَ خَبِيرٌ بِمَا تَعْمَلُونَ",tr:"Indeed, Allah is All-Aware of what you do.",ref:"Surah Al-Hujurat 49:13"}], mcq:[{q:"Al-Khabir means?",opts:["All-Hearing","All-Seeing","All-Aware","The Wise"],ans:2}], moods:["burdened","misunderstood","lonely","seeking validation"] },
+  { n:32, ar:"الْحَلِيمُ", tr:"Al-Halim", en:"The Forbearing — the One who does not hasten punishment despite witnessing all sin and disobedience.", cat:"mercy", benefits:["Brings relief knowing Allah is enormously patient with our sins.","Encourages us to be forbearing and patient with others.","Reduces guilt when returning to Allah after a long absence."], reflection:"Al-Halim watches us sin, delay, and return again and again — and still does not rush to punish. His forbearance is our greatest lifeline.", quran:[{ar:"وَاعْلَمُوا أَنَّ اللَّهَ غَفُورٌ حَلِيمٌ",tr:"And know that Allah is Forgiving and Forbearing.",ref:"Surah Al-Baqarah 2:235"}], mcq:[{q:"Al-Halim means?",opts:["The Creator","The Forbearing","The Exalted","The Provider"],ans:1}], moods:["guilty","burdened","seeking forgiveness","hopeless"] },
+  { n:33, ar:"الْعَظِيمُ", tr:"Al-Azim", en:"The Magnificent — the One whose greatness is beyond all comprehension and surpasses absolutely everything.", cat:"exalted", benefits:["Puts all human problems in their true and tiny perspective.","Inspires profound awe and gratitude in worship.","Deepens the experience of prayer by focusing on Allah's magnificence."], reflection:"When you say Subhanallah Al-Azim in ruku', you are acknowledging a greatness so vast it makes galaxies seem like specks of dust.", quran:[{ar:"وَهُوَ الْعَلِيُّ الْعَظِيمُ",tr:"And He is the Most High, the Most Magnificent.",ref:"Surah Al-Baqarah 2:255"}], mcq:[{q:"Al-Azim means?",opts:["The Forgiving","The Magnificent","The Patient","The Sustainer"],ans:1}], moods:["spiritually low","distracted","purposeless"] },
+  { n:34, ar:"الْغَفُورُ", tr:"Al-Ghafur", en:"The All-Forgiving — the One who forgives all sins completely and covers them without leaving any trace.", cat:"forgiver", benefits:["Removes all despair about the weight of accumulated sins.","Encourages returning to Allah after any failure, however great.","Grants genuine hope to those who feel most unworthy of mercy."], reflection:"Al-Ghafur doesn't just forgive — He covers. Your sins are not just erased; they are hidden so completely even the angels may not record them.", quran:[{ar:"وَهُوَ الْغَفُورُ الْوَدُودُ",tr:"And He is the All-Forgiving, the Most Loving.",ref:"Surah Al-Buruj 85:14"}], mcq:[{q:"Al-Ghafur means?",opts:["The Provider","The All-Forgiving","The Judge","The Holy"],ans:1}], moods:["guilty","seeking forgiveness","burdened","hopeless"] },
+  { n:35, ar:"الشَّكُورُ", tr:"Ash-Shakur", en:"The Most Appreciative — the One who appreciates even the smallest good deeds and rewards them beyond measure.", cat:"kindness", benefits:["Encourages performing small deeds consistently with sincerity.","Gives hope that no good act ever goes unnoticed by Allah.","Removes the discouraging feeling that small efforts are wasted."], reflection:"Ash-Shakur rewards a single small act of kindness with paradise. He notices what no human eye would even think to observe.", quran:[{ar:"إِنَّ اللَّهَ شَاكِرٌ عَلِيمٌ",tr:"Indeed, Allah is Appreciative and All-Knowing.",ref:"Surah Al-Baqarah 2:158"}], mcq:[{q:"Ash-Shakur means?",opts:["The All-Seeing","The Most Appreciative","The Forgiving","The Exalted"],ans:1}], moods:["hopeless","purposeless","spiritually low","discouraged"] },
+  { n:36, ar:"الْعَلِيُّ", tr:"Al-Ali", en:"The Most High — the One who is supreme above all of creation in essence, status, power, and every attribute.", cat:"exalted", benefits:["Reminds us to direct our highest aspirations toward what is truly high.","Reduces unhealthy attachment to worldly status and prestige.","Encourages raising our du'a to the highest, the Most High Himself."], reflection:"Al-Ali is so high that lowering ourselves completely before Him is paradoxically the highest position a human being can ever reach.", quran:[{ar:"وَهُوَ الْعَلِيُّ الْعَظِيمُ",tr:"And He is the Most High, the Most Magnificent.",ref:"Surah Al-Baqarah 2:255"}], mcq:[{q:"Al-Ali means?",opts:["The Forgiving","The Most High","The Provider","The King"],ans:1}], moods:["distracted","spiritually low","purposeless"] },
+  { n:37, ar:"الْكَبِيرُ", tr:"Al-Kabir", en:"The Most Great — the One who is immeasurably great in every attribute and above all possible comparison.", cat:"exalted", benefits:["Inspires profound awe during prayer and remembrance of Allah.","Reminds us of our smallness and Allah's immensity.","Encourages saying Allahu Akbar with its full weight and meaning."], reflection:"Every time you say Allahu Akbar, you are declaring: whatever I fear, whatever I love, whatever I pursue — Allah is greater than all of it combined.", quran:[{ar:"وَأَنَّ اللَّهَ هُوَ الْعَلِيُّ الْكَبِيرُ",tr:"And that Allah is the Most High, the Most Great.",ref:"Surah Al-Hajj 22:62"}], mcq:[{q:"Al-Kabir means?",opts:["The Most Great","The Forgiving","The Patient","The Creator"],ans:0}], moods:["spiritually low","distracted","purposeless"] },
+  { n:38, ar:"الْحَفِيظُ", tr:"Al-Hafiz", en:"The Preserver — the One who preserves and protects all things in existence with absolute and perfect care.", cat:"guardian", benefits:["Builds deep trust in Allah's protection over all of life and deeds.","Encourages entrusting loved ones entirely to Allah's care.","Removes excessive fear and worry about what might go wrong."], reflection:"Your deeds, your children, your soul — all held in the hands of Al-Hafiz. Nothing He preserves can ever be truly lost.", quran:[{ar:"وَرَبُّكَ عَلَىٰ كُلِّ شَيْءٍ حَفِيظٌ",tr:"And your Lord is a Preserver over all things.",ref:"Surah Saba 34:21"}], mcq:[{q:"Al-Hafiz means?",opts:["The Provider","The Preserver","The Judge","The Forgiving"],ans:1}], moods:["anxious","fearful","worried","stressed"] },
+  { n:39, ar:"الْمُقِيتُ", tr:"Al-Muqit", en:"The Nourisher — the One who maintains, nourishes, and sustains all of creation in every moment.", cat:"creator", benefits:["Builds complete reliance on Allah for all nourishment.","Removes anxiety about basic needs being met.","Encourages sincere gratitude for every single meal and breath."], reflection:"Al-Muqit nourishes the body, the soul, and the mind. Every bite of food, every breath of air — it all flows from Him.", quran:[{ar:"وَكَانَ اللَّهُ عَلَىٰ كُلِّ شَيْءٍ مُّقِيتًا",tr:"And Allah is Able to maintain and witness all things.",ref:"Surah An-Nisa 4:85"}], mcq:[{q:"Al-Muqit means?",opts:["The Nourisher","The Forgiver","The Exalted","The King"],ans:0}], moods:["grateful","anxious about provision","hopeful"] },
+  { n:40, ar:"الْحَسِيبُ", tr:"Al-Hasib", en:"The Reckoner — the One who takes perfect account of all things and is sufficient for everything His servant needs.", cat:"wisdom", benefits:["Encourages self-accountability before the great final reckoning.","Reminds us Allah is entirely sufficient without any partner.","Promotes honesty and integrity in all dealings."], reflection:"Al-Hasib keeps a perfect account. Not a good deed, not a bad deed, not a whispered intention — is ever missing from His record.", quran:[{ar:"وَكَفَىٰ بِاللَّهِ حَسِيبًا",tr:"And sufficient is Allah as Reckoner.",ref:"Surah An-Nisa 4:6"}], mcq:[{q:"Al-Hasib means?",opts:["The Reckoner","The Most Holy","The Provider","The Forgiving"],ans:0}], moods:["troubled","seeking accountability","spiritually low"] },
+  { n:41, ar:"الْجَلِيلُ", tr:"Al-Jalil", en:"The Majestic — the One who combines all attributes of greatness, beauty, and absolute perfection.", cat:"exalted", benefits:["Inspires the deepest reverence and respect in worship.","Encourages approaching Allah with both love and profound awe.","Deepens the quality, presence, and focus of prayer."], reflection:"Al-Jalil's majesty is not intimidating — it is magnetic. The more you know of it, the more irresistibly you are drawn toward it.", quran:[{ar:"وَيَبْقَىٰ وَجْهُ رَبِّكَ ذُو الْجَلَالِ وَالْإِكْرَامِ",tr:"And there will remain the Face of your Lord, Owner of Majesty and Honour.",ref:"Surah Ar-Rahman 55:27"}], mcq:[{q:"Al-Jalil means?",opts:["The Provider","The Majestic","The Forgiving","The Patient"],ans:1}], moods:["spiritually low","distracted","disconnected"] },
+  { n:42, ar:"الْكَرِيمُ", tr:"Al-Karim", en:"The Most Generous — the One who gives abundantly and whose generosity has absolutely no end or condition.", cat:"kindness", benefits:["Encourages asking Allah freely, openly, and without any embarrassment.","Inspires genuine generosity in our own character and dealings.","Removes the crippling feeling of unworthiness when making du'a."], reflection:"Al-Karim is generous to those who ask and to those who don't. You cannot exhaust His giving — the more you ask, the more He loves to give.", quran:[{ar:"يَا أَيُّهَا الْإِنسَانُ مَا غَرَّكَ بِرَبِّكَ الْكَرِيمِ",tr:"O mankind, what has deceived you concerning your Lord, the Most Generous?",ref:"Surah Al-Infitar 82:6"}], mcq:[{q:"Al-Karim means?",opts:["The Most Generous","The Forgiver","The All-Seeing","The Creator"],ans:0}], moods:["hopeless","seeking blessings","grateful","financial stress"] },
+  { n:43, ar:"الرَّقِيبُ", tr:"Ar-Raqib", en:"The Watchful — the One who permanently watches over all things without a single moment of inattention.", cat:"guardian", benefits:["Builds God-consciousness (taqwa) naturally in daily life.","Encourages honesty and integrity in private moments.","Reduces harmful behaviour done secretly away from people."], reflection:"Ar-Raqib never blinks, never sleeps, never looks away. Every moment of your life is under His watchful eye — and that is mercy, not threat.", quran:[{ar:"إِنَّ اللَّهَ كَانَ عَلَيْكُمْ رَقِيبًا",tr:"Indeed Allah is ever watchful over you.",ref:"Surah An-Nisa 4:1"}], mcq:[{q:"Ar-Raqib means?",opts:["The Provider","The Watchful","The Forgiving","The Creator"],ans:1}], moods:["spiritually disconnected","tempted","anxious"] },
+  { n:44, ar:"الْمُجِيبُ", tr:"Al-Mujib", en:"The Responsive — the One who answers every prayer and call without fail in the most perfect way.", cat:"kindness", benefits:["Encourages making du'a consistently and with full conviction.","Removes the discouraging feeling that prayers go completely unheard.","Builds deep trust that Allah responds — though not always as we expect."], reflection:"Al-Mujib has answered every prayer you ever made — sometimes with yes, sometimes with better, sometimes with a blessing not yet visible.", quran:[{ar:"إِنَّ رَبِّي قَرِيبٌ مُّجِيبٌ",tr:"Indeed, my Lord is Near and Responsive.",ref:"Surah Hud 11:61"}], mcq:[{q:"Al-Mujib means?",opts:["The Judge","The Responsive","The Creator","The Holy"],ans:1}], moods:["anxious","hopeless","lonely","seeking peace"] },
+  { n:45, ar:"الْوَاسِعُ", tr:"Al-Wasi", en:"The All-Encompassing — the One whose knowledge, mercy, and generosity are boundless and completely unlimited.", cat:"mercy", benefits:["Reminds us no situation is ever too big or too far for Allah.","Encourages expansive and bold hope in Allah's mercy.","Reduces the claustrophobic feeling of being trapped with no way out."], reflection:"Al-Wasi's mercy has no geography. No matter how far you have strayed, you are never outside the reach of His encompassing grace.", quran:[{ar:"إِنَّ اللَّهَ وَاسِعٌ عَلِيمٌ",tr:"Indeed, Allah is All-Encompassing and All-Knowing.",ref:"Surah Al-Baqarah 2:115"}], mcq:[{q:"Al-Wasi means?",opts:["The Forgiving","The All-Encompassing","The Exalted","The Patient"],ans:1}], moods:["hopeless","stuck","guilty","anxious"] },
+  { n:46, ar:"الْحَكِيمُ", tr:"Al-Hakim", en:"The All-Wise — the One who places everything in its most perfect place with complete and absolute wisdom.", cat:"wisdom", benefits:["Builds genuine acceptance of Allah's decree in all circumstances.","Helps understand that what seems painful may contain profound wisdom.","Encourages trusting Allah's plan even when it makes no sense to us."], reflection:"Every hardship, every delay, every 'no' — Al-Hakim placed it there with wisdom you may not understand today but will one day recognise.", quran:[{ar:"وَاللَّهُ عَزِيزٌ حَكِيمٌ",tr:"And Allah is Almighty, All-Wise.",ref:"Surah Al-Baqarah 2:228"}], mcq:[{q:"Al-Hakim means?",opts:["The All-Wise","The Generous","The Forgiving","The Provider"],ans:0}], moods:["confused about fate","troubled","questioning","angry at injustice"] },
+  { n:47, ar:"الْوَدُودُ", tr:"Al-Wadud", en:"The Most Loving — the One whose love for His creation is pure, limitless, and entirely unconditional.", cat:"mercy", benefits:["Reminds us that Allah's love is real, direct, and deeply personal.","Helps those who feel unloved, abandoned, or unworthy of love.","Inspires love of others as a reflection of divine love in us."], reflection:"Human love is limited and conditional. Al-Wadud's love for you existed before you were born and continues regardless of every mistake.", quran:[{ar:"وَهُوَ الْغَفُورُ الْوَدُودُ",tr:"And He is the Forgiving, the Most Loving.",ref:"Surah Al-Buruj 85:14"}], mcq:[{q:"Al-Wadud means?",opts:["The Creator","The Most Loving","The Judge","The Sustainer"],ans:1}], moods:["unloved","lonely","heartbroken","sad"] },
+  { n:48, ar:"الْمَجِيدُ", tr:"Al-Majid", en:"The All-Glorious — the One whose glory is vast and combines perfect majesty with overflowing generosity.", cat:"exalted", benefits:["Deepens the quality and meaning of salawat upon the Prophet.","Inspires profound awe and reverence in worship.","Encourages gratitude for being in relationship with so glorious a Lord."], reflection:"Al-Majid's glory is not distant and cold — it is warm and generous. His greatness flows toward you, not away from you.", quran:[{ar:"إِنَّهُ حَمِيدٌ مَّجِيدٌ",tr:"Indeed, He is Praiseworthy and All-Glorious.",ref:"Surah Hud 11:73"}], mcq:[{q:"Al-Majid means?",opts:["The Patient","The All-Glorious","The Creator","The Forgiving"],ans:1}], moods:["spiritually low","distracted","disconnected"] },
+  { n:49, ar:"الْبَاعِثُ", tr:"Al-Ba'ith", en:"The Resurrector — the One who will raise all people from the dead on the Day of Judgement.", cat:"majesty", benefits:["Strengthens firm belief in the Day of Resurrection.","Encourages real accountability in all deeds.","Provides powerful hope that death is not the end."], reflection:"Every living thing that dies will be raised by Al-Ba'ith. Death is not an ending — it is a pause before the eternal beginning.", quran:[{ar:"وَأَنَّ اللَّهَ يَبْعَثُ مَن فِي الْقُبُورِ",tr:"And that Allah will resurrect those in the graves.",ref:"Surah Al-Hajj 22:7"}], mcq:[{q:"Al-Ba'ith means?",opts:["The Creator","The Resurrector","The Forgiving","The Provider"],ans:1}], moods:["grieving","hopeless","questioning","fearful of death"] },
+  { n:50, ar:"الشَّهِيدُ", tr:"Ash-Shahid", en:"The Witness — the One who witnesses all things at all times and in every place without exception.", cat:"wisdom", benefits:["Promotes complete accountability and deep sincerity.","Removes the need for others to validate our deeds.","Encourages good, sincere behaviour even in total private."], reflection:"Ash-Shahid was present at every moment of your life even before you were aware of it. He witnessed your first breath and every heartbeat.", quran:[{ar:"وَاللَّهُ عَلَىٰ كُلِّ شَيْءٍ شَهِيدٌ",tr:"And Allah is Witness over all things.",ref:"Surah Al-Buruj 85:9"}], mcq:[{q:"Ash-Shahid means?",opts:["The Forgiving","The Witness","The Provider","The Exalted"],ans:1}], moods:["seeking validation","lonely","purposeless"] },
+  { n:51, ar:"الْحَقُّ", tr:"Al-Haqq", en:"The Truth — the One who is the ultimate reality and whose existence is the only absolute and certain truth.", cat:"exalted", benefits:["Grounds faith in unshakeable certainty and reality.","Encourages seeking truth in all matters of life and religion.","Provides stability and grounding when everything else feels uncertain."], reflection:"In a world full of illusions and falsehoods, Al-Haqq is the one unshakeable reality. Everything else will pass. He will not.", quran:[{ar:"فَتَعَالَى اللَّهُ الْمَلِكُ الْحَقُّ",tr:"So exalted is Allah, the True King.",ref:"Surah Ta-Ha 20:114"}], mcq:[{q:"Al-Haqq means?",opts:["The Forgiving","The Truth","The Provider","The Guide"],ans:1}], moods:["confused","questioning","spiritually disconnected"] },
+  { n:52, ar:"الْوَكِيلُ", tr:"Al-Wakil", en:"The Trustee — the One who is the best disposer of all affairs and the ultimate guardian to rely upon completely.", cat:"guardian", benefits:["Encourages full and complete reliance on Allah (tawakkul).","Reduces debilitating anxiety about outcomes and future events.","Frees the believer from obsessive need for control."], reflection:"When you say HasbunAllah wa ni'mal wakil — Allah is sufficient and what an excellent trustee — you let go of a burden never meant for you.", quran:[{ar:"وَتَوَكَّلْ عَلَى اللَّهِ ۚ وَكَفَىٰ بِاللَّهِ وَكِيلًا",tr:"And rely upon Allah; and sufficient is Allah as Trustee.",ref:"Surah Al-Ahzab 33:3"}], mcq:[{q:"Al-Wakil means?",opts:["The Forgiving","The Trustee","The Exalted","The Creator"],ans:1}], moods:["anxious","stressed","overwhelmed","worried"] },
+  { n:53, ar:"الْقَوِيُّ", tr:"Al-Qawiyy", en:"The All-Powerful — the One whose power is absolute and can never be weakened, diminished, or challenged.", cat:"majesty", benefits:["Strengthens the believer when facing seemingly powerful enemies.","Encourages drawing strength from Allah rather than worldly sources.","Provides deep courage when facing seemingly impossible hardship."], reflection:"Al-Qawiyy's power is unlike the power of armies or governments — it never tires, cannot be overthrown, and has absolutely no limit.", quran:[{ar:"إِنَّ اللَّهَ قَوِيٌّ عَزِيزٌ",tr:"Indeed, Allah is Strong and Exalted in Might.",ref:"Surah Al-Mujadila 58:21"}], mcq:[{q:"Al-Qawiyy means?",opts:["The All-Powerful","The Provider","The Forgiver","The Wise"],ans:0}], moods:["weak","powerless","defeated","overwhelmed"] },
+  { n:54, ar:"الْمَتِينُ", tr:"Al-Matin", en:"The Firm — the One whose strength is absolutely firm, completely unwavering, and unaffected by anything whatsoever.", cat:"majesty", benefits:["Builds completely unwavering trust in Allah's perfect dependability.","Provides stability, solidity, and groundedness in uncertain times.","Encourages building one's entire life on Allah's firm and unshakeable foundation."], reflection:"Al-Matin never wavers. When everything around you shakes and crumbles, the One you are holding onto absolutely does not.", quran:[{ar:"إِنَّ اللَّهَ هُوَ الرَّزَّاقُ ذُو الْقُوَّةِ الْمَتِينُ",tr:"Indeed, Allah is the Provider, Possessor of firm strength.",ref:"Surah Adh-Dhariyat 51:58"}], mcq:[{q:"Al-Matin means?",opts:["The Forgiving","The Firm","The All-Knowing","The Merciful"],ans:1}], moods:["anxious","uncertain","overwhelmed","stressed"] },
+  { n:55, ar:"الْوَلِيُّ", tr:"Al-Waliyy", en:"The Protecting Friend — the One who is the close guardian and most loyal ally of the believers.", cat:"guardian", benefits:["Provides the deepest comfort during loneliness and isolation.","Encourages seeking ever-greater closeness to Allah.","Reminds us we are never without a powerful and loyal friend."], reflection:"Al-Waliyy is not a distant overseer — He is a close, loyal friend. The believer who turns to Him finds the most faithful ally imaginable.", quran:[{ar:"وَهُوَ يَتَوَلَّى الصَّالِحِينَ",tr:"And He is the ally of the righteous.",ref:"Surah Al-A'raf 7:196"}], mcq:[{q:"Al-Waliyy means?",opts:["The Creator","The Protecting Friend","The Judge","The Exalted"],ans:1}], moods:["lonely","anxious","seeking peace","unloved"] },
+  { n:56, ar:"الْحَمِيدُ", tr:"Al-Hamid", en:"The Praiseworthy — the One who is deserving of all praise by virtue of His absolutely perfect attributes.", cat:"exalted", benefits:["Enriches the meaning and weight of Alhamdulillah.","Encourages gratitude as a constant and natural state of the heart.","Reminds us that praise belongs to Allah even in the depths of difficulty."], reflection:"Al-Hamid is praised not because He demands it — but because He is simply and completely worthy of every single praise.", quran:[{ar:"إِنَّ اللَّهَ لَغَنِيٌّ حَمِيدٌ",tr:"Indeed, Allah is Self-Sufficient and Praiseworthy.",ref:"Surah Luqman 31:26"}], mcq:[{q:"Al-Hamid means?",opts:["The Forgiving","The Praiseworthy","The Patient","The Provider"],ans:1}], moods:["grateful","spiritually low","distracted"] },
+  { n:57, ar:"الْمُحْصِي", tr:"Al-Muhsi", en:"The All-Enumerating — the One who keeps perfect count of every single thing in existence without missing anything.", cat:"wisdom", benefits:["Promotes sincerity in the smallest and most private deeds.","Encourages consistency knowing every act is perfectly counted.","Removes the discouraging feeling that tiny good deeds don't matter."], reflection:"Al-Muhsi counted every grain of sand, every leaf on every tree, every thought you ever had. Nothing whatsoever escapes His count.", quran:[{ar:"وَأَحْصَىٰ كُلَّ شَيْءٍ عَدَدًا",tr:"And He has enumerated all things in number.",ref:"Surah Al-Jinn 72:28"}], mcq:[{q:"Al-Muhsi means?",opts:["The Generous","The All-Enumerating","The Forgiving","The Creator"],ans:1}], moods:["purposeless","spiritually low","discouraged"] },
+  { n:58, ar:"الْمُبْدِئُ", tr:"Al-Mubdi", en:"The Originator — the One who brings creation into existence for the very first time from absolute nothing.", cat:"creator", benefits:["Strengthens belief in creation from nothing as a divine act.","Inspires profound wonder at the very origin of the universe.","Encourages gratitude for the gift of existence itself."], reflection:"Al-Mubdi started something from absolutely nothing — no blueprint, no material, no assistant. That beginning is beyond all imagination.", quran:[{ar:"إِنَّهُ هُوَ يُبْدِئُ وَيُعِيدُ",tr:"Indeed, it is He who originates and repeats.",ref:"Surah Al-Buruj 85:13"}], mcq:[{q:"Al-Mubdi means?",opts:["The Originator","The Forgiver","The Provider","The Patient"],ans:0}], moods:["curious","wondering","purposeless","questioning"] },
+  { n:59, ar:"الْمُعِيدُ", tr:"Al-Mu'id", en:"The Restorer — the One who will bring all creation back after its end, restoring all that has ceased to exist.", cat:"creator", benefits:["Strengthens belief in the resurrection and life after death.","Provides genuine comfort and hope about death.","Encourages reflection on the temporary nature of this life."], reflection:"Al-Mu'id will restore what was. Every soul that ever existed will be brought back — perfectly — by the One who first made them.", quran:[{ar:"إِنَّهُ هُوَ يُبْدِئُ وَيُعِيدُ",tr:"Indeed, it is He who originates and repeats.",ref:"Surah Al-Buruj 85:13"}], mcq:[{q:"Al-Mu'id means?",opts:["The Originator","The Restorer","The Provider","The All-Knowing"],ans:1}], moods:["grieving","hopeless","fearful of death"] },
+  { n:60, ar:"الْمُحْيِي", tr:"Al-Muhyi", en:"The Giver of Life — the One who gives life to all living things and who can restore life after death.", cat:"creator", benefits:["Deepens heartfelt gratitude for the extraordinary gift of life.","Provides hope that spiritually dead and hardened hearts can be revived.","Encourages actively seeking spiritual renewal and awakening."], reflection:"Al-Muhyi can revive a dead heart the way He revives dead earth with rain. If your heart feels lifeless, He is the only answer.", quran:[{ar:"كَيْفَ يُحْيِي الْأَرْضَ بَعْدَ مَوْتِهَا",tr:"How He revives the earth after its lifelessness.",ref:"Surah Ar-Rum 30:50"}], mcq:[{q:"Al-Muhyi means?",opts:["The Giver of Life","The Provider","The Forgiver","The Exalted"],ans:0}], moods:["spiritually low","hopeless","burdened","disconnected"] },
+  { n:61, ar:"الْمُمِيتُ", tr:"Al-Mumit", en:"The Creator of Death — the One who causes death to all living things at their appointed and precise time.", cat:"majesty", benefits:["Encourages constant and sincere preparation for death.","Reminds us that life is a trust from Allah, not a permanent possession.","Promotes living with urgency, intentionality, and divine purpose."], reflection:"Al-Mumit is not frightening — He is the reminder that every moment is precious. Death is not His cruelty; it is His wisdom calling us home.", quran:[{ar:"الَّذِي خَلَقَ الْمَوْتَ وَالْحَيَاةَ لِيَبْلُوَكُمْ",tr:"He who created death and life to test you as to which of you is best in deed.",ref:"Surah Al-Mulk 67:2"}], mcq:[{q:"Al-Mumit means?",opts:["The Giver of Life","The Creator of Death","The Provider","The Forgiving"],ans:1}], moods:["fearful of death","purposeless","questioning"] },
+  { n:62, ar:"الْحَيُّ", tr:"Al-Hayy", en:"The Ever-Living — the One who is eternally alive whose life has absolutely no beginning and no end.", cat:"exalted", benefits:["Grounds faith in a living, present, and personally engaged God.","Provides comfort that Allah is never absent, distant, or gone.","Enriches and deepens the experience of reciting Ayat al-Kursi."], reflection:"Every being that lives will one day die — except Al-Hayy. He was before all life and will remain after all life. He alone truly lives.", quran:[{ar:"اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ",tr:"Allah — there is no deity except Him, the Ever-Living, the Sustainer of existence.",ref:"Surah Al-Baqarah 2:255"}], mcq:[{q:"Al-Hayy means?",opts:["The Provider","The Ever-Living","The Forgiving","The Exalted"],ans:1}], moods:["spiritually disconnected","questioning","purposeless"] },
+  { n:63, ar:"الْقَيُّومُ", tr:"Al-Qayyum", en:"The Sustainer of All Existence — the One who independently sustains all creation and upon whom everything absolutely depends.", cat:"exalted", benefits:["Deepens understanding of our absolute and total dependence on Allah.","Encourages releasing worldly attachments and false independence.","Strengthens the impact and experience of Ayat al-Kursi."], reflection:"Al-Qayyum sustains every atom in the universe every single moment. If His sustaining stopped for one instant, all existence would simply vanish.", quran:[{ar:"اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ",tr:"Allah — there is no deity except Him, the Ever-Living, the Sustainer of existence.",ref:"Surah Al-Baqarah 2:255"}], mcq:[{q:"Al-Qayyum means?",opts:["The Forgiving","The Sustainer of All Existence","The Creator","The Wise"],ans:1}], moods:["spiritually disconnected","purposeless","questioning"] },
+  { n:64, ar:"الْوَاجِدُ", tr:"Al-Wajid", en:"The All-Perceiving — the One who finds whatever He wills and who lacks absolutely nothing.", cat:"exalted", benefits:["Removes the illusion that we can ever hide our true state from Allah.","Encourages complete and total honesty in worship and du'a.","Builds trust that Allah lacks nothing and needs nothing from us."], reflection:"Al-Wajid finds what He seeks. You cannot hide need from Him, nor can you surprise Him. He already knows and already has the solution.", quran:[{ar:"وَوَجَدَكَ ضَالًّا فَهَدَىٰ",tr:"And He found you lost and guided you.",ref:"Surah Ad-Duha 93:7"}], mcq:[{q:"Al-Wajid means?",opts:["The All-Perceiving","The Forgiving","The Provider","The Patient"],ans:0}], moods:["lost","purposeless","questioning"] },
+  { n:65, ar:"الْمَاجِدُ", tr:"Al-Majid", en:"The Noble — the One who is infinitely noble and most generous in His essence and all His attributes.", cat:"exalted", benefits:["Inspires deep awe at the nobility and grandeur of Allah.","Encourages seeking what is truly noble in our own character.","Deepens reverence and quality in every du'a made."], reflection:"Al-Majid's nobility means He gives freely, forgives freely, and loves freely. True nobility is never stingy — and neither is He.", quran:[{ar:"ذُو الْعَرْشِ الْمَجِيدُ",tr:"Owner of the Throne, the Most Glorious.",ref:"Surah Al-Buruj 85:15"}], mcq:[{q:"Al-Majid as a standalone means?",opts:["The Noble","The Creator","The Patient","The Judge"],ans:0}], moods:["spiritually low","distracted","disconnected"] },
+  { n:66, ar:"الْوَاحِدُ", tr:"Al-Wahid", en:"The One — the One who is singular, unique, and has absolutely no partner, equal, or likeness.", cat:"exalted", benefits:["Strengthens the very foundation of tawhid (oneness of God).","Removes dependence on others for what only Allah can truly give.","Purifies worship completely from all forms of association."], reflection:"Al-Wahid — there is no committee running the universe, no partner in any decision, no second opinion needed. Just One. And that One is enough.", quran:[{ar:"وَإِلَٰهُكُمْ إِلَٰهٌ وَاحِدٌ",tr:"And your God is one God.",ref:"Surah Al-Baqarah 2:163"}], mcq:[{q:"Al-Wahid means?",opts:["The Provider","The One","The Forgiving","The Exalted"],ans:1}], moods:["spiritually disconnected","confused","questioning"] },
+  { n:67, ar:"الأَحَدُ", tr:"Al-Ahad", en:"The Unique — the One who is uniquely singular and indivisible in a way that absolutely nothing else can be.", cat:"exalted", benefits:["Deepens profoundly the meaning and weight of Surah Al-Ikhlas.","Eliminates entirely any concept of multiplicity or partnership in divinity.","Purifies the heart through pure and complete monotheism."], reflection:"Al-Wahid means no partners. Al-Ahad goes far deeper — He cannot even theoretically be divided or compared. He is in a category entirely His own.", quran:[{ar:"قُلْ هُوَ اللَّهُ أَحَدٌ",tr:"Say: He is Allah, the Unique.",ref:"Surah Al-Ikhlas 112:1"}], mcq:[{q:"Al-Ahad is the first word of which surah?",opts:["Al-Fatiha","Al-Ikhlas","Al-Falaq","Al-Baqarah"],ans:1}], moods:["spiritually disconnected","questioning","purposeless"] },
+  { n:68, ar:"الصَّمَدُ", tr:"As-Samad", en:"The Self-Sufficient — the One upon whom all of creation depends entirely while He depends on absolutely nothing.", cat:"exalted", benefits:["Encourages turning directly and only to Allah in every need.","Removes excessive and harmful dependence on other people.","Strengthens the heart completely in times of helplessness."], reflection:"As-Samad is the ultimate destination of all need. Every person you turn to for help is themselves turning to Him. Go directly to the Source.", quran:[{ar:"اللَّهُ الصَّمَدُ",tr:"Allah, the Self-Sufficient Master.",ref:"Surah Al-Ikhlas 112:2"}], mcq:[{q:"As-Samad means?",opts:["The Self-Sufficient","The Creator","The Judge","The Forgiving"],ans:0}], moods:["hopeless","anxious","dependent","lonely"] },
+  { n:69, ar:"الْقَادِرُ", tr:"Al-Qadir", en:"The All-Capable — the One who has complete and absolute power and ability to do whatever He wills.", cat:"majesty", benefits:["Builds trust that absolutely nothing is impossible with Allah.","Encourages asking for what seems completely impossible.","Removes all self-imposed limitations we place on our du'a."], reflection:"Al-Qadir can create from nothing, restore what is gone, and change what seems entirely and permanently unchangeable.", quran:[{ar:"إِنَّ اللَّهَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ",tr:"Indeed, Allah is over all things competent.",ref:"Surah Al-Baqarah 2:20"}], mcq:[{q:"Al-Qadir means?",opts:["The All-Capable","The Forgiving","The Patient","The Wise"],ans:0}], moods:["hopeless","stuck","powerless","discouraged"] },
+  { n:70, ar:"الْمُقْتَدِرُ", tr:"Al-Muqtadir", en:"The All-Determiner — the One whose power executes itself with absolute precision, authority, and perfect control.", cat:"majesty", benefits:["Deepens the understanding of divine control over all of existence.","Provides comfort that Allah's plans are never disrupted or delayed.","Encourages surrendering our fragile plans to His flawless authority."], reflection:"Al-Muqtadir doesn't just have power — He deploys it perfectly and precisely. Nothing in the universe happens outside His exact execution.", quran:[{ar:"عِندَ مَلِيكٍ مُّقْتَدِرٍ",tr:"In the presence of a Sovereign, All-Powerful.",ref:"Surah Al-Qamar 54:55"}], mcq:[{q:"Al-Muqtadir means?",opts:["The Forgiving","The All-Determiner","The Provider","The Exalted"],ans:1}], moods:["powerless","overwhelmed","anxious","confused"] },
+  { n:71, ar:"الْمُقَدِّمُ", tr:"Al-Muqaddim", en:"The Expediter — the One who brings things forward and places them ahead of their time according to His wisdom.", cat:"wisdom", benefits:["Encourages deep trust in divine timing for all things.","Helps accept and appreciate why some blessings arrive unexpectedly early.","Removes frustration about circumstances seemingly arriving out of order."], reflection:"Al-Muqaddim moves things ahead of schedule when He wills. That blessing that came early — He deliberately sent it forward. Trust the timing.", quran:[{ar:"وَلَوْ يُعَجِّلُ اللَّهُ لِلنَّاسِ الشَّرَّ اسْتِعْجَالَهُم بِالْخَيْرِ",tr:"And if Allah were to hasten for people the ill as they wish to hasten the good, their term would have been concluded.",ref:"Surah Yunus 10:11"}], mcq:[{q:"Al-Muqaddim means?",opts:["The Delayer","The Expediter","The Provider","The Creator"],ans:1}], moods:["impatient","confused about timing","anxious"] },
+  { n:72, ar:"الْمُؤَخِّرُ", tr:"Al-Mu'akhkhir", en:"The Delayer — the One who delays things and places them behind their expected time according to His perfect wisdom.", cat:"wisdom", benefits:["Builds essential patience during frustrating and painful delays.","Helps understand why some prayers are not answered immediately.","Encourages complete trust that a delay is never a denial."], reflection:"Al-Mu'akhkhir delays things not out of neglect but out of wisdom. The prayer not yet answered, the door not yet opened — He is timing it perfectly.", quran:[{ar:"لِكُلِّ أُمَّةٍ أَجَلٌ إِذَا جَاءَ أَجَلُهُمْ لَا يَسْتَأْخِرُونَ سَاعَةً وَلَا يَسْتَقْدِمُونَ",tr:"For every nation is a term. When their term comes, they can neither delay it nor advance it by an hour.",ref:"Surah Al-A'raf 7:34"}], mcq:[{q:"Al-Mu'akhkhir means?",opts:["The Expediter","The Delayer","The Provider","The Forgiving"],ans:1}], moods:["impatient","anxious","confused about timing","frustrated"] },
+  { n:73, ar:"الأَوَّلُ", tr:"Al-Awwal", en:"The First — the One who exists before everything else, with absolutely nothing preceding His existence.", cat:"exalted", benefits:["Deepens understanding and certainty of Allah's eternality.","Removes doubt about the ultimate origin of all existence.","Grounds faith in the pre-eternal and self-existing God."], reflection:"Before light, before time, before the very concept of 'before' — Al-Awwal existed. He is the only true and absolute First.", quran:[{ar:"هُوَ الْأَوَّلُ وَالْآخِرُ وَالظَّاهِرُ وَالْبَاطِنُ",tr:"He is the First and the Last, the Manifest and the Hidden.",ref:"Surah Al-Hadid 57:3"}], mcq:[{q:"Al-Awwal means?",opts:["The Last","The First","The Manifest","The Hidden"],ans:1}], moods:["questioning","spiritually disconnected","doubting"] },
+  { n:74, ar:"الآخِرُ", tr:"Al-Akhir", en:"The Last — the One who exists after everything ends, with absolutely no ending to His own existence.", cat:"exalted", benefits:["Provides comfort that something eternal and real remains after this world.","Encourages working for the akhirah over the temporary world.","Removes attachment to what is passing and transient."], reflection:"After the universe dissolves, after everything ends, Al-Akhir will remain. He is what every soul will ultimately and finally return to.", quran:[{ar:"هُوَ الْأَوَّلُ وَالْآخِرُ وَالظَّاهِرُ وَالْبَاطِنُ",tr:"He is the First and the Last, the Manifest and the Hidden.",ref:"Surah Al-Hadid 57:3"}], mcq:[{q:"Al-Akhir means?",opts:["The First","The Last","The Manifest","The Provider"],ans:1}], moods:["fearful of death","questioning","purposeless"] },
+  { n:75, ar:"الظَّاهِرُ", tr:"Az-Zahir", en:"The Manifest — the One whose existence is evident and clear through His signs in every corner of creation.", cat:"exalted", benefits:["Encourages deep reflection on nature as clear proof of God.","Removes doubts by pointing to the unmistakable visible signs.","Builds gratitude for the countless visible blessings surrounding us."], reflection:"Az-Zahir is not hidden. The stars, the seasons, your own heartbeat — He announces Himself in everything, if only we would look.", quran:[{ar:"هُوَ الْأَوَّلُ وَالْآخِرُ وَالظَّاهِرُ وَالْبَاطِنُ",tr:"He is the First and the Last, the Manifest and the Hidden.",ref:"Surah Al-Hadid 57:3"}], mcq:[{q:"Az-Zahir means?",opts:["The Hidden","The Manifest","The Provider","The Forgiving"],ans:1}], moods:["questioning","doubting","spiritually disconnected"] },
+  { n:76, ar:"الْبَاطِنُ", tr:"Al-Batin", en:"The Hidden — the One whose essence is beyond all perception, closer than anything yet impossible to fully comprehend.", cat:"exalted", benefits:["Builds profound awe about the mystery and depth of Allah.","Encourages spiritual reflection, contemplation, and inner stillness.","Reminds us our knowledge of Allah is always beautifully incomplete."], reflection:"Al-Batin is closer to you than your jugular vein yet beyond all perception. He is the deepest hidden reality beneath all visible reality.", quran:[{ar:"هُوَ الْأَوَّلُ وَالْآخِرُ وَالظَّاهِرُ وَالْبَاطِنُ",tr:"He is the First and the Last, the Manifest and the Hidden.",ref:"Surah Al-Hadid 57:3"}], mcq:[{q:"Al-Batin means?",opts:["The Manifest","The Hidden","The Provider","The Creator"],ans:1}], moods:["spiritual seeking","curious","questioning"] },
+  { n:77, ar:"الْوَالِي", tr:"Al-Wali", en:"The Governor — the One who governs and controls all of creation with complete authority and perfect care.", cat:"guardian", benefits:["Builds deep trust in divine governance of all events in life.","Reduces anxiety and distress about world affairs and events.","Encourages willing submission to Allah's perfect governance."], reflection:"Al-Wali runs the universe without a committee, without a vote, without an election. His governance is the most just that has ever existed.", quran:[{ar:"وَاللَّهُ وَلِيُّ الْمُؤْمِنِينَ",tr:"And Allah is the ally of the believers.",ref:"Surah Aal-e-Imran 3:68"}], mcq:[{q:"Al-Wali means?",opts:["The Forgiving","The Governor","The Creator","The Wise"],ans:1}], moods:["anxious about world","uncertain","powerless"] },
+  { n:78, ar:"الْمُتَعَالِي", tr:"Al-Muta'ali", en:"The Self-Exalted — the One who is exalted far beyond any description, comparison, limitation, or comprehension.", cat:"exalted", benefits:["Removes any limited or anthropomorphic human concept of Allah.","Inspires profound awe at the incomprehensible transcendence of Allah.","Encourages appropriate humility in all theological discussion."], reflection:"Al-Muta'ali means no matter how high your imagination takes you in conceiving Allah — He is still infinitely beyond that. Our minds cannot reach His true height.", quran:[{ar:"عَالِمُ الْغَيْبِ وَالشَّهَادَةِ الْكَبِيرُ الْمُتَعَالِ",tr:"Knower of the unseen and the witnessed, the Grand, the Exalted.",ref:"Surah Ar-Ra'd 13:9"}], mcq:[{q:"Al-Muta'ali means?",opts:["The Self-Exalted","The Forgiving","The Creator","The Provider"],ans:0}], moods:["questioning","spiritually disconnected","curious"] },
+  { n:79, ar:"الْبَرُّ", tr:"Al-Barr", en:"The Source of Goodness — the One whose goodness and kindness toward creation is absolutely boundless and overflowing.", cat:"kindness", benefits:["Inspires deep gratitude for all blessings received without asking.","Encourages genuine good character as a reflection of divine kindness.","Provides hope that Allah's goodness toward us has no limit or end."], reflection:"Al-Barr's goodness doesn't wait for worthiness. Like rain falling on every land, His goodness reaches the grateful and ungrateful alike.", quran:[{ar:"إِنَّهُ هُوَ الْبَرُّ الرَّحِيمُ",tr:"Indeed, it is He who is the Source of Goodness, the Merciful.",ref:"Surah At-Tur 52:28"}], mcq:[{q:"Al-Barr means?",opts:["The Judge","The Source of Goodness","The Exalted","The Patient"],ans:1}], moods:["grateful","hopeful","spiritually low"] },
+  { n:80, ar:"التَّوَّابُ", tr:"At-Tawwab", en:"The Ever-Relenting — the One who continuously and always accepts repentance and turns toward those who repent.", cat:"forgiver", benefits:["Gives lasting hope for continuous and repeated return to Allah.","Removes the devastating feeling of being permanently cut off from mercy.","Encourages making sincere tawbah frequently and without delay."], reflection:"At-Tawwab turns toward you every single time you turn toward Him. The door of repentance has no closing time — ever.", quran:[{ar:"وَتُوبُوا إِلَى اللَّهِ جَمِيعًا أَيُّهَ الْمُؤْمِنُونَ لَعَلَّكُمْ تُفْلِحُونَ",tr:"And turn to Allah in repentance, all of you, O believers, that you might succeed.",ref:"Surah An-Nur 24:31"}], mcq:[{q:"At-Tawwab means?",opts:["The Forgiving once","The Ever-Relenting","The Creator","The Wise"],ans:1}], moods:["guilty","seeking forgiveness","burdened","hopeless"] },
+  { n:81, ar:"الْمُنْتَقِمُ", tr:"Al-Muntaqim", en:"The Avenger — the One who takes perfect vengeance from those who persist in evil and transgression.", cat:"majesty", benefits:["Provides deep comfort and relief to the oppressed.","Removes the crushing burden of seeking personal revenge.","Reminds all wrongdoers that justice will inevitably and surely come."], reflection:"Al-Muntaqim is a mercy to the oppressed — it means you don't have to carry the weight of vengeance. Justice belongs to a far more capable Hand.", quran:[{ar:"وَاللَّهُ عَزِيزٌ ذُو انتِقَامٍ",tr:"And Allah is Almighty, Owner of Vengeance.",ref:"Surah Aal-e-Imran 3:4"}], mcq:[{q:"Al-Muntaqim means?",opts:["The Forgiving","The Avenger","The Provider","The Wise"],ans:1}], moods:["oppressed","angry at injustice","grieving","powerless"] },
+  { n:82, ar:"الْعَفُوُّ", tr:"Al-Afuww", en:"The Pardoner — the One who completely wipes away sins leaving absolutely no trace, as if they never existed.", cat:"forgiver", benefits:["Gives the most profound and complete relief from guilt.","Encourages the special du'a of Laylat al-Qadr.","Reminds us forgiveness means a completely and perfectly clean slate."], reflection:"Al-Ghafur covers sins. Al-Afuww goes far further — He erases them completely. Not buried, not on record — utterly and completely gone.", quran:[{ar:"إِنَّ اللَّهَ كَانَ عَفُوًّا غَفُورًا",tr:"Indeed, Allah is ever Pardoning and Forgiving.",ref:"Surah An-Nisa 4:99"}], mcq:[{q:"What is special about Al-Afuww's forgiveness?",opts:["It covers sins","It erases sins completely as if they never happened","It delays punishment","It forgives only major sins"],ans:1}], moods:["guilty","seeking forgiveness","hopeless","burdened"] },
+  { n:83, ar:"الرَّؤُوفُ", tr:"Ar-Ra'uf", en:"The Most Kind — the One who shows the most tender and compassionate kindness, especially to the vulnerable and weak.", cat:"mercy", benefits:["Provides deep comfort to the weak, vulnerable, and suffering.","Encourages extraordinary gentleness toward others, especially the weak.","Reminds us Allah's kindness is especially tender toward those who struggle."], reflection:"If Ar-Rahman is boundless mercy, Ar-Ra'uf is mercy with tenderness — the kind that holds you gently when you're at your most fragile and broken.", quran:[{ar:"إِنَّ اللَّهَ بِالنَّاسِ لَرَءُوفٌ رَّحِيمٌ",tr:"Indeed Allah is Most Kind and Merciful to the people.",ref:"Surah Al-Baqarah 2:143"}], mcq:[{q:"Ar-Ra'uf means?",opts:["The All-Knowing","The Most Kind","The Exalted","The Creator"],ans:1}], moods:["vulnerable","sad","lonely","anxious"] },
+  { n:84, ar:"مَالِكُ الْمُلْكِ", tr:"Malik al-Mulk", en:"The Owner of All Sovereignty — the One who owns all dominion absolutely and gives it to whom He wills.", cat:"majesty", benefits:["Removes dependence on rulers, governments, and worldly power.","Encourages seeking rank and elevation through Allah alone.","Builds essential perspective on the ephemeral nature of worldly power."], reflection:"Malik al-Mulk gave kingdoms to Sulaiman and took them from Pharaoh. All power is merely on loan from Him.", quran:[{ar:"قُلِ اللَّهُمَّ مَالِكَ الْمُلْكِ تُؤْتِي الْمُلْكَ مَن تَشَاءُ وَتَنزِعُ الْمُلْكَ مِمَّن تَشَاءُ",tr:"Say: O Allah, Owner of Sovereignty, You give sovereignty to whom You will and take it from whom You will.",ref:"Surah Aal-e-Imran 3:26"}], mcq:[{q:"Malik al-Mulk means?",opts:["The Forgiving","The Owner of All Sovereignty","The Provider","The Wise"],ans:1}], moods:["powerless","overwhelmed","oppressed","humiliated"] },
+  { n:85, ar:"ذُو الْجَلَالِ وَالْإِكْرَامِ", tr:"Dhul-Jalal wal-Ikram", en:"The Lord of Majesty and Bounty — the One who combines supreme majesty with supreme and overflowing generosity.", cat:"exalted", benefits:["Inspires the most complete awe and reverence in all worship.","Encourages calling on Allah with both deep reverence and bold hope.","Deepens greatly the quality and richness of every du'a made."], reflection:"Dhul-Jalal wal-Ikram combines awe and love perfectly. He is so great it overwhelms you — and so generous it draws you irresistibly back.", quran:[{ar:"تَبَارَكَ اسْمُ رَبِّكَ ذِي الْجَلَالِ وَالْإِكْرَامِ",tr:"Blessed is the name of your Lord, Owner of Majesty and Honour.",ref:"Surah Ar-Rahman 55:78"}], mcq:[{q:"Dhul-Jalal wal-Ikram means?",opts:["The Forgiving","Lord of Majesty and Bounty","The Provider","The Creator"],ans:1}], moods:["spiritual seeking","distracted","spiritually low"] },
+  { n:86, ar:"الْمُقْسِطُ", tr:"Al-Muqsit", en:"The Equitable — the One who acts with complete and perfect equity and fairness in absolutely all situations.", cat:"wisdom", benefits:["Builds deep trust in divine fairness that surpasses human justice.","Encourages being just and equitable in our own daily dealings.","Provides comfort and peace when human fairness completely fails."], reflection:"Al-Muqsit's fairness is not swayed by money, influence, or emotion. Every soul will receive exactly what it is perfectly due.", quran:[{ar:"وَنَضَعُ الْمَوَازِينَ الْقِسْطَ لِيَوْمِ الْقِيَامَةِ",tr:"And We place the scales of justice for the Day of Resurrection.",ref:"Surah Al-Anbiya 21:47"}], mcq:[{q:"Al-Muqsit means?",opts:["The Equitable","The Forgiving","The Creator","The Provider"],ans:0}], moods:["troubled","angry at injustice","confused about fate"] },
+  { n:87, ar:"الْجَامِعُ", tr:"Al-Jami", en:"The Gatherer — the One who gathers all of creation together for the Day of Judgement.", cat:"majesty", benefits:["Strengthens belief in the great gathering on Judgement Day.","Encourages serious preparation for that inevitable day.","Provides beautiful hope for reunion with righteous loved ones."], reflection:"Al-Jami will gather every soul that ever lived in one place. Every lost one, every forgotten one — none will be missing from His gathering.", quran:[{ar:"رَبَّنَا إِنَّكَ جَامِعُ النَّاسِ لِيَوْمٍ لَّا رَيْبَ فِيهِ",tr:"Our Lord, indeed You will gather the people for a Day about which there is no doubt.",ref:"Surah Aal-e-Imran 3:9"}], mcq:[{q:"Al-Jami means?",opts:["The Forgiver","The Gatherer","The Provider","The Wise"],ans:1}], moods:["grieving","hopeless","questioning","fearful of death"] },
+  { n:88, ar:"الْغَنِيُّ", tr:"Al-Ghani", en:"The Self-Sufficient — the One who is completely free of all need while all of creation depends entirely on Him.", cat:"exalted", benefits:["Removes the illusion that our worship somehow benefits Allah.","Encourages sincere worship rather than transactional or self-serving worship.","Builds deep gratitude for being permitted and invited to worship."], reflection:"Al-Ghani doesn't need your prayer — you need it. Your worship doesn't add to Him; it only adds to you.", quran:[{ar:"إِنَّ اللَّهَ لَغَنِيٌّ عَنِ الْعَالَمِينَ",tr:"Indeed, Allah is free of need from the worlds.",ref:"Surah Aal-e-Imran 3:97"}], mcq:[{q:"Al-Ghani means?",opts:["The Generous","The Self-Sufficient","The Patient","The Creator"],ans:1}], moods:["spiritually disconnected","distracted","questioning"] },
+  { n:89, ar:"الْمُغْنِي", tr:"Al-Mughni", en:"The Enricher — the One who enriches and provides abundantly for whomever He wills in all forms.", cat:"creator", benefits:["Encourages turning directly to Allah in times of financial hardship.","Reminds us that all true wealth and richness comes from Allah alone.","Removes complete despair about poverty in any of its forms."], reflection:"Al-Mughni enriches with far more than money — He enriches hearts, relationships, and souls. The richest person may have the least bank balance.", quran:[{ar:"وَأَنَّهُ هُوَ أَغْنَىٰ وَأَقْنَىٰ",tr:"And that it is He who enriches and suffices.",ref:"Surah An-Najm 53:48"}], mcq:[{q:"Al-Mughni means?",opts:["The Forgiver","The Enricher","The Judge","The Holy"],ans:1}], moods:["financial stress","hopeless","worried","anxious"] },
+  { n:90, ar:"الْمَانِعُ", tr:"Al-Mani", en:"The Withholder — the One who withholds things from creation when it is wisdom and mercy to do so.", cat:"wisdom", benefits:["Helps understand profoundly why some blessings are withheld.","Builds genuine patience with unanswered or delayed prayers.","Encourages complete trust that refusal from Allah is a form of mercy."], reflection:"Al-Mani withholds what would harm you. Every 'no' from Him is a protection you don't always understand at the time — but will.", quran:[{ar:"مَّا يَفْتَحِ اللَّهُ لِلنَّاسِ مِن رَّحْمَةٍ فَلَا مُمْسِكَ لَهَا وَمَا يُمْسِكْ فَلَا مُرْسِلَ لَهُ",tr:"Whatever Allah grants to people of mercy — none can withhold it. And whatever He withholds — none can release it.",ref:"Surah Fatir 35:2"}], mcq:[{q:"Al-Mani means?",opts:["The Provider","The Withholder","The Forgiving","The Exalted"],ans:1}], moods:["frustrated","confused about fate","impatient","questioning"] },
+  { n:91, ar:"الضَّارُّ", tr:"Ad-Darr", en:"The Creator of Harm — the One who creates difficulty and hardship when it is part of His wisdom and plan.", cat:"majesty", benefits:["Helps understand the true source and divine purpose of hardship.","Encourages seeking protection from harm through Allah alone.","Removes crippling fear of anything or anyone besides Allah."], reflection:"Hardship doesn't ultimately come from your enemy — it comes from Ad-Darr and is for your growth, purification, or spiritual awakening.", quran:[{ar:"وَإِن يَمْسَسْكَ اللَّهُ بِضُرٍّ فَلَا كَاشِفَ لَهُ إِلَّا هُوَ",tr:"And if Allah touches you with adversity, there is no remover of it except Him.",ref:"Surah Al-An'am 6:17"}], mcq:[{q:"Ad-Darr means?",opts:["The Provider","The Creator of Harm","The Forgiving","The Patient"],ans:1}], moods:["in difficulty","struggling","troubled","broken"] },
+  { n:92, ar:"النَّافِعُ", tr:"An-Nafi", en:"The Creator of Benefit — the One who creates all benefit and every form of good for whomever He wills.", cat:"kindness", benefits:["Encourages seeking all benefit exclusively from Allah.","Removes anxiety about others' ability to help or ultimately harm.","Builds trust in Allah as the one and only true source of all good."], reflection:"An-Nafi is the ultimate source of every good thing that has ever reached you. No human benefited you without His permission and will.", quran:[{ar:"قُل لَّا أَمْلِكُ لِنَفْسِي نَفْعًا وَلَا ضَرًّا إِلَّا مَا شَاءَ اللَّهُ",tr:"Say: I have no power to bring myself benefit or cause harm except as Allah wills.",ref:"Surah Al-A'raf 7:188"}], mcq:[{q:"An-Nafi means?",opts:["The Creator of Harm","The Creator of Benefit","The Forgiving","The Wise"],ans:1}], moods:["hopeful","grateful","seeking blessings"] },
+  { n:93, ar:"النُّورُ", tr:"An-Nur", en:"The Light — the One who is the light of the heavens and the earth and who illuminates all of creation.", cat:"exalted", benefits:["Provides spiritual guidance in all darkness and confusion.","Enriches and deepens the meditation on Ayat al-Nur.","Encourages seeking illumination of the heart through worship and remembrance."], reflection:"An-Nur illuminates the sky, the earth, the heart, and the soul. When you feel lost in darkness, you are never far from the ultimate Light.", quran:[{ar:"اللَّهُ نُورُ السَّمَاوَاتِ وَالْأَرْضِ",tr:"Allah is the light of the heavens and the earth.",ref:"Surah An-Nur 24:35"}], mcq:[{q:"An-Nur means?",opts:["The Provider","The Light","The Forgiving","The Creator"],ans:1}], moods:["lost","confused","spiritually disconnected","anxious"] },
+  { n:94, ar:"الْهَادِي", tr:"Al-Hadi", en:"The Guide — the One who guides all of creation to what is good and guides believers to the straight path.", cat:"wisdom", benefits:["Encourages constant and sincere seeking of guidance from Allah.","Provides genuine hope when feeling completely lost or directionless.","Reminds us that guidance is a precious gift, not an automatic right."], reflection:"Al-Hadi guides stars to their paths, birds to their migrations, and hearts to the truth — if only they would turn to Him and sincerely ask.", quran:[{ar:"وَكَفَىٰ بِرَبِّكَ هَادِيًا وَنَصِيرًا",tr:"And sufficient is your Lord as Guide and Helper.",ref:"Surah Al-Furqan 25:31"}], mcq:[{q:"Al-Hadi means?",opts:["The Creator","The Guide","The Forgiving","The Provider"],ans:1}], moods:["lost","confused","questioning","anxious"] },
+  { n:95, ar:"الْبَدِيعُ", tr:"Al-Badi", en:"The Incomparable Originator — the One who creates in utterly unique ways with no prior example or model.", cat:"creator", benefits:["Inspires creativity as a reflection of divine creativity within us.","Deepens wonder and awe at the stunning uniqueness of creation.","Encourages deep appreciation of beauty and originality in all forms."], reflection:"Al-Badi created every species, every soul, every snowflake without ever once repeating Himself. Creation is His infinite and inexhaustible art.", quran:[{ar:"بَدِيعُ السَّمَاوَاتِ وَالْأَرْضِ",tr:"Originator of the heavens and the earth.",ref:"Surah Al-Baqarah 2:117"}], mcq:[{q:"Al-Badi means?",opts:["The Forgiving","The Incomparable Originator","The Provider","The Patient"],ans:1}], moods:["curious","wondering","spiritually low","seeking inspiration"] },
+  { n:96, ar:"الْبَاقِي", tr:"Al-Baqi", en:"The Everlasting — the One who endures forever and whose existence absolutely has no end.", cat:"exalted", benefits:["Reduces attachment to temporary and passing worldly things.","Encourages investing fully in the eternal over the temporary.","Provides comfort that goodness done for Allah is never lost."], reflection:"Al-Baqi will outlast everything. Every person, every civilization, every galaxy — and He will still remain. Build only for what lasts.", quran:[{ar:"وَيَبْقَىٰ وَجْهُ رَبِّكَ ذُو الْجَلَالِ وَالْإِكْرَامِ",tr:"And there will remain the Face of your Lord, Owner of Majesty and Honour.",ref:"Surah Ar-Rahman 55:27"}], mcq:[{q:"Al-Baqi means?",opts:["The First","The Everlasting","The Provider","The Creator"],ans:1}], moods:["grieving","purposeless","fearful of death","detached"] },
+  { n:97, ar:"الْوَارِثُ", tr:"Al-Warith", en:"The Inheritor — the One who inherits all things when creation ceases and to whom everything ultimately returns.", cat:"exalted", benefits:["Reduces attachment to material possessions and worldly things.","Encourages giving freely for Allah's sake from what He lent you.","Reminds us our wealth is a temporary trust, never truly ours."], reflection:"Al-Warith will inherit your home, your wealth, your very body one day. Since He owns it all, give freely from what He merely lent you.", quran:[{ar:"وَإِنَّا لَنَحْنُ نُحْيِي وَنُمِيتُ وَنَحْنُ الْوَارِثُونَ",tr:"And indeed, it is We who give life and cause death, and We are the Inheritor.",ref:"Surah Al-Hijr 15:23"}], mcq:[{q:"Al-Warith means?",opts:["The Forgiving","The Inheritor","The Creator","The Provider"],ans:1}], moods:["attached to dunya","purposeless","questioning"] },
+  { n:98, ar:"الرَّشِيدُ", tr:"Ar-Rashid", en:"The Guide to the Right Path — the One who directs all affairs with perfect and right guidance toward their best outcome.", cat:"wisdom", benefits:["Encourages following divine guidance over personal desires.","Builds complete trust in Allah's direction even when it seems unclear.","Removes confusion in major life decisions by turning to Him."], reflection:"Ar-Rashid guides not just individuals but the unfolding of all history — every event, every turn, every outcome guided by perfect wisdom.", quran:[{ar:"وَمَن يُطِعِ اللَّهَ وَرَسُولَهُ فَقَدْ فَازَ فَوْزًا عَظِيمًا",tr:"Whoever obeys Allah and His messenger has certainly attained a great attainment.",ref:"Surah Al-Ahzab 33:71"}], mcq:[{q:"Ar-Rashid means?",opts:["The Forgiving","The Guide to the Right Path","The Creator","The Merciful"],ans:1}], moods:["confused","lost","questioning","seeking guidance"] },
+  { n:99, ar:"الصَّبُورُ", tr:"As-Sabur", en:"The Most Patient — the One who does not hasten to punish despite witnessing all wrongdoing with perfect awareness.", cat:"mercy", benefits:["Teaches the highest virtue of patience in all situations.","Brings deep awareness of how infinitely patient Allah is with us.","Helps in developing personal patience with people and situations."], reflection:"As-Sabur withholds punishment even as He sees every sin. His patience is our opportunity for repentance — use it before it closes.", quran:[{ar:"وَاصْبِرْ وَمَا صَبْرُكَ إِلَّا بِاللَّهِ",tr:"And be patient — your patience is only through Allah.",ref:"Surah An-Nahl 16:127"}], mcq:[{q:"As-Sabur refers to?",opts:["The Most Loving","The Judge","The Most Patient","The Creator"],ans:2}], moods:["impatient","angry","struggling","burdened"] },
+];
+
+// Fill categories
+NAMES.forEach(n => { if(CATEGORIES[n.cat]) CATEGORIES[n.cat].names.push(n.n); });
+
+// ------------------------------------------
+// STATE
+// ------------------------------------------
+let state = JSON.parse(localStorage.getItem('asma_state_v2') || '{}');
+state.learned   = state.learned   || {};
+state.revisits  = state.revisits  || {};
+state.streak    = state.streak    || 0;
+state.bestStreak= state.bestStreak|| 0;
+state.lastVisit = state.lastVisit || null;
+state.weekActivity = state.weekActivity || {};
+state.customPlaylist = state.customPlaylist || [];
+state.todayName = state.todayName || null;
+state.todayDate = state.todayDate || null;
+state.learnedDates = state.learnedDates || {};
+state.dailyLearned = state.dailyLearned || {};
+state.currentMode = state.currentMode || 'balanced';
+
+const TODAY = new Date().toISOString().slice(0,10);
+function save() { localStorage.setItem('asma_state_v2', JSON.stringify(state)); }
+
+function checkStreak() {
+  if (state.lastVisit === TODAY) return;
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+  const yStr = yesterday.toISOString().slice(0,10);
+  if (state.lastVisit === yStr) { state.streak++; }
+  else { state.streak = 1; }
+  if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+  state.lastVisit = TODAY;
+  state.weekActivity[TODAY] = true;
+  save();
+}
+
+function getNotd() {
+  if (state.todayDate === TODAY && state.todayName) {
+    const found = NAMES.find(n=>n.n===state.todayName);
+    if (found) return found;
+  }
+  const dayNum = Math.floor((new Date(TODAY) - new Date('2024-01-01')) / 86400000);
+  const sorted = [...NAMES].sort((a,b)=>a.n-b.n);
+  const pick = sorted[dayNum % sorted.length];
+  state.todayName = pick.n; state.todayDate = TODAY; save();
+  return pick;
+}
+
+function getStatus(n) {
+  if ((state.revisits[n]||0) >= 3) return 'mastered';
+  if (state.learned[n]) return 'learned';
+  return 'new';
+}
+
+function updateUI() {
+  const learned  = Object.keys(state.learned).length;
+  const mastered = Object.values(state.revisits).filter(v=>v>=3).length;
+  document.getElementById('learnedCount').textContent  = learned;
+  document.getElementById('masteredCount').textContent = mastered;
+  document.getElementById('remainCount').textContent   = 99 - learned;
+  document.getElementById('mainProgBar').style.width   = (learned/99*100)+'%';
+  document.getElementById('streakCount').textContent   = state.streak;
+  document.getElementById('bestStreak').textContent    = state.bestStreak;
+}
+
+// ------------------------------------------
+// PAGES
+// ------------------------------------------
+let currentPage = 'home', currentDetail = null, currentMood = null;
+
+function showPage(page) {
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  const nav = document.getElementById('nav-'+page);
+  if (nav) nav.classList.add('active');
+  const titles = {home:'Home',names:'All 99 Names',playlist:'Playlists',stats:'My Journey'};
+  document.getElementById('topbarTitle').textContent = titles[page] || page;
+  const content = document.getElementById('pageContent');
+  if (page==='home') renderHome(content);
+  else if (page==='names') renderNames(content);
+  else if (page==='playlist') renderPlaylist(content);
+  else if (page==='stats') renderStats(content);
+  closeSidebar();
+}
+
+function renderHome(el) {
+  const notd = getNotd();
+  const needsEncourage = state.streak === 0 || !state.weekActivity[TODAY];
+
+  let remind = '';
+  if (needsEncourage && state.streak > 0) {
+    remind = `<div class="reminder-banner">
+      <div class="reminder-icon-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--streak)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div class="reminder-text">
+        <div class="reminder-title">Your ${state.streak}-Day Streak is Active</div>
+        <div class="reminder-sub">Study at least one name today to keep it going.</div>
+      </div>
+      <button class="dismiss-btn" onclick="this.parentElement.remove()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>`;
+  } else if (state.streak === 0) {
+    remind = `<div class="reminder-banner">
+      <div class="reminder-icon-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--streak)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="reminder-text">
+        <div class="reminder-title">Begin Your Daily Practice</div>
+        <div class="reminder-sub">Return each day to build your streak and master the 99 Names.</div>
+      </div>
+      <button class="dismiss-btn" onclick="this.parentElement.remove()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>`;
+  }
+
+  let catHtml = '<div class="cat-grid">';
+  Object.entries(CATEGORIES).forEach(([key,cat]) => {
+    const learned = cat.names.filter(n=>state.learned[n]).length;
+    const pct = cat.names.length ? Math.round(learned/cat.names.length*100) : 0;
+    catHtml += `<div class="cat-card" onclick="filterByCategory('${key}')">
+      <div class="cat-card-icon" style="background:${cat.color}18;border:1px solid ${cat.color}30">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${cat.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+      </div>
+      <div class="cat-card-name">${cat.name}</div>
+      <div class="cat-card-count">${cat.names.length} names &middot; ${pct}%</div>
+      <div class="cat-card-prog"><div class="cat-card-fill" style="width:${pct}%;background:${cat.color}"></div></div>
+    </div>`;
+  });
+  catHtml += '</div>';
+
+  const sorted = [...NAMES].sort((a,b)=>a.n-b.n).slice(0,6);
+  let recentHtml = '<div class="names-grid">';
+  sorted.forEach(n => { recentHtml += nameCardHtml(n); });
+  recentHtml += '</div>';
+
+  // Get stats for insights
+  const learned = Object.keys(state.learned).length;
+  const mastered = Object.values(state.revisits).filter(v=>v>=3).length;
+  
+  let insightSection = '';
+  if (learned === 0) {
+    insightSection = `<div class="encouragement-box">
+      Begin your journey with the 99 Names. Start with today's featured name or explore by category. Each name studied brings deeper understanding of divine attributes.
+    </div>`;
+  } else if (mastered === 0) {
+    insightSection = `<div class="encouragement-box">
+      You have learned ${learned} name(s). Continue revisiting them to move toward mastery. Three revisits per name unlock profound understanding.
+    </div>`;
+  } else {
+    insightSection = `<div class="encouragement-box">
+      You have mastered ${mastered} name(s) and learned ${learned - mastered} more. Your consistency is building a foundation of spiritual knowledge. Keep exploring and deepening.
+    </div>`;
+  }
+
+  el.innerHTML = remind + `
+    <div class="notd">
+      <div class="notd-badge"><div class="notd-badge-line"></div>Name of the Day<div class="notd-badge-line"></div></div>
+      <div class="notd-arabic">${notd.ar}</div>
+      <div class="notd-transliteration">${notd.tr}</div>
+      <div class="notd-meaning">${notd.en.split('—')[0].trim()}</div>
+      <div class="notd-actions">
+        <button class="btn btn-gold" onclick="openDetail(${notd.n})">Study This Name</button>
+        <button class="btn btn-outline" onclick="markLearned(${notd.n})">Mark Learned</button>
+        <button class="btn btn-teal" onclick="addToPlaylist(${notd.n})">Add to Playlist</button>
+      </div>
+      <div class="notd-number">${notd.n}</div>
+    </div>
+
+    <div class="section-title">Your Progress</div>
+    ${insightSection}
+
+    <div class="section-title">Categories</div>
+    ${catHtml}
+
+    <div class="section-title">Start Exploring</div>
+    ${recentHtml}`;
+}
+
+function nameCardHtml(n) {
+  const status = getStatus(n.n);
+  const cat = CATEGORIES[n.cat];
+  const badgeHtml = status === 'mastered'
+    ? '<div class="badge badge-mastered">Mastered</div>'
+    : status === 'learned'
+    ? '<div class="badge badge-learned">Learned</div>'
+    : '<div class="badge badge-new">New</div>';
+  return `<div class="name-card" onclick="openDetail(${n.n})">
+    <div class="name-card-num">No. ${n.n}</div>
+    <div class="name-card-arabic">${n.ar}</div>
+    <div class="name-card-trans">${n.tr}</div>
+    <div class="name-card-meaning">${n.en.substring(0,78)}${n.en.length>78?'...':''}</div>
+    <div class="name-card-badges">
+      ${badgeHtml}
+      <div class="cat-tag" style="background:${cat.color}18;color:${cat.color};border:1px solid ${cat.color}30">${cat.name.split(' ')[0]}</div>
+    </div>
+  </div>`;
+}
+
+function renderNames(el, filter='', catFilter='') {
+  let names = [...NAMES].sort((a,b)=>a.n-b.n).filter(n => {
+    const q = filter.toLowerCase();
+    const matchSearch = !q || n.tr.toLowerCase().includes(q) || n.en.toLowerCase().includes(q) || n.ar.includes(q);
+    const matchCat = !catFilter || n.cat === catFilter;
+    return matchSearch && matchCat;
+  });
+
+  let html = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">`;
+  html += `<button class="mood-chip ${!catFilter?'active':''}" onclick="renderNames(document.getElementById('pageContent'),'','')">All</button>`;
+  Object.entries(CATEGORIES).forEach(([k,c]) => {
+    html += `<button class="mood-chip ${catFilter===k?'active':''}" onclick="renderNames(document.getElementById('pageContent'),'','${k}')">${c.name.split(' ')[0]}</button>`;
+  });
+  html += `</div>`;
+
+  if (!names.length) {
+    html += `<div class="empty">
+      <div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+      <div class="empty-text">No names match your search</div>
+    </div>`;
+  } else {
+    html += `<div style="font-size:11px;color:var(--text3);margin-bottom:14px;letter-spacing:1px;text-transform:uppercase">${names.length} Names</div>`;
+    html += '<div class="names-grid">';
+    names.forEach(n => { html += nameCardHtml(n); });
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+function filterByCategory(cat) {
+  showPage('names');
+  setTimeout(() => renderNames(document.getElementById('pageContent'),'',cat), 10);
+}
+
+function handleSearch(val) {
+  if (currentPage !== 'names') { showPage('names'); setTimeout(()=>renderNames(document.getElementById('pageContent'),val,''),10); return; }
+  renderNames(document.getElementById('pageContent'), val, '');
+}
+
+function renderPlaylist(el) {
+  const MOODS = [
+    {id:'anxious',label:'Anxious'}, {id:'sad',label:'Sad'}, {id:'grateful',label:'Grateful'},
+    {id:'seeking forgiveness',label:'Seeking Forgiveness'}, {id:'hopeless',label:'Hopeless'},
+    {id:'weak',label:'Weak'}, {id:'lonely',label:'Lonely'}, {id:'stressed',label:'Stressed'},
+    {id:'guilty',label:'Guilty'}, {id:'burdened',label:'Burdened'}, {id:'confused',label:'Confused'},
+    {id:'purposeless',label:'Purposeless'}, {id:'fearful',label:'Fearful'}, {id:'lost',label:'Lost'},
+  ];
+
+  let moodHtml = '<div class="mood-chips">';
+  MOODS.forEach(m => {
+    moodHtml += `<button class="mood-chip ${currentMood===m.id?'active':''}" onclick="selectMood('${m.id}')">${m.label}</button>`;
+  });
+  moodHtml += '</div>';
+
+  let listHtml = '';
+  if (currentMood) {
+    const matches = [...NAMES].sort((a,b)=>a.n-b.n).filter(n => n.moods && n.moods.includes(currentMood));
+    if (matches.length) {
+      listHtml = `<div style="font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">${matches.length} Names Curated</div>`;
+      listHtml += '<div class="playlist-items">';
+      matches.forEach((n,i) => {
+        const cat = CATEGORIES[n.cat];
+        listHtml += `<div class="pl-item" onclick="openDetail(${n.n})">
+          <div class="pl-num">${i+1}</div>
+          <div class="pl-arabic">${n.ar}</div>
+          <div class="pl-info">
+            <div class="pl-trans">${n.tr}</div>
+            <div class="pl-meaning">${n.en.substring(0,52)}&hellip;</div>
+          </div>
+          <div class="pl-cat">${cat.name.split(' ')[0]}</div>
+        </div>`;
+      });
+      listHtml += '</div>';
+    } else {
+      listHtml = `<div class="empty">
+        <div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></div>
+        <div class="empty-text">No names found for this state</div>
+      </div>`;
+    }
+  } else {
+    listHtml = `<div style="text-align:center;padding:40px 24px;color:var(--text3)">
+      <div style="margin-bottom:16px;opacity:0.4"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></div>
+      <div style="font-size:13px;letter-spacing:0.3px">Select your current state to receive a curated list of Names</div>
+    </div>`;
+  }
+
+  el.innerHTML = `
+    <div class="playlist-panel">
+      <div class="section-title">How are you feeling?</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:4px">Select a state of heart to curate the Names most suited to you.</div>
+      ${moodHtml}
+      ${listHtml}
+    </div>`;
+}
+
+function selectMood(m) {
+  currentMood = currentMood === m ? null : m;
+  renderPlaylist(document.getElementById('pageContent'));
+}
+
+function renderStats(el) {
+  const learned  = Object.keys(state.learned).length;
+  const mastered = Object.values(state.revisits).filter(v=>v>=3).length;
+  const totalDaysActive = Object.keys(state.weekActivity).length;
+
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let weekHtml = '<div class="week-grid">';
+  for (let i=6; i>=0; i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const ds = d.toISOString().slice(0,10);
+    const isToday = ds === TODAY, isDone = !!state.weekActivity[ds];
+    weekHtml += `<div class="day-dot ${isToday?'today':isDone?'done':''}">
+      <div class="day-name">${days[d.getDay()]}</div>
+      <div class="day-check">${isDone?'✓':isToday?'●':'–'}</div>
+    </div>`;
+  }
+  weekHtml += '</div>';
+
+  let catProgress = '';
+  Object.entries(CATEGORIES).forEach(([k,c]) => {
+    const total = c.names.length, done = c.names.filter(n=>state.learned[n]).length;
+    const pct = total ? Math.round(done/total*100) : 0;
+    catProgress += `<div class="cat-progress-row">
+      <div class="cat-progress-label">
+        <div class="cat-progress-name">
+          <div style="width:8px;height:8px;border-radius:50%;background:${c.color};flex-shrink:0"></div>
+          ${c.name}
+        </div>
+        <div class="cat-progress-frac">${done} / ${total}</div>
+      </div>
+      <div class="prog-bar-wrap" style="height:4px"><div class="prog-bar-fill" style="width:${pct}%;background:${c.color}"></div></div>
+    </div>`;
+  });
+
+  // Milestones
+  const milestones = getMilestones();
+  let milestonesHtml = '<div class="milestone-grid">';
+  milestones.forEach(m => {
+    milestonesHtml += `<div class="milestone ${m.unlocked?'unlocked':'locked'}">
+      <div class="milestone-icon">${m.unlocked ? '◆' : '◇'}</div>
+      <div class="milestone-text">${m.label}</div>
+    </div>`;
+  });
+  milestonesHtml += '</div>';
+
+  // Learning insights
+  const avgDailyLearned = totalDaysActive > 0 ? (learned / totalDaysActive).toFixed(1) : 0;
+  const timeToMastery = mastered > 0 ? (learned / mastered).toFixed(1) : 'N/A';
+
+  el.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon-wrap" style="background:var(--teal-dim);border:1px solid var(--teal-border)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="stat-num" style="color:var(--teal)">${learned}</div>
+        <div class="stat-lbl">Learned</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-wrap" style="background:var(--gold-dim);border:1px solid var(--gold-border)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <div class="stat-num" style="color:var(--gold)">${mastered}</div>
+        <div class="stat-lbl">Mastered</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-wrap" style="background:rgba(194,112,58,0.1);border:1px solid rgba(194,112,58,0.25)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--streak)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="stat-num" style="color:var(--streak)">${state.streak}</div>
+        <div class="stat-lbl">Day Streak</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-wrap" style="background:var(--gold-dim);border:1px solid var(--gold-border)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold2)" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>
+        </div>
+        <div class="stat-num" style="color:var(--gold2)">${state.bestStreak}</div>
+        <div class="stat-lbl">Best Streak</div>
+      </div>
+    </div>
+
+    <div class="insight-card">
+      <div class="insight-label">Learning Pace</div>
+      <div class="insight-value">${avgDailyLearned}</div>
+      <div class="insight-meta">Names learned per active day</div>
+    </div>
+
+    <div class="insight-card">
+      <div class="insight-label">Mastery Ratio</div>
+      <div class="insight-value">${timeToMastery}</div>
+      <div class="insight-meta">Names learned per mastered name</div>
+    </div>
+
+    <div class="section-title">Achievements Unlocked</div>
+    ${milestonesHtml}
+
+    <div class="section-title">This Week</div>
+    ${weekHtml}
+    <div class="section-title">Progress by Category</div>
+    ${catProgress}`;
+}
+
+// ------------------------------------------
+// DETAIL PANEL
+// ------------------------------------------
+function openDetail(num) {
+  const n = NAMES.find(x=>x.n===num);
+  if (!n) return;
+  currentDetail = n;
+
+  if (state.learned[num]) {
+    state.revisits[num] = (state.revisits[num]||0) + 1;
+    save();
+  }
+
+  const status = getStatus(num);
+  const cat = CATEGORIES[n.cat];
+
+  document.getElementById('dNum').textContent = `Name No. ${num}  ·  ${cat.name}`;
+  document.getElementById('dArabic').textContent = n.ar;
+  document.getElementById('dTrans').textContent = n.tr;
+  document.getElementById('dMeaning').textContent = n.en;
+
+  const badgeMap = {
+    mastered: '<div class="badge badge-mastered">Mastered</div>',
+    learned:  '<div class="badge badge-learned">Learned</div>',
+    new:      '<div class="badge badge-new">New</div>'
+  };
+  document.getElementById('dBadges').innerHTML = badgeMap[status];
+
+  let body = '';
+
+  // Benefits
+  body += `<div class="detail-section">
+    <div class="detail-section-title">Benefits of Learning</div>
+    ${n.benefits.map(b=>`<div class="benefit-item"><div class="benefit-bullet"></div><div class="benefit-text">${b}</div></div>`).join('')}
+  </div>`;
+
+  // Quran
+  body += `<div class="detail-section">
+    <div class="detail-section-title">Qur&#39;anic References</div>
+    ${n.quran.map(q=>`<div class="quran-ref">
+      ${q.ar ? `<div class="quran-arabic">${q.ar}</div>` : ''}
+      <div class="quran-trans">&ldquo;${q.tr}&rdquo;</div>
+      ${q.ref ? `<div class="quran-ref-tag">${q.ref}</div>` : ''}
+    </div>`).join('')}
+  </div>`;
+
+  // Reflection
+  body += `<div class="detail-section">
+    <div class="detail-section-title">Reflection</div>
+    <div class="reflection-box">${n.reflection}</div>
+  </div>`;
+
+  // Learning Insights
+  const revisits = state.revisits[num] || 0;
+  const daysSinceLearned = state.learnedDates[num] ? Math.floor((new Date(TODAY) - new Date(state.learnedDates[num])) / 86400000) : null;
+  let insightContent = '';
+  
+  if (state.learned[num]) {
+    if (revisits === 0) {
+      insightContent = 'Strong start on this name. Now it is time to deepen your understanding through reflection and repeated exposure.';
+    } else if (revisits === 1) {
+      insightContent = 'You have revisited this name once. Continue exploring its depth through the Quranic passages and its practical application in daily life.';
+    } else if (revisits === 2) {
+      insightContent = 'Two revisits completed. One more revisit will elevate this name to mastery. Focus on embodying its qualities.';
+    } else if (revisits >= 3) {
+      insightContent = 'This name has reached mastery status through consistent engagement. Consider how it now influences your perspective on life.';
+    }
+  } else {
+    insightContent = 'You have not yet marked this name as learned. Study it thoughtfully and reflect on how its meaning connects to your spiritual journey.';
+  }
+  
+  body += `<div class="detail-section">
+    <div class="detail-section-title">Learning Insight</div>
+    <div class="encouragement-box">${insightContent}</div>
+  </div>`;
+
+  // Spaced Repetition Guide
+  if (state.learned[num]) {
+    let repText = '';
+    if (revisits === 0) {
+      repText = 'Revisit within 3 days to reinforce learning.';
+    } else if (revisits === 1) {
+      repText = 'Revisit within 1 week to strengthen retention.';
+    } else if (revisits === 2) {
+      repText = 'Final revisit needed to achieve mastery.';
+    } else {
+      repText = 'Mastered. Review occasionally to maintain deep knowledge.';
+    }
+    body += `<div class="detail-section">
+      <div class="repet-box">
+        <div class="repet-label">Optimal Review Schedule</div>
+        ${repText}
+      </div>
+    </div>`;
+  }
+
+  // MCQ
+  body += `<div class="detail-section">
+    <div class="detail-section-title">Test Yourself</div>
+    ${renderMCQ(n)}
+  </div>`;
+
+  // Match
+  body += `<div class="detail-section">
+    <div class="detail-section-title">Match the Quality</div>
+    ${renderMatch(n)}
+  </div>`;
+
+  // Progress
+  body += `<div class="detail-section">
+    <div class="detail-section-title">Your Progress</div>
+    <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:16px;border:1px solid var(--border)">
+      <div class="learn-progress-grid">
+        <div class="learn-stage" style="${state.learned[num]?'border-color:var(--teal-border);background:var(--teal-dim)':''}">
+          <div style="color:${state.learned[num]?'var(--teal)':'var(--text3)'}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="learn-stage-title" style="color:${state.learned[num]?'var(--teal)':'var(--text2)'}">Learned</div>
+          <div class="learn-stage-desc">${state.learned[num]?'Status: Learned':'Not yet learned'}</div>
+          ${state.learned[num]?'<div style="font-size:11px;color:var(--teal);margin-top:6px;font-weight:700">Marked on: '+ state.learnedDates[num]+'</div>':''}
+        </div>
+        <div class="learn-stage" style="${revisits>=3?'border-color:var(--gold-border);background:var(--gold-dim)':''}">
+          <div style="color:${revisits>=3?'var(--gold)':'var(--text3)'}">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div class="learn-stage-title" style="color:${revisits>=3?'var(--gold)':'var(--text2)'}">Mastered</div>
+          <div class="learn-stage-desc" style="font-size:12px">Revisits: <span style="font-weight:800;color:${revisits>=3?'var(--gold)':'var(--text)'}">${revisits}</span> / 3</div>
+          ${revisits>0?'<div style="font-size:11px;color:var(--text2);margin-top:6px">'+(revisits===1?'1 revisit completed':''+revisits+' revisits completed')+'</div>':''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  body += '<div style="height:40px"></div>';
+  document.getElementById('detailBody').innerHTML = body;
+  document.getElementById('detailPanel').classList.add('open');
+  
+  // Show/hide learn and unlearn buttons
+  const learnBtn = document.getElementById('learnBtn');
+  const unlearnBtn = document.getElementById('unlearnBtn');
+  if (state.learned[num]) {
+    learnBtn.style.display = 'none';
+    unlearnBtn.style.display = 'inline-flex';
+  } else {
+    learnBtn.style.display = 'inline-flex';
+    unlearnBtn.style.display = 'none';
+  }
+}
+
+function renderMCQ(n) {
+  if (!n.mcq || !n.mcq.length) return '<div style="color:var(--text3);font-size:13px">No quiz available.</div>';
+  const q = n.mcq[0];
+  return `<div class="mcq-wrap" id="mcq-${n.n}">
+    <div class="mcq-q">${q.q}</div>
+    <div class="mcq-options">
+      ${q.opts.map((o,i)=>`<button class="mcq-opt" onclick="answerMCQ(${n.n},${i},${q.ans})">${o}</button>`).join('')}
+    </div>
+    <div class="mcq-feedback" id="mcqFb-${n.n}"></div>
+    <button class="btn btn-teal mcq-next" id="mcqNext-${n.n}" onclick="nextMCQ(${n.n})" style="display:none">Next Question</button>
+  </div>`;
+}
+
+function answerMCQ(num, chosen, correct) {
+  const wrap = document.getElementById('mcq-'+num);
+  if (!wrap || wrap.dataset.done) return;
+  wrap.dataset.done = '1';
+  wrap.querySelectorAll('.mcq-opt').forEach((o,i) => {
+    o.disabled = true;
+    if (i === correct) o.classList.add('correct');
+    else if (i === chosen && chosen !== correct) o.classList.add('wrong');
+  });
+  const fb = document.getElementById('mcqFb-'+num);
+  const isRight = chosen === correct;
+  const n = NAMES.find(x=>x.n===num);
+  fb.className = 'mcq-feedback show '+(isRight?'correct':'wrong');
+  fb.textContent = isRight ? 'Correct.' : `Incorrect. The answer is: "${n.mcq[0].opts[correct]}"`;
+  if (n.mcq.length > 1) document.getElementById('mcqNext-'+num).style.display = 'block';
+  if (isRight && !state.learned[num]) markLearned(num);
+}
+
+function nextMCQ(num) {
+  const n = NAMES.find(x=>x.n===num);
+  if (!n||!n.mcq||n.mcq.length<2) return;
+  const q = n.mcq[1];
+  const wrap = document.getElementById('mcq-'+num);
+  delete wrap.dataset.done;
+  wrap.innerHTML = `<div class="mcq-q">${q.q}</div>
+    <div class="mcq-options">
+      ${q.opts.map((o,i)=>`<button class="mcq-opt" onclick="answerMCQ2(${num},${i},${q.ans})">${o}</button>`).join('')}
+    </div>
+    <div class="mcq-feedback" id="mcqFb-${num}"></div>`;
+}
+
+function answerMCQ2(num, chosen, correct) {
+  const wrap = document.getElementById('mcq-'+num);
+  if (!wrap||wrap.dataset.done) return;
+  wrap.dataset.done = '1';
+  wrap.querySelectorAll('.mcq-opt').forEach((o,i)=>{
+    o.disabled=true;
+    if(i===correct) o.classList.add('correct');
+    else if(i===chosen&&chosen!==correct) o.classList.add('wrong');
+  });
+  const fb = document.getElementById('mcqFb-'+num);
+  const n = NAMES.find(x=>x.n===num);
+  const isRight = chosen===correct;
+  fb.className = 'mcq-feedback show '+(isRight?'correct':'wrong');
+  fb.textContent = isRight ? 'Correct.' : `Incorrect. The answer is: "${n.mcq[1].opts[correct]}"`;
+}
+
+function renderMatch(n) {
+  const matches = [
+    { left: "Divine Quality", right: "In Your Heart", leftText: n.tr, rightText: n.reflection.substring(0, 80) },
+    { left: "When to Call", right: "The Benefit", leftText: "Feeling " + (n.moods?n.moods[0]:"lost"), rightText: n.benefits[0]?.substring(0,70) || "Inner peace" }
+  ];
+  const shuffled = [...matches].map((m,i) => ({...m, origIdx: i})).sort(()=>Math.random()-0.5);
+  
+  return `<div class="match-guide" style="background:var(--teal-dim);border-left:3px solid var(--teal);padding:12px;border-radius:var(--radius-sm);margin-bottom:14px;font-size:12px">
+    <strong style="color:var(--teal)">⚡ Quick Match</strong><br>
+    Connect each quality on the <strong>left</strong> with how it applies on the <strong>right</strong>
+  </div>
+  <div class="match-grid">
+    <div class="match-column">
+      <div class="match-column-title" style="color:var(--gold);font-weight:800">This Name</div>
+      ${matches.map((m,i)=>`<div class="match-item" id="mw-${n.n}-${i}" onclick="selectMatch('word',${n.n},${i})" style="border:2px solid var(--gold-border);background:var(--gold-dim)">${m.leftText}</div>`).join('')}
+    </div>
+    <div class="match-column">
+      <div class="match-column-title" style="color:var(--teal);font-weight:800">Means This For You</div>
+      ${shuffled.map((m,i)=>`<div class="match-item" id="md-${n.n}-${i}" onclick="selectMatch('def',${n.n},${i},${m.origIdx})">${m.rightText}${m.rightText.length>70?'...':''}</div>`).join('')}
+    </div>
+  </div>
+  <div id="matchFb-${n.n}" style="margin-top:12px;font-size:13px;font-weight:700;letter-spacing:0.5px;text-align:center;color:var(--teal)"></div>`;
+}
+
+let matchSel = {};
+function selectMatch(type, num, idx, origIdx) {
+  if (type==='word') {
+    if (matchSel.wordEl) { const el=document.getElementById(matchSel.wordEl); if(el) el.classList.remove('selected'); }
+    matchSel.word = idx; matchSel.wordEl = `mw-${num}-${idx}`;
+    document.getElementById(`mw-${num}-${idx}`).classList.add('selected');
+  } else {
+    if (matchSel.word !== undefined && matchSel.word === origIdx) {
+      // Correct match
+      document.getElementById(`mw-${num}-${matchSel.word}`).classList.remove('selected');
+      document.getElementById(`mw-${num}-${matchSel.word}`).classList.add('matched');
+      document.getElementById(`md-${num}-${idx}`).classList.add('matched');
+      document.getElementById(`matchFb-${num}`).innerHTML = '✓ Perfect match!';
+      document.getElementById(`matchFb-${num}`).style.color = 'var(--green)';
+      matchSel = {};
+      // Auto-reset after showing success
+      setTimeout(() => {
+        const fb = document.getElementById(`matchFb-${num}`);
+        if(fb) fb.innerHTML = '';
+      }, 1200);
+    } else {
+      // Wrong match
+      const el = document.getElementById(`md-${num}-${idx}`);
+      el.classList.add('wrong-flash');
+      setTimeout(()=>el.classList.remove('wrong-flash'),400);
+    }
+  }
+}
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('open');
+  updateUI();
+  if(currentPage==='home') renderHome(document.getElementById('pageContent'));
+  else if(currentPage==='names') renderNames(document.getElementById('pageContent'));
+}
+
+function markCurrentLearned() { if(currentDetail) markLearned(currentDetail.n); }
+
+function unlearnCurrent() { if(currentDetail) showUnlearnConfirm(currentDetail.n, currentDetail.tr); }
+
+function showUnlearnConfirm(num, name) {
+  const html = `<div style="position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)" onclick="if(event.target===this)document.getElementById('unlearnModal').remove()">
+    <div style="background:var(--surface);border:2px solid var(--gold-border);border-radius:var(--radius);padding:28px;max-width:380px;box-shadow:var(--shadow)" id="unlearnModal">
+      <div style="font-size:16px;font-weight:800;color:var(--gold);margin-bottom:6px">⚠️ Reset This Name?</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.6">
+        You are about to <strong>reset ${name}</strong>.<br><br>
+        ✓ Learned status removed<br>
+        ✓ Revisit counter reset to 0<br>
+        ✓ You can learn it again
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" onclick="document.getElementById('unlearnModal').remove()" style="flex:1">Cancel</button>
+        <button class="btn btn-unlearn" onclick="unlearn(${num});document.getElementById('unlearnModal').remove()" style="flex:1;background:#c0392b;color:white;border:none">Unlearn</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function markLearned(num) {
+  if (!state.learned[num]) {
+    state.learned[num] = TODAY;
+    state.learnedDates[num] = TODAY;
+    state.weekActivity[TODAY] = true;
+    state.dailyLearned[TODAY] = (state.dailyLearned[TODAY] || 0) + 1;
+    save(); showToast('Learned', 'teal'); updateUI();
+  } else {
+    showToast('Already learned — revisit to master', 'gold');
+  }
+}
+
+function unlearn(num) {
+  if (state.learned[num]) {
+    delete state.learned[num];
+    state.revisits[num] = 0;
+    state.dailyLearned[TODAY] = Math.max(0, (state.dailyLearned[TODAY] || 0) - 1);
+    save(); showToast('✓ Reset — Ready to start fresh', 'gold'); updateUI();
+    if (currentDetail && currentDetail.n === num) {
+      openDetail(num);
+    }
+  }
+}
+
+function showNotification(title, msg, nameNum) {
+  const html = `<div style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--surface2),var(--surface3));border:2px solid var(--teal-border);border-radius:var(--radius);padding:20px;max-width:340px;z-index:500;box-shadow:var(--shadow);cursor:pointer;transition:all 0.3s" onclick="openDetail(${nameNum});this.remove()">
+    <div style="font-size:12px;color:var(--teal);font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">${title}</div>
+    <div style="font-size:13px;color:var(--text);line-height:1.5;margin-bottom:8px">${msg}</div>
+    <div style="font-size:11px;color:var(--text3)">👆 Tap to open</div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  setTimeout(() => {
+    const el = document.querySelector('[onclick="openDetail('+nameNum+')"]');
+    if(el) el.remove();
+  }, 8000);
+}
+
+function getMilestones() {
+  const learned = Object.keys(state.learned).length;
+  const mastered = Object.values(state.revisits).filter(v=>v>=3).length;
+  const totalDays = Object.keys(state.learnedDates).length;
+  
+  return [
+    { id: 'first', label: 'First Step', threshold: 1, current: learned, unlocked: learned >= 1 },
+    { id: 'five', label: 'Steadfast', threshold: 5, current: learned, unlocked: learned >= 5 },
+    { id: 'ten', label: 'Devoted', threshold: 10, current: learned, unlocked: learned >= 10 },
+    { id: 'master', label: 'Master One', threshold: 1, current: mastered, unlocked: mastered >= 1 },
+    { id: 'streaker', label: 'Seven Day Streak', threshold: 7, current: state.streak, unlocked: state.streak >= 7 },
+    { id: 'thirtynames', label: 'Thirty Names', threshold: 30, current: learned, unlocked: learned >= 30 },
+    { id: 'allmaster', label: 'Perfect Understanding', threshold: 33, current: mastered, unlocked: mastered >= 33 }
+  ];
+}
+
+function getNextToReview() {
+  const learned = Object.keys(state.learned).filter(n => state.learnedDates[n]);
+  if (learned.length === 0) return [];
+  
+  const today = new Date(TODAY);
+  const dueSoon = learned
+    .map(numStr => {
+      const num = parseInt(numStr);
+      const learnedDate = new Date(state.learnedDates[num]);
+      const revisits = state.revisits[num] || 0;
+      let daysUntilDue;
+      
+      if (revisits === 0) daysUntilDue = 3 - Math.floor((today - learnedDate) / 86400000);
+      else if (revisits === 1) daysUntilDue = 7 - Math.floor((today - learnedDate) / 86400000);
+      else if (revisits === 2) daysUntilDue = 14 - Math.floor((today - learnedDate) / 86400000);
+      else daysUntilDue = 30 - Math.floor((today - learnedDate) / 86400000);
+      
+      return { num, daysUntilDue, revisits };
+    })
+    .filter(item => item.daysUntilDue <= 3 && item.daysUntilDue > -30)
+    .sort((a, b) => a.daysUntilDue - b.daysUntilDue)
+    .slice(0, 5)
+    .map(item => item.num);
+  
+  return dueSoon;
+}
+
+function addToPlaylist(num) {
+  if (!state.customPlaylist.includes(num)) {
+    state.customPlaylist.push(num); save(); showToast('Added to playlist', 'teal');
+  }
+}
+
+function addToPlaylistFromDetail() { if(currentDetail) addToPlaylist(currentDetail.n); }
+
+// ------------------------------------------
+// SIDEBAR
+// ------------------------------------------
+function buildSidebarCats() {
+  const el = document.getElementById('sidebarCats');
+  let html = '';
+  Object.entries(CATEGORIES).forEach(([k,c]) => {
+    const done = c.names.filter(n=>state.learned[n]).length;
+    html += `<div class="cat-chip" onclick="filterByCategory('${k}')">
+      <div class="cat-dot" style="background:${c.color}"></div>
+      <span>${c.name.split(' ')[0]}</span>
+      <div class="cat-count">${done}/${c.names.length}</div>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+// ------------------------------------------
+// UTILS
+// ------------------------------------------
+function showToast(msg, type='gold') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+function toggleTheme() {
+  document.documentElement.classList.toggle('light');
+  document.body.classList.toggle('light');
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ------------------------------------------
+// INIT
+// ------------------------------------------
+checkStreak();
+buildSidebarCats();
+updateUI();
+showPage('home');
+
+// Show notifications
+if (state.streak > 1 && !state.weekActivity[TODAY]) {
+  setTimeout(()=>showToast(`${state.streak}-day streak — keep it going`, 'streak'), 1200);
+}
+if (Object.keys(state.learned).length === 0) {
+  setTimeout(()=>showToast("Begin with today's name", 'gold'), 1800);
+}
+
+// Periodic mood-based notifications every 20 minutes
+setInterval(() => {
+  const moods = ['anxious','sad','weak','lonely','stressed','guilty','hopeless'];
+  const randomMood = moods[Math.floor(Math.random() * moods.length)];
+  const matches = NAMES.filter(n => n.moods && n.moods.includes(randomMood));
+  if (matches.length > 0) {
+    const pick = matches[Math.floor(Math.random() * matches.length)];
+    showNotification(`Feeling ${randomMood}?`, `Try reading <strong>${pick.tr}</strong> now`, pick.n);
+  }
+}, 1200000);
+</script>
+</body>
+</html>
