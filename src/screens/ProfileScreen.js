@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useNames } from '../context/NamesContext';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS } from '../theme';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const ProfileScreen = () => {
   const { user, updateProfile, logout } = useAuth();
@@ -23,6 +23,7 @@ const ProfileScreen = () => {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
   const [saving, setSaving] = useState(false);
+  const [showSignOut, setShowSignOut] = useState(false);
 
   // Build initials avatar from user name
   const initials = (user?.name || 'U')
@@ -44,21 +45,12 @@ const ProfileScreen = () => {
     }
   };
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign Out', style: 'destructive', onPress: logout },
-      ]
-    );
-  };
+  const handleLogout = () => setShowSignOut(true);
 
   const stats = [
-    { label: 'LEARNED',   value: learnedIds.length,  color: '#2d9c96', icon: 'book-outline' },
-    { label: 'MASTERED',  value: masteredIds.length,  color: '#c9a84c', icon: 'trophy-outline' },
-    { label: 'DAY STREAK', value: streak,              color: '#f59e0b', icon: 'flame-outline' },
+    { label: 'LEARNED', value: learnedIds.length, color: '#2d9c96', icon: 'book-outline' },
+    { label: 'MASTERED', value: masteredIds.length, color: '#c9a84c', icon: 'trophy-outline' },
+    { label: 'DAY STREAK', value: streak, color: '#f59e0b', icon: 'flame-outline' },
   ];
 
   const progress = Math.round((learnedIds.length / 99) * 100);
@@ -72,9 +64,6 @@ const ProfileScreen = () => {
         {/* ── Header ── */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profile</Text>
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-            <Ionicons name="log-out-outline" size={20} color="#ff4444" />
-          </TouchableOpacity>
         </View>
 
         {/* ── Avatar + Name ── */}
@@ -205,20 +194,40 @@ const ProfileScreen = () => {
               label="About Wahid"
               note="v1.0.0"
             />
-            <View style={styles.divider} />
-            <TouchableOpacity style={styles.settingRow} onPress={handleLogout}>
-              <View style={styles.settingLeft}>
-                <View style={[styles.settingIconWrap, { backgroundColor: 'rgba(255,68,68,0.08)' }]}>
-                  <Ionicons name="log-out-outline" size={16} color="#ff4444" />
-                </View>
-                <Text style={[styles.settingLabel, { color: '#ff4444' }]}>Sign Out</Text>
-              </View>
-            </TouchableOpacity>
           </View>
         </View>
 
+        {/* ── Sign Out Card ── */}
+        <TouchableOpacity
+          style={styles.signOutCard}
+          onPress={handleLogout}
+          activeOpacity={0.75}
+        >
+          <View style={styles.signOutInner}>
+            <View style={styles.signOutIconWrap}>
+              <Ionicons name="log-out-outline" size={18} color="#ff6b6b" />
+            </View>
+            <Text style={styles.signOutLabel}>Sign Out</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color="rgba(255,107,107,0.4)" />
+        </TouchableOpacity>
+
         <View style={{ height: 100 }} />
       </ScrollView>
+
+      {/* ── Sign Out Confirmation ── */}
+      <ConfirmDialog
+        visible={showSignOut}
+        title="Sign Out"
+        message="Are you sure you want to sign out of your account?"
+        icon="log-out-outline"
+        iconColor="#ff6b6b"
+        confirmLabel="Sign Out"
+        cancelLabel="Cancel"
+        confirmColor="#ff6b6b"
+        onConfirm={() => { setShowSignOut(false); logout(); }}
+        onCancel={() => setShowSignOut(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -263,10 +272,10 @@ const styles = StyleSheet.create({
   },
   logoutBtn: {
     padding: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,68,68,0.06)',
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: 1,
-    borderColor: 'rgba(255,68,68,0.15)',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
 
   // ── Avatar ──
@@ -291,20 +300,24 @@ const styles = StyleSheet.create({
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    marginBottom: 2,
   },
   userName: {
     color: COLORS.white,
     fontFamily: FONTS.bold,
     fontSize: SIZES.lg,
+    lineHeight: 24,
   },
   editIcon: {
     padding: 4,
+    marginLeft: 4,
+    marginTop: 2, // Slight push down to visually align with text baseline
   },
   userEmail: {
     color: COLORS.muted,
     fontSize: SIZES.sm,
-    marginTop: 4,
+    marginTop: 2,
   },
   editRow: {
     flexDirection: 'row',
@@ -464,6 +477,41 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: 'rgba(255,255,255,0.05)',
     marginHorizontal: SPACE.md,
+  },
+
+  // ── Sign Out ──
+  signOutCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(255, 80, 80, 0.06)',
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 107, 0.15)',
+    paddingVertical: SPACE.md,
+    paddingHorizontal: SPACE.md,
+    marginBottom: SPACE.xl,
+  },
+  signOutInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  signOutIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 107, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  signOutLabel: {
+    color: '#ff6b6b',
+    fontFamily: FONTS.bold,
+    fontSize: SIZES.base,
+    letterSpacing: 0.3,
   },
 });
 
