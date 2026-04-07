@@ -20,24 +20,25 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS, SHADOW } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
+import { Image } from 'react-native';
 
 Dimensions.get('window');
 
 const LoginScreen = ({ navigation }) => {
-  const [email, setEmail]             = useState('');
-  const [password, setPassword]       = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading]         = useState(false);
-  const [focusedField, setFocused]    = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [focusedField, setFocused] = useState(null);
   const { login } = useAuth();
   const { colors, isDark } = useAppTheme();
 
-  const emailInput    = useRef(null);
+  const emailInput = useRef(null);
   const passwordInput = useRef(null);
-  const buttonScale   = useRef(new Animated.Value(1)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
 
-  const pressIn  = () => Animated.spring(buttonScale, { toValue: 0.98, useNativeDriver: true }).start();
-  const pressOut = () => Animated.spring(buttonScale, { toValue: 1,    useNativeDriver: true }).start();
+  const pressIn = () => Animated.spring(buttonScale, { toValue: 0.98, useNativeDriver: true }).start();
+  const pressOut = () => Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true }).start();
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -57,7 +58,7 @@ const LoginScreen = ({ navigation }) => {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
-      
+
       <LinearGradient
         colors={isDark ? ['rgba(20, 22, 33, 1)', 'rgba(0, 0, 0, 1)'] : [colors.surface, colors.background]}
         style={StyleSheet.absoluteFill}
@@ -78,10 +79,23 @@ const LoginScreen = ({ navigation }) => {
           {/* Header */}
           <View style={styles.header}>
             <View style={[styles.logoWrap, { backgroundColor: isDark ? 'rgba(201, 168, 76, 0.1)' : 'rgba(184, 150, 61, 0.15)', borderColor: isDark ? 'rgba(201, 168, 76, 0.2)' : 'rgba(184, 150, 61, 0.3)' }]}>
-              <Ionicons name="sparkles" size={32} color={colors.primary} />
+              <Image
+                source={
+                  isDark
+                    ? require('../../assets/logoWhite.png')
+                    : require('../../assets/logoColor.png')
+                }
+                style={styles.logo}
+              />
             </View>
-            <Text style={[styles.brandName, { color: colors.text }]}>WAHID</Text>
+            {/* <Text style={[styles.brandName, { color: colors.text }]}>WAHID</Text> */}
             <Text style={[styles.arabicHeader, { color: colors.primary, opacity: isDark ? 0.8 : 1.0 }]}>بِسْمِ ٱللَّهِ</Text>
+            <View style={[styles.dividerWrap, { opacity: isDark ? 0.6 : 1.0 }]}>
+              <View style={[styles.line, { backgroundColor: colors.primary }]} />
+              <Ionicons name="moon" size={14} color={colors.primary} />
+              <View style={[styles.line, { backgroundColor: colors.primary }]} />
+            </View>
+            <Text style={[styles.headerSub, { color: colors.textMuted }]}>START THE JOURNEY</Text>
           </View>
 
           {/* Login Card (Glassmorphic) */}
@@ -90,15 +104,15 @@ const LoginScreen = ({ navigation }) => {
             <Text style={[styles.cardSub, { color: colors.textMuted }]}>Sign in to continue your spiritual journey</Text>
 
             {/* Email Field */}
-            <Pressable 
+            <Pressable
               onPress={() => emailInput.current?.focus()}
               style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'email' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
             >
               <View style={styles.inputHeader}>
-                <Ionicons 
-                  name="mail-outline" 
-                  size={14} 
-                  color={focusedField === 'email' ? colors.primary : colors.textMuted} 
+                <Ionicons
+                  name="mail-outline"
+                  size={14}
+                  color={focusedField === 'email' ? colors.primary : colors.textMuted}
                 />
                 <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'email' && { color: colors.primary }]}>
                   EMAIL ADDRESS
@@ -121,15 +135,15 @@ const LoginScreen = ({ navigation }) => {
             </Pressable>
 
             {/* Password Field */}
-            <Pressable 
+            <Pressable
               onPress={() => passwordInput.current?.focus()}
               style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'password' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
             >
               <View style={styles.inputHeader}>
-                <Ionicons 
-                  name="lock-closed-outline" 
-                  size={14} 
-                  color={focusedField === 'password' ? colors.primary : colors.textMuted} 
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={14}
+                  color={focusedField === 'password' ? colors.primary : colors.textMuted}
                 />
                 <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'password' && { color: colors.primary }]}>
                   PASSWORD
@@ -151,7 +165,7 @@ const LoginScreen = ({ navigation }) => {
                 />
                 <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn}>
                   <Ionicons
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
                     size={18}
                     color={colors.textMuted}
                   />
@@ -228,6 +242,10 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: SPACE.xxl,
+  }, logo: {
+    width: 32,
+    height: 32,
+    resizeMode: 'contain',
   },
   logoWrap: {
     width: 64,
@@ -251,7 +269,26 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.arabicBold,
     fontSize: SIZES.arabic.sm,
     marginTop: SPACE.xs,
+    marginBottom: SPACE.xs,
     opacity: 0.8,
+  },
+  dividerWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: SPACE.sm,
+    opacity: 0.6,
+  },
+  line: {
+    width: 32,
+    height: 1,
+    backgroundColor: '#c9a84c',
+  },
+  headerSub: {
+    fontFamily: FONTS.bold,
+    fontSize: 10,
+    color: COLORS.muted,
+    letterSpacing: 2.5,
   },
 
   // Card

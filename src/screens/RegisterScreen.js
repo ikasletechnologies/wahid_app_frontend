@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS, SHADOW } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
+import { Image } from 'react-native';
 
 const RegisterScreen = ({ navigation }) => {
   const [name, setName] = useState('');
@@ -30,10 +31,10 @@ const RegisterScreen = ({ navigation }) => {
   const { register } = useAuth();
   const { colors, isDark } = useAppTheme();
 
-  const nameInput     = useRef(null);
-  const emailInput    = useRef(null);
+  const nameInput = useRef(null);
+  const emailInput = useRef(null);
   const passwordInput = useRef(null);
-  const buttonScale   = useRef(new Animated.Value(1)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
 
   const pressIn = () => Animated.spring(buttonScale, { toValue: 0.98, useNativeDriver: true }).start();
   const pressOut = () => Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true }).start();
@@ -60,7 +61,7 @@ const RegisterScreen = ({ navigation }) => {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
-      
+
       <LinearGradient
         colors={isDark ? ['rgba(20, 22, 33, 1)', 'rgba(0, 0, 0, 1)'] : [colors.surface, colors.background]}
         style={StyleSheet.absoluteFill}
@@ -77,6 +78,16 @@ const RegisterScreen = ({ navigation }) => {
         >
           {/* Header */}
           <View style={styles.header}>
+            <View style={[styles.logoWrap, { backgroundColor: isDark ? 'rgba(201, 168, 76, 0.1)' : 'rgba(184, 150, 61, 0.15)', borderColor: isDark ? 'rgba(201, 168, 76, 0.2)' : 'rgba(184, 150, 61, 0.3)' }]}>
+              <Image
+                source={
+                  isDark
+                    ? require('../../assets/logoWhite.png')
+                    : require('../../assets/logoColor.png')
+                }
+                style={styles.logo}
+              />
+            </View>
             <Text style={[styles.arabicHeader, { color: colors.primary, opacity: isDark ? 0.9 : 1.0 }]}>بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</Text>
             <View style={[styles.dividerWrap, { opacity: isDark ? 0.6 : 1.0 }]}>
               <View style={[styles.line, { backgroundColor: colors.primary }]} />
@@ -92,15 +103,15 @@ const RegisterScreen = ({ navigation }) => {
             <Text style={[styles.cardSub, { color: colors.textMuted }]}>Start your exploration of the 99 Divine Names</Text>
 
             {/* Name Input */}
-            <Pressable 
+            <Pressable
               onPress={() => nameInput.current?.focus()}
               style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'name' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
             >
               <View style={styles.inputHeader}>
-                <Ionicons 
-                  name="person-outline" 
-                  size={14} 
-                  color={focusedField === 'name' ? colors.primary : colors.textMuted} 
+                <Ionicons
+                  name="person-outline"
+                  size={14}
+                  color={focusedField === 'name' ? colors.primary : colors.textMuted}
                 />
                 <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'name' && { color: colors.primary }]}>
                   FULL NAME
@@ -122,15 +133,15 @@ const RegisterScreen = ({ navigation }) => {
             </Pressable>
 
             {/* Email Input */}
-            <Pressable 
+            <Pressable
               onPress={() => emailInput.current?.focus()}
               style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'email' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
             >
               <View style={styles.inputHeader}>
-                <Ionicons 
-                  name="mail-outline" 
-                  size={14} 
-                  color={focusedField === 'email' ? colors.primary : colors.textMuted} 
+                <Ionicons
+                  name="mail-outline"
+                  size={14}
+                  color={focusedField === 'email' ? colors.primary : colors.textMuted}
                 />
                 <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'email' && { color: colors.primary }]}>
                   EMAIL ADDRESS
@@ -153,15 +164,15 @@ const RegisterScreen = ({ navigation }) => {
             </Pressable>
 
             {/* Password Input */}
-            <Pressable 
+            <Pressable
               onPress={() => passwordInput.current?.focus()}
               style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'password' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
             >
               <View style={styles.inputHeader}>
-                <Ionicons 
-                  name="lock-closed-outline" 
-                  size={14} 
-                  color={focusedField === 'password' ? colors.primary : colors.textMuted} 
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={14}
+                  color={focusedField === 'password' ? colors.primary : colors.textMuted}
                 />
                 <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'password' && { color: colors.primary }]}>
                   SECURE PASSWORD
@@ -243,6 +254,21 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: SPACE.xxl,
+  }, logo: {
+    width: 32,
+    height: 32,
+    resizeMode: 'contain',
+  },
+  logoWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(201, 168, 76, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACE.md,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 168, 76, 0.2)',
   },
   arabicHeader: {
     fontFamily: FONTS.arabicBold,
