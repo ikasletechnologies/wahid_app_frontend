@@ -13,17 +13,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../context/ThemeContext';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS } from '../theme';
 
+
 const { width, height } = Dimensions.get('window');
 
 const SplashScreen = () => {
   const { colors, isDark } = useAppTheme();
   const animation = useRef(null);
-  const fadeAnim  = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim,  { toValue: 1, duration: 1200, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
       Animated.spring(scaleAnim, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true }),
     ]).start();
   }, []);
@@ -31,7 +32,7 @@ const SplashScreen = () => {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
-      
+
       <LinearGradient
         colors={isDark ? ['rgba(20, 22, 33, 1)', 'rgba(0, 0, 0, 1)'] : [colors.surface, colors.background]}
         style={StyleSheet.absoluteFill}
@@ -46,17 +47,15 @@ const SplashScreen = () => {
         <View style={styles.lottieWrap}>
           <LottieView
             ref={animation}
-            source={require('../../assets/animation/Bismillah (In the name of Allah).json')}
+            source={
+              isDark
+                ? require('../../assets/animation/bismillah-dark.json')
+                : require('../../assets/animation/bismillah-light.json')
+            }
             autoPlay
             loop
             style={styles.lottie}
             resizeMode="contain"
-            colorFilters={[
-              {
-                keypath: '**', // Apply to all paths
-                color: COLORS.primary,
-              },
-            ]}
           />
         </View>
 
