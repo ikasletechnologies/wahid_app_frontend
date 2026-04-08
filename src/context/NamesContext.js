@@ -228,6 +228,15 @@ export const NamesProvider = ({ children }) => {
     }
   };
 
+  const unmarkAsLearned = async (nameNumber) => {
+    try {
+      setLearnedIds(prev => prev.filter(id => id !== nameNumber));
+      setMasteredIds(prev => prev.filter(id => id !== nameNumber));
+    } catch (error) {
+      console.error('[NamesContext] Unmark Learned Error:', error.message);
+    }
+  };
+
   const getMoodPlaylist = useCallback((mood) => {
     if (!mood || names.length === 0) return [];
     const lowerMood = mood.toLowerCase().trim();
@@ -269,6 +278,7 @@ export const NamesProvider = ({ children }) => {
       syncWithBackend,
       refresh,
       markAsLearned,
+      unmarkAsLearned,
       getMoodPlaylist,
       getNameOfDay,
       categories: CATEGORIES,

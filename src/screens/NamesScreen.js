@@ -208,12 +208,46 @@ const NamesScreen = ({ navigation, route }) => {
   const { colors, isDark } = useAppTheme();
   const [searchQuery, setSearchQuery]       = useState('');
   const [selectedCategory, setSelectedCategory] = useState(route.params?.filter || null);
+  const [statusFilter, setStatusFilter] = useState(route.params?.statusFilter || null);
+
+  const scrollViewRef = useRef(null);
+  const categoryLayouts = useRef({});
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      if (scrollViewRef.current && categoryLayouts.current) {
+        const xPos = selectedCategory 
+          ? categoryLayouts.current[selectedCategory] 
+          : categoryLayouts.current['all'];
+
+        if (xPos !== undefined) {
+          // Center the chip horizontally taking device width into account
+          scrollViewRef.current.scrollTo({ x: Math.max(0, xPos - width / 2 + 60), animated: true });
+        }
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    let shouldClear = false;
+    let clearedParams = {};
+
     if (route.params?.filter !== undefined) {
       setSelectedCategory(route.params.filter);
+      shouldClear = true;
+      clearedParams.filter = undefined;
     }
-  }, [route.params?.filter]);
+    if (route.params?.statusFilter !== undefined) {
+      setStatusFilter(route.params.statusFilter);
+      shouldClear = true;
+      clearedParams.statusFilter = undefined;
+    }
+
+    if (shouldClear) {
+      navigation.setParams(clearedParams);
+    }
+  }, [route.params?.filter, route.params?.statusFilter, navigation]);
 
   const filteredNames = useMemo(() => {
     return names.filter((name) => {
@@ -224,9 +258,14 @@ const NamesScreen = ({ navigation, route }) => {
 
       const matchesCategory = selectedCategory ? (name.category === selectedCategory) : true;
 
-      return matchesSearch && matchesCategory;
+      let matchesStatus = true;
+      if (statusFilter === 'learned') matchesStatus = learnedIds.includes(name.number);
+      else if (statusFilter === 'mastered') matchesStatus = masteredIds.includes(name.number);
+      else if (statusFilter === 'remaining') matchesStatus = !learnedIds.includes(name.number);
+
+      return matchesSearch && matchesCategory && matchesStatus;
     });
-  }, [names, searchQuery, selectedCategory]);
+  }, [names, searchQuery, selectedCategory, statusFilter, learnedIds, masteredIds]);
 
   const handleCardPress = useCallback((item) => {
     navigation.navigate('NameDetail', { name: item });
@@ -266,38 +305,71 @@ const NamesScreen = ({ navigation, route }) => {
         </View>
 
         {/* Category Filters */}
-        <View style={styles.filterContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterScroll}
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryScroll}
+          style={[styles.categoryRow, { flexGrow: 0, flexShrink: 0 }]}
+        >
+          <TouchableOpacity
+            onLayout={(e) => { categoryLayouts.current['all'] = e.nativeEvent.layout.x; }}
+            style={[styles.catChip, { backgroundColor: colors.glass, borderColor: colors.border }, !selectedCategory && styles.catChipAllActive]}
+            onPress={() => setSelectedCategory(null)}
           >
-            <TouchableOpacity
-              style={[
-                styles.filterChip, { backgroundColor: colors.glass, borderColor: colors.border },
-                !selectedCategory && [styles.filterChipActive, { backgroundColor: isDark ? 'rgba(201, 168, 76, 0.1)' : 'rgba(184, 150, 61, 0.1)', borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)' }],
-              ]}
-              onPress={() => setSelectedCategory(null)}
-            >
-              <Text style={[styles.filterText, { color: colors.textMuted }, !selectedCategory && [styles.filterTextActive, { color: colors.primary }]]}>ALL</Text>
-            </TouchableOpacity>
+            <Text style={[styles.catChipText, { color: colors.text }, !selectedCategory && { color: colors.primary }]}>ALL CATEGORIES</Text>
+          </TouchableOpacity>
 
-            {Object.values(CATEGORIES).map((cat) => (
+          {Object.values(CATEGORIES).map((cat) => {
+            const isActive = selectedCategory === cat.id;
+            return (
               <TouchableOpacity
                 key={cat.id}
+                onLayout={(e) => { categoryLayouts.current[cat.id] = e.nativeEvent.layout.x; }}
                 style={[
-                  styles.filterChip, { backgroundColor: colors.glass, borderColor: colors.border },
-                  selectedCategory === cat.id && [styles.filterChipActive, { backgroundColor: isDark ? 'rgba(201, 168, 76, 0.1)' : 'rgba(184, 150, 61, 0.1)', borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)' }],
+                  styles.catChip,
+                  { backgroundColor: colors.glass, borderColor: isActive ? cat.color + '60' : colors.border },
+                  isActive && { backgroundColor: cat.color + '18' },
                 ]}
                 onPress={() => setSelectedCategory(cat.id)}
               >
-                <Text style={[styles.filterText, { color: colors.textMuted }, selectedCategory === cat.id && [styles.filterTextActive, { color: colors.primary }]]}>
-                  {cat.id.toUpperCase()}
+                <View style={[styles.catDot, { backgroundColor: cat.color }]} />
+                <Text style={[styles.catChipText, { color: isActive ? cat.color : colors.text }]}>
+                  {cat.name.split(' ')[0].toUpperCase()}
                 </Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+            );
+          })}
+        </ScrollView>
+
+        {/* Status Segmented Control */}
+        {(() => {
+          const STATUS_OPTIONS = [
+            { key: null,        label: 'ALL NAMES',       icon: 'list-outline',      color: colors.textMuted },
+            { key: 'learned',   label: 'LEARNED',   icon: 'checkmark-circle-outline', color: '#2d9c96' },
+            { key: 'mastered',  label: 'MASTERED',  icon: 'star-outline',      color: '#c9a84c' },
+            { key: 'remaining', label: 'LEFT',      icon: 'time-outline',      color: '#8b5cf6' },
+          ];
+          return (
+            <View style={[styles.segmentedWrap, { backgroundColor: colors.glass, borderColor: colors.border, flexGrow: 0, flexShrink: 0 }]}>
+              {STATUS_OPTIONS.map(({ key, label, icon, color }) => {
+                const isActive = statusFilter === key;
+                return (
+                  <TouchableOpacity
+                    key={label}
+                    style={[styles.segmentBtn, isActive && { backgroundColor: color + '22', borderRadius: 8 }]}
+                    onPress={() => setStatusFilter(key)}
+                    activeOpacity={0.75}
+                  >
+                    <Ionicons name={icon} size={13} color={isActive ? color : colors.textDimmed} />
+                    <Text style={[styles.segmentText, { color: isActive ? color : colors.textDimmed }]}>{label}</Text>
+                    {isActive && <View style={[styles.segmentUnderline, { backgroundColor: color }]} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          );
+        })()}
 
         {/* Names Grid */}
         {loading ? (
@@ -307,6 +379,7 @@ const NamesScreen = ({ navigation, route }) => {
           </View>
         ) : (
           <FlatList
+            style={{ flex: 1 }}
             data={filteredNames}
             renderItem={renderNameCard}
             keyExtractor={(item) => item.number.toString()}
@@ -371,34 +444,69 @@ const styles = StyleSheet.create({
     fontSize: SIZES.sm,
   },
 
-  // ── Filters ──
-  filterContainer: {
+  // ── Category chips ──
+  categoryRow: {
     marginBottom: SPACE.sm,
   },
-  filterScroll: {
+  categoryScroll: {
     paddingHorizontal: SPACE.md,
     gap: 8,
+    alignItems: 'center',
   },
-  filterChip: {
+  catChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: RADIUS.sm,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    paddingHorizontal: 12,
+    borderRadius: RADIUS.full,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
   },
-  filterChipActive: {
-    backgroundColor: 'rgba(201, 168, 76, 0.1)',
-    borderColor: 'rgba(201, 168, 76, 0.3)',
+  catChipAllActive: {
+    backgroundColor: 'rgba(201,168,76,0.12)',
+    borderColor: 'rgba(201,168,76,0.35)',
   },
-  filterText: {
-    color: COLORS.muted,
+  catDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  catChipText: {
     fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 1,
+    letterSpacing: 0.8,
   },
-  filterTextActive: {
-    color: '#c9a84c',
+
+  // ── Status segmented control ──
+  segmentedWrap: {
+    flexDirection: 'row',
+    marginHorizontal: SPACE.md,
+    marginBottom: SPACE.sm,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    padding: 3,
+    gap: 2,
+  },
+  segmentBtn: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 7,
+    gap: 3,
+    position: 'relative',
+  },
+  segmentText: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  segmentUnderline: {
+    position: 'absolute',
+    bottom: 2,
+    left: '20%',
+    right: '20%',
+    height: 2,
+    borderRadius: 1,
   },
 
   // ── Grid ──

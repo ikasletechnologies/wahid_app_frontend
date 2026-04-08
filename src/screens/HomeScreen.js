@@ -123,18 +123,30 @@ const HomeScreen = ({ navigation }) => {
         </View>
 
         <View style={styles.metricsGrid}>
-          <View style={[styles.metricCard, { backgroundColor: colors.glass, borderColor: colors.border }]}>
+          <TouchableOpacity
+            style={[styles.metricCard, { backgroundColor: colors.glass, borderColor: colors.border }]}
+            activeOpacity={0.75}
+            onPress={() => navigation.navigate('Names', { statusFilter: 'learned', filter: null })}
+          >
             <Text style={styles.metricValue}>{stats.learned}</Text>
             <Text style={[styles.metricLabel, { color: colors.textMuted }]}>LEARNED</Text>
-          </View>
-          <View style={[styles.metricCard, { backgroundColor: colors.glass, borderColor: colors.border }]}>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.metricCard, { backgroundColor: colors.glass, borderColor: colors.border }]}
+            activeOpacity={0.75}
+            onPress={() => navigation.navigate('Names', { statusFilter: 'mastered', filter: null })}
+          >
             <Text style={[styles.metricValue, { color: colors.primary }]}>{stats.mastered}</Text>
             <Text style={[styles.metricLabel, { color: colors.textMuted }]}>MASTERED</Text>
-          </View>
-          <View style={[styles.metricCard, { backgroundColor: colors.glass, borderColor: colors.border }]}>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.metricCard, { backgroundColor: colors.glass, borderColor: colors.border }]}
+            activeOpacity={0.75}
+            onPress={() => navigation.navigate('Names', { statusFilter: 'remaining', filter: null })}
+          >
             <Text style={[styles.metricValue, { color: colors.textMuted }]}>{stats.remaining}</Text>
             <Text style={[styles.metricLabel, { color: colors.textMuted }]}>REMAINING</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Progress Bar */}
@@ -169,7 +181,7 @@ const HomeScreen = ({ navigation }) => {
                 key={cat.id}
                 style={[styles.catCard, { backgroundColor: colors.glass, borderColor: colors.border }]}
                 activeOpacity={0.82}
-                onPress={() => navigation.navigate('Names', { filter: cat.id })}
+                onPress={() => navigation.navigate('Names', { filter: cat.id, statusFilter: null })}
               >
                 <View
                   style={[
