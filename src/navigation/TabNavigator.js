@@ -147,20 +147,25 @@ const styles = StyleSheet.create({
   },
 });
 
+import MiniPlayer from '../components/MiniPlayer';
+
 const TabNavigator = () => {
   const { colors, isDark } = useAppTheme();
 
   return (
-    <Tab.Navigator
-      tabBar={props => <CustomTabBar {...props} colors={colors} isDark={isDark} />}
-      screenOptions={{ headerShown: false }}
-    >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Names" component={NamesScreen} />
-      <Tab.Screen name="Playlist" component={PlaylistScreen} />
-      <Tab.Screen name="Journey" component={JourneyScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
-    </Tab.Navigator>
+    <>
+      <Tab.Navigator
+        tabBar={props => <CustomTabBar {...props} colors={colors} isDark={isDark} />}
+        screenOptions={{ headerShown: false }}
+      >
+        <Tab.Screen name="Home" component={HomeScreen} />
+        <Tab.Screen name="Names" component={NamesScreen} />
+        <Tab.Screen name="Playlist" component={PlaylistScreen} />
+        <Tab.Screen name="Journey" component={JourneyScreen} />
+        <Tab.Screen name="Profile" component={ProfileScreen} />
+      </Tab.Navigator>
+      <MiniPlayer />
+    </>
   );
 };
 

@@ -1,129 +1,23 @@
-/**
- * PlaylistContext — Complete backend-integrated playlist state for WAHID
- *
- * Backend endpoints (all gracefully fall back if not yet deployed):
- *   GET  /api/playlist?mood=X          → weighted name list
- *   GET  /api/playlist/presets         → preset playlist definitions
- *   GET  /api/playlist/daily           → today's personalised playlist
- *   GET  /api/playlist/session         → saved session for resume
- *   POST /api/playlist/session         → { mood, trackIndex, title }
- *   GET  /api/playlist/favourites      → [nameNumber, ...]
- *   POST /api/playlist/favourites      → { nameNumber }
- *   DELETE /api/playlist/favourites/:n → remove favourite
- *   POST /api/mood-log                 → { mood, timestamp }
- *   GET  /api/insights                 → mood patterns + suggestions
- *
- * Provides:
- *   fetchPlaylist(mood)         async → name[]  (backend → weighted client fallback)
- *   presets                     PresetPlaylist[]
- *   fetchPresetPlaylist(id)     async → name[]
- *   dailyPlaylist               name[]  (loaded on mount)
- *   insights                    { topMood, suggestion, streakMood } | null
- *   favouriteIds                Set<number>
- *   toggleFavourite(num)        optimistic, backend-synced
- *   saveSession(mood,idx,title) AsyncStorage immediate + debounced backend
- *   resumeSession               { mood, trackIndex, title } | null
- *   clearResumeSession()
- *   logMood(mood)               fire-and-forget analytics
- *   moodHistory                 string[]  (last 10, most-recent first)
- *   activeQueue                 name[]    current playing queue
- *   setActiveQueue(names)       update queue
- */
 import React, {
   createContext, useContext, useState, useEffect, useCallback, useRef,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Speech from 'expo-speech';
 import http from '../config/http';
 import { ENDPOINTS } from '../config/api';
 import { useAuth } from './AuthContext';
 import { useNames } from './NamesContext';
 
-// ─── Preset playlist definitions (client-side, overridden by backend if available) ─
 export const CLIENT_PRESETS = [
-  {
-    id: 'calm-journey',
-    title: 'Calm Journey',
-    subtitle: 'Peace & Tranquility',
-    emoji: '🕊️',
-    colors: ['#002E2E', '#004040', '#001818'],
-    accent: '#2DD4BF',
-    moods: ['seeking peace', 'peaceful', 'anxious', 'worried'],
-    description: 'A guided journey through the names of peace and protection.',
-  },
-  {
-    id: 'strength-courage',
-    title: 'Strength & Courage',
-    subtitle: 'Rise Through His Power',
-    emoji: '⚡',
-    colors: ['#1A0A2E', '#220D3B', '#100618'],
-    accent: '#A78BFA',
-    moods: ['powerless', 'fearful', 'overwhelmed', 'defeated', 'weak'],
-    description: 'Draw strength from His names of power and might.',
-  },
-  {
-    id: 'healing-forgiveness',
-    title: 'Healing & Forgiveness',
-    subtitle: 'Let Go & Be Free',
-    emoji: '💚',
-    colors: ['#0D1F0A', '#122614', '#081208'],
-    accent: '#86EFAC',
-    moods: ['seeking forgiveness', 'guilty', 'broken', 'grieving', 'sad'],
-    description: 'His mercy is infinite. Return to Him with an open heart.',
-  },
-  {
-    id: 'gratitude-practice',
-    title: 'Gratitude Practice',
-    subtitle: 'Count Your Blessings',
-    emoji: '🌟',
-    colors: ['#2D1E00', '#3D2A00', '#1A1100'],
-    accent: '#FBBF24',
-    moods: ['grateful', 'hopeful', 'seeking blessings'],
-    description: 'Deepen your gratitude through the names of abundance.',
-  },
-  {
-    id: 'morning-awakening',
-    title: 'Morning Awakening',
-    subtitle: 'Start With His Names',
-    emoji: '🌅',
-    colors: ['#0A1430', '#0D1A3D', '#060A1A'],
-    accent: '#93C5FD',
-    moods: ['hopeful', 'seeking blessings', 'distracted', 'purposeless'],
-    description: 'Begin every day by connecting with His light.',
-  },
-  {
-    id: 'night-dhikr',
-    title: 'Night Dhikr',
-    subtitle: 'Surrender Before Sleep',
-    emoji: '🌙',
-    colors: ['#0A0A14', '#141420', '#06060A'],
-    accent: '#C4B5FD',
-    moods: ['peaceful', 'seeking peace', 'grateful', 'hopeful'],
-    description: 'A soothing evening reflection to close your day.',
-  },
+  { id: 'calm-journey', title: 'Calm Journey', subtitle: 'Peace & Tranquility', emoji: '🕊️', colors: ['#002E2E', '#004040', '#001818'], accent: '#2DD4BF', moods: ['seeking peace', 'peaceful', 'anxious', 'worried'], description: 'A guided journey through the names of peace and protection.' },
+  { id: 'strength-courage', title: 'Strength & Courage', subtitle: 'Rise Through His Power', emoji: '⚡', colors: ['#1A0A2E', '#220D3B', '#100618'], accent: '#A78BFA', moods: ['powerless', 'fearful', 'overwhelmed', 'defeated', 'weak'], description: 'Draw strength from His names of power and might.' },
+  { id: 'healing-forgiveness', title: 'Healing & Forgiveness', subtitle: 'Let Go & Be Free', emoji: '💚', colors: ['#0D1F0A', '#122614', '#081208'], accent: '#86EFAC', moods: ['seeking forgiveness', 'guilty', 'broken', 'grieving', 'sad'], description: 'His mercy is infinite. Return to Him with an open heart.' },
 ];
 
-// ─── Insights suggestions ──────────────────────────────────────────────────────
-const MOOD_SUGGESTIONS = {
-  anxious:               { text: "You've been feeling anxious. Let His names bring calm.", presetId: 'calm-journey' },
-  worried:               { text: 'His plan is perfect. Try the Calm Journey.', presetId: 'calm-journey' },
-  'seeking peace':       { text: 'Continue your journey toward stillness.', presetId: 'calm-journey' },
-  sad:                   { text: 'You are not alone. Try Healing & Forgiveness.', presetId: 'healing-forgiveness' },
-  broken:                { text: 'He mends every broken heart. Try Healing.', presetId: 'healing-forgiveness' },
-  grieving:              { text: 'His mercy surrounds you. Try Healing.', presetId: 'healing-forgiveness' },
-  'seeking forgiveness': { text: 'His door is always open. Return to Him.', presetId: 'healing-forgiveness' },
-  guilty:                { text: 'He forgives all sins. Seek His mercy.', presetId: 'healing-forgiveness' },
-  grateful:              { text: 'Your gratitude is powerful. Keep practising.', presetId: 'gratitude-practice' },
-  hopeful:               { text: 'Your hope is well-placed. Build your practice.', presetId: 'gratitude-practice' },
-  powerless:             { text: 'His strength is yours to draw from.', presetId: 'strength-courage' },
-  fearful:               { text: 'He is your protector. Find courage in His names.', presetId: 'strength-courage' },
-  overwhelmed:           { text: 'He carries what you cannot. Try Strength & Courage.', presetId: 'strength-courage' },
-};
-
-// ─── Cache keys ────────────────────────────────────────────────────────────────
-const CACHE_FAV     = 'playlist_favourites_v1';
+const CACHE_FAV = 'playlist_favourites_v1';
 const CACHE_SESSION = 'playlist_session_v1';
-const CACHE_MOODS   = 'playlist_mood_history_v1';
-const CACHE_DAILY   = 'playlist_daily_v1';       // { date, names[] }
+const CACHE_MOODS = 'playlist_mood_history_v1';
+const CACHE_DAILY = 'playlist_daily_v1';
 const CACHE_PRESETS = 'playlist_presets_v1';
 
 const PlaylistContext = createContext(null);
@@ -132,83 +26,69 @@ export const PlaylistProvider = ({ children }) => {
   const { token } = useAuth();
   const { getMoodPlaylist, getDailyPlaylist } = useNames();
 
-  const [favouriteIds,  setFavouriteIds]  = useState(new Set());
+  const [favouriteIds, setFavouriteIds] = useState(new Set());
   const [resumeSession, setResumeSession] = useState(null);
-  const [moodHistory,   setMoodHistory]   = useState([]);
-  const [presets,       setPresets]       = useState(CLIENT_PRESETS);
+  const [moodHistory, setMoodHistory] = useState([]);
+  const [presets, setPresets] = useState(CLIENT_PRESETS);
   const [dailyPlaylist, setDailyPlaylist] = useState([]);
-  const [insights,      setInsights]      = useState(null);
-  const [activeQueue,   setActiveQueue]   = useState([]);
+  const [insights, setInsights] = useState(null);
+  const [customPlaylists, setCustomPlaylists] = useState([]);
+  
+  // ── Global Player State ──
+  const [activeQueue, setActiveQueue] = useState([]);
+  const [queueTitle, setQueueTitle] = useState("");
+  const [playingId, setPlayingId] = useState(null);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [isLoop, setIsLoop] = useState(false);
+  const [playMode, setPlayMode] = useState('normal');
 
   const sessionDebounce = useRef(null);
+  const autoNextTimer = useRef(null);
 
-  // ── Bootstrap: load cache → sync backend ──────────────────────────────────
-  useEffect(() => {
-    loadFromCache();
-  }, []);
-
+  // Sync caches
+  useEffect(() => { loadFromCache(); }, []);
   useEffect(() => {
     if (token) {
       syncFavourites();
       syncSession();
       syncPresets();
-      syncInsights();
+      fetchCustomPlaylists();
     }
   }, [token]);
 
-  // Compute daily playlist once names are available (NamesContext loads async)
-  useEffect(() => {
-    loadDailyPlaylist();
-  }, [getDailyPlaylist]);
+  useEffect(() => { loadDailyPlaylist(); }, [getDailyPlaylist]);
 
-  // Re-compute insights whenever mood history changes
-  useEffect(() => {
-    setInsights(computeInsights(moodHistory));
-  }, [moodHistory]);
-
-  // ── Cache loader ───────────────────────────────────────────────────────────
   const loadFromCache = async () => {
     try {
       const [favRaw, sessionRaw, moodRaw] = await Promise.all([
-        AsyncStorage.getItem(CACHE_FAV),
-        AsyncStorage.getItem(CACHE_SESSION),
-        AsyncStorage.getItem(CACHE_MOODS),
+        AsyncStorage.getItem(CACHE_FAV), AsyncStorage.getItem(CACHE_SESSION), AsyncStorage.getItem(CACHE_MOODS)
       ]);
-      if (favRaw)     setFavouriteIds(new Set(JSON.parse(favRaw).map(Number)));
+      if (favRaw) setFavouriteIds(new Set(JSON.parse(favRaw).map(Number)));
       if (sessionRaw) setResumeSession(JSON.parse(sessionRaw));
-      if (moodRaw)    setMoodHistory(JSON.parse(moodRaw));
+      if (moodRaw) setMoodHistory(JSON.parse(moodRaw));
     } catch (_) {}
   };
 
-  // ── Daily playlist: backend → NamesContext fallback ───────────────────────
   const loadDailyPlaylist = useCallback(async () => {
-    const todayKey = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-
-    // 1. Try cache (only valid for today)
+    const todayKey = new Date().toISOString().slice(0, 10);
     try {
       const cached = await AsyncStorage.getItem(CACHE_DAILY);
       if (cached) {
         const { date, names } = JSON.parse(cached);
-        if (date === todayKey && names?.length > 0) {
-          setDailyPlaylist(names);
-          return;
-        }
+        if (date === todayKey && names?.length > 0) { setDailyPlaylist(names); return; }
       }
     } catch (_) {}
 
-    // 2. Try backend
     if (token) {
       try {
         const res = await http.get(ENDPOINTS.playlistDaily);
-        if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+        if (res.data?.success && res.data.data?.length > 0) {
           setDailyPlaylist(res.data.data);
           AsyncStorage.setItem(CACHE_DAILY, JSON.stringify({ date: todayKey, names: res.data.data }));
           return;
         }
       } catch (_) {}
     }
-
-    // 3. Client-side fallback: NamesContext weighted daily generator
     const clientDaily = getDailyPlaylist();
     if (clientDaily.length > 0) {
       setDailyPlaylist(clientDaily);
@@ -216,24 +96,22 @@ export const PlaylistProvider = ({ children }) => {
     }
   }, [token, getDailyPlaylist]);
 
-  // ── Presets: backend → CLIENT_PRESETS fallback ────────────────────────────
   const syncPresets = async () => {
     try {
       const res = await http.get(ENDPOINTS.playlistPresets);
-      if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+      if (res.data?.success && res.data.data?.length > 0) {
         setPresets(res.data.data);
-        AsyncStorage.setItem(CACHE_PRESETS, JSON.stringify(res.data.data));
       }
-    } catch (_) {
-      // Use CLIENT_PRESETS (already set as default state)
-      try {
-        const cached = await AsyncStorage.getItem(CACHE_PRESETS);
-        if (cached) setPresets(JSON.parse(cached));
-      } catch (_2) {}
-    }
+    } catch (_) {}
   };
 
-  // ── Favourites ─────────────────────────────────────────────────────────────
+  const fetchCustomPlaylists = async () => {
+    try {
+      const res = await http.get('/api/playlist/custom');
+      if (res.data?.success) setCustomPlaylists(res.data.playlists);
+    } catch (_) {}
+  };
+
   const syncFavourites = async () => {
     try {
       const res = await http.get(ENDPOINTS.playlistFavourites);
@@ -246,9 +124,8 @@ export const PlaylistProvider = ({ children }) => {
   };
 
   const toggleFavourite = useCallback(async (nameNumber) => {
-    const num   = Number(nameNumber);
+    const num = Number(nameNumber);
     const isFav = favouriteIds.has(num);
-    // Optimistic UI update immediately
     const next = new Set(favouriteIds);
     if (isFav) next.delete(num); else next.add(num);
     setFavouriteIds(next);
@@ -256,34 +133,25 @@ export const PlaylistProvider = ({ children }) => {
 
     if (!token) return;
     try {
-      if (isFav) {
-        await http.delete(`${ENDPOINTS.playlistFavourites}/${num}`);
-      } else {
-        await http.post(ENDPOINTS.playlistFavourites, { nameNumber: num });
-      }
+      if (isFav) await http.delete(`${ENDPOINTS.playlistFavourites}/${num}`);
+      else await http.post(ENDPOINTS.playlistFavourites, { nameNumber: num });
     } catch (_) {
-      // Revert on backend failure
       setFavouriteIds(new Set(favouriteIds));
-      AsyncStorage.setItem(CACHE_FAV, JSON.stringify([...favouriteIds]));
     }
   }, [favouriteIds, token]);
 
-  // ── Session persistence ────────────────────────────────────────────────────
   const syncSession = async () => {
     try {
       const res = await http.get(ENDPOINTS.playlistSession);
-      if (res.data?.success && res.data.data) {
-        const { mood, trackIndex, title } = res.data.data;
-        const session = { mood, trackIndex, title: title || mood, savedAt: Date.now() };
-        setResumeSession(session);
-        AsyncStorage.setItem(CACHE_SESSION, JSON.stringify(session));
+      if (res.data?.success && res.data.session) {
+        setResumeSession(res.data.session);
       }
     } catch (_) {}
   };
 
   const saveSession = useCallback((mood, trackIndex, title) => {
     const session = { mood, trackIndex, title: title || mood, savedAt: Date.now() };
-    AsyncStorage.setItem(CACHE_SESSION, JSON.stringify(session)); // immediate
+    setResumeSession(session);
     clearTimeout(sessionDebounce.current);
     sessionDebounce.current = setTimeout(async () => {
       if (!token) return;
@@ -293,103 +161,107 @@ export const PlaylistProvider = ({ children }) => {
 
   const clearResumeSession = useCallback(() => {
     setResumeSession(null);
-    AsyncStorage.removeItem(CACHE_SESSION);
   }, []);
 
-  // ── Mood logging ───────────────────────────────────────────────────────────
-  const logMood = useCallback(async (mood) => {
-    const updated = [mood, ...moodHistory.filter(m => m !== mood)].slice(0, 10);
-    setMoodHistory(updated);
-    AsyncStorage.setItem(CACHE_MOODS, JSON.stringify(updated));
-    if (!token) return;
-    try {
-      await http.post(ENDPOINTS.moodLog, { mood, timestamp: new Date().toISOString() });
-    } catch (_) {}
-  }, [moodHistory, token]);
+  const buildText = useCallback((item) => {
+    const parts = [`${item.transliteration} — ${item.meaning}.`];
+    const benefits = Array.isArray(item.benefits) ? item.benefits.join('. ') : (item.benefits_of_learning || item.benefits || '');
+    if (benefits?.trim()) parts.push(`Benefits: ${benefits}`);
+    if (item.reflection) parts.push(`Reflection: ${item.reflection}`);
+    if (playMode === 'guided') parts.push('Take a moment to reflect on this name.');
+    return parts.join(' ');
+  }, [playMode]);
 
-  // ── Insights ───────────────────────────────────────────────────────────────
-  const syncInsights = async () => {
-    try {
-      const res = await http.get(ENDPOINTS.userInsights);
-      if (res.data?.success && res.data.data) {
-        setInsights(res.data.data);
-      }
-    } catch (_) {
-      // computeInsights from local moodHistory already runs via useEffect above
+  // Player Engine Methods
+  const activeQueueRef = useRef(activeQueue);
+  useEffect(() => { activeQueueRef.current = activeQueue; }, [activeQueue]);
+
+  const speakAtIdx = useCallback((idx) => {
+    const pl = activeQueueRef.current;
+    const item = pl[idx];
+    if (!item) return;
+
+    clearTimeout(autoNextTimer.current);
+    Speech.stop();
+    setCurrentIdx(idx);
+    setPlayingId(item.number);
+    saveSession('session', idx, queueTitle);
+
+    Speech.speak(buildText(item), {
+      language: 'en-US',
+      rate: playMode === 'guided' ? 0.80 : 0.88,
+      onDone: () => {
+        setPlayingId(null);
+        const pauseMs = playMode === 'guided' ? 3000 : 1500;
+        autoNextTimer.current = setTimeout(() => {
+          const pl2 = activeQueueRef.current;
+          const nextIdx = idx + 1 < pl2.length ? idx + 1 : isLoop ? 0 : -1;
+          if (nextIdx >= 0) speakAtIdx(nextIdx);
+        }, pauseMs);
+      },
+      onStopped: () => { setPlayingId(null); clearTimeout(autoNextTimer.current); },
+      onError: () => { setPlayingId(null); clearTimeout(autoNextTimer.current); },
+    });
+  }, [buildText, saveSession, isLoop, playMode, queueTitle]);
+
+  const playQueue = useCallback((newQueue, title, startIdx = 0) => {
+    Speech.stop();
+    clearTimeout(autoNextTimer.current);
+    setActiveQueue(newQueue);
+    setQueueTitle(title);
+    setCurrentIdx(startIdx);
+    setTimeout(() => {
+      speakAtIdx(startIdx);
+    }, 100);
+  }, [speakAtIdx]);
+
+  const togglePlay = useCallback(() => {
+    if (playingId !== null) {
+      Speech.stop();
+      clearTimeout(autoNextTimer.current);
+      setPlayingId(null);
+    } else if (activeQueue.length > 0) {
+      speakAtIdx(currentIdx);
     }
-  };
+  }, [playingId, activeQueue, currentIdx, speakAtIdx]);
 
-  // ── Playlist generation ────────────────────────────────────────────────────
-  // 1. Try backend (server-side weighted ranking)
-  // 2. Client-side weighted fallback (NamesContext getMoodPlaylist)
-  // 3. Apply favourites boost (raise favourited names to top)
-  const fetchPlaylist = useCallback(async (mood) => {
-    let items = [];
+  const nextTrack = useCallback(() => {
+    const nextIdx = currentIdx + 1 < activeQueue.length ? currentIdx + 1 : isLoop ? 0 : -1;
+    if (nextIdx >= 0) speakAtIdx(nextIdx);
+  }, [currentIdx, activeQueue, isLoop, speakAtIdx]);
 
-    if (token) {
-      try {
-        const res = await http.get(ENDPOINTS.playlist, { params: { mood } });
-        if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
-          items = res.data.data;
-        }
-      } catch (_) {}
-    }
-
-    if (items.length === 0) {
-      items = getMoodPlaylist(mood); // already weighted by learnedIds + masteredIds
-    }
-
-    // Apply favourites boost: push favourited names to the front
-    if (favouriteIds.size > 0) {
-      const favs   = items.filter(n => favouriteIds.has(Number(n.number)));
-      const others = items.filter(n => !favouriteIds.has(Number(n.number)));
-      items = [...favs, ...others];
-    }
-
-    return items;
-  }, [token, getMoodPlaylist, favouriteIds]);
-
-  // ── Preset playlist ────────────────────────────────────────────────────────
-  const fetchPresetPlaylist = useCallback(async (presetId) => {
-    const preset = presets.find(p => p.id === presetId);
-    if (!preset) return [];
-
-    // Union of all mood playlists for this preset's moods
-    const seen  = new Set();
-    const items = [];
-    for (const mood of preset.moods) {
-      const moodItems = getMoodPlaylist(mood);
-      moodItems.forEach(n => {
-        if (!seen.has(n.number)) { seen.add(n.number); items.push(n); }
-      });
-    }
-    return items;
-  }, [presets, getMoodPlaylist]);
+  const prevTrack = useCallback(() => {
+    const pdx = currentIdx > 0 ? currentIdx - 1 : isLoop ? activeQueue.length - 1 : 0;
+    speakAtIdx(pdx);
+  }, [currentIdx, activeQueue, isLoop, speakAtIdx]);
 
   return (
     <PlaylistContext.Provider value={{
-      // Playlist generation
-      fetchPlaylist,
-      fetchPresetPlaylist,
-      // Presets
       presets,
-      // Daily playlist
       dailyPlaylist,
-      refreshDailyPlaylist: loadDailyPlaylist,
-      // Favourites
+      customPlaylists,
+      fetchCustomPlaylists,
       favouriteIds,
       toggleFavourite,
-      // Session
       saveSession,
       resumeSession,
       clearResumeSession,
-      // Mood logging + personalization
-      logMood,
-      moodHistory,
       insights,
-      // Queue
+      // Global Player
       activeQueue,
-      setActiveQueue,
+      queueTitle,
+      playingId,
+      currentIdx,
+      isLoop,
+      setIsLoop,
+      playMode,
+      setPlayMode,
+      playQueue,
+      togglePlay,
+      nextTrack,
+      prevTrack,
+      activeTrack: activeQueue[currentIdx] || null,
+      isPlaying: playingId !== null,
     }}>
       {children}
     </PlaylistContext.Provider>
@@ -401,15 +273,3 @@ export const usePlaylist = () => {
   if (!ctx) throw new Error('usePlaylist must be inside PlaylistProvider');
   return ctx;
 };
-
-// ── Pure helper: compute insights from local mood history ────────────────────
-function computeInsights(moodHistory) {
-  if (!moodHistory || moodHistory.length === 0) return null;
-
-  const counts = moodHistory.reduce((acc, m) => ({ ...acc, [m]: (acc[m] || 0) + 1 }), {});
-  const streakMood = Object.entries(counts).sort(([, a], [, b]) => b - a)[0]?.[0];
-  const topMood    = moodHistory[0];
-  const suggestion = MOOD_SUGGESTIONS[streakMood] || MOOD_SUGGESTIONS[topMood] || null;
-
-  return { topMood, streakMood, suggestion };
-}
