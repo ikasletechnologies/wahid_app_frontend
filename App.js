@@ -5,6 +5,8 @@ import { AuthProvider } from './src/context/AuthContext';
 import { LanguageProvider } from './src/context/LanguageContext';
 import { NamesProvider } from './src/context/NamesContext';
 import { ThemeProvider } from './src/context/ThemeContext';
+import { ContentProvider } from './src/context/ContentContext';
+import { PlaylistProvider } from './src/context/PlaylistContext';
 import * as SplashScreen from 'expo-splash-screen';
 import AppNavigator from './src/navigation/AppNavigator';
 import ThemedToast from './src/components/ThemedToast';
@@ -26,8 +28,12 @@ export default function App() {
           <AuthProvider>
             <LanguageProvider>
               <NamesProvider>
-                <AppNavigator />
-                <ThemedToast />
+                <ContentProvider>
+                  <PlaylistProvider>
+                    <AppNavigator />
+                    <ThemedToast />
+                  </PlaylistProvider>
+                </ContentProvider>
               </NamesProvider>
             </LanguageProvider>
           </AuthProvider>

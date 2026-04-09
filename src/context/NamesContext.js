@@ -237,27 +237,82 @@ export const NamesProvider = ({ children }) => {
     }
   };
 
+  // ── Weighted Recommendation Engine ────────────────────────────────────────
+  // Score breakdown:
+  //   +10  backend moods[] exact match  (highest trust — set by admin)
+  //   +2   per keyword hit in meaning/reflection/benefits
+  //   +1   name is unlearned (surface new knowledge)
+  //   -1   name already mastered (de-prioritise — user knows it)
+  //   (favourites boost is applied in PlaylistContext after this call)
   const getMoodPlaylist = useCallback((mood) => {
     if (!mood || names.length === 0) return [];
     const lowerMood = mood.toLowerCase().trim();
-    const keywords = MOOD_KEYWORDS[lowerMood] || [lowerMood];
+    const keywords  = MOOD_KEYWORDS[lowerMood] || [lowerMood];
 
-    return names.filter(name => {
-      // Use backend moods field if available
-      if (name.moods?.some(m => m.toLowerCase() === lowerMood)) return true;
+    const scored = names.map(name => {
+      let score = 0;
 
-      // Keyword search across text fields
+      // Highest trust: backend moods[] field
+      if (name.moods?.some(m => m.toLowerCase() === lowerMood)) score += 10;
+
+      // Keyword relevance across all text fields
+      const benefits = Array.isArray(name.benefits)
+        ? name.benefits.join(' ')
+        : (name.benefits || '');
       const searchText = [
-        name.meaning,
-        name.transliteration,
-        name.description,
-        name.reflection,
-        name.benefits,
+        name.meaning, name.transliteration, name.description,
+        name.reflection, benefits,
       ].filter(Boolean).join(' ').toLowerCase();
 
-      return keywords.some(kw => searchText.includes(kw));
+      keywords.forEach(kw => { if (searchText.includes(kw)) score += 2; });
+
+      // Learning-state weighting
+      if (!learnedIds.includes(name.number))   score += 1;  // favour new names
+      if (masteredIds.includes(name.number))   score -= 1;  // soft-deprioritise mastered
+
+      return { name, score };
     });
-  }, [names]);
+
+    return scored
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(item => item.name);
+  }, [names, learnedIds, masteredIds]);
+
+  // ── Daily Playlist ─────────────────────────────────────────────────────────
+  // Deterministic for the day (same result on every call within a day).
+  // Mix: 4 unlearned + 2 review (learned not mastered) + name-of-day.
+  const getDailyPlaylist = useCallback(() => {
+    if (names.length === 0) return [];
+
+    const today  = new Date();
+    const dayNum = Math.floor(today.getTime() / 86_400_000); // days since epoch
+
+    // Seeded deterministic pick (no external lib needed)
+    const seededPick = (arr, count, seed) => {
+      const copy = [...arr].sort((a, b) => {
+        const ha = ((seed + a.number) * 2654435761) >>> 0;
+        const hb = ((seed + b.number) * 2654435761) >>> 0;
+        return ha - hb;
+      });
+      return copy.slice(0, count);
+    };
+
+    const unlearned   = names.filter(n => !learnedIds.includes(n.number));
+    const reviewing   = names.filter(n =>  learnedIds.includes(n.number) && !masteredIds.includes(n.number));
+    const nameOfDay   = names[dayNum % names.length];
+
+    const newNames    = seededPick(unlearned, 4, dayNum);
+    const reviewNames = seededPick(reviewing, 2, dayNum + 1000);
+
+    const seen  = new Set();
+    const daily = [];
+    [...newNames, ...reviewNames, nameOfDay].forEach(n => {
+      if (n && !seen.has(n.number)) { seen.add(n.number); daily.push(n); }
+    });
+
+    return daily.slice(0, 7);
+  }, [names, learnedIds, masteredIds]);
 
   const getNameOfDay = useCallback(() => {
     if (names.length === 0) return null;
@@ -280,6 +335,7 @@ export const NamesProvider = ({ children }) => {
       markAsLearned,
       unmarkAsLearned,
       getMoodPlaylist,
+      getDailyPlaylist,
       getNameOfDay,
       categories: CATEGORIES,
       moods: MOODS,

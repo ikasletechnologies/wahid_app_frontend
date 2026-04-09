@@ -32,36 +32,39 @@ export const PALETTE = {
     background: COLORS.darkBg,
     surface: COLORS.darkSurface,
     card: COLORS.darkCard,
-    
+
     text: COLORS.white,
     textMuted: '#71717A',
     textDimmed: '#3F3F46',
-    
+
     border: 'rgba(255, 255, 255, 0.08)',
     borderStrong: 'rgba(255, 255, 255, 0.15)',
-    
+
     glass: 'rgba(255, 255, 255, 0.03)',
     overlay: COLORS.overlayDark,
-    
-    primary: COLORS.primary,
+
+    primary: COLORS.primary,          // gold
+    playerBg: ['#0A1F14', '#0D2B1A'], // dark-mode player header
   },
   light: {
-    background: COLORS.lightBg,
-    surface: COLORS.lightSurface,
-    card: COLORS.lightCard,
-    
-    text: '#1A1A1A', // Dark gray/black text
-    textMuted: '#4B5563', // Darker gray for readability
-    textDimmed: '#9CA3AF', // Darker gray for labels
-    
-    border: 'rgba(0, 0, 0, 0.12)',
-    borderStrong: 'rgba(0, 0, 0, 0.20)',
-    
-    glass: 'rgba(0, 0, 0, 0.04)',
-    overlay: COLORS.overlayLight,
-    
-    primary: COLORS.primaryDark, // Darker gold for better contrast on white
-  }
+    // ── Islamic sage-green light theme ──────────────────────────────────────
+    background: '#F2F7F4',            // very light sage
+    surface: '#FFFFFF',
+    card: '#FFFFFF',
+
+    text: '#1A2E22',                  // dark green-tinted text
+    textMuted: '#4D6B5A',             // muted sage
+    textDimmed: '#A0B8A8',            // very muted sage
+
+    border: 'rgba(45, 106, 79, 0.14)',
+    borderStrong: 'rgba(45, 106, 79, 0.26)',
+
+    glass: 'rgba(45, 106, 79, 0.05)',
+    overlay: 'rgba(242, 247, 244, 0.85)',
+
+    primary: '#2D6A4F',               // forest green (replaces gold in light)
+    playerBg: ['#2D6A4F', '#1B4332'], // light-mode player header gradient
+  },
 };
 
 export const FONTS = {

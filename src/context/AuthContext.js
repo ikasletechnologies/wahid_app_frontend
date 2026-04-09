@@ -32,6 +32,45 @@ export const AuthProvider = ({ children }) => {
     loadAuth();
   }, []);
 
+  // ── OTP flow (Twilio Verify) ─────────────────────────────────────────────
+  // Step 1: send OTP to phone number
+  const sendOTP = async (phone) => {
+    try {
+      const response = await http.post(ENDPOINTS.sendOtp, { phone });
+      if (response.data?.success) {
+        return { success: true };
+      }
+      return { success: false, message: response.data?.message || 'Failed to send OTP.' };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Could not send OTP. Check your number and try again.',
+      };
+    }
+  };
+
+  // Step 2: verify OTP → receive JWT + user object
+  const verifyOTP = async (phone, code) => {
+    try {
+      const response = await http.post(ENDPOINTS.verifyOtp, { phone, code });
+      const { user: u, token: t } = response.data;
+      setUser(u);
+      setToken(t);
+      http.defaults.headers.common['Authorization'] = `Bearer ${t}`;
+      await Promise.all([
+        AsyncStorage.setItem('user', JSON.stringify(u)),
+        AsyncStorage.setItem('token', t),
+      ]);
+      return { success: true, isNewUser: response.data?.isNewUser };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Incorrect code. Please try again.',
+      };
+    }
+  };
+
+  // ── Legacy email/password (kept for admin) ───────────────────────────────
   const login = async (email, password) => {
     try {
       const response = await http.post(ENDPOINTS.login, { email, password });
@@ -104,7 +143,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, updateProfile, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, sendOTP, verifyOTP, login, register, updateProfile, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -107,10 +107,18 @@ const NameDetailScreen = ({ route, navigation }) => {
     if (quranicRefs.filter(r => r.arabic || r.translation).length > 0)                   s.push({ id: 'quran' });
     if (reflection)                                                                       s.push({ id: 'reflection' });
     if (learningInsight && learningInsight !== reflection)                                s.push({ id: 'insight' });
+    
+    // Add dynamic learning cards from the database
+    if (name.learningCards && Array.isArray(name.learningCards)) {
+      name.learningCards.forEach(card => {
+        s.push({ id: `dynamic_${card.id}`, type: 'dynamic', data: card });
+      });
+    }
+
     s.push({ id: 'mcq' });
     s.push({ id: 'progress' });
     return s;
-  }, [benefits, quranicRefs, reflection, learningInsight]);
+  }, [benefits, quranicRefs, reflection, learningInsight, name.learningCards]);
 
   // ── Flip logic ──────────────────────────────────────────────────────────────
   const flipToPage = useCallback((targetIdx) => {
@@ -584,9 +592,88 @@ const NameDetailScreen = ({ route, navigation }) => {
     </View>
   );
 
+  // ── PAGE 8: DYNAMIC LEARNING CARD ─────────────────────────────────────────
+  // Design: Ramadan Mubarak styled card.
+  //   - Crescent moon and lanterns at the top.
+  //   - Arabic watermark underneath the moon.
+  //   - Golden title text and diamond separator.
+  //   - Lower section intersecting a geometric pattern.
+  const renderDynamicCardPage = (card) => (
+    <View style={{ flex: 1, backgroundColor: isDark ? '#14120D' : '#FDFBF7' }}>
+      {/* Background Bottom Pattern Area */}
+      <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '35%', backgroundColor: isDark ? '#0c0b08' : '#F8F4EA' }}>
+         <View style={{flexDirection: 'row', flexWrap: 'wrap', opacity: 0.1, justifyContent: 'center'}}>
+            {Array.from({length: 80}).map((_, i) => (
+               <View key={i} style={{width: 30, height: 30, borderWidth: 1, borderColor: '#c9a84c', transform: [{rotate: '45deg'}], margin: -5}} />
+            ))}
+         </View>
+      </View>
+
+      <ScrollView contentContainerStyle={{flexGrow: 1}} showsVerticalScrollIndicator={false}>
+        {/* The White Overlay Frame with Arch */}
+        <View style={{
+          backgroundColor: isDark ? '#14120D' : '#FDFBF7',
+          flex: 1,
+          borderBottomLeftRadius: 60,
+          borderBottomRightRadius: 60,
+          borderBottomWidth: 4,
+          borderBottomColor: '#c9a84c30',
+          paddingBottom: 50,
+          marginBottom: 30,
+          paddingHorizontal: 24,
+          alignItems: 'center',
+          shadowColor: '#000', shadowOffset: {width: 0, height: 15}, shadowOpacity: 0.05, shadowRadius: 20, elevation: 5,
+        }}>
+           {/* Hanging Lanterns */}
+            <View style={{ position: 'absolute', top: -10, left: 30, alignItems: 'center' }}>
+              <View style={{ width: 1, height: 60, backgroundColor: '#c9a84c' }} />
+              <View style={{ width: 14, height: 20, backgroundColor: '#c9a84c', borderRadius: 3 }} />
+              <View style={{ width: 22, height: 6, backgroundColor: '#c9a84c', borderRadius: 2, marginTop: -2 }} />
+            </View>
+            <View style={{ position: 'absolute', top: -20, right: 30, alignItems: 'center' }}>
+              <View style={{ width: 1, height: 90, backgroundColor: '#c9a84c' }} />
+              <View style={{ width: 14, height: 20, backgroundColor: '#c9a84c', borderRadius: 3 }} />
+              <View style={{ width: 22, height: 6, backgroundColor: '#c9a84c', borderRadius: 2, marginTop: -2 }} />
+            </View>
+
+            {/* Crescent */}
+            <View style={{ marginTop: 70, alignItems: 'center' }}>
+              <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#c9a84c', overflow: 'hidden' }}>
+                <View style={{ position: 'absolute', top: -12, right: 12, width: 80, height: 80, borderRadius: 40, backgroundColor: isDark ? '#14120D' : '#FDFBF7' }} />
+              </View>
+            </View>
+
+            {/* Calligraphy */}
+            <Text style={{ fontFamily: FONTS.arabic, fontSize: 44, color: '#c9a84c', textAlign: 'center', marginTop: 15 }}>
+              {name.arabic}
+            </Text>
+
+            {/* Title */}
+            <Text style={{ fontSize: 18, fontFamily: FONTS.regular, color: '#c9a84c', textAlign: 'center', marginTop: 10, letterSpacing: 2, textTransform: 'uppercase', fontWeight: 'bold' }}>
+              {card.title}
+            </Text>
+
+            {/* Diamond Separator */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginVertical: 18 }}>
+               <View style={{ height: 1, width: 50, backgroundColor: '#c9a84c', opacity: 0.5 }} />
+               <Ionicons name="diamond" size={7} color="#c9a84c" style={{ marginHorizontal: 8 }} />
+               <View style={{ height: 1, width: 50, backgroundColor: '#c9a84c', opacity: 0.5 }} />
+            </View>
+
+            {/* Content */}
+            <Text style={{ fontSize: 13, fontFamily: FONTS.regular, color: isDark ? 'rgba(255,255,255,0.7)' : '#666', textAlign: 'center', lineHeight: 22 }}>
+              {card.content}
+            </Text>
+        </View>
+      </ScrollView>
+    </View>
+  );
+
   // ── Page dispatcher ────────────────────────────────────────────────────────
   const renderPage = (slide) => {
     if (!slide) return null;
+    if (slide.type === 'dynamic') return renderDynamicCardPage(slide.data);
+
     switch (slide.id) {
       case 'hero':       return renderHeroPage();
       case 'benefits':   return renderBenefitsPage();
@@ -600,6 +687,11 @@ const NameDetailScreen = ({ route, navigation }) => {
   };
 
   const PAGE_LABELS = { hero: 'Title', benefits: 'Gifts', quran: "Qur'ān", reflection: 'Reflect', insight: 'Insight', mcq: 'Quiz', progress: 'Progress' };
+  const getPageLabel = (slide) => {
+    if (!slide) return '';
+    if (slide.type === 'dynamic') return slide.data.title || 'Insight';
+    return PAGE_LABELS[slide.id] || '';
+  };
 
   // ── Root render ────────────────────────────────────────────────────────────
   return (
@@ -753,7 +845,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
         {/* Page label + counter */}
         <Text style={[styles.pageCounter, { color: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.22)' }]}>
-          {PAGE_LABELS[slides[currentPage]?.id]}  ·  {currentPage + 1} of {slides.length}
+          {getPageLabel(slides[currentPage])}  ·  {currentPage + 1} of {slides.length}
         </Text>
 
       </SafeAreaView>
