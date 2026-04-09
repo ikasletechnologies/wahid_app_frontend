@@ -21,6 +21,7 @@ import { useNames, CATEGORIES } from '../context/NamesContext';
 import { useContent } from '../context/ContentContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { FONTS, SIZES, SPACE, RADIUS } from '../theme';
+import GeometricPattern from '../components/GeometricPattern';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 
@@ -70,30 +71,54 @@ function composeFeed(names, contentItems) {
   return feed;
 }
 
-// ─── Islamic corner ornament ──────────────────────────────────────────────────
-// Two concentric arcs peaking from a corner — pure View, zero assets.
-const CornerOrn = ({ position = 'tr', color }) => {
-  const base = {
-    position: 'absolute',
-    width: 100, height: 100,
-    overflow: 'hidden',
-    ...(position === 'tr' ? { top: 0, right: 0 } : { bottom: 0, left: 0 }),
-  };
-  const arc = (sz, opacity, offset) => ({
-    position: 'absolute',
-    width: sz, height: sz,
-    borderRadius: sz / 2,
-    borderWidth: 1.2,
-    borderColor: color + opacity,
-    ...(position === 'tr'
-      ? { top: -sz / 2 + offset, right: -sz / 2 + offset }
-      : { bottom: -sz / 2 + offset, left: -sz / 2 + offset }),
-  });
+// ─── Islamic arch frame border ───────────────────────────────────────────────
+// Draws the Moroccan arch frame over the cream card — top horseshoe arch,
+// inner rectangle border, side concave arcs, corner/centre diamond finials.
+const IslamicArchBorder = ({ cardH }) => {
+  const bc   = 'rgba(139, 105, 20, 0.38)';
+  const bcMd = 'rgba(139, 105, 20, 0.55)';
+  const gem  = { position: 'absolute', width: 11, height: 11, borderWidth: 1.5, borderColor: bcMd, transform: [{ rotate: '45deg' }], backgroundColor: '#F0E4C8' };
+  const pad  = 14;
+  const archW = CARD_W * 0.68;
+
   return (
-    <View style={base} pointerEvents="none">
-      <View style={arc(110, '28', 0)} />
-      <View style={arc(75,  '1A', 8)} />
-      <View style={arc(44,  '12', 16)} />
+    <View style={[StyleSheet.absoluteFill, { overflow: 'hidden' }]} pointerEvents="none">
+      {/* Inner rectangle frame */}
+      <View style={{ position: 'absolute', top: pad, left: pad, right: pad, bottom: pad, borderWidth: 1, borderColor: bc, borderRadius: 10 }} />
+
+      {/* Top horseshoe arch crown */}
+      <View style={{
+        position: 'absolute', top: 3,
+        left: (CARD_W - archW) / 2, right: (CARD_W - archW) / 2,
+        height: 52,
+        borderTopWidth: 1.5, borderLeftWidth: 1.5, borderRightWidth: 1.5,
+        borderTopLeftRadius: archW / 2, borderTopRightRadius: archW / 2,
+        borderColor: bc,
+      }} />
+
+      {/* Bottom arch curve */}
+      <View style={{
+        position: 'absolute', bottom: 3,
+        left: CARD_W * 0.22, right: CARD_W * 0.22,
+        height: 36,
+        borderBottomWidth: 1.5, borderLeftWidth: 1.5, borderRightWidth: 1.5,
+        borderBottomLeftRadius: CARD_W * 0.28, borderBottomRightRadius: CARD_W * 0.28,
+        borderColor: bc,
+      }} />
+
+      {/* Left concave arc (bleeds off edge — only the inner curve is visible) */}
+      <View style={{ position: 'absolute', left: -28, top: cardH * 0.37, width: 62, height: 84, borderRadius: 42, borderWidth: 1.5, borderColor: bc }} />
+      {/* Right concave arc */}
+      <View style={{ position: 'absolute', right: -28, top: cardH * 0.37, width: 62, height: 84, borderRadius: 42, borderWidth: 1.5, borderColor: bc }} />
+
+      {/* Top-centre diamond finial */}
+      <View style={[gem, { top: pad - 5.5, left: CARD_W / 2 - 5.5 }]} />
+      {/* Bottom-centre diamond finial */}
+      <View style={[gem, { bottom: pad - 5.5, left: CARD_W / 2 - 5.5 }]} />
+      {/* Left-centre diamond finial */}
+      <View style={[gem, { top: cardH / 2 - 5.5, left: pad - 5.5 }]} />
+      {/* Right-centre diamond finial */}
+      <View style={[gem, { top: cardH / 2 - 5.5, right: pad - 5.5 }]} />
     </View>
   );
 };
@@ -101,11 +126,12 @@ const CornerOrn = ({ position = 'tr', color }) => {
 // ─── Ornamental divider ───────────────────────────────────────────────────────
 const OrnDiv = ({ color }) => (
   <View style={styles.ornRow} pointerEvents="none">
-    <View style={[styles.ornLine, { backgroundColor: color + '50' }]} />
-    <Text style={[styles.ornGem, { color: color + 'BB' }]}>✦</Text>
-    <View style={[styles.ornLine, { backgroundColor: color + '30' }]} />
-    <Text style={[styles.ornGem, { color: color + '55' }]}>✦</Text>
-    <View style={[styles.ornLine, { backgroundColor: color + '50' }]} />
+    <View style={[styles.ornLine, { backgroundColor: color + '40' }]} />
+    <View style={styles.ornCenter}>
+      <Text style={[styles.ornGem, { color: color + 'DD' }]}>✦</Text>
+      <View style={[styles.ornGemRing, { borderColor: color + '25' }]} />
+    </View>
+    <View style={[styles.ornLine, { backgroundColor: color + '40' }]} />
   </View>
 );
 
@@ -113,30 +139,9 @@ const OrnDiv = ({ color }) => (
 const NameCard = React.memo(({
   item, index, scrollY, cardH, onPress, isDark, learnedIds, masteredIds,
 }) => {
-  const ITEM_SIZE = cardH + CARD_GAP;
   const cc        = catColor(item.category);
   const isLearned  = learnedIds.includes(item.number);
   const isMastered = masteredIds.includes(item.number);
-
-  // Parallax scale: centre card = 1, neighbours = 0.93
-  const scale = scrollY.interpolate({
-    inputRange: [
-      (index - 1) * ITEM_SIZE,
-      index       * ITEM_SIZE,
-      (index + 1) * ITEM_SIZE,
-    ],
-    outputRange: [0.93, 1, 0.93],
-    extrapolate: 'clamp',
-  });
-  const opacity = scrollY.interpolate({
-    inputRange: [
-      (index - 1) * ITEM_SIZE,
-      index       * ITEM_SIZE,
-      (index + 1) * ITEM_SIZE,
-    ],
-    outputRange: [0.55, 1, 0.55],
-    extrapolate: 'clamp',
-  });
 
   const press = useRef(new Animated.Value(1)).current;
   const onIn  = () => Animated.spring(press, { toValue: 0.97, useNativeDriver: true, tension: 300, friction: 8 }).start();
@@ -145,7 +150,7 @@ const NameCard = React.memo(({
   return (
     <Animated.View style={[
       styles.cardWrap,
-      { height: cardH, transform: [{ scale: Animated.multiply(scale, press) }], opacity },
+      { height: cardH, transform: [{ scale: press }] },
     ]}>
       <TouchableOpacity
         onPressIn={onIn} onPressOut={onOut}
@@ -153,74 +158,76 @@ const NameCard = React.memo(({
         activeOpacity={1}
         style={[styles.card, { height: cardH }]}
       >
-        {/* Card background */}
+        {/* Card background — warm Islamic parchment */}
         <LinearGradient
-          colors={isDark
-            ? ['#07101A', '#0B1827', '#060E17']
-            : ['#FFFFFF', '#FAFCFB', '#F7FAF8']}
+          colors={['#F5EDDA', '#EDE0C4', '#E6D8B8']}
           style={StyleSheet.absoluteFillObject}
-          start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
         />
 
-        {/* Category aura — very subtle background tint */}
-        <View style={[StyleSheet.absoluteFillObject, styles.auraOverlay, { backgroundColor: cc + '06' }]} />
+        {/* Dense Islamic geometric tile pattern */}
+        <GeometricPattern color="#8B6914" isDark={false} cardW={CARD_W} cardH={cardH} />
 
-        {/* Category top-border accent */}
-        <View style={[styles.topAccent, { backgroundColor: cc }]} />
+        {/* Pattern bottom fade — preserves readability of lower text */}
+        <LinearGradient
+          colors={['transparent', 'rgba(230, 216, 184, 0.72)']}
+          style={[StyleSheet.absoluteFillObject, { top: '50%' }]}
+          pointerEvents="none"
+        />
 
-        {/* Corner ornaments */}
-        <CornerOrn position="tr" color={cc} />
-        <CornerOrn position="bl" color={cc} />
+        {/* Islamic arch frame border */}
+        <IslamicArchBorder cardH={cardH} />
 
         {/* ── Card inner content ── */}
         <View style={styles.cardInner}>
 
           {/* Row 1: number + category + status */}
           <View style={styles.topRow}>
-            <View style={[styles.numBox, { borderColor: cc + '55' }]}>
-              <Text style={[styles.numText, { color: cc }]}>
+            <View style={[styles.numBox, { borderColor: 'rgba(139,105,20,0.45)', backgroundColor: 'rgba(201,168,76,0.12)' }]}>
+              <Text style={[styles.numText, { color: '#7A5000' }]}>
                 {String(item.number).padStart(2, '0')}
               </Text>
             </View>
 
             <View style={styles.topRowMiddle} />
 
-            <View style={[styles.catPill, { backgroundColor: cc + '14', borderColor: cc + '40' }]}>
+            <View style={[styles.catPill, { backgroundColor: cc + '18', borderColor: cc + '50' }]}>
               <View style={[styles.catDot, { backgroundColor: cc }]} />
               <Text style={[styles.catPillText, { color: cc }]}>{catLabel(item.category)}</Text>
             </View>
 
             {isMastered && (
-              <View style={[styles.statusPill, { backgroundColor: GOLD + '18', borderColor: GOLD + '45' }]}>
-                <Ionicons name="trophy" size={10} color={GOLD} />
-                <Text style={[styles.statusPillText, { color: GOLD }]}>Mastered</Text>
+              <View style={[styles.statusPill, { backgroundColor: GOLD + '20', borderColor: GOLD + '55' }]}>
+                <Ionicons name="trophy" size={10} color="#7A5000" />
+                <Text style={[styles.statusPillText, { color: '#7A5000' }]}>Mastered</Text>
               </View>
             )}
             {isLearned && !isMastered && (
-              <View style={[styles.statusPill, { backgroundColor: '#2d9c9618', borderColor: '#2d9c9645' }]}>
-                <Ionicons name="checkmark" size={10} color="#2d9c96" />
-                <Text style={[styles.statusPillText, { color: '#2d9c96' }]}>Learned</Text>
+              <View style={[styles.statusPill, { backgroundColor: '#2d9c9620', borderColor: '#2d9c9650' }]}>
+                <Ionicons name="checkmark" size={10} color="#1A6B66" />
+                <Text style={[styles.statusPillText, { color: '#1A6B66' }]}>Learned</Text>
               </View>
             )}
           </View>
 
           {/* Arabic — hero element */}
           <View style={styles.arabicWrap}>
-            <Text style={[styles.arabicText, { color: isDark ? GOLD : '#2D6A4F' }]}>
+            <View style={[styles.heroHalo, { backgroundColor: 'rgba(201,168,76,0.10)' }]} />
+            <Text style={[styles.arabicText, { color: '#6B4000' }]}>
               {item.arabic}
             </Text>
           </View>
 
           {/* Ornamental divider */}
-          <OrnDiv color={cc} />
+          <OrnDiv color="#8B6914" />
 
           {/* Transliteration */}
-          <Text style={[styles.transText, { color: isDark ? 'rgba(255,255,255,0.92)' : '#1A2E22' }]}>
+          <Text style={[styles.transText, { color: '#1A0F00' }]}>
             {item.transliteration}
           </Text>
 
           {/* Meaning */}
-          <Text style={[styles.meaningText, { color: isDark ? 'rgba(255,255,255,0.42)' : '#5A7265' }]}
+          <Text style={[styles.meaningText, { color: 'rgba(80, 48, 8, 0.72)' }]}
             numberOfLines={3}
           >
             {item.meaning}
@@ -228,16 +235,16 @@ const NameCard = React.memo(({
 
           {/* Bottom CTA */}
           <View style={styles.ctaRow}>
-            <View style={[styles.ctaLine, { backgroundColor: cc + '35' }]} />
-            <Text style={[styles.ctaText, { color: cc + 'AA' }]}>Tap to explore</Text>
-            <Ionicons name="arrow-forward" size={11} color={cc + 'AA'} style={{ marginTop: 1 }} />
-            <View style={[styles.ctaLine, { backgroundColor: cc + '35' }]} />
+            <View style={[styles.ctaLine, { backgroundColor: 'rgba(139,105,20,0.30)' }]} />
+            <Text style={[styles.ctaText, { color: 'rgba(122,80,0,0.75)' }]}>Tap to explore</Text>
+            <Ionicons name="arrow-forward" size={11} color="rgba(122,80,0,0.75)" style={{ marginTop: 1 }} />
+            <View style={[styles.ctaLine, { backgroundColor: 'rgba(139,105,20,0.30)' }]} />
           </View>
         </View>
 
-        {/* Bottom category aura */}
+        {/* Bottom category colour wash */}
         <LinearGradient
-          colors={['transparent', cc + '22']}
+          colors={['transparent', cc + '18']}
           style={styles.bottomAura}
         />
       </TouchableOpacity>
@@ -246,120 +253,107 @@ const NameCard = React.memo(({
 });
 
 // ─── Did You Know card (full page) ────────────────────────────────────────────
-const DYKCard = React.memo(({ item, index, scrollY, cardH, isDark }) => {
-  const ITEM_SIZE = cardH + CARD_GAP;
-  const scale = scrollY.interpolate({
-    inputRange: [(index-1)*ITEM_SIZE, index*ITEM_SIZE, (index+1)*ITEM_SIZE],
-    outputRange: [0.93, 1, 0.93], extrapolate: 'clamp',
-  });
-  const opacity = scrollY.interpolate({
-    inputRange: [(index-1)*ITEM_SIZE, index*ITEM_SIZE, (index+1)*ITEM_SIZE],
-    outputRange: [0.55, 1, 0.55], extrapolate: 'clamp',
-  });
+const DYKCard = React.memo(({ item, cardH }) => (
+  <View style={[styles.cardWrap, { height: cardH }]}>
+    <View style={[styles.card, { height: cardH, overflow: 'hidden' }]}>
+      {/* Same cream parchment background */}
+      <LinearGradient
+        colors={['#F5EDDA', '#EDE0C4', '#E6D8B8']}
+        style={StyleSheet.absoluteFillObject}
+        start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+      />
+      <GeometricPattern color="#8B6914" isDark={false} cardW={CARD_W} cardH={cardH} />
+      <LinearGradient
+        colors={['transparent', 'rgba(230, 216, 184, 0.72)']}
+        style={[StyleSheet.absoluteFillObject, { top: '50%' }]}
+        pointerEvents="none"
+      />
+      <IslamicArchBorder cardH={cardH} />
 
-  return (
-    <Animated.View style={[styles.cardWrap, { height: cardH, transform: [{ scale }], opacity }]}>
-      <View style={[styles.card, { height: cardH, overflow: 'hidden' }]}>
-        <LinearGradient
-          colors={isDark ? ['#130D00', '#1E1500', '#0D0900'] : ['#FFFDF5', '#FFF8E0', '#FFF5D5']}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <View style={[styles.topAccent, { backgroundColor: GOLD }]} />
-        <CornerOrn position="tr" color={GOLD} />
-        <CornerOrn position="bl" color={GOLD} />
-
-        <View style={styles.cardInner}>
-          {/* Icon */}
-          <View style={styles.dykIconRing}>
-            <View style={[styles.dykIconBg, { backgroundColor: GOLD + '20' }]}>
-              <Ionicons name="bulb-outline" size={26} color={GOLD} />
-            </View>
+      <View style={styles.cardInner}>
+        {/* Icon */}
+        <View style={styles.dykIconRing}>
+          <View style={[styles.dykIconBg, { backgroundColor: 'rgba(201,168,76,0.18)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.30)' }]}>
+            <Ionicons name="bulb-outline" size={26} color="#7A5000" />
           </View>
-
-          {/* Label */}
-          <Text style={styles.dykLabel}>DID YOU KNOW?</Text>
-
-          {/* Title */}
-          {!!item.title && (
-            <Text style={[styles.dykTitle, { color: isDark ? 'rgba(255,240,190,0.95)' : '#4A3000' }]}>
-              {item.title}
-            </Text>
-          )}
-
-          <OrnDiv color={GOLD} />
-
-          {/* Content */}
-          <Text style={[styles.dykContent, { color: isDark ? 'rgba(255,225,155,0.7)' : 'rgba(80,55,0,0.72)' }]}>
-            {item.content}
-          </Text>
         </View>
 
-        <LinearGradient colors={['transparent', GOLD + '20']} style={styles.bottomAura} />
+        {/* Label */}
+        <Text style={[styles.dykLabel, { color: '#8B6914' }]}>DID YOU KNOW?</Text>
+
+        {/* Title */}
+        {!!item.title && (
+          <Text style={[styles.dykTitle, { color: '#1A0F00' }]}>
+            {item.title}
+          </Text>
+        )}
+
+        <OrnDiv color="#8B6914" />
+
+        {/* Content */}
+        <Text style={[styles.dykContent, { color: 'rgba(80, 48, 8, 0.72)' }]}>
+          {item.content}
+        </Text>
       </View>
-    </Animated.View>
-  );
-});
+
+      <LinearGradient colors={['transparent', 'rgba(139,105,20,0.12)']} style={styles.bottomAura} />
+    </View>
+  </View>
+));
 
 // ─── Media / Ad card (full page) ─────────────────────────────────────────────
-const MediaAdCard = React.memo(({ item, index, scrollY, cardH, isDark, isAd }) => {
-  const ITEM_SIZE = cardH + CARD_GAP;
-  const scale = scrollY.interpolate({
-    inputRange: [(index-1)*ITEM_SIZE, index*ITEM_SIZE, (index+1)*ITEM_SIZE],
-    outputRange: [0.93, 1, 0.93], extrapolate: 'clamp',
-  });
-  const opacity = scrollY.interpolate({
-    inputRange: [(index-1)*ITEM_SIZE, index*ITEM_SIZE, (index+1)*ITEM_SIZE],
-    outputRange: [0.55, 1, 0.55], extrapolate: 'clamp',
-  });
+const MediaAdCard = React.memo(({ item, cardH, isAd }) => (
+  <View style={[styles.cardWrap, { height: cardH }]}>
+    <View style={[styles.card, { height: cardH, overflow: 'hidden' }]}>
+      {/* Same cream parchment background */}
+      <LinearGradient
+        colors={['#F5EDDA', '#EDE0C4', '#E6D8B8']}
+        style={StyleSheet.absoluteFillObject}
+        start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+      />
+      <GeometricPattern color="#8B6914" isDark={false} cardW={CARD_W} cardH={cardH} />
+      <LinearGradient
+        colors={['transparent', 'rgba(230, 216, 184, 0.72)']}
+        style={[StyleSheet.absoluteFillObject, { top: '50%' }]}
+        pointerEvents="none"
+      />
+      <IslamicArchBorder cardH={cardH} />
 
-  return (
-    <Animated.View style={[styles.cardWrap, { height: cardH, transform: [{ scale }], opacity }]}>
-      <View style={[styles.card, { height: cardH, overflow: 'hidden' }]}>
-        {/* Dark gradient background */}
-        <LinearGradient
-          colors={['#071222', '#0C1A30', '#040C18']}
-          style={StyleSheet.absoluteFillObject}
-        />
-        {/* Orbs */}
-        <View style={[styles.mediaOrb, styles.mediaOrb1, { backgroundColor: '#0ea5e910' }]} />
-        <View style={[styles.mediaOrb, styles.mediaOrb2, { backgroundColor: GOLD + '0C'  }]} />
+      {/* Sponsored label */}
+      {isAd && <Text style={[styles.sponsored, { color: 'rgba(122,80,0,0.40)' }]}>Sponsored</Text>}
 
-        {/* Sponsored label — required but invisible-ish */}
-        {isAd && <Text style={styles.sponsored}>Sponsored</Text>}
+      <View style={styles.mediaInner}>
+        {/* Tags */}
+        {Array.isArray(item.tags) && item.tags.length > 0 && (
+          <View style={styles.tagRow}>
+            {item.tags.slice(0, 2).map(t => (
+              <View key={t} style={[styles.tag, { backgroundColor: 'rgba(139,105,20,0.14)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.28)' }]}>
+                <Text style={[styles.tagText, { color: '#7A5000' }]}>{t.toUpperCase()}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
-        <View style={styles.mediaInner}>
-          {/* Tags */}
-          {Array.isArray(item.tags) && item.tags.length > 0 && (
-            <View style={styles.tagRow}>
-              {item.tags.slice(0, 2).map(t => (
-                <View key={t} style={styles.tag}>
-                  <Text style={styles.tagText}>{t.toUpperCase()}</Text>
-                </View>
-              ))}
-            </View>
-          )}
+        {/* Title */}
+        <Text style={[styles.mediaTitle, { color: '#1A0F00' }]}>{item.title}</Text>
+        <OrnDiv color="#8B6914" />
+        {!!item.content && (
+          <Text style={[styles.mediaSub, { color: 'rgba(80, 48, 8, 0.68)' }]} numberOfLines={5}>{item.content}</Text>
+        )}
 
-          {/* Title */}
-          <Text style={styles.mediaTitle}>{item.title}</Text>
-          <OrnDiv color={GOLD} />
-          {!!item.content && (
-            <Text style={styles.mediaSub} numberOfLines={5}>{item.content}</Text>
-          )}
-
-          {/* CTA */}
-          {!!item.ctaText && (
-            <View style={styles.mediaCta}>
-              <Text style={styles.mediaCtaText}>{item.ctaText}</Text>
-              <Ionicons name="arrow-forward" size={14} color={GOLD} />
-            </View>
-          )}
-        </View>
-
-        <LinearGradient colors={['transparent', 'rgba(4,12,24,0.85)']} style={styles.bottomAura} />
+        {/* CTA */}
+        {!!item.ctaText && (
+          <View style={styles.mediaCta}>
+            <Text style={[styles.mediaCtaText, { color: '#7A5000' }]}>{item.ctaText}</Text>
+            <Ionicons name="arrow-forward" size={14} color="#7A5000" />
+          </View>
+        )}
       </View>
-    </Animated.View>
-  );
-});
+
+      <LinearGradient colors={['transparent', 'rgba(139,105,20,0.12)']} style={styles.bottomAura} />
+    </View>
+  </View>
+));
 
 // ─── Filter bottom sheet ──────────────────────────────────────────────────────
 const FilterSheet = React.memo(({
@@ -565,9 +559,12 @@ const NamesScreen = ({ navigation, route }) => {
           <Text style={[styles.headerTitle, { color: isDark ? GOLD : '#2D6A4F' }]}>
             Al-Asmāʾ Al-Ḥusnā
           </Text>
-          <Text style={[styles.headerSub, { color: colors.textMuted }]}>
-            {feed.length} names
-          </Text>
+          <View style={styles.headerSubRow}>
+            <View style={[styles.headerSubDot, { backgroundColor: isDark ? GOLD : '#2D6A4F' }]} />
+            <Text style={[styles.headerSub, { color: colors.textMuted }]}>
+              {feed.length} Sacred Names
+            </Text>
+          </View>
         </View>
 
         <View style={styles.headerActions}>
@@ -674,7 +671,8 @@ const NamesScreen = ({ navigation, route }) => {
           )}
           scrollEventThrottle={16}
           removeClippedSubviews
-          maxToRenderPerBatch={5}
+          initialNumToRender={3}
+          maxToRenderPerBatch={3}
           windowSize={5}
           ListEmptyComponent={() => (
             <View style={styles.empty}>
@@ -724,8 +722,19 @@ const styles = StyleSheet.create({
   },
   headerSub: {
     fontSize: 11,
-    marginTop: 1,
     letterSpacing: 0.4,
+  },
+  headerSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+  },
+  headerSubDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    opacity: 0.6,
   },
   headerActions: { flexDirection: 'row', gap: SPACE.sm },
   hBtn: {
@@ -864,6 +873,12 @@ const styles = StyleSheet.create({
     lineHeight: 90,
     includeFontPadding: false,
   },
+  heroHalo: {
+    position: 'absolute',
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+  },
 
   // ── Ornamental divider ──
   ornRow: {
@@ -874,7 +889,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   ornLine: { flex: 1, height: 1 },
-  ornGem:  { fontSize: 9 },
+  ornCenter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 32,
+    height: 32,
+  },
+  ornGem:  { fontSize: 10 },
+  ornGemRing: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    opacity: 0.8,
+  },
 
   // ── Transliteration + meaning ──
   transText: {
@@ -961,9 +990,6 @@ const styles = StyleSheet.create({
   },
   mediaCta:     { flexDirection: 'row', alignItems: 'center', gap: 6 },
   mediaCtaText: { fontSize: 13, fontWeight: '700', color: GOLD, letterSpacing: 0.3 },
-
-  // ── Corner ornaments ──
-  // (inline in CornerOrn component)
 
   // ── Filter sheet ──
   fsBackdrop: {
