@@ -42,6 +42,7 @@ export const PlaylistProvider = ({ children }) => {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [loopMode, setLoopMode] = useState('none'); // 'none' | 'playlist' | 'track'
   const [playMode, setPlayMode] = useState('normal');
+  const [isMiniPlayerVisible, setIsMiniPlayerVisible] = useState(true);
 
   // Progress tracking
   const [elapsed, setElapsed] = useState(0);
@@ -51,6 +52,8 @@ export const PlaylistProvider = ({ children }) => {
   const autoNextTimer  = useRef(null);
   const progressInterval = useRef(null);
   const startTimeRef = useRef(null);
+  const playbackSessionRef = useRef(0);
+  const lastCharIndexRef = useRef(0);
 
   useEffect(() => { loadFromCache(); }, []);
 
@@ -276,43 +279,76 @@ export const PlaylistProvider = ({ children }) => {
   const activeQueueRef = useRef(activeQueue);
   useEffect(() => { activeQueueRef.current = activeQueue; }, [activeQueue]);
 
-  const speakAtIdx = useCallback((idx) => {
+  const speakAtIdx = useCallback((idx, fromResume = false) => {
     const pl = activeQueueRef.current;
     const item = pl[idx];
     if (!item) return;
+
+    // Increment session ID to invalidate previous callbacks
+    const currentSession = ++playbackSessionRef.current;
+    
+    // Ensure player is visible when new track starts
+    setIsMiniPlayerVisible(true);
 
     clearTimeout(autoNextTimer.current);
     clearInterval(progressInterval.current);
     Speech.stop();
 
-    const text = buildText(item);
-    const estDur = estimateDurationMs(text, playMode === 'guided' ? 0.80 : 0.88);
+    const fullText = buildText(item);
+    // If resuming, slice the text
+    const startIdx = fromResume ? lastCharIndexRef.current : 0;
+    const textToSpeak = fullText.substring(startIdx);
+    
+    // Estimate based on remaining text
+    const estDur = estimateDurationMs(textToSpeak, playMode === 'guided' ? 0.80 : 0.88);
+    const fullDur = estimateDurationMs(fullText, playMode === 'guided' ? 0.80 : 0.88);
 
     setCurrentIdx(idx);
     setPlayingId(item.number);
-    setElapsed(0);
-    setDuration(estDur);
-    startTimeRef.current = Date.now();
+    
+    // If not resuming, reset counters
+    if (!fromResume) {
+      setElapsed(0);
+      setDuration(fullDur);
+      lastCharIndexRef.current = 0;
+    } else {
+      // Keep duration, update elapsed to roughly match start point
+      setElapsed((startIdx / fullText.length) * fullDur);
+    }
+    
+    startTimeRef.current = Date.now() - (fromResume ? (startIdx / fullText.length) * fullDur : 0);
 
     saveSession('session', idx, queueTitle);
     addToRecent(item);
 
     // Start progress interval
     progressInterval.current = setInterval(() => {
+      if (currentSession !== playbackSessionRef.current) {
+        clearInterval(progressInterval.current);
+        return;
+      }
       const e = Date.now() - startTimeRef.current;
-      setElapsed(prev => Math.min(e, estDur));
+      setElapsed(prev => Math.min(e, fullDur));
     }, 250);
 
-    Speech.speak(text, {
+    Speech.speak(textToSpeak, {
       language: 'en-US',
       rate: playMode === 'guided' ? 0.80 : 0.88,
+      onBoundary: ({ charIndex }) => {
+        if (currentSession !== playbackSessionRef.current) return;
+        lastCharIndexRef.current = startIdx + charIndex;
+      },
       onDone: () => {
+        if (currentSession !== playbackSessionRef.current) return;
+
         clearInterval(progressInterval.current);
         setPlayingId(null);
-        setElapsed(estDur);
+        setElapsed(fullDur);
+        lastCharIndexRef.current = 0;
 
         const pauseMs = playMode === 'guided' ? 3000 : 1500;
         autoNextTimer.current = setTimeout(() => {
+          if (currentSession !== playbackSessionRef.current) return;
           const pl2 = activeQueueRef.current;
           let nextIdx;
 
@@ -329,11 +365,13 @@ export const PlaylistProvider = ({ children }) => {
         }, pauseMs);
       },
       onStopped: () => {
+        if (currentSession !== playbackSessionRef.current) return;
         clearInterval(progressInterval.current);
         setPlayingId(null);
         clearTimeout(autoNextTimer.current);
       },
       onError: () => {
+        if (currentSession !== playbackSessionRef.current) return;
         clearInterval(progressInterval.current);
         setPlayingId(null);
         clearTimeout(autoNextTimer.current);
@@ -368,13 +406,14 @@ export const PlaylistProvider = ({ children }) => {
 
   const togglePlay = useCallback(() => {
     if (playingId !== null) {
+      playbackSessionRef.current++; // Invalidates current callbacks
       Speech.stop();
       clearInterval(progressInterval.current);
       clearTimeout(autoNextTimer.current);
       setPlayingId(null);
     } else if (activeQueue.length > 0) {
-      // Resume from currentIdx
-      speakAtIdx(currentIdx);
+      // Resume from last character index if same track
+      speakAtIdx(currentIdx, lastCharIndexRef.current > 0);
     }
   }, [playingId, activeQueue, currentIdx, speakAtIdx]);
 
@@ -397,6 +436,8 @@ export const PlaylistProvider = ({ children }) => {
     const pdx = currentIdx > 0 ? currentIdx - 1 : loopMode === 'playlist' ? activeQueue.length - 1 : 0;
     speakAtIdx(pdx);
   }, [currentIdx, activeQueue, loopMode, speakAtIdx]);
+
+  const hideMiniPlayer = useCallback(() => setIsMiniPlayerVisible(false), []);
 
   const activeTrack = activeQueue[currentIdx] || null;
 
@@ -439,6 +480,8 @@ export const PlaylistProvider = ({ children }) => {
       activeTrack,
       isPlaying: playingId !== null,
       currentTrackText: activeTrack ? buildText(activeTrack) : '',
+      isMiniPlayerVisible,
+      hideMiniPlayer,
     }}>
       {children}
     </PlaylistContext.Provider>

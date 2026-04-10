@@ -59,7 +59,7 @@ const detectMood = (query) => {
 // ──────────────────────────────────────────
 // Song Row
 // ──────────────────────────────────────────
-const TrackRow = React.memo(({ item, index, isActive, onPress, onAddPress }) => {
+const TrackRow = React.memo(({ item, index, isActive, onPress, onAddPress, isRemove }) => {
   const { colors, isDark } = useAppTheme();
   const grad = getThumbGradient(item.number);
   const pulse = useRef(new Animated.Value(1)).current;
@@ -118,7 +118,11 @@ const TrackRow = React.memo(({ item, index, isActive, onPress, onAddPress }) => 
             <Ionicons name="volume-high" size={12} color="#c9a84c" style={{ marginTop: 2, marginRight: 8 }} />
           )}
           <TouchableOpacity onPress={onAddPress} hitSlop={10}>
-            <Ionicons name="add" size={18} color={colors.textMuted} />
+            <Ionicons 
+              name={isRemove ? "trash-outline" : "add"} 
+              size={18} 
+              color={isRemove ? "#ef4444" : colors.textMuted} 
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -130,7 +134,7 @@ const TrackRow = React.memo(({ item, index, isActive, onPress, onAddPress }) => 
 // Option Card (Favorites / Playlist / Recent)
 // ──────────────────────────────────────────
 const OptionCard = ({ icon, label, count, colors: cardColors, isActive, onPress }) => {
-  const { isDark } = useAppTheme();
+  const { colors, isDark } = useAppTheme();
   return (
     <TouchableOpacity
       style={[styles.optionCard, { backgroundColor: isDark ? '#111' : '#fff' }]}
@@ -140,8 +144,8 @@ const OptionCard = ({ icon, label, count, colors: cardColors, isActive, onPress 
       <LinearGradient colors={cardColors} style={styles.optionIcon}>
         <Ionicons name={icon} size={20} color="#fff" />
       </LinearGradient>
-      <Text style={[styles.optionCount, { color: isActive ? '#c9a84c' : '#fff' }]}>{count}</Text>
-      <Text style={[styles.optionLabel, { color: '#888' }]}>{label}</Text>
+      <Text style={[styles.optionCount, { color: isActive ? '#c9a84c' : (isDark ? '#fff' : '#000') }]}>{count}</Text>
+      <Text style={[styles.optionLabel, { color: isDark ? '#888' : '#666' }]}>{label}</Text>
       {isActive && <View style={styles.optionDot} />}
     </TouchableOpacity>
   );
@@ -157,19 +161,26 @@ export default function PlaylistScreen() {
   const {
     customPlaylists, favouriteIds, recentlyPlayed,
     activeTrack, isPlaying,
-    playQueue, createPlaylist, deletePlaylist,
+    playQueue, createPlaylist, deletePlaylist, addToPlaylist, removeFromPlaylist,
   } = usePlaylist();
 
   const [searchText, setSearchText] = useState('');
   const [searchMode, setSearchMode] = useState(null); // null | 'name' | 'mood'
   const [filteredSongs, setFilteredSongs] = useState([]);
   const [viewMode, setViewMode] = useState('main'); // main | favorites | playlists | recent | playlist-detail
-  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState(null);
+  const currentPlaylist = useMemo(() => 
+    customPlaylists.find(p => p.id === selectedPlaylistId),
+    [customPlaylists, selectedPlaylistId]
+  );
 
   // Create playlist modal
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [creatingPlaylist, setCreatingPlaylist] = useState(false);
+
+  // Add names selector
+  const [showNameSelector, setShowNameSelector] = useState(false);
 
   // Picker
   const [pickingTrack, setPickingTrack] = useState(null);
@@ -203,13 +214,13 @@ export default function PlaylistScreen() {
     if (searchMode !== null && filteredSongs.length > 0) return filteredSongs;
     if (viewMode === 'favorites') return favouriteNames;
     if (viewMode === 'recent') return recentlyPlayed;
-    if (viewMode === 'playlist-detail' && selectedPlaylist) {
-      return (selectedPlaylist.nameNumbers || [])
+    if (viewMode === 'playlist-detail' && currentPlaylist) {
+      return (currentPlaylist.nameNumbers || [])
         .map(num => names.find(n => n.number === num))
         .filter(Boolean);
     }
     return names;
-  }, [searchMode, filteredSongs, viewMode, favouriteNames, recentlyPlayed, selectedPlaylist, names]);
+  }, [searchMode, filteredSongs, viewMode, favouriteNames, recentlyPlayed, currentPlaylist, names]);
 
   const [aiLoading, setAiLoading] = useState(false);
   const aiDebounce = useRef(null);
@@ -278,7 +289,7 @@ export default function PlaylistScreen() {
   };
 
   const openPlaylistDetail = (playlist) => {
-    setSelectedPlaylist(playlist);
+    setSelectedPlaylistId(playlist.id);
     setViewMode('playlist-detail');
   };
 
@@ -294,13 +305,13 @@ export default function PlaylistScreen() {
   const playTrackAt = useCallback((idx) => {
     playQueue(displayedSongs, getViewTitle(), idx);
     navigation.navigate('NowPlaying');
-  }, [displayedSongs, viewMode, selectedPlaylist, playQueue, navigation]);
+  }, [displayedSongs, viewMode, currentPlaylist, playQueue, navigation]);
 
   const getViewTitle = () => {
     switch (viewMode) {
       case 'favorites': return 'Favorites';
       case 'recent': return 'Recently Played';
-      case 'playlist-detail': return selectedPlaylist?.name || 'Playlist';
+      case 'playlist-detail': return currentPlaylist?.name || 'Playlist';
       default: return searchMode === 'mood' ? 'Mood Picks' : 'All Names';
     }
   };
@@ -325,7 +336,14 @@ export default function PlaylistScreen() {
         index={index}
         isActive={isActive}
         onPress={() => playTrackAt(index)}
-        onAddPress={() => setPickingTrack(item)}
+        onAddPress={() => {
+          if (viewMode === 'playlist-detail') {
+            removeFromPlaylist(selectedPlaylistId, item.number);
+          } else {
+            setPickingTrack(item);
+          }
+        }}
+        isRemove={viewMode === 'playlist-detail'}
       />
     );
   }, [activeTrack, isPlaying, playTrackAt]);
@@ -344,7 +362,17 @@ export default function PlaylistScreen() {
         <Ionicons name="arrow-back" size={24} color={colors.text} />
       </TouchableOpacity>
       <Text style={[styles.subHeaderTitle, { color: colors.text }]}>{getViewTitle()}</Text>
-      <View style={{ width: 36 }} />
+      {viewMode === 'playlist-detail' ? (
+        <TouchableOpacity 
+          onPress={() => setShowNameSelector(true)} 
+          hitSlop={12} 
+          style={styles.backBtn}
+        >
+          <Ionicons name="add-circle" size={26} color={colors.primary} />
+        </TouchableOpacity>
+      ) : (
+        <View style={{ width: 36 }} />
+      )}
     </View>
   );
 
@@ -420,6 +448,14 @@ export default function PlaylistScreen() {
           <View style={styles.emptyState}>
             <Ionicons name="musical-notes-outline" size={40} color={colors.textMuted} />
             <Text style={[styles.emptyText, { color: colors.textMuted }]}>Nothing here yet</Text>
+            {viewMode === 'playlist-detail' && (
+              <TouchableOpacity 
+                style={[styles.addBtnEmpty, { backgroundColor: colors.primary }]}
+                onPress={() => setShowNameSelector(true)}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Add Names</Text>
+              </TouchableOpacity>
+            )}
           </View>
         }
       />
@@ -606,6 +642,54 @@ export default function PlaylistScreen() {
         nameNumber={pickingTrack?.number}
         nameTitle={pickingTrack?.transliteration}
       />
+
+      {/* Name Selector Modal */}
+      <Modal visible={showNameSelector} animationType="slide">
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+          <View style={[styles.subHeader, { borderBottomColor: colors.border }]}>
+            <TouchableOpacity onPress={() => setShowNameSelector(false)} hitSlop={12} style={styles.backBtn}>
+              <Ionicons name="close" size={24} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={[styles.subHeaderTitle, { color: colors.text }]}>Add to {currentPlaylist?.name}</Text>
+            <View style={{ width: 36 }} />
+          </View>
+          <FlatList
+            data={names}
+            keyExtractor={item => String(item.number)}
+            contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+            renderItem={({ item }) => {
+              const inPlaylist = currentPlaylist?.nameNumbers?.includes(item.number);
+              return (
+                <View style={[styles.trackRow, { backgroundColor: colors.card, marginHorizontal: 0 }]}>
+                    <View style={styles.thumbWrap}>
+                      <LinearGradient colors={getThumbGradient(item.number)} style={styles.thumb}>
+                          <Text style={styles.thumbNum}>{item.number}</Text>
+                      </LinearGradient>
+                    </View>
+                    <View style={styles.trackInfo}>
+                        <Text style={[styles.trackTrans, { color: colors.text }]}>{item.transliteration}</Text>
+                        <Text style={[styles.trackMeaning, { color: colors.textMuted }]}>{item.meaning}</Text>
+                    </View>
+                    <TouchableOpacity 
+                      onPress={async () => {
+                        if (!inPlaylist) {
+                          await addToPlaylist(currentPlaylist.id, item.number);
+                        }
+                      }}
+                      disabled={inPlaylist}
+                    >
+                       <Ionicons 
+                        name={inPlaylist ? "checkmark-circle" : "add-circle-outline"} 
+                        size={28} 
+                        color={inPlaylist ? "#10b981" : colors.primary} 
+                       />
+                    </TouchableOpacity>
+                </View>
+              );
+            }}
+          />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -766,6 +850,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyText: { fontSize: 14 },
+  addBtnEmpty: {
+    marginTop: 18,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+  },
 
   // Modal
   modalOverlay: {
