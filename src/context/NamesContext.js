@@ -230,10 +230,24 @@ export const NamesProvider = ({ children }) => {
 
   const unmarkAsLearned = async (nameNumber) => {
     try {
+      // 1. Instantly update local UI state regardless of server result
       setLearnedIds(prev => prev.filter(id => id !== nameNumber));
       setMasteredIds(prev => prev.filter(id => id !== nameNumber));
-    } catch (error) {
-      console.error('[NamesContext] Unmark Learned Error:', error.message);
+      
+      // 2. Attempt backend unlearn (silently handle 405 if server is not yet ready)
+      if (token) {
+        try {
+          await http.delete(ENDPOINTS.learn, { data: { nameNumber } });
+          await syncWithBackend();
+        } catch (apiErr) {
+          // If 405, it means the backend logic is pending – we'll keep it local-only for now
+          if (apiErr.response?.status !== 405) {
+            console.warn('[NamesContext] Backend Syncing...', apiErr.message);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[NamesContext] Local State Error:', err.message);
     }
   };
 

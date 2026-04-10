@@ -54,13 +54,14 @@ const parseQuranicRefs = (name) => {
 // ─── NameDetailScreen ─────────────────────────────────────────────────────────
 const NameDetailScreen = ({ route, navigation }) => {
   const { name } = route.params;
-  const { markAsLearned, learnedIds, masteredIds, revisitCounts } = useNames();
+  const { markAsLearned, unmarkAsLearned, learnedIds, masteredIds, revisitCounts } = useNames();
   const { toggleFavourite, favouriteIds, customPlaylists, addToPlaylist } = usePlaylist();
   const { colors, isDark } = useAppTheme();
 
   const [selectedOption, setSelectedOption] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [showUnlearnConfirm, setShowUnlearnConfirm] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [pagesLayout, setPagesLayout] = useState({
     width: SW - SPACE.md * 2 - SPINE_W - 2,
@@ -129,9 +130,19 @@ const NameDetailScreen = ({ route, navigation }) => {
   }, [showFeedback, mcq.ans, name.number, markAsLearned]);
 
   const handleMarkLearned = useCallback(async () => {
+    if (isLearned) {
+      setShowUnlearnConfirm(true);
+      return;
+    }
     await markAsLearned(name.number);
     Toast.show({ type: 'success', text1: 'Marked as Learned', text2: `${name.transliteration} added to your progress.`, visibilityTime: 2000 });
-  }, [markAsLearned, name]);
+  }, [markAsLearned, name, isLearned]);
+
+  const confirmUnlearn = async () => {
+    await unmarkAsLearned(name.number);
+    setShowUnlearnConfirm(false);
+    Toast.show({ type: 'info', text1: 'Name Unlearned', text2: `${name.transliteration} removed from learned names.`, visibilityTime: 2000 });
+  };
 
   // ── Unified design tokens ────────────────────────────────────────────────────
   // All cards share the same warm cream palette as the Hero card
@@ -602,6 +613,42 @@ const NameDetailScreen = ({ route, navigation }) => {
         nameNumber={Number(name.number)}
         nameTitle={name.transliteration}
       />
+
+      {/* Unlearn Confirmation Modal */}
+      <Modal
+        visible={showUnlearnConfirm}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowUnlearnConfirm(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.confirmCard, { backgroundColor: colors.card, borderColor: colors.borderStrong }]}>
+            <View style={[styles.confirmIcon, { backgroundColor: 'rgba(255, 68, 68, 0.1)' }]}>
+              <Ionicons name="alert-circle-outline" size={32} color="#ff4444" />
+            </View>
+            <Text style={[styles.confirmTitle, { color: colors.text }]}>Reset Progress?</Text>
+            <Text style={[styles.confirmSub, { color: colors.textMuted }]}>
+              Do you want to unlearn <Text style={{ color: colors.primary, fontWeight: '700' }}>{name.transliteration}</Text>? This will remove it from your learned collection.
+            </Text>
+            
+            <View style={styles.confirmActions}>
+              <TouchableOpacity 
+                onPress={() => setShowUnlearnConfirm(false)}
+                style={[styles.confirmBtn, { backgroundColor: colors.glass }]}
+              >
+                <Text style={[styles.confirmBtnText, { color: colors.text }]}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                onPress={confirmUnlearn}
+                style={[styles.confirmBtn, { backgroundColor: '#ff4444' }]}
+              >
+                <Text style={[styles.confirmBtnText, { color: '#fff' }]}>Unlearn</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -735,8 +782,15 @@ const styles = StyleSheet.create({
   revisitTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
   revisitFill: { height: '100%', borderRadius: 3 },
 
-  // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  // Modal & Confirm
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: SPACE.xl },
+  confirmCard: { width: '100%', borderRadius: RADIUS.xl, padding: SPACE.xl, alignItems: 'center', borderWidth: 1, elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 20 },
+  confirmIcon: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', marginBottom: SPACE.lg },
+  confirmTitle: { fontFamily: FONTS.bold, fontSize: 22, marginBottom: SPACE.sm },
+  confirmSub: { fontSize: 15, textAlign: 'center', lineHeight: 22, paddingHorizontal: SPACE.md, marginBottom: SPACE.xl },
+  confirmActions: { flexDirection: 'row', gap: SPACE.md, width: '100%' },
+  confirmBtn: { flex: 1, height: 48, borderRadius: RADIUS.lg, justifyContent: 'center', alignItems: 'center' },
+  confirmBtnText: { fontWeight: '700', fontSize: 16 },
 });
 
 export default NameDetailScreen;
