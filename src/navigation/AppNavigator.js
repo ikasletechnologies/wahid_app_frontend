@@ -7,6 +7,7 @@ import OTPScreen       from '../screens/OTPScreen';
 import TabNavigator    from './TabNavigator';
 import NameDetailScreen from '../screens/NameDetailScreen';
 import RegisterProfileScreen from '../screens/RegisterProfileScreen';
+import NowPlayingScreen from '../screens/NowPlayingScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -28,6 +29,11 @@ const AppNavigator = () => {
               name="NameDetail"
               component={NameDetailScreen}
               options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen
+              name="NowPlaying"
+              component={NowPlayingScreen}
+              options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true }}
             />
           </>
         )

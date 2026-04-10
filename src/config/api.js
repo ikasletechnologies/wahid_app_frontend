@@ -35,17 +35,15 @@ export const ENDPOINTS = {
   // Admin auth
   adminLogin:    `${API_BASE_URL}/api/admin/auth/login`,
 
-  // Playlist — mood playlist, presets, daily, session, favourites, mood log
-  playlist:           `${API_BASE_URL}/api/playlist`,             // GET ?mood=X → name list
+  // Playlist — presets, daily, session, favourites, custom, AI
   playlistPresets:    `${API_BASE_URL}/api/playlist/presets`,     // GET → preset playlist definitions
   playlistDaily:      `${API_BASE_URL}/api/playlist/daily`,       // GET → today's personalised playlist
   playlistSession:    `${API_BASE_URL}/api/playlist/session`,     // GET / POST { mood, trackIndex, title }
-  playlistFavourites: `${API_BASE_URL}/api/playlist/favourites`,  // GET / POST { nameNumber } / DELETE /:nameNumber
+  playlistFavourites: `${API_BASE_URL}/api/playlist/favourites`,  // GET / POST { nameNumber } / DELETE body { nameNumber }
+  playlistCustom:     `${API_BASE_URL}/api/playlist/custom`,      // GET / POST / PUT / DELETE body { id }
+  playlistAiRecommend:`${API_BASE_URL}/api/playlist/ai-recommend`,// POST { prompt }
   moodLog:            `${API_BASE_URL}/api/mood-log`,             // POST { mood, timestamp }
 
   // Insights & analytics
-  userInsights:       `${API_BASE_URL}/api/insights`,             // GET → mood patterns + suggestions
-
-  // Audio (TTS stream from backend — ready when audio URLs are added to names)
-  audioStream:        (num) => `${API_BASE_URL}/api/audio/${num}`, // GET → audio URL or stream
+  userInsights:       `${API_BASE_URL}/api/insights`,             // GET → user stats
 };

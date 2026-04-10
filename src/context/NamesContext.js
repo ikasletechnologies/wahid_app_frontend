@@ -311,6 +311,16 @@ export const NamesProvider = ({ children }) => {
       if (n && !seen.has(n.number)) { seen.add(n.number); daily.push(n); }
     });
 
+    // Pad with random names if we have fewer than 7 (to ensure a full experience)
+    if (daily.length < 7 && names.length > 0) {
+      const remaining = names.filter(n => !seen.has(n.number));
+      const needed = 7 - daily.length;
+      const padding = seededPick(remaining, needed, dayNum * 2);
+      padding.forEach(n => {
+        if (n && !seen.has(n.number)) { seen.add(n.number); daily.push(n); }
+      });
+    }
+
     return daily.slice(0, 7);
   }, [names, learnedIds, masteredIds]);
 

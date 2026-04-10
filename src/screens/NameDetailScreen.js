@@ -7,14 +7,17 @@ import {
   TouchableOpacity,
   StatusBar,
   Dimensions,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useNames } from '../context/NamesContext';
+import { usePlaylist } from '../context/PlaylistContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { FONTS, SPACE, RADIUS } from '../theme';
+import PlaylistPicker from '../components/PlaylistPicker';
 
 const { width: SW } = Dimensions.get('window');
 const SPINE_W = 10;
@@ -48,10 +51,12 @@ const parseQuranicRefs = (name) => {
 const NameDetailScreen = ({ route, navigation }) => {
   const { name }                                            = route.params;
   const { markAsLearned, learnedIds, masteredIds, revisitCounts } = useNames();
+  const { toggleFavourite, favouriteIds, customPlaylists, addToPlaylist } = usePlaylist();
   const { colors, isDark }                                  = useAppTheme();
 
   const [selectedOption, setSelectedOption] = useState(null);
   const [showFeedback,   setShowFeedback]   = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [currentPage,    setCurrentPage]    = useState(0);
   const [pagesLayout,    setPagesLayout]    = useState({
     width:  SW - SPACE.md * 2 - SPINE_W - 2,
@@ -62,6 +67,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   const isLearned    = learnedIds.includes(name.number);
   const isMastered   = masteredIds.includes(name.number);
+  const isFav        = favouriteIds.has(Number(name.number));
   const revisitCount = revisitCounts?.[name.number] ?? revisitCounts?.[String(name.number)] ?? 0;
 
   const benefits        = parseBenefits(name);
@@ -502,15 +508,31 @@ const NameDetailScreen = ({ route, navigation }) => {
             <Text style={[styles.headerArabic, { color: colors.primary }]}>{name.arabic}</Text>
           </View>
 
-          <TouchableOpacity
-            onPress={handleMarkLearned}
-            style={[styles.learnBtn, { backgroundColor: colors.glass, borderColor: colors.borderStrong }, isLearned && styles.learnBtnActive]}
-          >
-            <Ionicons name={isLearned ? 'checkmark-circle' : 'add-circle-outline'} size={15} color={isLearned ? '#2d9c96' : colors.textMuted} />
-            <Text style={[styles.learnBtnText, { color: colors.textMuted }, isLearned && { color: '#2d9c96' }]}>
-              {isLearned ? 'LEARNED' : 'MARK'}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <TouchableOpacity 
+              onPress={() => toggleFavourite(name.number)} 
+              style={[styles.iconBtn, { backgroundColor: colors.glass, marginRight: 8 }]}
+            >
+              <Ionicons name={isFav ? "heart" : "heart-outline"} size={22} color={isFav ? "#ff4d4d" : colors.text} />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={() => setShowPlaylistModal(true)} 
+              style={[styles.iconBtn, { backgroundColor: colors.glass, marginRight: 8 }]}
+            >
+              <Ionicons name="add-outline" size={22} color={colors.text} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleMarkLearned}
+              style={[styles.learnBtn, { backgroundColor: colors.glass, borderColor: colors.borderStrong }, isLearned && styles.learnBtnActive]}
+            >
+              <Ionicons name={isLearned ? 'checkmark-circle' : 'add-circle-outline'} size={15} color={isLearned ? '#2d9c96' : colors.textMuted} />
+              <Text style={[styles.learnBtnText, { color: colors.textMuted }, isLearned && { color: '#2d9c96' }]}>
+                {isLearned ? 'LEARNED' : 'MARK'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* ── Book ── */}
@@ -575,6 +597,13 @@ const NameDetailScreen = ({ route, navigation }) => {
         </Text>
 
       </SafeAreaView>
+
+      <PlaylistPicker
+        visible={showPlaylistModal}
+        onHide={() => setShowPlaylistModal(false)}
+        nameNumber={Number(name.number)}
+        nameTitle={name.transliteration}
+      />
     </View>
   );
 };
@@ -588,6 +617,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: SPACE.md, height: 64,
   },
+  headerRight: { flexDirection: 'row', alignItems: 'center' },
   iconBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   headerCenter: { flex: 1, alignItems: 'center', paddingHorizontal: SPACE.sm },
   headerArabic: { fontFamily: FONTS.arabic, fontSize: 30 },
@@ -706,6 +736,9 @@ const styles = StyleSheet.create({
   revisitCount: { fontFamily: FONTS.bold, fontSize: 15 },
   revisitTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
   revisitFill:  { height: '100%', borderRadius: 3 },
+
+  // Modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
 });
 
 export default NameDetailScreen;
