@@ -36,9 +36,10 @@ const CAT = {
   forgiver: { color: '#ec4899', label: 'Forgiver' },
   exalted:  { color: '#c9a84c', label: 'Exalted'  },
 };
-const catColor = (key) => CAT[key]?.color ?? '#c9a84c';
+const catColor = (key) => CAT[key]?.color ?? PRIMARY_GREEN;
 const catLabel = (key) => CAT[key]?.label ?? key;
-const GOLD = '#c9a84c';
+const GOLD = '#F2F7F4'; 
+const PRIMARY_GREEN = '#2D6A4F';
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 const HEADER_H  = 64;
@@ -74,10 +75,10 @@ function composeFeed(names, contentItems) {
 // ─── Islamic arch frame border ───────────────────────────────────────────────
 // Draws the Moroccan arch frame over the cream card — top horseshoe arch,
 // inner rectangle border, side concave arcs, corner/centre diamond finials.
-const IslamicArchBorder = ({ cardH }) => {
-  const bc   = 'rgba(139, 105, 20, 0.38)';
-  const bcMd = 'rgba(139, 105, 20, 0.55)';
-  const gem  = { position: 'absolute', width: 11, height: 11, borderWidth: 1.5, borderColor: bcMd, transform: [{ rotate: '45deg' }], backgroundColor: '#F0E4C8' };
+const IslamicArchBorder = ({ cardH, isDark }) => {
+  const bc   = isDark ? 'rgba(201,168,76,0.2)' : 'rgba(45, 106, 79, 0.12)';
+  const bcMd = isDark ? 'rgba(201,168,76,0.35)' : 'rgba(45, 106, 79, 0.25)';
+  const gem  = { position: 'absolute', width: 11, height: 11, borderWidth: 1.5, borderColor: bcMd, transform: [{ rotate: '45deg' }], backgroundColor: isDark ? '#111' : '#FFF' };
   const pad  = 14;
   const archW = CARD_W * 0.68;
 
@@ -137,7 +138,7 @@ const OrnDiv = ({ color }) => (
 
 // ─── Name card (full page) ────────────────────────────────────────────────────
 const NameCard = React.memo(({
-  item, index, scrollY, cardH, onPress, isDark, learnedIds, masteredIds,
+  item, index, scrollY, cardH, onPress, isDark, learnedIds, masteredIds, colors
 }) => {
   const cc        = catColor(item.category);
   const isLearned  = learnedIds.includes(item.number);
@@ -158,33 +159,41 @@ const NameCard = React.memo(({
         activeOpacity={1}
         style={[styles.card, { height: cardH }]}
       >
-        {/* Card background — warm Islamic parchment */}
+        {/* Card background — pure white/sage instead of parchment */}
         <LinearGradient
-          colors={['#F5EDDA', '#EDE0C4', '#E6D8B8']}
+          colors={isDark ? ['#1A1A1A', '#111111'] : ['#FFFFFF', '#F2F7F4']}
           style={StyleSheet.absoluteFillObject}
           start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
         />
 
-        {/* Dense Islamic geometric tile pattern */}
-        <GeometricPattern color="#8B6914" isDark={false} cardW={CARD_W} cardH={cardH} />
+        {/* Dense Islamic geometric tile pattern — subtle green */}
+        <GeometricPattern 
+          color={isDark ? 'rgba(255,255,255,0.03)' : 'rgba(45, 106, 79, 0.04)'} 
+          isDark={isDark} 
+          cardW={CARD_W} 
+          cardH={cardH} 
+        />
 
-        {/* Pattern bottom fade — preserves readability of lower text */}
+        {/* Pattern bottom fade */}
         <LinearGradient
-          colors={['transparent', 'rgba(230, 216, 184, 0.72)']}
+          colors={['transparent', isDark ? 'rgba(17,17,17,0.8)' : 'rgba(242, 247, 244, 0.72)']}
           style={[StyleSheet.absoluteFillObject, { top: '50%' }]}
           pointerEvents="none"
         />
 
         {/* Islamic arch frame border */}
-        <IslamicArchBorder cardH={cardH} />
+        <IslamicArchBorder cardH={cardH} isDark={isDark} />
 
         {/* ── Card inner content ── */}
         <View style={styles.cardInner}>
 
           {/* Row 1: number + category + status */}
           <View style={styles.topRow}>
-            <View style={[styles.numBox, { borderColor: 'rgba(139,105,20,0.45)', backgroundColor: 'rgba(201,168,76,0.12)' }]}>
-              <Text style={[styles.numText, { color: '#7A5000' }]}>
+            <View style={[styles.numBox, { 
+              borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(45, 106, 79, 0.15)', 
+              backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(45, 106, 79, 0.05)' 
+            }]}>
+              <Text style={[styles.numText, { color: isDark ? '#FFF' : PRIMARY_GREEN, fontSize: 13 }]}>
                 {String(item.number).padStart(2, '0')}
               </Text>
             </View>
@@ -197,9 +206,9 @@ const NameCard = React.memo(({
             </View>
 
             {isMastered && (
-              <View style={[styles.statusPill, { backgroundColor: GOLD + '20', borderColor: GOLD + '55' }]}>
-                <Ionicons name="trophy" size={10} color="#7A5000" />
-                <Text style={[styles.statusPillText, { color: '#7A5000' }]}>Mastered</Text>
+              <View style={[styles.statusPill, { backgroundColor: PRIMARY_GREEN + '10', borderColor: PRIMARY_GREEN + '30' }]}>
+                <Ionicons name="trophy" size={10} color={PRIMARY_GREEN} />
+                <Text style={[styles.statusPillText, { color: PRIMARY_GREEN }]}>Mastered</Text>
               </View>
             )}
             {isLearned && !isMastered && (
@@ -212,22 +221,22 @@ const NameCard = React.memo(({
 
           {/* Arabic — hero element */}
           <View style={styles.arabicWrap}>
-            <View style={[styles.heroHalo, { backgroundColor: 'rgba(201,168,76,0.10)' }]} />
-            <Text style={[styles.arabicText, { color: '#6B4000' }]}>
+            <View style={[styles.heroHalo, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : PRIMARY_GREEN + '05' }]} />
+            <Text style={[styles.arabicText, { color: isDark ? '#FFF' : PRIMARY_GREEN }]}>
               {item.arabic}
             </Text>
           </View>
 
           {/* Ornamental divider */}
-          <OrnDiv color="#8B6914" />
+          <OrnDiv color={isDark ? '#FFF' : PRIMARY_GREEN} />
 
           {/* Transliteration */}
-          <Text style={[styles.transText, { color: '#1A0F00' }]}>
+          <Text style={[styles.transText, { color: colors.text }]}>
             {item.transliteration}
           </Text>
 
           {/* Meaning */}
-          <Text style={[styles.meaningText, { color: 'rgba(80, 48, 8, 0.72)' }]}
+          <Text style={[styles.meaningText, { color: colors.textMuted }]}
             numberOfLines={3}
           >
             {item.meaning}
@@ -235,10 +244,10 @@ const NameCard = React.memo(({
 
           {/* Bottom CTA */}
           <View style={styles.ctaRow}>
-            <View style={[styles.ctaLine, { backgroundColor: 'rgba(139,105,20,0.30)' }]} />
-            <Text style={[styles.ctaText, { color: 'rgba(122,80,0,0.75)' }]}>Tap to explore</Text>
-            <Ionicons name="arrow-forward" size={11} color="rgba(122,80,0,0.75)" style={{ marginTop: 1 }} />
-            <View style={[styles.ctaLine, { backgroundColor: 'rgba(139,105,20,0.30)' }]} />
+            <View style={[styles.ctaLine, { backgroundColor: colors.border }]} />
+            <Text style={[styles.ctaText, { color: PRIMARY_GREEN }]}>Tap to explore</Text>
+            <Ionicons name="arrow-forward" size={11} color={PRIMARY_GREEN} style={{ marginTop: 1 }} />
+            <View style={[styles.ctaLine, { backgroundColor: colors.border }]} />
           </View>
         </View>
 
@@ -253,104 +262,128 @@ const NameCard = React.memo(({
 });
 
 // ─── Did You Know card (full page) ────────────────────────────────────────────
-const DYKCard = React.memo(({ item, cardH }) => (
+const DYKCard = React.memo(({ item, cardH, isDark, colors }) => (
   <View style={[styles.cardWrap, { height: cardH }]}>
     <View style={[styles.card, { height: cardH, overflow: 'hidden' }]}>
-      {/* Same cream parchment background */}
+      {/* Same white/sage background */}
       <LinearGradient
-        colors={['#F5EDDA', '#EDE0C4', '#E6D8B8']}
+        colors={isDark ? ['#1A1A1A', '#111111'] : ['#FFFFFF', '#F2F7F4']}
         style={StyleSheet.absoluteFillObject}
         start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
       />
-      <GeometricPattern color="#8B6914" isDark={false} cardW={CARD_W} cardH={cardH} />
+      <GeometricPattern 
+        color={isDark ? 'rgba(255,255,255,0.03)' : 'rgba(45, 106, 79, 0.04)'} 
+        isDark={isDark} 
+        cardW={CARD_W} 
+        cardH={cardH} 
+      />
       <LinearGradient
-        colors={['transparent', 'rgba(230, 216, 184, 0.72)']}
+        colors={['transparent', isDark ? 'rgba(17,17,17,0.8)' : 'rgba(242, 247, 244, 0.72)']}
         style={[StyleSheet.absoluteFillObject, { top: '50%' }]}
         pointerEvents="none"
       />
-      <IslamicArchBorder cardH={cardH} />
+      <IslamicArchBorder cardH={cardH} isDark={isDark} />
 
       <View style={styles.cardInner}>
         {/* Icon */}
         <View style={styles.dykIconRing}>
-          <View style={[styles.dykIconBg, { backgroundColor: 'rgba(201,168,76,0.18)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.30)' }]}>
-            <Ionicons name="bulb-outline" size={26} color="#7A5000" />
+          <View style={[styles.dykIconBg, { 
+            backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(45, 106, 79, 0.05)', 
+            borderWidth: 1, 
+            borderColor: colors.border 
+          }]}>
+            <Ionicons name="bulb-outline" size={26} color={PRIMARY_GREEN} />
           </View>
         </View>
 
         {/* Label */}
-        <Text style={[styles.dykLabel, { color: '#8B6914' }]}>DID YOU KNOW?</Text>
+        <Text style={[styles.dykLabel, { color: PRIMARY_GREEN }]}>DID YOU KNOW?</Text>
 
         {/* Title */}
         {!!item.title && (
-          <Text style={[styles.dykTitle, { color: '#1A0F00' }]}>
+          <Text style={[styles.dykTitle, { color: colors.text }]}>
             {item.title}
           </Text>
         )}
 
-        <OrnDiv color="#8B6914" />
+        <OrnDiv color={isDark ? '#FFF' : PRIMARY_GREEN} />
 
         {/* Content */}
-        <Text style={[styles.dykContent, { color: 'rgba(80, 48, 8, 0.72)' }]}>
+        <Text style={[styles.dykContent, { color: colors.textMuted }]}>
           {item.content}
         </Text>
       </View>
 
-      <LinearGradient colors={['transparent', 'rgba(139,105,20,0.12)']} style={styles.bottomAura} />
+      <LinearGradient 
+        colors={['transparent', isDark ? 'rgba(255,255,255,0.03)' : 'rgba(45, 106, 79, 0.05)']} 
+        style={styles.bottomAura} 
+      />
     </View>
   </View>
 ));
 
 // ─── Media / Ad card (full page) ─────────────────────────────────────────────
-const MediaAdCard = React.memo(({ item, cardH, isAd }) => (
+const MediaAdCard = React.memo(({ item, cardH, isAd, isDark, colors }) => (
   <View style={[styles.cardWrap, { height: cardH }]}>
     <View style={[styles.card, { height: cardH, overflow: 'hidden' }]}>
-      {/* Same cream parchment background */}
+      {/* Same white/sage background */}
       <LinearGradient
-        colors={['#F5EDDA', '#EDE0C4', '#E6D8B8']}
+        colors={isDark ? ['#1A1A1A', '#111111'] : ['#FFFFFF', '#F2F7F4']}
         style={StyleSheet.absoluteFillObject}
         start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
       />
-      <GeometricPattern color="#8B6914" isDark={false} cardW={CARD_W} cardH={cardH} />
+      <GeometricPattern 
+        color={isDark ? 'rgba(255,255,255,0.03)' : 'rgba(45, 106, 79, 0.04)'} 
+        isDark={isDark} 
+        cardW={CARD_W} 
+        cardH={cardH} 
+      />
       <LinearGradient
-        colors={['transparent', 'rgba(230, 216, 184, 0.72)']}
+        colors={['transparent', isDark ? 'rgba(17,17,17,0.8)' : 'rgba(242, 247, 244, 0.72)']}
         style={[StyleSheet.absoluteFillObject, { top: '50%' }]}
         pointerEvents="none"
       />
-      <IslamicArchBorder cardH={cardH} />
+      <IslamicArchBorder cardH={cardH} isDark={isDark} />
 
       {/* Sponsored label */}
-      {isAd && <Text style={[styles.sponsored, { color: 'rgba(122,80,0,0.40)' }]}>Sponsored</Text>}
+      {isAd && <Text style={[styles.sponsored, { color: colors.textDimmed }]}>Sponsored</Text>}
 
       <View style={styles.mediaInner}>
         {/* Tags */}
         {Array.isArray(item.tags) && item.tags.length > 0 && (
           <View style={styles.tagRow}>
             {item.tags.slice(0, 2).map(t => (
-              <View key={t} style={[styles.tag, { backgroundColor: 'rgba(139,105,20,0.14)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.28)' }]}>
-                <Text style={[styles.tagText, { color: '#7A5000' }]}>{t.toUpperCase()}</Text>
+              <View key={t} style={[styles.tag, { 
+                backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(45, 106, 79, 0.08)', 
+                borderWidth: 1, 
+                borderColor: colors.border 
+              }]}>
+                <Text style={[styles.tagText, { color: isDark ? '#FFF' : PRIMARY_GREEN }]}>{t.toUpperCase()}</Text>
               </View>
             ))}
           </View>
         )}
 
         {/* Title */}
-        <Text style={[styles.mediaTitle, { color: '#1A0F00' }]}>{item.title}</Text>
-        <OrnDiv color="#8B6914" />
+        <Text style={[styles.mediaTitle, { color: colors.text }]}>{item.title}</Text>
+        <OrnDiv color={isDark ? '#FFF' : PRIMARY_GREEN} />
         {!!item.content && (
-          <Text style={[styles.mediaSub, { color: 'rgba(80, 48, 8, 0.68)' }]} numberOfLines={5}>{item.content}</Text>
+          <Text style={[styles.mediaSub, { color: colors.textMuted }]} numberOfLines={5}>{item.content}</Text>
         )}
 
         {/* CTA */}
         {!!item.ctaText && (
           <View style={styles.mediaCta}>
-            <Text style={[styles.mediaCtaText, { color: '#7A5000' }]}>{item.ctaText}</Text>
-            <Ionicons name="arrow-forward" size={14} color="#7A5000" />
+            <Text style={[styles.mediaCtaText, { color: PRIMARY_GREEN }]}>{item.ctaText}</Text>
+            <Ionicons name="arrow-forward" size={14} color={PRIMARY_GREEN} />
           </View>
         )}
       </View>
 
-      <LinearGradient colors={['transparent', 'rgba(139,105,20,0.12)']} style={styles.bottomAura} />
+      <LinearGradient 
+        colors={['transparent', isDark ? 'rgba(255,255,255,0.03)' : 'rgba(45, 106, 79, 0.05)']} 
+        style={styles.bottomAura} 
+      />
     </View>
   </View>
 ));
@@ -523,7 +556,7 @@ const NamesScreen = ({ navigation, route }) => {
 
   // ── Render feed row ──
   const renderItem = useCallback(({ item: row, index }) => {
-    const sharedProps = { index, scrollY, cardH: CARD_H, isDark };
+    const sharedProps = { index, scrollY, cardH: CARD_H, isDark, colors };
     switch (row.type) {
       case 'name':
         return (
@@ -556,15 +589,12 @@ const NamesScreen = ({ navigation, route }) => {
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <View style={[styles.header, { height: HEADER_H }]}>
         <View style={styles.headerLeft}>
-          <Text style={[styles.headerTitle, { color: isDark ? GOLD : '#2D6A4F' }]}>
+          <Text style={[styles.headerTitle, { color: colors.textMuted }]}>
             Al-Asmāʾ Al-Ḥusnā
           </Text>
-          <View style={styles.headerSubRow}>
-            <View style={[styles.headerSubDot, { backgroundColor: isDark ? GOLD : '#2D6A4F' }]} />
-            <Text style={[styles.headerSub, { color: colors.textMuted }]}>
-              {feed.length} Sacred Names
-            </Text>
-          </View>
+          <Text style={[styles.headerSub, { color: colors.text }]}>
+            {feed.length} Sacred Names
+          </Text>
         </View>
 
         <View style={styles.headerActions}>
@@ -716,25 +746,14 @@ const styles = StyleSheet.create({
   },
   headerLeft: { flex: 1 },
   headerTitle: {
-    fontFamily: FONTS.arabic,
-    fontSize: 18,
-    letterSpacing: 0.3,
+    fontFamily: FONTS.regular,
+    fontSize: SIZES.sm,
+    letterSpacing: 0.5,
   },
   headerSub: {
-    fontSize: 11,
-    letterSpacing: 0.4,
-  },
-  headerSubRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    fontFamily: FONTS.bold,
+    fontSize: SIZES.xl,
     marginTop: 2,
-  },
-  headerSubDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    opacity: 0.6,
   },
   headerActions: { flexDirection: 'row', gap: SPACE.sm },
   hBtn: {
@@ -868,9 +887,9 @@ const styles = StyleSheet.create({
   arabicWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   arabicText: {
     fontFamily: FONTS.arabic,
-    fontSize: 72,
+    fontSize: 64,
     textAlign: 'center',
-    lineHeight: 90,
+    lineHeight: 82,
     includeFontPadding: false,
   },
   heroHalo: {
@@ -981,7 +1000,7 @@ const styles = StyleSheet.create({
   tagText:   { fontSize: 9, fontWeight: '800', letterSpacing: 0.8, color: GOLD },
   mediaTitle: {
     fontFamily: FONTS.bold,
-    fontSize: 24, color: '#FFFFFF',
+    fontSize: 24,
     lineHeight: 32, marginBottom: 4,
   },
   mediaSub: {
