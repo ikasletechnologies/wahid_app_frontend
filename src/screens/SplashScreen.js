@@ -24,8 +24,8 @@ const SplashScreen = () => {
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
-      Animated.spring(scaleAnim, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+      Animated.spring(scaleAnim, { toValue: 1, friction: 6, tension: 60, useNativeDriver: true }),
     ]).start();
   }, []);
 

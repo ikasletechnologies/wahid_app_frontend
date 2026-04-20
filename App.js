@@ -10,6 +10,7 @@ import { PlaylistProvider } from './src/context/PlaylistContext';
 import * as SplashScreen from 'expo-splash-screen';
 import AppNavigator from './src/navigation/AppNavigator';
 import ThemedToast from './src/components/ThemedToast';
+import NetworkStatusBanner from './src/components/NetworkStatusBanner';
 
 // Keep the native splash screen visible until the app is ready
 SplashScreen.preventAutoHideAsync();
@@ -32,6 +33,7 @@ export default function App() {
                   <PlaylistProvider>
                     <AppNavigator />
                     <ThemedToast />
+                    <NetworkStatusBanner />
                   </PlaylistProvider>
                 </ContentProvider>
               </NamesProvider>
@@ -39,6 +41,7 @@ export default function App() {
           </AuthProvider>
         </ThemeProvider>
       </NavigationContainer>
+
     </GestureHandlerRootView>
   );
 }

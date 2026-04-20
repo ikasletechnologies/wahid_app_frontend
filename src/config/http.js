@@ -1,20 +1,23 @@
 import axios from 'axios';
-import { API_BASE_URL } from './api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL, ENDPOINTS } from './api';
 
-// Shared Axios instance — pre-configured with base URL, timeout, and auth.
-// AuthContext sets the Authorization header once after login:
-//   http.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-// All screens/contexts import this instead of calling fetch() directly.
+// Shared Axios instance
 const http = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 15000,
 });
 
 // ── Request interceptor ────────────────────────────────────────────────────
+// Automatically inject the accessToken if available
 http.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    const token = await AsyncStorage.getItem('accessToken');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
     if (__DEV__) {
-      console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`);
+      console.log(`[API >>] ${config.method?.toUpperCase()} ${config.url}`);
     }
     return config;
   },
@@ -22,9 +25,49 @@ http.interceptors.request.use(
 );
 
 // ── Response interceptor ───────────────────────────────────────────────────
+// Handles automatic token refresh on 401 errors
 http.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  (response) => {
+    if (__DEV__) {
+      console.log(`[API <<] ${response.status} ${response.config.url}`);
+    }
+    return response;
+  },
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If error is 401 and we haven't retried yet
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = await AsyncStorage.getItem('refreshToken');
+        if (!refreshToken) throw new Error('No refresh token available');
+
+        console.log('[AUTH] Token expired, attempting refresh...');
+        
+        // Use a clean axios instance to avoid infinite loops
+        const refreshResponse = await axios.post(ENDPOINTS.refresh, { refreshToken });
+        
+        if (refreshResponse.data?.success) {
+          const { accessToken } = refreshResponse.data;
+          
+          // Save new token
+          await AsyncStorage.setItem('accessToken', accessToken);
+          
+          // Update the original request header and retry
+          originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+          console.log('[AUTH] Token refreshed successfully. Retrying request.');
+          return http(originalRequest);
+        }
+      } catch (refreshError) {
+        console.warn('[AUTH] Session expired. Logging out.');
+        // Optional: Trigger a logout by clearing storage
+        await AsyncStorage.multiRemove(['user', 'accessToken', 'refreshToken']);
+        // The app will naturally redirect if AuthContext state is updated via a listener (or manual check)
+      }
+    }
+
     if (__DEV__) {
       const status  = error.response?.status ?? 'NO_RESPONSE';
       const url     = error.config?.url ?? '';

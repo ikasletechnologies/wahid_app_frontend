@@ -66,10 +66,16 @@ const OTPScreen = ({ navigation, route }) => {
 
     // Logic for new vs existing user
     if (result.isNewUser) {
-        navigation.replace('RegisterProfile');
+        // Navigate to Register to set password/username
+        navigation.navigate('Register', { 
+          verificationToken: result.verificationToken,
+          phone 
+        });
+        Toast.show({ type: 'success', text1: 'Phone Verified!', text2: 'Please set your account details.' });
     } else {
-        // AuthNavigator will automatically switch to MainApp because user is set in state
-        Toast.show({ type: 'success', text1: 'Welcome Back!' });
+        // User exists, they should login with password
+        navigation.navigate('Login', { identifier: phone });
+        Toast.show({ type: 'info', text1: 'Welcome Back!', text2: 'Please enter your password to login.' });
     }
   };
 

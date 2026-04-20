@@ -15,7 +15,10 @@ export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || getLocalIp();
 export const ENDPOINTS = {
   // Auth — OTP flow (Twilio Verify)
   sendOtp:   `${API_BASE_URL}/api/auth/send-otp`,   // POST { phone }
-  verifyOtp: `${API_BASE_URL}/api/auth/verify-otp`, // POST { phone, code } → { user, token }
+  verifyOtp: `${API_BASE_URL}/api/auth/verify-otp`, // POST { phone, code } → { verificationToken }
+  signup:    `${API_BASE_URL}/api/auth/signup`,    // POST { verificationToken, username, password }
+  refresh:   `${API_BASE_URL}/api/auth/refresh`,   // POST { refreshToken }
+  logout:    `${API_BASE_URL}/api/auth/logout`,    // POST { refreshToken }
   profile:   `${API_BASE_URL}/api/me`,
 
   // Legacy email/password (kept for admin use)

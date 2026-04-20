@@ -24,8 +24,10 @@ import { Image } from 'react-native';
 
 Dimensions.get('window');
 
-const LoginScreen = ({ navigation }) => {
-  const [email, setEmail] = useState('');
+const LoginScreen = ({ navigation, route }) => {
+  const { identifier: initialIdentifier } = route.params || {};
+
+  const [identifier, setIdentifier] = useState(initialIdentifier || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -33,7 +35,7 @@ const LoginScreen = ({ navigation }) => {
   const { login } = useAuth();
   const { colors, isDark } = useAppTheme();
 
-  const emailInput = useRef(null);
+  const identifierInput = useRef(null);
   const passwordInput = useRef(null);
   const buttonScale = useRef(new Animated.Value(1)).current;
 
@@ -41,17 +43,18 @@ const LoginScreen = ({ navigation }) => {
   const pressOut = () => Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true }).start();
 
   const handleLogin = async () => {
-    if (!email.trim() || !password) {
-      Toast.show({ type: 'error', text1: 'Incomplete Fields', text2: 'Please enter both your email and password.' });
+    if (!identifier.trim() || !password) {
+      Toast.show({ type: 'error', text1: 'Incomplete Fields', text2: 'Please enter your identifier and password.' });
       return;
     }
     setLoading(true);
-    const result = await login(email.trim(), password);
+    const result = await login(identifier.trim(), password);
     setLoading(false);
     if (!result.success) {
       Toast.show({ type: 'error', text1: 'Login Error', text2: result.message || 'The credentials you entered are incorrect.' });
     } else {
       Toast.show({ type: 'success', text1: 'Welcome back!', text2: 'Signed in successfully.' });
+      // AuthNavigator will naturally switch to MainApp
     }
   };
 
@@ -103,33 +106,32 @@ const LoginScreen = ({ navigation }) => {
             <Text style={[styles.cardTitle, { color: colors.text }]}>Welcome Back</Text>
             <Text style={[styles.cardSub, { color: colors.textMuted }]}>Sign in to continue your spiritual journey</Text>
 
-            {/* Email Field */}
+            {/* Identifier Field */}
             <Pressable
-              onPress={() => emailInput.current?.focus()}
-              style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'email' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
+              onPress={() => identifierInput.current?.focus()}
+              style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'identifier' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
             >
               <View style={styles.inputHeader}>
                 <Ionicons
-                  name="mail-outline"
+                  name="person-outline"
                   size={14}
-                  color={focusedField === 'email' ? colors.primary : colors.textMuted}
+                  color={focusedField === 'identifier' ? colors.primary : colors.textMuted}
                 />
-                <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'email' && { color: colors.primary }]}>
-                  EMAIL ADDRESS
+                <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'identifier' && { color: colors.primary }]}>
+                  USERNAME / PHONE / EMAIL
                 </Text>
               </View>
               <TextInput
-                ref={emailInput}
+                ref={identifierInput}
                 style={[styles.input, { color: colors.text }]}
-                placeholder="your@email.com"
+                placeholder="Enter your login details"
                 placeholderTextColor={colors.textDimmed}
-                value={email}
-                onChangeText={setEmail}
-                onFocus={() => setFocused('email')}
+                value={identifier}
+                onChangeText={setIdentifier}
+                onFocus={() => setFocused('identifier')}
                 onBlur={() => setFocused(null)}
                 selectionColor="#c9a84c"
                 cursorColor="#c9a84c"
-                keyboardType="email-address"
                 autoCapitalize="none"
               />
             </Pressable>
@@ -203,7 +205,7 @@ const LoginScreen = ({ navigation }) => {
             {/* Footer */}
             <View style={styles.footer}>
               <Text style={[styles.footerText, { color: colors.textMuted }]}>New to Wahid?</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <TouchableOpacity onPress={() => navigation.navigate('Phone')}>
                 <Text style={[styles.footerLink, { color: colors.primary }]}>Create Account</Text>
               </TouchableOpacity>
             </View>

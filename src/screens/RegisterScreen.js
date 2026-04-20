@@ -21,18 +21,20 @@ import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { Image } from 'react-native';
 
-const RegisterScreen = ({ navigation }) => {
+const RegisterScreen = ({ navigation, route }) => {
+  const { verificationToken, phone } = route.params || {};
+
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocused] = useState(null);
-  const { register } = useAuth();
+  const { signup } = useAuth();
   const { colors, isDark } = useAppTheme();
 
   const nameInput = useRef(null);
-  const emailInput = useRef(null);
+  const usernameInput = useRef(null);
   const passwordInput = useRef(null);
   const buttonScale = useRef(new Animated.Value(1)).current;
 
@@ -40,21 +42,29 @@ const RegisterScreen = ({ navigation }) => {
   const pressOut = () => Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true }).start();
 
   const handleRegister = async () => {
-    if (!name.trim() || !email.trim() || !password) {
-      Toast.show({ type: 'error', text1: 'Missing Info', text2: 'Please fill in all the details to continue.' });
+    if (!username.trim() || !password) {
+      Toast.show({ type: 'error', text1: 'Missing Info', text2: 'Username and password are required.' });
       return;
     }
     if (password.length < 6) {
       Toast.show({ type: 'error', text1: 'Weak Password', text2: 'Password should be at least 6 characters long.' });
       return;
     }
+    if (!verificationToken) {
+      Toast.show({ type: 'error', text1: 'Session Expired', text2: 'Please verify your phone number again.' });
+      navigation.navigate('Phone');
+      return;
+    }
+
     setLoading(true);
-    const result = await register(name.trim(), email.trim(), password);
+    const result = await signup(verificationToken, username.trim(), password, name.trim());
     setLoading(false);
+
     if (!result.success) {
-      Toast.show({ type: 'error', text1: 'Registration Error', text2: result.message || 'Something went wrong. Please try again.' });
+      Toast.show({ type: 'error', text1: 'Registration Error', text2: result.message || 'Something went wrong.' });
     } else {
       Toast.show({ type: 'success', text1: 'Account Created!', text2: 'Welcome to your spiritual journey.' });
+      // AuthNavigator will naturally switch to MainApp
     }
   };
 
@@ -132,33 +142,32 @@ const RegisterScreen = ({ navigation }) => {
               />
             </Pressable>
 
-            {/* Email Input */}
+            {/* Username Input */}
             <Pressable
-              onPress={() => emailInput.current?.focus()}
-              style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'email' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
+              onPress={() => usernameInput.current?.focus()}
+              style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'username' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
             >
               <View style={styles.inputHeader}>
                 <Ionicons
-                  name="mail-outline"
+                  name="at-outline"
                   size={14}
-                  color={focusedField === 'email' ? colors.primary : colors.textMuted}
+                  color={focusedField === 'username' ? colors.primary : colors.textMuted}
                 />
-                <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'email' && { color: colors.primary }]}>
-                  EMAIL ADDRESS
+                <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'username' && { color: colors.primary }]}>
+                  CHOOSE USERNAME
                 </Text>
               </View>
               <TextInput
-                ref={emailInput}
+                ref={usernameInput}
                 style={[styles.input, { color: colors.text }]}
-                placeholder="your@email.com"
+                placeholder="your_unique_username"
                 placeholderTextColor={colors.textDimmed}
-                value={email}
-                onChangeText={setEmail}
-                onFocus={() => setFocused('email')}
+                value={username}
+                onChangeText={setUsername}
+                onFocus={() => setFocused('username')}
                 onBlur={() => setFocused(null)}
                 selectionColor="#c9a84c"
                 cursorColor="#c9a84c"
-                keyboardType="email-address"
                 autoCapitalize="none"
               />
             </Pressable>

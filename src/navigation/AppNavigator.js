@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import SplashScreen    from '../screens/SplashScreen';
 import PhoneScreen     from '../screens/PhoneScreen';
 import OTPScreen       from '../screens/OTPScreen';
+import LoginScreen     from '../screens/LoginScreen';
+import RegisterScreen  from '../screens/RegisterScreen';
 import TabNavigator    from './TabNavigator';
 import NameDetailScreen from '../screens/NameDetailScreen';
 import RegisterProfileScreen from '../screens/RegisterProfileScreen';
@@ -38,7 +40,7 @@ const AppNavigator = () => {
           </>
         )
       ) : (
-        // ── Unauthenticated — OTP flow ───────────────────────────────────
+        // ── Unauthenticated — OTP + Login + Register flow ────────────────
         <>
           {/* Step 1: enter phone number + country code */}
           <Stack.Screen name="Phone" component={PhoneScreen} />
@@ -46,6 +48,18 @@ const AppNavigator = () => {
           <Stack.Screen
             name="OTP"
             component={OTPScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          {/* Step 3a: existing user → password login */}
+          <Stack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          {/* Step 3b: new user → set username/password */}
+          <Stack.Screen
+            name="Register"
+            component={RegisterScreen}
             options={{ animation: 'slide_from_right' }}
           />
         </>
