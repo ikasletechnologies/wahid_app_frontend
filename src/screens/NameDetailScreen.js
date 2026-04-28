@@ -1,33 +1,19 @@
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  StatusBar,
-  Dimensions,
-  Modal,
-  ActivityIndicator,
-  ImageBackground,
+  View, Text, StyleSheet, Dimensions, Animated, Easing,
+  Image, TouchableOpacity, StatusBar, Pressable, PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import Toast from 'react-native-toast-message';
 import { useNames } from '../context/NamesContext';
-import { usePlaylist } from '../context/PlaylistContext';
-import { useAppTheme } from '../context/ThemeContext';
-import { FONTS, SPACE, RADIUS } from '../theme';
-import PlaylistPicker from '../components/PlaylistPicker';
+import NameDetailHeader from '../components/NameDetailHeader';
 
 const { width: SW } = Dimensions.get('window');
-const SPINE_W = 10;
 
-// ─── Data helpers ─────────────────────────────────────────────────────────────
 const getField = (name, ...keys) => {
-  for (const key of keys) {
-    if (name[key] !== undefined && name[key] !== null && name[key] !== '') return name[key];
+  for (const k of keys) {
+    if (name[k] !== undefined && name[k] !== null && name[k] !== '') return name[k];
   }
   return null;
 };
@@ -39,758 +25,746 @@ const parseBenefits = (name) => {
   return raw.split(/\.\s+/).filter(Boolean);
 };
 
-const parseQuranicRefs = (name) => {
-  const raw = getField(name, 'quranic_references', 'quranicReferences');
-  if (Array.isArray(raw) && raw.length > 0) return raw;
-  const arabic = getField(name, 'quranicAyah', 'ayah');
+const parseQuranicRef = (name) => {
+  const refs = getField(name, 'quranic_references', 'quranicReferences');
+  if (Array.isArray(refs) && refs.length > 0) return refs[0];
   const translation = getField(name, 'quranicTranslation', 'ayahTranslation');
   const reference = getField(name, 'quranicReference', 'surahReference', 'reference');
-  if (arabic || translation) return [{ arabic, translation, reference }];
-  return [];
+  if (translation) return { translation, reference };
+  return { translation: `In the name of Allah, the most gracious, the most merciful`, reference: 'Al-Fatiha 1:1' };
 };
 
+const parseMcq = (name) => {
+  const raw = getField(name, 'match_the_quality', 'matchTheQuality', 'mcq');
+  if (raw) return Array.isArray(raw) ? raw[0] : raw;
+  return {
+    q: `What does ${name.transliteration} primarily signify?`,
+    opts: [name.meaning, 'All-Encompassing mercy', 'The creator', 'The judge'],
+    ans: 0,
+  };
+};
+
+const N_SECTIONS = 6;
 
 
-// ─── NameDetailScreen ─────────────────────────────────────────────────────────
 const NameDetailScreen = ({ route, navigation }) => {
   const { name } = route.params;
-  const { markAsLearned, unmarkAsLearned, learnedIds, masteredIds, revisitCounts } = useNames();
-  const { toggleFavourite, favouriteIds, customPlaylists, addToPlaylist } = usePlaylist();
-  const { colors, isDark } = useAppTheme();
+  const { markAsLearned } = useNames();
 
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
-  const [showUnlearnConfirm, setShowUnlearnConfirm] = useState(false);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [pagesLayout, setPagesLayout] = useState({
-    width: SW - SPACE.md * 2 - SPINE_W - 2,
-    height: 560,
-  });
 
-  const scrollRef = useRef(null);
+  const benefits = useMemo(() => parseBenefits(name), [name]);
+  const quranicRef = useMemo(() => parseQuranicRef(name), [name]);
+  const reflection = getField(name, 'reflection', 'learning_insight', 'description');
+  const insight = getField(name, 'learning_insight', 'learningInsight', 'reflection', 'description');
+  const mcq = useMemo(() => parseMcq(name), [name]);
 
-  const isLearned = learnedIds.includes(name.number);
-  const isMastered = masteredIds.includes(name.number);
-  const isFav = favouriteIds.has(Number(name.number));
-  const revisitCount = revisitCounts?.[name.number] ?? revisitCounts?.[String(name.number)] ?? 0;
 
-  const benefits = parseBenefits(name);
-  const quranicRefs = parseQuranicRefs(name);
-  const reflection = getField(name, 'reflection', 'learning_insight', 'learningInsight', 'description');
-  const learningInsight = getField(name, 'learning_insight', 'learningInsight', 'reflection', 'description');
+  const [phase, setPhase] = useState('gift');
+  const [contentStage, setContentStage] = useState(0);
+  const [giftOpened, setGiftOpened] = useState(false);
+  const [quizAnswer, setQuizAnswer] = useState(null);
+  const [quizDone, setQuizDone] = useState(false);
 
-  const mcq = useMemo(() => {
-    const raw = getField(name, 'match_the_quality', 'matchTheQuality', 'mcq');
-    if (raw) return Array.isArray(raw) ? raw[0] : raw;
-    return {
-      q: `What is the primary significance of ${name.transliteration}?`,
-      opts: [name.meaning, 'The Creator', 'The Judge', 'The Healer'],
-      ans: 0,
-    };
-  }, [name]);
 
-  const slides = useMemo(() => {
-    const s = [{ id: 'hero' }];
-    if (benefits.length > 0) s.push({ id: 'benefits' });
-    if (quranicRefs.filter(r => r.arabic || r.translation).length > 0) s.push({ id: 'quran' });
-    if (reflection) s.push({ id: 'reflection' });
-    if (learningInsight && learningInsight !== reflection) s.push({ id: 'insight' });
-    if (name.learningCards && Array.isArray(name.learningCards)) {
-      name.learningCards.forEach(card => s.push({ id: `dynamic_${card.id}`, type: 'dynamic', data: card }));
+  const lastTapRef = useRef(0);
+
+
+  const floatAnim = useRef(new Animated.Value(0)).current;
+  const giftOpacity = useRef(new Animated.Value(1)).current;
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const handAnim = useRef(new Animated.Value(0)).current;
+  const slideBtnScale = useRef(new Animated.Value(1)).current;
+
+  const sectionAnims = useRef(
+    Array.from({ length: N_SECTIONS }, () => ({
+      opacity: new Animated.Value(0),
+      translateY: new Animated.Value(35),
+    }))
+  ).current;
+
+  const journeyOpacity = useRef(new Animated.Value(0)).current;
+  const journeyTranslate = useRef(new Animated.Value(50)).current;
+
+
+  const floatLoopRef = useRef(null);
+  const handLoopRef = useRef(null);
+
+
+  useEffect(() => {
+    floatLoopRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, { toValue: -14, duration: 1500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(floatAnim, { toValue: 0, duration: 1500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      ])
+    );
+    floatLoopRef.current.start();
+    return () => floatLoopRef.current?.stop();
+  }, []);
+
+
+  useEffect(() => {
+    if (phase !== 'content') return;
+    handLoopRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(handAnim, { toValue: 1, duration: 700, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+        Animated.delay(200),
+        Animated.timing(handAnim, { toValue: 0, duration: 400, easing: Easing.in(Easing.ease), useNativeDriver: true }),
+        Animated.delay(300),
+      ])
+    );
+    handLoopRef.current.start();
+    return () => { handLoopRef.current?.stop(); handAnim.setValue(0); };
+  }, [phase]);
+
+
+  const handleGiftTap = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 350) {
+      floatLoopRef.current?.stop();
+      setGiftOpened(true);
+
+      Animated.sequence([
+        Animated.delay(350),
+        Animated.timing(giftOpacity, {
+          toValue: 0, duration: 1550,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setPhase('content');
+        setContentStage(1);
+        Animated.timing(contentOpacity, {
+          toValue: 1, duration: 350, useNativeDriver: true,
+        }).start(() => revealSections(1));
+      });
     }
-    s.push({ id: 'mcq' });
-    s.push({ id: 'progress' });
-    return s;
-  }, [benefits, quranicRefs, reflection, learningInsight, name.learningCards]);
+    lastTapRef.current = now;
+  }, []);
 
-  // ── Navigation ───────────────────────────────────────────────────────────────
-  const goToPage = useCallback((idx) => {
-    if (idx < 0 || idx >= slides.length) return;
-    scrollRef.current?.scrollTo({ x: idx * pagesLayout.width, animated: true });
-    setCurrentPage(idx);
-  }, [slides.length, pagesLayout.width]);
 
-  const handleScroll = useCallback((e) => {
-    const page = Math.round(e.nativeEvent.contentOffset.x / pagesLayout.width);
-    if (page >= 0 && page < slides.length) setCurrentPage(page);
-  }, [pagesLayout.width, slides.length]);
+  const revealSections = useCallback((stage) => {
+    handLoopRef.current?.stop();
 
-  // ── Quiz ─────────────────────────────────────────────────────────────────────
-  const handleOptionPress = useCallback((index) => {
-    if (showFeedback) return;
-    setSelectedOption(index);
-    setShowFeedback(true);
-    if (index === mcq.ans) {
-      markAsLearned(name.number);
-      Toast.show({ type: 'success', text1: 'Excellent!', text2: 'Your progress has been updated.', visibilityTime: 2500 });
-    } else {
-      Toast.show({ type: 'error', text1: 'Not quite!', text2: 'Keep studying and try again.', visibilityTime: 2500 });
+    const progressValue = stage === 1 ? 0.4 : 1;
+    Animated.timing(progressAnim, {
+      toValue: progressValue, duration: 1200, easing: Easing.out(Easing.ease),
+      useNativeDriver: false,
+    }).start();
+
+    const animSlice = stage === 1 ? sectionAnims.slice(0, 3) : sectionAnims.slice(3, 6);
+
+    Animated.stagger(
+      150,
+      animSlice.map(a =>
+        Animated.parallel([
+          Animated.timing(a.opacity, { toValue: 1, duration: 480, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+          Animated.timing(a.translateY, { toValue: 0, duration: 480, easing: Easing.out(Easing.back(1.05)), useNativeDriver: true }),
+        ])
+      )
+    ).start();
+  }, [sectionAnims, progressAnim]);
+
+
+  const goJourney = useCallback(() => {
+    setPhase('journey');
+    Animated.parallel([
+      Animated.timing(journeyOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(journeyTranslate, { toValue: 0, duration: 400, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  const handleSlideTap = useCallback(() => {
+    Animated.sequence([
+      Animated.timing(slideBtnScale, { toValue: 0.95, duration: 80, useNativeDriver: true }),
+      Animated.timing(slideBtnScale, { toValue: 1, duration: 120, useNativeDriver: true }),
+    ]).start();
+
+    if (contentStage === 1) {
+      setContentStage(2);
+      revealSections(2);
+    } else if (contentStage === 2) {
+      goJourney();
     }
-  }, [showFeedback, mcq.ans, name.number, markAsLearned]);
+  }, [contentStage, revealSections, goJourney]);
 
-  const handleMarkLearned = useCallback(async () => {
-    if (isLearned) {
-      setShowUnlearnConfirm(true);
-      return;
-    }
-    await markAsLearned(name.number);
-    Toast.show({ type: 'success', text1: 'Marked as Learned', text2: `${name.transliteration} added to your progress.`, visibilityTime: 2000 });
-  }, [markAsLearned, name, isLearned]);
+  // ── Physical Swiping Logic ──
+  const slidePanX = useRef(new Animated.Value(0)).current;
+  const slidePanResponder = useMemo(() => {
+    const MAX_SLIDE = SW - 32 - 64; // width of screen minus margins minus thumb width
 
-  const confirmUnlearn = async () => {
-    await unmarkAsLearned(name.number);
-    setShowUnlearnConfirm(false);
-    Toast.show({ type: 'info', text1: 'Name Unlearned', text2: `${name.transliteration} removed from learned names.`, visibilityTime: 2000 });
-  };
+    return PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        handLoopRef.current?.stop();
+        handAnim.setValue(0);
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        let val = gestureState.dx;
+        if (val < 0) val = 0;
+        if (val > MAX_SLIDE) val = MAX_SLIDE;
+        slidePanX.setValue(val);
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        if (gestureState.dx > MAX_SLIDE * 0.7) {
+          // Success swipe!
+          Animated.timing(slidePanX, {
+            toValue: MAX_SLIDE,
+            duration: 150,
+            useNativeDriver: true,
+          }).start(() => {
+            handleSlideTap();
 
-  // ── Unified design tokens ────────────────────────────────────────────────────
-  // All cards share the same warm cream palette as the Hero card
-  const IC = isDark ? 'rgba(201,168,76,0.09)' : (colors.primary + '15');
-  const ICB = isDark ? 'rgba(201,168,76,0.24)' : (colors.primary + '30');
-  const QBG = isDark ? 'rgba(201,168,76,0.03)' : (colors.primary + '08');
-  const QBC = isDark ? 'rgba(201,168,76,0.12)' : (colors.primary + '20');
+            // if we just revealed the second half of content, snap the slider back for the "Journey" swipe
+            if (contentStage === 1) {
+              slidePanX.setValue(0);
+              handLoopRef.current?.start(); // re-enable hint jumping
+            }
+          });
+        } else {
+          // Snaps back
+          Animated.spring(slidePanX, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start(() => {
+            handLoopRef.current?.start();
+          });
+        }
+      }
+    });
+  }, [contentStage, handleSlideTap, handAnim, slidePanX]);
 
-  // ─── PAGE 1: HERO ─────────────────────────────────────────────────────────────
-  const ovalSize = pagesLayout.width * 0.80;
-  const renderHeroPage = () => (
-    <View style={{ width: pagesLayout.width, height: pagesLayout.height }}>
-      <ImageBackground
-        source={require('../../assets/image.png')}
-        style={StyleSheet.absoluteFillObject}
-        resizeMode="stretch"
-      >
+  const handleQuizOption = useCallback((idx) => {
+    if (quizDone) return;
+    setQuizAnswer(idx);
+    setQuizDone(true);
+    if (idx === mcq.ans) markAsLearned(name.number);
+  }, [quizDone, mcq.ans, name.number, markAsLearned]);
 
 
+  if (phase === 'gift') {
+    return (
+      <View style={styles.root}>
+        <StatusBar barStyle="dark-content" />
 
-        {/* Corner ornaments */}
-        <View style={[styles.heroCorner, styles.heroCornerTL, { borderColor: isDark ? 'rgba(201,168,76,0.18)' : 'rgba(130,100,30,0.2)' }]} />
-        <View style={[styles.heroCorner, styles.heroCornerTR, { borderColor: isDark ? 'rgba(201,168,76,0.18)' : 'rgba(130,100,30,0.2)' }]} />
-        <View style={[styles.heroCorner, styles.heroCornerBL, { borderColor: isDark ? 'rgba(201,168,76,0.18)' : 'rgba(130,100,30,0.2)' }]} />
-        <View style={[styles.heroCorner, styles.heroCornerBR, { borderColor: isDark ? 'rgba(201,168,76,0.18)' : 'rgba(130,100,30,0.2)' }]} />
+        <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+          {/* Header */}
+          <NameDetailHeader name={name} onClose={() => navigation.goBack()} />
 
-        <ScrollView contentContainerStyle={styles.heroPage} showsVerticalScrollIndicator={false} nestedScrollEnabled>
-          <Text style={[styles.pageLabel, { color: isDark ? 'rgba(201,168,76,0.28)' : 'rgba(130,100,30,0.35)' }]}>
-            THE BEAUTIFUL NAMES
-          </Text>
+          <View style={styles.progressTrack} />
 
-          {/* Number badge */}
-          <View style={[styles.heroBadge, { borderColor: isDark ? 'rgba(201,168,76,0.22)' : 'rgba(180,140,40,0.28)' }]}>
-            <Text style={[styles.heroNumeral, { color: isDark ? 'rgba(201,168,76,0.55)' : 'rgba(130,100,30,0.5)' }]}>
-              {String(name.number).padStart(2, '0')}
-            </Text>
-          </View>
-
-          {/* Arabic — lives inside the oval visually */}
-          <Text style={[styles.heroArabic, { color: colors.primary }]}>{name.arabic}</Text>
-
-          {/* Ornamental divider */}
-          <View style={styles.ornamentRow}>
-            <View style={[styles.ornamentLine, { backgroundColor: colors.primary, opacity: 0.22 }]} />
-            <Ionicons name="diamond" size={7} color={colors.primary} style={{ opacity: 0.45 }} />
-            <Ionicons name="diamond" size={5} color={colors.primary} style={{ opacity: 0.25, marginHorizontal: -2 }} />
-            <Ionicons name="diamond" size={7} color={colors.primary} style={{ opacity: 0.45 }} />
-            <View style={[styles.ornamentLine, { backgroundColor: colors.primary, opacity: 0.22 }]} />
-          </View>
-
-          <Text style={[styles.heroTrans, { color: colors.text }]}>{name.transliteration}</Text>
-          <Text style={[styles.heroMeaning, { color: colors.textMuted }]}>{name.meaning}</Text>
-
-          {!!name.category && (
-            <View style={[styles.categoryChip, { borderColor: isDark ? 'rgba(201,168,76,0.18)' : 'rgba(160,120,40,0.22)' }]}>
-              <Text style={[styles.categoryText, { color: isDark ? 'rgba(201,168,76,0.45)' : 'rgba(130,100,30,0.5)' }]}>
-                {name.category.toUpperCase()}
-              </Text>
-            </View>
-          )}
-        </ScrollView>
-      </ImageBackground>
-    </View>
-  );
-
-  // ─── PAGE 2: BENEFITS ─────────────────────────────────────────────────────────
-  const renderBenefitsPage = () => (
-    <View style={{ width: pagesLayout.width, height: pagesLayout.height }}>
-      <ImageBackground source={require('../../assets/image.png')} style={StyleSheet.absoluteFillObject} resizeMode="stretch">
-        <ScrollView contentContainerStyle={styles.sectionPage} showsVerticalScrollIndicator={false} nestedScrollEnabled>
-          <View style={styles.pageHeader}>
-            <View style={[styles.pageIconCircle, { backgroundColor: IC, borderWidth: 1, borderColor: ICB }]}>
-              <Ionicons name="leaf-outline" size={26} color={colors.primary} />
-            </View>
-            <Text style={[styles.pageTitle, { color: colors.text }]}>Gifts of This Name</Text>
-            <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
-              What learning {name.transliteration} brings to your life
-            </Text>
-          </View>
-          <View style={styles.benefitsList}>
-            {benefits.map((benefit, idx) => (
-              <View key={idx} style={[styles.benefitCard, {
-                backgroundColor: QBG,
-                borderColor: QBC,
-                borderLeftColor: colors.primary,
-              }]}>
-                <Text style={[styles.benefitIdx, { color: colors.primary }]}>
-                  {String(idx + 1).padStart(2, '0')}
+          <Animated.View style={[styles.giftBody, { opacity: giftOpacity }]}>
+            {/* Top info */}
+            <View style={styles.giftTopInfo}>
+              <Text style={styles.giftTitle}>Gifts of this Name</Text>
+              <View style={styles.giftSubtitleContainer}>
+                <Text style={styles.giftSubtitle}>
+                  What learning {name.transliteration} brings to your life
                 </Text>
-                <Text style={[styles.benefitText, { color: colors.text }]}>{benefit}</Text>
               </View>
-            ))}
-          </View>
-        </ScrollView>
-      </ImageBackground>
-    </View>
-  );
-
-  // ─── PAGE 3: QUR'AN ───────────────────────────────────────────────────────────
-  const renderQuranPage = () => (
-    <View style={{ width: pagesLayout.width, height: pagesLayout.height }}>
-      <ImageBackground source={require('../../assets/image.png')} style={StyleSheet.absoluteFillObject} resizeMode="stretch">
-        <ScrollView contentContainerStyle={styles.sectionPage} showsVerticalScrollIndicator={false} nestedScrollEnabled>
-          <View style={styles.pageHeader}>
-            <View style={[styles.pageIconCircle, { backgroundColor: IC, borderWidth: 1, borderColor: ICB }]}>
-              <Ionicons name="journal-outline" size={26} color={colors.primary} />
             </View>
-            <Text style={[styles.pageTitle, { color: colors.text }]}>Divine Words</Text>
-            <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
-              Qur'anic references to this name
-            </Text>
-          </View>
-          {quranicRefs.map((ref, idx) => (
-            <View key={idx} style={[styles.quranBlock, { backgroundColor: QBG, borderColor: QBC },
-            idx > 0 && { marginTop: SPACE.xl }]}>
-              <Text style={[styles.bigQuote, { color: isDark ? 'rgba(201,168,76,0.1)' : 'rgba(130,100,30,0.1)' }]}>"</Text>
-              {!!ref.arabic && (
-                <Text style={[styles.quranArabic, { color: colors.primary }]}>{ref.arabic}</Text>
-              )}
-              {!!ref.translation && (
-                <Text style={[styles.quranTrans, { color: colors.text }]}>"{ref.translation}"</Text>
-              )}
-              {!!ref.reference && (
-                <View style={[styles.quranBadge, { backgroundColor: QBG, borderColor: QBC }]}>
-                  <Ionicons name="location-outline" size={11} color={colors.primary} />
-                  <Text style={[styles.quranRef, { color: colors.primary }]}>{ref.reference}</Text>
-                </View>
-              )}
-            </View>
-          ))}
-        </ScrollView>
-      </ImageBackground>
-    </View>
-  );
 
-  // ─── PAGE 4: REFLECTION ───────────────────────────────────────────────────────
-  const renderReflectionPage = () => (
-    <View style={{ width: pagesLayout.width, height: pagesLayout.height }}>
-      <ImageBackground source={require('../../assets/image.png')} style={StyleSheet.absoluteFillObject} resizeMode="stretch">
-        <ScrollView contentContainerStyle={[styles.sectionPage, { justifyContent: 'center', flexGrow: 1 }]} showsVerticalScrollIndicator={false} nestedScrollEnabled>
-          <View style={styles.pageHeader}>
-            <View style={[styles.pageIconCircle, { backgroundColor: IC, borderWidth: 1, borderColor: ICB }]}>
-              <Ionicons name="water-outline" size={26} color={colors.primary} />
+            {/* Floating gift box */}
+            <View style={styles.giftBoxWrap}>
+              <Pressable onPress={handleGiftTap}>
+                <Animated.View style={{ transform: [{ translateY: floatAnim }] }}>
+                  <Image
+                    source={giftOpened
+                      ? require('../../assets/openGiftBox.png')
+                      : require('../../assets/giftBox.png')}
+                    style={styles.giftBoxImg}
+                    resizeMode="contain"
+                  />
+                </Animated.View>
+              </Pressable>
+              <Image source={require('../../assets/Ellipse 5.png')} style={styles.giftShadow} resizeMode="contain" />
             </View>
-            <Text style={[styles.pageTitle, { color: colors.text }]}>Ponder & Reflect</Text>
-          </View>
-          <View style={[styles.quoteBox, { backgroundColor: QBG, borderColor: QBC }]}>
-            <Text style={[styles.openQuote, { color: isDark ? 'rgba(201,168,76,0.12)' : 'rgba(160,120,30,0.12)' }]}>"</Text>
-            <Text style={[styles.quoteBody, { color: colors.text }]}>{reflection}</Text>
-            <Text style={[styles.closeQuote, { color: isDark ? 'rgba(201,168,76,0.12)' : 'rgba(160,120,30,0.12)' }]}>"</Text>
-          </View>
-        </ScrollView>
-      </ImageBackground>
-    </View>
-  );
 
-  // ─── PAGE 5: INSIGHT ──────────────────────────────────────────────────────────
-  const renderInsightPage = () => (
-    <View style={{ width: pagesLayout.width, height: pagesLayout.height }}>
-      <ImageBackground source={require('../../assets/image.png')} style={StyleSheet.absoluteFillObject} resizeMode="stretch">
-        <ScrollView contentContainerStyle={[styles.sectionPage, { justifyContent: 'center', flexGrow: 1 }]} showsVerticalScrollIndicator={false} nestedScrollEnabled>
-          <View style={styles.pageHeader}>
-            <View style={[styles.pageIconCircle, { backgroundColor: IC, borderWidth: 1, borderColor: ICB }]}>
-              <Ionicons name="bulb-outline" size={26} color={colors.primary} />
+            {/* Double tap hint */}
+            <View style={styles.doubleTapRow}>
+              <Image source={require('../../assets/signHand.png')} style={styles.handHint} resizeMode="contain" />
+              <Text style={styles.doubleTapText}>Double Tap to Open</Text>
+              <Image source={require('../../assets/signHand.png')} style={[styles.handHint, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
             </View>
-            <Text style={[styles.pageTitle, { color: colors.text }]}>Learning Insight</Text>
-          </View>
-          <View style={[styles.insightBox, { backgroundColor: QBG, borderColor: QBC, borderLeftColor: colors.primary }]}>
-            <Text style={[styles.quoteBody, { color: colors.text }]}>{learningInsight}</Text>
-          </View>
-        </ScrollView>
-      </ImageBackground>
-    </View>
-  );
+          </Animated.View>
+        </SafeAreaView>
+      </View>
+    );
+  }
 
-  // ─── PAGE 6: MCQ ──────────────────────────────────────────────────────────────
-  const renderMcqPage = () => (
-    <View style={{ width: pagesLayout.width, height: pagesLayout.height }}>
-      <ImageBackground source={require('../../assets/image.png')} style={StyleSheet.absoluteFillObject} resizeMode="stretch">
-        <ScrollView contentContainerStyle={styles.sectionPage} showsVerticalScrollIndicator={false} nestedScrollEnabled>
-          <View style={styles.pageHeader}>
-            <View style={[styles.pageIconCircle, { backgroundColor: IC, borderWidth: 1, borderColor: ICB }]}>
-              <Ionicons name="layers-outline" size={26} color={colors.primary} />
-            </View>
-            <Text style={[styles.pageTitle, { color: colors.text }]}>Match the Quality</Text>
-            <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
-              Test your understanding of{' '}
-              <Text style={{ color: colors.text, fontStyle: 'normal', fontWeight: '700' }}>{name.transliteration}</Text>
-            </Text>
-          </View>
-          <View style={[styles.mcqBox, { backgroundColor: QBG, borderColor: QBC }]}>
-            <Text style={[styles.mcqQ, { color: colors.text }]}>{mcq.q}</Text>
-          </View>
-          <View style={styles.optionsList}>
-            {(mcq.opts || []).map((opt, idx) => {
-              const isCorrect = idx === mcq.ans;
-              const isWrongChoice = showFeedback && selectedOption === idx && !isCorrect;
-              const isRevealOk = showFeedback && isCorrect;
-              const isChosen = !showFeedback && selectedOption === idx;
-              return (
-                <TouchableOpacity
-                  key={idx}
-                  onPress={() => handleOptionPress(idx)}
-                  disabled={showFeedback}
-                  activeOpacity={0.75}
-                  style={[
-                    styles.mcqOption,
-                    { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' },
-                    isChosen && { backgroundColor: 'rgba(201,168,76,0.08)', borderColor: 'rgba(201,168,76,0.35)' },
-                    isRevealOk && { backgroundColor: 'rgba(45,156,150,0.1)', borderColor: 'rgba(45,156,150,0.35)' },
-                    isWrongChoice && { backgroundColor: 'rgba(255,68,68,0.1)', borderColor: 'rgba(255,68,68,0.35)' },
-                  ]}
-                >
-                  <View style={[styles.mcqLetter, {
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                    ...(isRevealOk && { backgroundColor: 'rgba(45,156,150,0.15)' }),
-                    ...(isWrongChoice && { backgroundColor: 'rgba(255,68,68,0.15)' }),
-                  }]}>
-                    <Text style={[styles.mcqLetterTxt, { color: colors.textMuted },
-                    isRevealOk && { color: '#2d9c96' },
-                    isWrongChoice && { color: '#ff4444' },
-                    ]}>
-                      {['A', 'B', 'C', 'D'][idx]}
-                    </Text>
-                  </View>
-                  <Text style={[styles.mcqOptTxt, { color: colors.text },
-                  isRevealOk && { color: '#2d9c96', fontWeight: '700' },
-                  isWrongChoice && { color: '#ff4444' },
-                  ]}>
-                    {opt}
-                  </Text>
-                  {isRevealOk && <Ionicons name="checkmark-circle" size={20} color="#2d9c96" />}
-                  {isWrongChoice && <Ionicons name="close-circle" size={20} color="#ff4444" />}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </ScrollView>
-      </ImageBackground>
-    </View>
-  );
-
-  // ─── PAGE 7: PROGRESS ─────────────────────────────────────────────────────────
-  const renderProgressPage = () => (
-    <View style={{ width: pagesLayout.width, height: pagesLayout.height }}>
-      <ImageBackground source={require('../../assets/image.png')} style={StyleSheet.absoluteFillObject} resizeMode="stretch">
-        <ScrollView contentContainerStyle={styles.sectionPage} showsVerticalScrollIndicator={false} nestedScrollEnabled>
-          <View style={styles.pageHeader}>
-            <View style={[styles.pageIconCircle, { backgroundColor: IC, borderWidth: 1, borderColor: ICB }]}>
-              <Ionicons name="medal-outline" size={26} color={colors.primary} />
-            </View>
-            <Text style={[styles.pageTitle, { color: colors.text }]}>Your Journey</Text>
-            <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
-              Track your mastery of {name.transliteration}
-            </Text>
-          </View>
-          <View style={styles.progressCards}>
-            <TouchableOpacity
-              onPress={handleMarkLearned}
-              style={[styles.progressCard, {
-                backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
-                borderColor: isLearned ? 'rgba(45,156,150,0.4)' : (isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.1)'),
-                ...(isLearned && { backgroundColor: 'rgba(45,156,150,0.07)' }),
-              }]}
-            >
-              <View style={[styles.progressRing, {
-                borderColor: isLearned ? '#2d9c96' : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.12)'),
-                backgroundColor: isLearned ? 'rgba(45,156,150,0.08)' : 'transparent',
-              }]}>
-                <Ionicons name={isLearned ? 'checkmark-circle' : 'ellipse-outline'} size={38} color={isLearned ? '#2d9c96' : colors.textDimmed} />
-              </View>
-              <Text style={[styles.progressCardTitle, { color: isLearned ? '#2d9c96' : colors.text }]}>Learned</Text>
-              <Text style={[styles.progressCardSub, { color: colors.textMuted }]}>{isLearned ? 'Completed ✓' : 'Tap to mark'}</Text>
-            </TouchableOpacity>
-
-            <View style={[styles.progressCard, {
-              backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
-              borderColor: isMastered ? 'rgba(201,168,76,0.4)' : (isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.1)'),
-              ...(isMastered && { backgroundColor: 'rgba(201,168,76,0.07)' }),
-            }]}>
-              <View style={[styles.progressRing, {
-                borderColor: isMastered ? colors.primary : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.12)'),
-                backgroundColor: isMastered ? 'rgba(201,168,76,0.08)' : 'transparent',
-              }]}>
-                <Ionicons name={isMastered ? 'ribbon' : 'ribbon-outline'} size={38} color={isMastered ? colors.primary : colors.textDimmed} />
-              </View>
-              <Text style={[styles.progressCardTitle, { color: isMastered ? colors.primary : colors.text }]}>Mastered</Text>
-              <Text style={[styles.progressCardSub, { color: colors.textMuted }]}>{revisitCount} / 3 revisits</Text>
-            </View>
-          </View>
-
-          <View style={[styles.revisitWrap, {
-            backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)',
-            borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)',
+  // ─────────────────────────────────────────────────────────────────────────
+  //  JOURNEY PHASE
+  // ─────────────────────────────────────────────────────────────────────────
+  if (phase === 'journey') {
+    return (
+      <View style={styles.root}>
+        <StatusBar barStyle="dark-content" />
+        <SafeAreaView style={styles.journeyRoot} edges={['top']}>
+          <Animated.View style={[styles.journeyCard, {
+            opacity: journeyOpacity,
+            transform: [{ translateY: journeyTranslate }],
           }]}>
-            <View style={styles.revisitTop}>
-              <Ionicons name="repeat" size={13} color={colors.textMuted} />
-              <Text style={[styles.revisitLabel, { color: colors.textMuted }]}>MASTERY PROGRESS</Text>
-              <Text style={[styles.revisitCount, { color: colors.primary }]}>{revisitCount}/3</Text>
+            <LinearGradient
+              colors={['#E8F7FB', '#FFFFFF']}
+              style={StyleSheet.absoluteFillObject}
+            />
+            <Text style={styles.journeyTitle}>Your Journey</Text>
+            <Text style={styles.journeySub}>Track your mastery of {name.transliteration}</Text>
+
+            <View style={styles.journeyRow}>
+              <View style={styles.journeyStep}>
+                <View style={[styles.journeyIcon, { backgroundColor: '#E0F7FA' }]}>
+                  <Image source={require('../../assets/mdi_learn-outline.png')} style={styles.journeyImg} resizeMode="contain" />
+                </View>
+                <Text style={styles.journeyStepLabel}>Learned</Text>
+              </View>
+
+              <View style={styles.journeyArrow}>
+                <View style={styles.arrowLine} />
+                <Ionicons name="chevron-forward" size={18} color="#00ADC1" />
+              </View>
+
+              <View style={styles.journeyStep}>
+                <View style={[styles.journeyIcon, { backgroundColor: '#FFF3E0' }]}>
+                  <Image source={require('../../assets/Masterlock.png')} style={styles.journeyImg} resizeMode="contain" />
+                </View>
+                <Text style={styles.journeyStepLabel}>Mastered</Text>
+              </View>
             </View>
-            <View style={[styles.revisitTrack, { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.1)' }]}>
-              <View style={[styles.revisitFill, {
-                backgroundColor: colors.primary,
-                width: `${Math.min(revisitCount / 3, 1) * 100}%`,
-              }]} />
-            </View>
-          </View>
-        </ScrollView>
-      </ImageBackground>
-    </View>
-  );
 
-  // ─── PAGE 8: DYNAMIC CARD ─────────────────────────────────────────────────────
-  const renderDynamicCardPage = (card) => (
-    <View style={{ width: pagesLayout.width, height: pagesLayout.height }}>
-      <ImageBackground source={require('../../assets/image.png')} style={StyleSheet.absoluteFillObject} resizeMode="stretch">
-        <ScrollView contentContainerStyle={[styles.sectionPage, { justifyContent: 'center', flexGrow: 1 }]} showsVerticalScrollIndicator={false} nestedScrollEnabled>
-          <View style={styles.pageHeader}>
-            <View style={[styles.pageIconCircle, { backgroundColor: IC, borderWidth: 1, borderColor: ICB }]}>
-              <Ionicons name="diamond-outline" size={24} color={colors.primary} />
-            </View>
-            <Text style={[styles.pageTitle, { color: colors.text }]}>{card.title}</Text>
-          </View>
-          <View style={styles.ornamentRow}>
-            <View style={[styles.ornamentLine, { backgroundColor: colors.primary, opacity: 0.22 }]} />
-            <Ionicons name="diamond" size={6} color={colors.primary} style={{ opacity: 0.45 }} />
-            <View style={[styles.ornamentLine, { backgroundColor: colors.primary, opacity: 0.22 }]} />
-          </View>
-          <Text style={[styles.heroArabic, { color: colors.primary, fontSize: 58, lineHeight: 74, textAlign: 'center', marginVertical: SPACE.lg }]}>
-            {name.arabic}
-          </Text>
-          <View style={[styles.quoteBox, { backgroundColor: QBG, borderColor: QBC }]}>
-            <Text style={[styles.quoteBody, { color: colors.text }]}>{card.content}</Text>
-          </View>
-        </ScrollView>
-      </ImageBackground>
-    </View>
-  );
+            <TouchableOpacity
+              style={styles.doneBtn}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.85}
+            >
+              <LinearGradient colors={['#00ADC1', '#0090A8']} style={styles.doneBtnGrad}>
+                <Text style={styles.doneBtnText}>Done</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+        </SafeAreaView>
+      </View>
+    );
+  }
 
-  // ── Page dispatcher ────────────────────────────────────────────────────────
-  const renderPage = (slide) => {
-    if (!slide) return null;
-    if (slide.type === 'dynamic') return renderDynamicCardPage(slide.data);
-    switch (slide.id) {
-      case 'hero': return renderHeroPage();
-      case 'benefits': return renderBenefitsPage();
-      case 'quran': return renderQuranPage();
-      case 'reflection': return renderReflectionPage();
-      case 'insight': return renderInsightPage();
-      case 'mcq': return renderMcqPage();
-      case 'progress': return renderProgressPage();
-      default: return null;
-    }
-  };
+  // ─────────────────────────────────────────────────────────────────────────
+  //  CONTENT PHASE
+  // ─────────────────────────────────────────────────────────────────────────
+  const handX = handAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
 
-  const PAGE_LABELS = { hero: 'Title', benefits: 'Gifts', quran: "Qur'ān", reflection: 'Reflect', insight: 'Insight', mcq: 'Quiz', progress: 'Progress' };
-  const getPageLabel = (slide) => {
-    if (!slide) return '';
-    if (slide.type === 'dynamic') return slide.data.title || 'Insight';
-    return PAGE_LABELS[slide.id] || '';
-  };
-
-  // ── Root render ────────────────────────────────────────────────────────────
   return (
     <View style={styles.root}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle="dark-content" />
 
-      <LinearGradient
-        colors={isDark ? ['rgba(10,8,18,1)', 'rgba(2,2,8,1)'] : [colors.surface, colors.background]}
-        style={StyleSheet.absoluteFill}
-      />
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+        {/* Header */}
+        <NameDetailHeader name={name} onClose={() => navigation.goBack()} />
 
-      <SafeAreaView style={{ flex: 1 }}>
-
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.iconBtn, { backgroundColor: colors.glass }]}>
-            <Ionicons name="arrow-back" size={22} color={colors.text} />
-          </TouchableOpacity>
-
-          <View style={styles.headerCenter}>
-            <Text style={[styles.headerArabic, { color: colors.primary }]}>{name.arabic}</Text>
-          </View>
-
-          <View style={styles.headerRight}>
-            <TouchableOpacity
-              onPress={() => toggleFavourite(name.number)}
-              style={[styles.iconBtn, { backgroundColor: colors.glass, marginRight: 8 }]}
-            >
-              <Ionicons name={isFav ? "heart" : "heart-outline"} size={22} color={isFav ? "#ff4d4d" : colors.text} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setShowPlaylistModal(true)}
-              style={[styles.iconBtn, { backgroundColor: colors.glass, marginRight: 8 }]}
-            >
-              <Ionicons name="add-outline" size={22} color={colors.text} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleMarkLearned}
-              style={[styles.learnBtn, { backgroundColor: colors.glass, borderColor: colors.borderStrong }, isLearned && styles.learnBtnActive]}
-            >
-              <Ionicons name={isLearned ? 'checkmark-circle' : 'add-circle-outline'} size={15} color={isLearned ? '#2d9c96' : colors.textMuted} />
-              <Text style={[styles.learnBtnText, { color: colors.textMuted }, isLearned && { color: '#2d9c96' }]}>
-                {isLearned ? 'LEARNED' : 'MARK'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+        {/* Progress bar */}
+        <View style={styles.progressTrack}>
+          <Animated.View style={[styles.progressFill, {
+            width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
+          }]} />
         </View>
 
-        {/* ── Book ── */}
-        <View style={styles.bookWrapper}>
-          <View style={[styles.bookBody, { borderColor: isDark ? 'rgba(201,168,76,0.12)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
-            {/* Horizontal swipe pages */}
-            <ScrollView
-              ref={scrollRef}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              bounces={false}
-              scrollEventThrottle={16}
-              onScroll={handleScroll}
-              onLayout={e => setPagesLayout({
-                width: e.nativeEvent.layout.width,
-                height: e.nativeEvent.layout.height,
-              })}
-              style={{ flex: 1 }}
-            >
-              {slides.map(slide => {
-                const el = renderPage(slide);
-                return el ? React.cloneElement(el, { key: slide.id }) : null;
-              })}
-            </ScrollView>
-          </View>
-        </View>
+        {/* Scrollable content */}
+        <Animated.ScrollView
+          style={{ flex: 1, opacity: contentOpacity }}
+          contentContainerStyle={styles.contentScroll}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Static header inside scroll */}
+          <Text style={styles.giftTitleScroll}>Gifts of this Name</Text>
+          <Text style={styles.giftSubtitleSmall}>
+            What learning {name.transliteration} brings to your life
+          </Text>
 
-        {/* ── Dots only footer (no left/right buttons) ── */}
-        <View style={styles.footer}>
-          <View style={styles.dotsRow}>
-            {slides.map((s, idx) => (
-              <TouchableOpacity
-                key={s.id}
-                onPress={() => goToPage(idx)}
-                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-              >
-                <View style={[styles.dot, {
-                  backgroundColor: idx === currentPage
-                    ? colors.primary
-                    : (isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'),
-                  width: idx === currentPage ? 22 : 6,
-                }]} />
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Page label + counter */}
-        <Text style={[styles.pageCounter, { color: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.22)' }]}>
-          {getPageLabel(slides[currentPage])}  ·  {currentPage + 1} of {slides.length}
-        </Text>
-
-      </SafeAreaView>
-
-      <PlaylistPicker
-        visible={showPlaylistModal}
-        onHide={() => setShowPlaylistModal(false)}
-        nameNumber={Number(name.number)}
-        nameTitle={name.transliteration}
-      />
-
-      {/* Unlearn Confirmation Modal */}
-      <Modal
-        visible={showUnlearnConfirm}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowUnlearnConfirm(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.confirmCard, { backgroundColor: colors.card, borderColor: colors.borderStrong }]}>
-            <View style={[styles.confirmIcon, { backgroundColor: 'rgba(255, 68, 68, 0.1)' }]}>
-              <Ionicons name="alert-circle-outline" size={32} color="#ff4444" />
+          {/* ── Section 0: Benefits ── */}
+          <AnimSection anim={sectionAnims[0]}>
+            <View style={styles.benefitsList}>
+              {(benefits.length > 0 ? benefits.slice(0, 3) : [
+                `Reciting this name brings peace and calm to an anxious heart`,
+                `It opens door of mercy in one's daily life`,
+                `Remind us that every blessing we have comes from his grace`,
+              ]).map((text, i) => (
+                <View key={i} style={styles.benefitRow}>
+                  <View style={styles.benefitNumBadge}>
+                    <Text style={styles.benefitNum}>{String(i + 1).padStart(2, '0')}</Text>
+                  </View>
+                  <Text style={styles.benefitText}>{text}</Text>
+                </View>
+              ))}
             </View>
-            <Text style={[styles.confirmTitle, { color: colors.text }]}>Reset Progress?</Text>
-            <Text style={[styles.confirmSub, { color: colors.textMuted }]}>
-              Do you want to unlearn <Text style={{ color: colors.primary, fontWeight: '700' }}>{name.transliteration}</Text>? This will remove it from your learned collection.
+          </AnimSection>
+
+          {/* ── Section 1: Gold divider ── */}
+          <AnimSection anim={sectionAnims[1]}>
+            <View style={styles.dividerWrap}>
+              <Image source={require('../../assets/lineGold.png')} style={styles.goldDivider} resizeMode="contain" />
+            </View>
+          </AnimSection>
+
+          {/* ── Section 2: Divine Words ── */}
+          <AnimSection anim={sectionAnims[2]}>
+            <View style={styles.divineCard}>
+              <LinearGradient
+                colors={['#FFF9D6', '#FFE6A3']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFillObject}
+              />
+              <Text style={styles.divineName}>Divine Words</Text>
+              <Text style={styles.divineSubtitle}>Qur'anic references to this name</Text>
+              <View style={styles.quoteBlock}>
+                <Image source={require('../../assets/quatation.png')} style={styles.quoteIconTop} resizeMode="contain" />
+                <Text style={styles.quoteText}>
+                  {quranicRef.translation || `In the name of allah, the most gracious,\nthe most merciful`}
+                </Text>
+                <Image source={require('../../assets/quatation.png')} style={styles.quoteIconBottom} resizeMode="contain" />
+              </View>
+            </View>
+          </AnimSection>
+
+          {/* ── Section 3: Ponder & Reflect ── */}
+          <AnimSection anim={sectionAnims[3]} hidden={contentStage < 2}>
+            <View style={styles.sectionCard}>
+              <Text style={styles.sectionCardTitle}>Ponder &amp; Reflect</Text>
+              <View style={styles.reflectBox}>
+                <Text style={styles.reflectText}>
+                  {reflection || `Every breath we take is a mercy from ${name.transliteration}. He did not wait for us to ask — His mercy arrives before any deed of ours.`}
+                </Text>
+              </View>
+            </View>
+          </AnimSection>
+
+          {/* ── Section 4: Learning Insight ── */}
+          <AnimSection anim={sectionAnims[4]} hidden={contentStage < 2}>
+            <View style={styles.sectionCard}>
+              <Text style={styles.sectionCardTitle}>Learning Insight</Text>
+              <View style={styles.insightRow}>
+                <Image source={require('../../assets/man.png')} style={styles.manImg} resizeMode="contain" />
+                <View style={styles.insightBox}>
+                  <Image source={require('../../assets/bgCard2.png')} style={StyleSheet.absoluteFillObject} resizeMode="stretch" borderRadius={14} />
+                  <Text style={styles.insightText}>
+                    {insight || `${name.transliteration} teaches that mercy pervades all existence. When you accept that grace finds you before you deserve it, you begin to live without shame and extend unconditional mercy to others.`}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </AnimSection>
+
+          {/* ── Section 5: Match the Quality (Quiz) ── */}
+          <AnimSection anim={sectionAnims[5]} hidden={contentStage < 2}>
+            <View style={styles.sectionCard}>
+              <View style={styles.quizHeader}>
+                <Image source={require('../../assets/quest.png')} style={styles.questImg} resizeMode="contain" />
+                <View>
+                  <Text style={styles.sectionCardTitle}>Match the Quality</Text>
+                  <Text style={styles.quizSubtitle}>Test your understanding of {name.transliteration}</Text>
+                </View>
+              </View>
+              <Text style={styles.quizQuestion}>{mcq.q}</Text>
+              <View style={styles.optionsList}>
+                {(mcq.opts || []).map((opt, idx) => {
+                  const isChosen = quizAnswer === idx;
+                  const isCorrect = idx === mcq.ans;
+                  const isBad = quizDone && isChosen && !isCorrect;
+                  const isGood = quizDone && isCorrect;
+                  return (
+                    <TouchableOpacity
+                      key={idx}
+                      onPress={() => handleQuizOption(idx)}
+                      disabled={quizDone}
+                      activeOpacity={0.75}
+                      style={[styles.quizOption,
+                      isGood && styles.quizOptionGood,
+                      isBad && styles.quizOptionBad,
+                      (isChosen && !quizDone) && styles.quizOptionChosen,
+                      ]}
+                    >
+                      <View style={[styles.radioOuter,
+                      isGood && { borderColor: '#00ADC1' },
+                      isBad && { borderColor: '#FF4444' },
+                      ]}>
+                        {(isChosen || isGood) && (
+                          <View style={[styles.radioInner, { backgroundColor: isGood ? '#00ADC1' : isBad ? '#FF4444' : '#AAA' }]} />
+                        )}
+                      </View>
+                      <Text style={[styles.quizOptText,
+                      isGood && { color: '#00ADC1', fontWeight: '700' },
+                      isBad && { color: '#FF4444' },
+                      ]}>{opt}</Text>
+                      {isGood && <Ionicons name="checkmark-circle" size={18} color="#00ADC1" />}
+                      {isBad && <Ionicons name="close-circle" size={18} color="#FF4444" />}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          </AnimSection>
+
+          <View style={{ height: 100 }} />
+        </Animated.ScrollView>
+
+        {/* ── Fixed bottom: Slide to Continue ── */}
+        <Animated.View style={[styles.slideBar, { transform: [{ scale: slideBtnScale }] }]}>
+          <View style={styles.slideGrad}>
+            <Animated.View
+              {...slidePanResponder.panHandlers}
+              style={[
+                styles.slideThumb,
+                { position: 'absolute', left: 0, zIndex: 10 },
+                { transform: [{ translateX: slidePanX }] }
+              ]}
+            >
+              <Animated.Image
+                source={require('../../assets/signHand.png')}
+                style={[styles.slideHand, { transform: [{ translateX: handX }] }]}
+                resizeMode="contain"
+              />
+            </Animated.View>
+            <Text style={[styles.slideText, { marginLeft: 80 }]}>
+              {contentStage === 2 ? 'Continue to Journey' : 'Slide to Continue'}
             </Text>
-            
-            <View style={styles.confirmActions}>
-              <TouchableOpacity 
-                onPress={() => setShowUnlearnConfirm(false)}
-                style={[styles.confirmBtn, { backgroundColor: colors.glass }]}
-              >
-                <Text style={[styles.confirmBtnText, { color: colors.text }]}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                onPress={confirmUnlearn}
-                style={[styles.confirmBtn, { backgroundColor: '#ff4444' }]}
-              >
-                <Text style={[styles.confirmBtnText, { color: '#fff' }]}>Unlearn</Text>
-              </TouchableOpacity>
-            </View>
           </View>
-        </View>
-      </Modal>
+        </Animated.View>
+      </SafeAreaView>
     </View>
   );
 };
+
+// ─── Reusable animated section wrapper ────────────────────────────────────────
+const AnimSection = ({ anim, hidden, children }) => (
+  <Animated.View style={[styles.animSection, {
+    opacity: anim.opacity,
+    transform: [{ translateY: anim.translateY }],
+    display: hidden ? 'none' : 'flex'
+  }]}>
+    {children}
+  </Animated.View>
+);
+
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, backgroundColor: '#F0F2FB', borderTopLeftRadius: 36, borderTopRightRadius: 36, overflow: 'hidden' },
 
-  // Header
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SPACE.md, height: 64,
+  // ── Gift phase ──
+  giftBody: { flex: 1, alignItems: 'center', justifyContent: 'space-between', paddingBottom: 50, paddingHorizontal: 24, zIndex: 1 },
+  giftTopInfo: { alignItems: 'flex-start', marginTop: 10, width: '100%' },
+  giftTitle: { fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 },
+  giftTitleScroll: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1A1A1A',
+    marginBottom: 4,
+    textAlign: 'center',
   },
-  headerRight: { flexDirection: 'row', alignItems: 'center' },
-  iconBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-  headerCenter: { flex: 1, alignItems: 'center', paddingHorizontal: SPACE.sm },
-  headerArabic: { fontFamily: FONTS.arabic, fontSize: 30 },
-  learnBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingVertical: 8, paddingHorizontal: 12,
-    borderRadius: RADIUS.full, borderWidth: 1,
+  giftSubtitleContainer: { fontWeight: '100', paddingBottom: 2 },
+  giftSubtitle: { fontSize: 14, color: '#000000ff', fontWeight: '500', lineHeight: 20 },
+  giftSubtitleSmall: {
+    fontSize: 13,
+    color: '#7A7A7A',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 19
   },
-  learnBtnActive: { backgroundColor: 'rgba(45,156,150,0.12)', borderColor: 'rgba(45,156,150,0.4)' },
-  learnBtnText: { fontSize: 10, fontWeight: '800', letterSpacing: 1.5 },
 
-  // Book structure
-  bookWrapper: { flex: 1, marginHorizontal: SPACE.md, marginBottom: SPACE.sm },
-  bookShadow: { position: 'absolute', bottom: -7, left: 12, right: -5, top: 7, borderRadius: RADIUS.xl },
-  bookBody: { flex: 1, flexDirection: 'row', borderRadius: RADIUS.xl, overflow: 'hidden', borderWidth: 1 },
-  spine: { width: SPINE_W },
-
-  // Footer – dots only
-  footer: { paddingHorizontal: SPACE.md, paddingVertical: 6, alignItems: 'center' },
-  dotsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6 },
-  dot: { height: 6, borderRadius: 3 },
-  pageCounter: { textAlign: 'center', fontSize: 10, fontWeight: '700', letterSpacing: 1.8, marginBottom: SPACE.sm },
-
-  // ── Hero page ──
-  heroOval: {
+  giftBoxWrap: {
+    width: '100%',
+    aspectRatio: 1.2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+  },
+  giftBoxImg: { width: SW * 0.55, height: SW * 0.55 },
+  giftShadow: {
     position: 'absolute',
-    borderWidth: 1,
+    bottom: 85,
+    width: SW * 0.5,
+    height: 30,
+    zIndex: -1,
   },
-  heroCorner: {
-    position: 'absolute', width: 28, height: 28, borderWidth: 1.5,
-  },
-  heroCornerTL: { top: 16, left: 16, borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius: 6 },
-  heroCornerTR: { top: 16, right: 16, borderLeftWidth: 0, borderBottomWidth: 0, borderTopRightRadius: 6 },
-  heroCornerBL: { bottom: 16, left: 16, borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius: 6 },
-  heroCornerBR: { bottom: 16, right: 16, borderLeftWidth: 0, borderTopWidth: 0, borderBottomRightRadius: 6 },
-  heroPage: { alignItems: 'center', paddingVertical: SPACE.xxl, paddingHorizontal: SPACE.xl },
-  pageLabel: { fontSize: 9, fontWeight: '900', letterSpacing: 3.5, marginBottom: SPACE.xl, marginTop: SPACE.xl },
-  heroBadge: { borderWidth: 1, borderRadius: RADIUS.full, paddingHorizontal: 18, paddingVertical: 7, marginBottom: SPACE.xl },
-  heroNumeral: { fontFamily: FONTS.bold, fontSize: 20, letterSpacing: 4 },
-  heroArabic: { fontFamily: FONTS.arabic, fontSize: 90, textAlign: 'center', lineHeight: 115 },
-  ornamentRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: SPACE.lg },
-  ornamentLine: { flex: 1, height: 1 },
-  heroTrans: { fontFamily: FONTS.bold, fontSize: 34, textAlign: 'center' },
-  heroMeaning: {
-    fontFamily: FONTS.regular, fontSize: 20, fontStyle: 'italic',
-    textAlign: 'center', lineHeight: 30, marginTop: SPACE.sm, paddingHorizontal: SPACE.sm,
-  },
-  categoryChip: { borderWidth: 1, borderRadius: RADIUS.full, paddingHorizontal: 16, paddingVertical: 5, marginTop: SPACE.xl },
-  categoryText: { fontSize: 9, fontWeight: '900', letterSpacing: 2.2 },
 
-  // ── Generic section layout ──
-  sectionPage: { padding: SPACE.xl, paddingBottom: SPACE.xxl },
-  pageHeader: { alignItems: 'center', marginBottom: SPACE.xxl },
-  pageIconCircle: { width: 62, height: 62, borderRadius: 31, justifyContent: 'center', alignItems: 'center', marginBottom: SPACE.md },
-  pageTitle: { fontFamily: FONTS.bold, fontSize: 26, textAlign: 'center', marginBottom: SPACE.xs },
-  pageSubtitle: { fontSize: 14, textAlign: 'center', lineHeight: 22, opacity: 0.8 },
+  doubleTapRow: { flexDirection: 'row', alignItems: 'center', gap: 25, bottom: 220 },
+  handHint: { width: 32, height: 32, tintColor: '#00ADC1' },
+  doubleTapText: { fontSize: 24, fontWeight: '500', color: '#00ADC1', letterSpacing: 0.3 },
+
+  // ── Progress bar ──
+  progressTrack: {
+    height: 10,
+    backgroundColor: '#E6E8F0',
+    width: '80%',
+    borderRadius: 20,
+    alignSelf: 'center',
+    marginVertical: 20,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#20B9CC',
+    borderRadius: 20,
+  },
+
+  // ── Content scroll ──
+  contentScroll: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 20 },
+  animSection: { marginBottom: 18 },
 
   // ── Benefits ──
-  benefitsList: { gap: SPACE.md },
-  benefitCard: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: SPACE.md,
-    padding: SPACE.md, borderRadius: RADIUS.lg, borderWidth: 1, borderLeftWidth: 3,
+  benefitsList: { gap: 10 },
+  benefitRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 6,
+    minHeight: 64,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+    overflow: 'hidden',
   },
-  benefitIdx: { fontFamily: FONTS.bold, fontSize: 14, fontWeight: '900', minWidth: 24, marginTop: 2 },
-  benefitText: { flex: 1, fontSize: 16, lineHeight: 24, fontWeight: '500' },
+  benefitNumBadge: {
+    width: 80,
+    backgroundColor: '#4CD6E8',
+    borderTopRightRadius: 6,
+    borderBottomRightRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  benefitNum: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  benefitText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 22,
+    color: '#1A1A1A',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    alignSelf: 'center',
+  },
 
-  // ── Qur'an ──
-  quranBlock: { borderRadius: RADIUS.xl, padding: SPACE.xl, borderWidth: 1 },
-  bigQuote: { fontSize: 70, lineHeight: 54, fontWeight: '900', marginBottom: SPACE.sm },
-  quranArabic: { fontFamily: FONTS.arabic, fontSize: 28, textAlign: 'right', lineHeight: 48, marginBottom: SPACE.md },
-  quranTrans: { fontSize: 17, fontStyle: 'italic', lineHeight: 26, textAlign: 'center', opacity: 0.9 },
-  quranBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'center',
-    marginTop: SPACE.lg, paddingHorizontal: 14, paddingVertical: 6,
-    borderRadius: RADIUS.full, borderWidth: 1,
+  // ── Gold divider ──
+  dividerWrap: {
+    alignItems: 'center',
+    marginVertical: 16,
   },
-  quranRef: { fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
+  goldDivider: {
+    width: 180,
+    height: 20,
+    opacity: 0.8,
+  },
 
-  // ── Reflection / Insight ──
-  quoteBox: { borderRadius: RADIUS.xl, padding: SPACE.xl, borderWidth: 1 },
-  openQuote: { fontSize: 62, lineHeight: 46, fontWeight: '900' },
-  closeQuote: { fontSize: 62, lineHeight: 54, fontWeight: '900', textAlign: 'right' },
-  quoteBody: {
-    fontFamily: FONTS.regular, fontSize: 19, fontStyle: 'italic',
-    lineHeight: 30, textAlign: 'center', fontWeight: '400',
+  // ── Divine Words card ──
+  divineCard: {
+    borderRadius: 18,
+    padding: 20,
+    overflow: 'hidden',
+    backgroundColor: '#FFF8E6',
+    shadowColor: '#E6B84C',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 5,
   },
-  insightBox: { borderRadius: RADIUS.xl, padding: SPACE.xl, borderWidth: 1, borderLeftWidth: 3 },
+  divineName: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#6B4F00',
+    textAlign: 'center',
+    marginBottom: 3,
+  },
+  divineSubtitle: {
+    fontSize: 12,
+    color: '#A07A1A',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  quoteBlock: { alignItems: 'center', position: 'relative' },
+  quoteIconTop: { width: 28, height: 20, alignSelf: 'flex-start', tintColor: '#C9A84C', marginBottom: 4 },
+  quoteIconBottom: { width: 28, height: 20, alignSelf: 'flex-end', tintColor: '#C9A84C', transform: [{ rotate: '180deg' }], marginTop: 4 },
+  quoteText: {
+    fontSize: 15,
+    fontStyle: 'italic',
+    color: '#5A4000',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
 
-  // ── MCQ ──
-  mcqBox: { borderRadius: RADIUS.xl, padding: SPACE.xl, borderWidth: 1, marginBottom: SPACE.xl },
-  mcqQ: { fontFamily: FONTS.bold, fontSize: 19, lineHeight: 28 },
-  optionsList: { gap: SPACE.md },
-  mcqOption: {
-    flexDirection: 'row', alignItems: 'center', gap: SPACE.md,
-    padding: SPACE.md, borderRadius: RADIUS.lg, borderWidth: 1,
+  // ── Generic section card ──
+  sectionCard: {
+    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16,
+    elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
   },
-  mcqLetter: { width: 34, height: 34, borderRadius: 17, justifyContent: 'center', alignItems: 'center' },
-  mcqLetterTxt: { fontSize: 13, fontWeight: '900' },
-  mcqOptTxt: { flex: 1, fontSize: 16, fontWeight: '500' },
+  sectionCardTitle: { fontSize: 16, fontWeight: '800', color: '#1A1A1A', marginBottom: 10 },
 
-  // ── Progress ──
-  progressCards: { flexDirection: 'row', gap: SPACE.md, marginBottom: SPACE.xl },
-  progressCard: {
-    flex: 1, borderRadius: RADIUS.xl, padding: SPACE.lg,
-    alignItems: 'center', gap: SPACE.sm, borderWidth: 1,
-  },
-  progressRing: {
-    width: 72, height: 72, borderRadius: 36, borderWidth: 2,
-    justifyContent: 'center', alignItems: 'center', marginBottom: SPACE.sm,
-  },
-  progressCardTitle: { fontFamily: FONTS.bold, fontSize: 17 },
-  progressCardSub: { fontSize: 13, textAlign: 'center' },
-  revisitWrap: { borderRadius: RADIUS.lg, padding: SPACE.lg, borderWidth: 1 },
-  revisitTop: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: SPACE.md },
-  revisitLabel: { flex: 1, fontSize: 11, fontWeight: '800', letterSpacing: 1.5 },
-  revisitCount: { fontFamily: FONTS.bold, fontSize: 15 },
-  revisitTrack: { height: 6, borderRadius: 3, overflow: 'hidden' },
-  revisitFill: { height: '100%', borderRadius: 3 },
+  // ── Reflect ──
+  reflectBox: { backgroundColor: '#F0FAFB', borderRadius: 12, padding: 14, borderLeftWidth: 3, borderLeftColor: '#00ADC1' },
+  reflectText: { fontSize: 14, color: '#444', lineHeight: 22, fontStyle: 'italic' },
 
-  // Modal & Confirm
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: SPACE.xl },
-  confirmCard: { width: '100%', borderRadius: RADIUS.xl, padding: SPACE.xl, alignItems: 'center', borderWidth: 1, elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 20 },
-  confirmIcon: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', marginBottom: SPACE.lg },
-  confirmTitle: { fontFamily: FONTS.bold, fontSize: 22, marginBottom: SPACE.sm },
-  confirmSub: { fontSize: 15, textAlign: 'center', lineHeight: 22, paddingHorizontal: SPACE.md, marginBottom: SPACE.xl },
-  confirmActions: { flexDirection: 'row', gap: SPACE.md, width: '100%' },
-  confirmBtn: { flex: 1, height: 48, borderRadius: RADIUS.lg, justifyContent: 'center', alignItems: 'center' },
-  confirmBtnText: { fontWeight: '700', fontSize: 16 },
+  // ── Insight ──
+  insightRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  manImg: { width: 72, height: 90, marginTop: 4 },
+  insightBox: { flex: 1, borderRadius: 14, padding: 14, minHeight: 90, overflow: 'hidden' },
+  insightText: { fontSize: 13, color: '#333', lineHeight: 20 },
+
+  // ── Quiz ──
+  quizHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  questImg: { width: 36, height: 36 },
+  quizSubtitle: { fontSize: 12, color: '#888', marginTop: 1 },
+  quizQuestion: { fontSize: 15, fontWeight: '700', color: '#1A1A1A', marginBottom: 14, lineHeight: 22 },
+  optionsList: { gap: 9 },
+  quizOption: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12,
+    borderRadius: 10, borderWidth: 1.5, borderColor: '#E0E0E0', backgroundColor: '#FAFAFA',
+  },
+  quizOptionChosen: { borderColor: '#00ADC150', backgroundColor: '#E8F7FB' },
+  quizOptionGood: { borderColor: '#00ADC1', backgroundColor: '#E0F7FA' },
+  quizOptionBad: { borderColor: '#FF4444', backgroundColor: '#FFF0F0' },
+  radioOuter: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#CCCCCC', justifyContent: 'center', alignItems: 'center' },
+  radioInner: { width: 10, height: 10, borderRadius: 5 },
+  quizOptText: { flex: 1, fontSize: 14, color: '#1A1A1A', fontWeight: '500' },
+
+  // ── Slide to Continue ──
+  slideBar: {
+    position: 'absolute', bottom: 0, left: 0, right: 0, height: 56,
+    marginHorizontal: 16, marginBottom: 16, borderRadius: 8, overflow: 'hidden',
+    backgroundColor: '#00ADC1',
+    elevation: 4, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 4 },
+  },
+  slideGrad: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+  slideThumb: {
+    width: 64, height: '100%', backgroundColor: '#89DFE9',
+    justifyContent: 'center', alignItems: 'center',
+    borderRightWidth: 1, borderRightColor: '#68C3D2',
+  },
+  slideHand: { width: 30, height: 30, tintColor: '#FFFFFF' },
+  slideText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.4 },
+
+  // ── Journey screen ──
+  journeyRoot: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  journeyCard: {
+    width: '100%', borderRadius: 24, padding: 30, alignItems: 'center', overflow: 'hidden',
+    elevation: 6, shadowColor: '#00ADC1', shadowOpacity: 0.15, shadowRadius: 16, shadowOffset: { width: 0, height: 4 },
+    borderWidth: 1, borderColor: '#00ADC120',
+  },
+  journeyTitle: { fontSize: 26, fontWeight: '900', color: '#1A1A1A', marginBottom: 6, letterSpacing: 0.2 },
+  journeySub: { fontSize: 13, color: '#666', marginBottom: 32, textAlign: 'center' },
+  journeyRow: { flexDirection: 'row', alignItems: 'center', gap: 0, marginBottom: 36 },
+  journeyStep: { alignItems: 'center', gap: 8 },
+  journeyIcon: { width: 70, height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center' },
+  journeyImg: { width: 44, height: 44 },
+  journeyStepLabel: { fontSize: 13, fontWeight: '700', color: '#1A1A1A' },
+  journeyArrow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16 },
+  arrowLine: { width: 30, height: 2, backgroundColor: '#00ADC1', marginRight: -2 },
+  doneBtn: { width: '100%', borderRadius: 14, overflow: 'hidden' },
+  doneBtnGrad: { paddingVertical: 15, alignItems: 'center' },
+  doneBtnText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF', letterSpacing: 0.5 },
 });
 
 export default NameDetailScreen;

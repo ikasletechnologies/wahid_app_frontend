@@ -1,131 +1,164 @@
 import React, { useEffect, useRef } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
-import { View, Platform, Animated, TouchableOpacity, StyleSheet, Text, Dimensions } from 'react-native';
+import { View, Platform, Animated, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
 import NamesScreen from '../screens/NamesScreen';
 import PlaylistScreen from '../screens/PlaylistScreen';
 import JourneyScreen from '../screens/JourneyScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import { useAppTheme } from '../context/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import MiniPlayer from '../components/MiniPlayer';
 
 const { width } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
 
-const CustomTabBar = ({ state, descriptors, navigation, colors, isDark }) => {
-  const translateX = useRef(new Animated.Value(0)).current;
+// ── MANUALLY RESIZE THESE TO TWEAK THE LOOK ───────────────────────────────
+const BAR_HEIGHT = 65;         // Tall and premium
+const BAR_MARGIN = 10;         // Left/Right distance from screen edges
+const BEAM_OPACITY = 0.15;     // Strength of the light beam
+const ICON_ACTIVE_SCALE = 1.2; // Animation pop
+// ──────────────────────────────────────────────────────────────────────────
 
-  // The bar has left/right margin of 16 each = 32. 
-  const availableWidth = width - 32;
+const TAB_ICONS = {
+  Home: require('../../assets/HOME.png'),
+  Names: require('../../assets/NAMES.png'),
+  Playlist: require('../../assets/PLAYLIST.png'),
+  Journey: require('../../assets/JOURNEY.png'),
+  Profile: require('../../assets/PROFILE.png'),
+};
+
+const CustomTabBar = ({ state, descriptors, navigation, isDark }) => {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const activeScales = useRef(state.routes.map(() => new Animated.Value(1))).current;
+
+  const availableWidth = width - (BAR_MARGIN * 2);
   const tabWidth = availableWidth / state.routes.length;
 
   useEffect(() => {
+    // 1. Move the light beam
     Animated.spring(translateX, {
       toValue: state.index * tabWidth,
       useNativeDriver: true,
-      friction: 6,
-      tension: 50,
+      friction: 8,
+      tension: 40,
     }).start();
+
+    // 2. Animate icon scale
+    state.routes.forEach((_, i) => {
+      Animated.spring(activeScales[i], {
+        toValue: state.index === i ? ICON_ACTIVE_SCALE : 1,
+        useNativeDriver: true,
+      }).start();
+    });
   }, [state.index, tabWidth]);
 
   return (
-    <View style={[
-      styles.tabBar,
-      {
-        backgroundColor: isDark ? 'rgba(18, 20, 28, 0.98)' : 'rgba(255, 255, 255, 0.95)',
-        borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-        shadowOpacity: isDark ? 0.6 : 0.1,
-      }
-    ]}>
-      {/* Sliding Active Pill */}
-      <Animated.View
-        style={[
-          styles.activeIndicatorWrap,
-          { width: tabWidth, transform: [{ translateX }] }
-        ]}
-      >
-        <View style={[
-          styles.activeIndicatorPill,
-          { backgroundColor: isDark ? 'rgba(201, 168, 76, 0.18)' : 'rgba(184, 150, 61, 0.15)' }
-        ]} />
-      </Animated.View>
+    <View style={styles.tabBarContainer}>
+      <View style={[styles.tabBar, { height: BAR_HEIGHT, borderRadius: BAR_HEIGHT / 2.2 }]}>
 
-      {/* Tabs */}
-      {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key];
-        const isFocused = state.index === index;
+        {/* Sliding Spotlight Beam (Soft Gradient) */}
+        <Animated.View
+          style={[
+            styles.beamContainer,
+            { width: tabWidth, height: BAR_HEIGHT, transform: [{ translateX }] }
+          ]}
+        >
+          <LinearGradient
+            colors={[`rgba(0, 173, 193, ${BEAM_OPACITY * 1.5})`, 'transparent']}
+            style={styles.beamGradient}
+          />
+          <View style={styles.beamTopLine} />
+        </Animated.View>
 
-        const onPress = () => {
-          const event = navigation.emit({
-            type: 'tabPress',
-            target: route.key,
-            canPreventDefault: true,
-          });
+        {/* Tabs */}
+        {state.routes.map((route, index) => {
+          const { options } = descriptors[route.key];
+          const isFocused = state.index === index;
 
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
-        };
+          const onPress = () => {
+            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
 
-        let iconName;
-        if (route.name === 'Home')         iconName = isFocused ? 'home'          : 'home-outline';
-        else if (route.name === 'Names')   iconName = isFocused ? 'grid'          : 'grid-outline';
-        else if (route.name === 'Playlist')iconName = isFocused ? 'musical-notes' : 'musical-notes-outline';
-        else if (route.name === 'Journey') iconName = isFocused ? 'stats-chart'   : 'stats-chart-outline';
-        else if (route.name === 'Profile') iconName = isFocused ? 'person'        : 'person-outline';
-
-        const color = isFocused 
-          ? colors.primary 
-          : (isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(0, 0, 0, 0.4)');
-
-        return (
-          <TouchableOpacity
-            key={route.key}
-            activeOpacity={1}
-            onPress={onPress}
-            style={styles.tabButton}
-          >
-            <View style={styles.iconContainer}>
-              <Ionicons name={iconName} size={20} color={color} />
-            </View>
-            <Text style={[styles.tabLabel, { color }]}>
-              {route.name}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
+          return (
+            <TouchableOpacity
+              key={route.key}
+              activeOpacity={1}
+              onPress={onPress}
+              style={styles.tabButton}
+            >
+              <Animated.View style={[styles.iconContainer, { transform: [{ scale: activeScales[index] }] }]}>
+                <Image
+                  source={TAB_ICONS[route.name]}
+                  style={[
+                    styles.tabIcon,
+                    {
+                      tintColor: isFocused ? '#00ADC1' : '#1A1A1A',
+                      opacity: isFocused ? 1 : 0.6
+                    }
+                  ]}
+                  resizeMode="contain"
+                />
+              </Animated.View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  tabBar: {
+  tabBarContainer: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 30 : 20,
-    left: 16,
-    right: 16,
-    borderRadius: 24,
-    height: 70,
-    borderWidth: 1.5,
+    bottom: Platform.OS === 'ios' ? 35 : 25,
+    left: BAR_MARGIN,
+    right: BAR_MARGIN,
+    zIndex: 1000,
+  },
+  tabBar: {
+    backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
-    elevation: 12,
-    shadowColor: '#000',
+    elevation: 30,
+    shadowColor: '#00ADC1',
     shadowOffset: { width: 0, height: 12 },
-    shadowRadius: 16,
-    paddingHorizontal: 0,
+    shadowOpacity: 0.22,
+    shadowRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 173, 193, 0.08)',
+    overflow: 'hidden',
   },
-  activeIndicatorWrap: {
+  beamContainer: {
     position: 'absolute',
-    height: '100%',
-    justifyContent: 'center',
+    top: 0,
     alignItems: 'center',
-    top: -5,
+    zIndex: -1,
   },
-  activeIndicatorPill: {
-    width: 48,
-    height: 30,
-    borderRadius: 15,
+  beamGradient: {
+    width: '50%',
+    height: '100%',
+    position: 'absolute',
+    top: -15,
+    // This creates the tapered searchlight look
+    transform: [{ perspective: 100 }, { rotateX: '45deg' }],
+    opacity: 1,
+  },
+  beamTopLine: {
+    position: 'absolute',
+    top: -1,
+    width: 45,
+    height: 4.5,
+    backgroundColor: '#00ADC1',
+    borderBottomLeftRadius: 5,
+    borderBottomRightRadius: 5,
+    shadowColor: '#00ADC1',
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    elevation: 5,
   },
   tabButton: {
     flex: 1,
@@ -134,20 +167,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconContainer: {
-    height: 30,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 2,
   },
-  tabLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+  tabIcon: {
+    width: 28,
+    height: 28,
   },
 });
-
-import MiniPlayer from '../components/MiniPlayer';
 
 const TabNavigator = () => {
   const { colors, isDark } = useAppTheme();
