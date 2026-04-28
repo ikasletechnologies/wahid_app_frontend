@@ -9,7 +9,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNames } from '../context/NamesContext';
 import NameDetailHeader from '../components/NameDetailHeader';
 
-const { width: SW } = Dimensions.get('window');
+const { width: SW, height: SH } = Dimensions.get('window');
+
+// Scale helpers — reference device: Redmi Note 13 Pro+ (≈393 × 900 dp)
+const BASE_W = 393;
+const BASE_H = 900;
+const wScale = SW / BASE_W;
+const hScale = SH / BASE_H;
+const rs = (n) => Math.round(n * wScale);
+const hs = (n) => Math.round(n * hScale);
 
 const getField = (name, ...keys) => {
   for (const k of keys) {
@@ -52,13 +60,11 @@ const NameDetailScreen = ({ route, navigation }) => {
   const { markAsLearned, masteredIds } = useNames();
   const isMastered = masteredIds ? masteredIds.includes(name.number) : false;
 
-
   const benefits = useMemo(() => parseBenefits(name), [name]);
   const quranicRef = useMemo(() => parseQuranicRef(name), [name]);
   const reflection = getField(name, 'reflection', 'learning_insight', 'description');
   const insight = getField(name, 'learning_insight', 'learningInsight', 'reflection', 'description');
   const mcq = useMemo(() => parseMcq(name), [name]);
-
 
   const [phase, setPhase] = useState('gift');
   const [contentStage, setContentStage] = useState(0);
@@ -66,9 +72,7 @@ const NameDetailScreen = ({ route, navigation }) => {
   const [quizAnswer, setQuizAnswer] = useState(null);
   const [quizDone, setQuizDone] = useState(false);
 
-
   const lastTapRef = useRef(0);
-
 
   const floatAnim = useRef(new Animated.Value(0)).current;
   const giftOpacity = useRef(new Animated.Value(1)).current;
@@ -88,10 +92,8 @@ const NameDetailScreen = ({ route, navigation }) => {
   const journeyOpacity = useRef(new Animated.Value(0)).current;
   const journeyTranslate = useRef(new Animated.Value(50)).current;
 
-
   const floatLoopRef = useRef(null);
   const handLoopRef = useRef(null);
-
 
   useEffect(() => {
     floatLoopRef.current = Animated.loop(
@@ -103,7 +105,6 @@ const NameDetailScreen = ({ route, navigation }) => {
     floatLoopRef.current.start();
     return () => floatLoopRef.current?.stop();
   }, []);
-
 
   useEffect(() => {
     if (phase !== 'content') return;
@@ -118,7 +119,6 @@ const NameDetailScreen = ({ route, navigation }) => {
     handLoopRef.current.start();
     return () => { handLoopRef.current?.stop(); handAnim.setValue(0); };
   }, [phase]);
-
 
   const handleGiftTap = useCallback(() => {
     const now = Date.now();
@@ -143,7 +143,6 @@ const NameDetailScreen = ({ route, navigation }) => {
     }
     lastTapRef.current = now;
   }, []);
-
 
   const revealSections = useCallback((stage) => {
     handLoopRef.current?.stop();
@@ -180,7 +179,6 @@ const NameDetailScreen = ({ route, navigation }) => {
     ).start();
   }, [sectionAnims, progressAnim]);
 
-
   const goJourney = useCallback(() => {
     setPhase('journey');
     Animated.parallel([
@@ -215,7 +213,7 @@ const NameDetailScreen = ({ route, navigation }) => {
   // ── Physical Swiping Logic ──
   const slidePanX = useRef(new Animated.Value(0)).current;
   const slidePanResponder = useMemo(() => {
-    const MAX_SLIDE = SW - 32 - 64; // width of screen minus margins minus thumb width
+    const MAX_SLIDE = SW - rs(32) - rs(64);
 
     return PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -224,23 +222,20 @@ const NameDetailScreen = ({ route, navigation }) => {
         handLoopRef.current?.stop();
         handAnim.setValue(0);
       },
-      onPanResponderMove: (evt, gestureState) => {
+      onPanResponderMove: (_, gestureState) => {
         let val = gestureState.dx;
         if (val < 0) val = 0;
         if (val > MAX_SLIDE) val = MAX_SLIDE;
         slidePanX.setValue(val);
       },
-      onPanResponderRelease: (evt, gestureState) => {
+      onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dx > MAX_SLIDE * 0.7) {
-          // Success swipe!
           Animated.timing(slidePanX, {
             toValue: MAX_SLIDE,
             duration: 150,
             useNativeDriver: true,
           }).start(() => {
             handleSlideTap();
-
-            // if we just revealed content, smoothly slide the slider back for the next swipe
             if (contentStage < 4) {
               Animated.spring(slidePanX, {
                 toValue: 0,
@@ -248,12 +243,11 @@ const NameDetailScreen = ({ route, navigation }) => {
                 friction: 4,
                 useNativeDriver: true,
               }).start(() => {
-                handLoopRef.current?.start(); // re-enable hint jumping
+                handLoopRef.current?.start();
               });
             }
           });
         } else {
-          // Snaps back smoothly if not fully swiped
           Animated.spring(slidePanX, {
             toValue: 0,
             tension: 60,
@@ -281,13 +275,11 @@ const NameDetailScreen = ({ route, navigation }) => {
         <StatusBar barStyle="dark-content" />
 
         <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
-          {/* Header */}
           <NameDetailHeader name={name} onClose={() => navigation.goBack()} />
 
           <View style={styles.progressTrack} />
 
           <Animated.View style={[styles.giftBody, { opacity: giftOpacity }]}>
-            {/* Top info */}
             <View style={styles.giftTopInfo}>
               <Text style={styles.giftTitle}>Gifts of this Name</Text>
               <View style={styles.giftSubtitleContainer}>
@@ -297,7 +289,6 @@ const NameDetailScreen = ({ route, navigation }) => {
               </View>
             </View>
 
-            {/* Floating gift box */}
             <View style={styles.giftBoxWrap}>
               <Pressable onPress={handleGiftTap}>
                 <Animated.View style={{ transform: [{ translateY: floatAnim }] }}>
@@ -313,7 +304,6 @@ const NameDetailScreen = ({ route, navigation }) => {
               <Image source={require('../../assets/Ellipse 5.png')} style={styles.giftShadow} resizeMode="contain" />
             </View>
 
-            {/* Double tap hint */}
             <View style={styles.doubleTapRow}>
               <Image source={require('../../assets/signHand.png')} style={styles.handHint} resizeMode="contain" />
               <Text style={styles.doubleTapText}>Double Tap to Open</Text>
@@ -356,16 +346,16 @@ const NameDetailScreen = ({ route, navigation }) => {
               </View>
 
               <View style={[styles.journeyStepCard, { opacity: isMastered ? 1 : 0.6 }]}>
-                <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center', marginBottom: 8, height: 44, width: 44 }}>
-                  <Image source={isMastered ? require('../../assets/masterOpen.png') : require('../../assets/Masterlock.png')} style={{ width: 44, height: 44 }} resizeMode="contain" />
-                  {!isMastered && <Ionicons name="lock-closed" size={20} color="#00ADC1" style={{ position: 'absolute', top: 12 }} />}
+                <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center', marginBottom: rs(8), height: rs(44), width: rs(44) }}>
+                  <Image source={isMastered ? require('../../assets/masterOpen.png') : require('../../assets/Masterlock.png')} style={{ width: rs(44), height: rs(44) }} resizeMode="contain" />
+                  {!isMastered && <Ionicons name="lock-closed" size={rs(20)} color="#00ADC1" style={{ position: 'absolute', top: rs(12) }} />}
                 </View>
                 <Text style={styles.journeyStepLabel}>Mastered</Text>
               </View>
             </View>
 
             <Text style={styles.journeyNote}>
-              {isMastered 
+              {isMastered
                 ? `You are the master of this journey!`
                 : `If you read more than 3 times you will be master on this course`}
             </Text>
@@ -395,24 +385,20 @@ const NameDetailScreen = ({ route, navigation }) => {
       <StatusBar barStyle="dark-content" />
 
       <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
-        {/* Header */}
         <NameDetailHeader name={name} onClose={() => navigation.goBack()} />
 
-        {/* Progress bar */}
         <View style={styles.progressTrack}>
           <Animated.View style={[styles.progressFill, {
             width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
           }]} />
         </View>
 
-        {/* Scrollable content */}
         <Animated.ScrollView
           ref={scrollViewRef}
           style={{ flex: 1, opacity: contentOpacity }}
           contentContainerStyle={styles.contentScroll}
           showsVerticalScrollIndicator={false}
         >
-          {/* Static header inside scroll */}
           <Text style={styles.giftTitleScroll}>Gifts of this Name</Text>
           <Text style={styles.giftSubtitleSmall}>
             What learning {name.transliteration} brings to your life
@@ -448,7 +434,7 @@ const NameDetailScreen = ({ route, navigation }) => {
             <ImageBackground
               source={require('../../assets/bgCard.png')}
               style={styles.divineCard}
-              imageStyle={{ borderRadius: 16 }}
+              imageStyle={{ borderRadius: rs(16) }}
               resizeMode="cover"
             >
               <Text style={styles.divineName}>Divine Words</Text>
@@ -463,7 +449,7 @@ const NameDetailScreen = ({ route, navigation }) => {
             </ImageBackground>
           </AnimSection>
 
-          {/* ── Section 3: Ponder & Reflect (Merged) ── */}
+          {/* ── Section 3: Ponder & Reflect ── */}
           <AnimSection anim={sectionAnims[3]} hidden={contentStage < 2}>
             <View style={styles.sectionCardTransparent}>
               <View style={styles.smallDividerWrap}>
@@ -474,7 +460,7 @@ const NameDetailScreen = ({ route, navigation }) => {
               <ImageBackground
                 source={require('../../assets/bgCard2.png')}
                 style={styles.insightRow}
-                imageStyle={{ borderRadius: 14 }}
+                imageStyle={{ borderRadius: rs(14) }}
                 resizeMode="cover"
               >
                 <Image source={require('../../assets/man.png')} style={styles.manImg} resizeMode="contain" />
@@ -484,7 +470,6 @@ const NameDetailScreen = ({ route, navigation }) => {
                   </Text>
                 </View>
               </ImageBackground>
-
             </View>
           </AnimSection>
 
@@ -537,24 +522,16 @@ const NameDetailScreen = ({ route, navigation }) => {
 
                   if (showStatus) {
                     if (isSelected && isCorrect) {
-                      borderColor = '#4CAF50';
-                      bgColor = '#E8F5E9';
-                      iconColor = '#4CAF50';
+                      borderColor = '#4CAF50'; bgColor = '#E8F5E9'; iconColor = '#4CAF50';
                     } else if (isSelected && !isCorrect) {
-                      borderColor = '#F44336';
-                      bgColor = '#FFEBEE';
-                      iconColor = '#F44336';
+                      borderColor = '#F44336'; bgColor = '#FFEBEE'; iconColor = '#F44336';
                     } else if (isCorrect) {
-                      borderColor = '#4CAF50';
-                      bgColor = '#E8F5E9';
-                      iconColor = '#4CAF50';
+                      borderColor = '#4CAF50'; bgColor = '#E8F5E9'; iconColor = '#4CAF50';
                     } else {
-                      iconColor = '#ccc';
-                      textColor = '#888';
+                      iconColor = '#ccc'; textColor = '#888';
                     }
                   } else if (isSelected) {
-                    borderColor = '#00ADC1';
-                    bgColor = '#F0FBFC';
+                    borderColor = '#00ADC1'; bgColor = '#F0FBFC';
                   }
 
                   return (
@@ -577,7 +554,7 @@ const NameDetailScreen = ({ route, navigation }) => {
             </View>
           </AnimSection>
 
-          <View style={{ height: 100 }} />
+          <View style={{ height: hs(100) }} />
         </Animated.ScrollView>
 
         {/* ── Fixed bottom: Slide to Continue ── */}
@@ -597,7 +574,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                 resizeMode="contain"
               />
             </Animated.View>
-            <Text style={[styles.slideText, { marginLeft: 80 }]}>
+            <Text style={[styles.slideText, { marginLeft: rs(80) }]}>
               {contentStage === 4 ? 'Continue to Journey' : 'Slide to Continue'}
             </Text>
           </View>
@@ -621,28 +598,16 @@ const AnimSection = ({ anim, hidden, children }) => (
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F0F2FB', borderTopLeftRadius: 36, borderTopRightRadius: 36, overflow: 'hidden' },
+  root: { flex: 1, backgroundColor: '#F0F2FB', borderTopLeftRadius: rs(36), borderTopRightRadius: rs(36), overflow: 'hidden' },
 
   // ── Gift phase ──
-  giftBody: { flex: 1, alignItems: 'center', justifyContent: 'space-between', paddingBottom: 50, paddingHorizontal: 24, zIndex: 1 },
-  giftTopInfo: { alignItems: 'flex-start', marginTop: 10, width: '100%' },
-  giftTitle: { fontSize: 24, fontWeight: '800', color: '#1A1A1A', marginBottom: 4 },
-  giftTitleScroll: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#1A1A1A',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  giftSubtitleContainer: { fontWeight: '100', paddingBottom: 2 },
-  giftSubtitle: { fontSize: 14, color: '#000000ff', fontWeight: '500', lineHeight: 20 },
-  giftSubtitleSmall: {
-    fontSize: 13,
-    color: '#7A7A7A',
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 19
-  },
+  giftBody: { flex: 1, alignItems: 'center', justifyContent: 'space-between', paddingBottom: hs(50), paddingHorizontal: rs(24), zIndex: 1 },
+  giftTopInfo: { alignItems: 'flex-start', marginTop: hs(10), width: '100%' },
+  giftTitle: { fontSize: rs(24), fontWeight: '800', color: '#1A1A1A', marginBottom: hs(4) },
+  giftTitleScroll: { fontSize: rs(20), fontWeight: '800', color: '#1A1A1A', marginBottom: hs(4), textAlign: 'center' },
+  giftSubtitleContainer: { fontWeight: '100', paddingBottom: hs(2) },
+  giftSubtitle: { fontSize: rs(14), color: '#000000ff', fontWeight: '500', lineHeight: rs(20) },
+  giftSubtitleSmall: { fontSize: rs(13), color: '#7A7A7A', textAlign: 'center', marginBottom: hs(20), lineHeight: rs(19) },
 
   giftBoxWrap: {
     width: '100%',
@@ -654,140 +619,104 @@ const styles = StyleSheet.create({
   giftBoxImg: { width: SW * 0.55, height: SW * 0.55 },
   giftShadow: {
     position: 'absolute',
-    bottom: 85,
+    bottom: hs(85),
     width: SW * 0.5,
-    height: 30,
+    height: hs(30),
     zIndex: -1,
   },
 
-  doubleTapRow: { flexDirection: 'row', alignItems: 'center', gap: 25, bottom: 220 },
-  handHint: { width: 32, height: 32, tintColor: '#00ADC1' },
-  doubleTapText: { fontSize: 24, fontWeight: '500', color: '#00ADC1', letterSpacing: 0.3 },
+  doubleTapRow: { flexDirection: 'row', alignItems: 'center', gap: rs(25), bottom: hs(220) },
+  handHint: { width: rs(32), height: rs(32), tintColor: '#00ADC1' },
+  doubleTapText: { fontSize: rs(24), fontWeight: '500', color: '#00ADC1', letterSpacing: 0.5, marginVertical: 20, },
 
   // ── Progress bar ──
   progressTrack: {
-    height: 10,
+    height: hs(10),
     backgroundColor: '#E6E8F0',
     width: '80%',
-    borderRadius: 20,
+    borderRadius: rs(20),
     alignSelf: 'center',
-    marginVertical: 20,
+    marginVertical: hs(20),
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#20B9CC',
-    borderRadius: 20,
+    borderRadius: rs(20),
   },
 
   // ── Content scroll ──
-  contentScroll: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 20 },
-  animSection: { marginBottom: 18 },
+  contentScroll: { paddingHorizontal: rs(20), paddingTop: hs(10), paddingBottom: hs(20) },
+  animSection: { marginBottom: hs(18) },
 
   // ── Benefits ──
-  benefitsList: { gap: 10 },
+  benefitsList: { gap: hs(10) },
   benefitRow: {
     flexDirection: 'row',
     alignItems: 'stretch',
     backgroundColor: '#FFFFFF',
-    borderRadius: 6,
-    minHeight: 64,
-    marginBottom: 12,
+    borderRadius: rs(6),
+    minHeight: hs(64),
+    marginBottom: hs(12),
     shadowColor: '#000',
     shadowOpacity: 0.05,
-    shadowRadius: 6,
+    shadowRadius: rs(6),
     shadowOffset: { width: 0, height: 3 },
     elevation: 2,
     overflow: 'hidden',
   },
   benefitNumBadge: {
-    width: 80,
+    width: rs(80),
     backgroundColor: '#4CD6E8',
-    borderTopRightRadius: 6,
-    borderBottomRightRadius: 6,
+    borderTopRightRadius: rs(6),
+    borderBottomRightRadius: rs(6),
     justifyContent: 'center',
     alignItems: 'center',
   },
-  benefitNum: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
+  benefitNum: { fontSize: rs(18), fontWeight: '800', color: '#FFFFFF' },
   benefitText: {
     flex: 1,
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: rs(14),
+    lineHeight: rs(22),
     color: '#1A1A1A',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: rs(16),
+    paddingVertical: hs(14),
     alignSelf: 'center',
   },
 
   // ── Gold divider ──
-  dividerWrap: {
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  goldDivider: {
-    width: 180,
-    height: 20,
-    opacity: 0.8,
-  },
+  dividerWrap: { alignItems: 'center', marginVertical: hs(16) },
+  goldDivider: { width: rs(180), height: hs(20), opacity: 0.8 },
 
   // ── Divine Words card ──
   divineCard: {
-    borderRadius: 16,
-    padding: 24,
+    borderRadius: rs(16),
+    padding: rs(24),
     overflow: 'hidden',
     backgroundColor: 'transparent',
     shadowColor: '#00ADC1',
     shadowOpacity: 0.15,
-    shadowRadius: 15,
+    shadowRadius: rs(15),
     shadowOffset: { width: 0, height: 6 },
     elevation: 4,
   },
-  divineName: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#000000',
-    textAlign: 'center',
-    marginBottom: 3,
-  },
-  divineSubtitle: {
-    fontSize: 12,
-    color: '#4A4A4A',
-    fontWeight: '400',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
+  divineName: { fontSize: rs(18), fontWeight: '800', color: '#000000', textAlign: 'center', marginBottom: hs(3) },
+  divineSubtitle: { fontSize: rs(12), color: '#4A4A4A', fontWeight: '400', textAlign: 'center', marginBottom: hs(16) },
   quoteBlock: { alignItems: 'center', position: 'relative' },
-  quoteIconTop: { width: 32, height: 24, alignSelf: 'flex-start', marginBottom: 4 },
-  quoteIconBottom: { width: 32, height: 24, alignSelf: 'flex-end', transform: [{ rotate: '180deg' }], marginTop: 4 },
-  quoteText: {
-    fontSize: 15,
-    fontStyle: 'normal',
-    color: '#1A1A1A',
-    textAlign: 'center',
-    lineHeight: 24,
-  },
+  quoteIconTop: { width: rs(32), height: hs(24), alignSelf: 'flex-start', marginBottom: hs(4) },
+  quoteIconBottom: { width: rs(32), height: hs(24), alignSelf: 'flex-end', transform: [{ rotate: '180deg' }], marginTop: hs(4) },
+  quoteText: { fontSize: rs(15), fontStyle: 'normal', color: '#1A1A1A', textAlign: 'center', lineHeight: rs(24) },
 
   // ── Generic section card ──
-  sectionCardTransparent: {
-    backgroundColor: 'transparent',
-    paddingTop: 10,
-    paddingBottom: 2,
-    paddingHorizontal: 4,
-  },
-  sectionCardTitleLeft: {
-    fontSize: 18, fontWeight: '800', color: '#1A1A1A', marginBottom: 12, textAlign: 'left'
-  },
-  smallDividerWrap: { alignItems: 'center', marginBottom: 16 },
-  smallDivider: { width: 140, height: 12, opacity: 0.6 },
+  sectionCardTransparent: { backgroundColor: 'transparent', paddingTop: hs(10), paddingBottom: hs(2), paddingHorizontal: rs(4) },
+  sectionCardTitleLeft: { fontSize: rs(18), fontWeight: '800', color: '#1A1A1A', marginBottom: hs(12), textAlign: 'left' },
+  smallDividerWrap: { alignItems: 'center', marginBottom: hs(16) },
+  smallDivider: { width: rs(140), height: hs(12), opacity: 0.6 },
 
-  // ── Ponder Insight (Merged) ──
-  insightRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, padding: 16, overflow: 'hidden' },
-  manImg: { width: 68, height: 96, marginRight: 12 },
+  // ── Ponder Insight ──
+  insightRow: { flexDirection: 'row', alignItems: 'center', borderRadius: rs(14), padding: rs(16), overflow: 'hidden' },
+  manImg: { width: rs(68), height: rs(96), marginRight: rs(12) },
   insightBox: { flex: 1, justifyContent: 'center' },
-  insightText: { fontSize: 13, color: '#1A1A1A', lineHeight: 20 },
+  insightText: { fontSize: rs(13), color: '#1A1A1A', lineHeight: rs(20) },
 
   // ── Learning Insight (Quest) ──
   questBgBox: {
@@ -800,107 +729,92 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  questInsightText: {
-    fontSize: 15,
-    color: '#1A1A1A',
-    lineHeight: 25,
-    textAlign: 'center',
-    fontWeight: '400',
-  },
+  questInsightText: { fontSize: rs(15), color: '#1A1A1A', lineHeight: rs(25), textAlign: 'center', fontWeight: '400' },
 
   // ── Quiz Section ──
-  quizSection: { paddingTop: 10, paddingHorizontal: 4 },
-  quizHeader: { marginBottom: 20 },
-  quizTitle: { fontSize: 20, fontWeight: '800', color: '#1A1A1A' },
+  quizSection: { paddingTop: hs(10), paddingHorizontal: rs(4) },
+  quizHeader: { marginBottom: hs(20) },
+  quizTitle: { fontSize: rs(20), fontWeight: '800', color: '#1A1A1A' },
   quizTitleUnderline: { height: 3, backgroundColor: '#00ADC1', width: '100%', marginTop: 2, borderRadius: 2 },
-  quizSubtitle: { fontSize: 13, color: '#4A4A4A', marginTop: 8 },
-  quizQuestion: { fontSize: 16, color: '#1A1A1A', fontWeight: '500', marginBottom: 16 },
-  quizOptions: { gap: 12 },
+  quizSubtitle: { fontSize: rs(13), color: '#4A4A4A', marginTop: hs(8) },
+  quizQuestion: { fontSize: rs(16), color: '#1A1A1A', fontWeight: '500', marginBottom: hs(16) },
+  quizOptions: { gap: hs(12) },
   quizOptionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 16,
+    borderRadius: rs(8),
+    padding: rs(16),
     shadowColor: '#00ADC1',
     shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowRadius: rs(8),
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
     borderWidth: 1,
   },
   quizRadio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+    width: rs(20), height: rs(20), borderRadius: rs(10),
+    borderWidth: 1.5, justifyContent: 'center', alignItems: 'center', marginRight: rs(12),
   },
-  quizRadioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  quizOptionText: { fontSize: 14 },
+  quizRadioInner: { width: rs(10), height: rs(10), borderRadius: rs(5) },
+  quizOptionText: { fontSize: rs(14) },
 
   // ── Slide to Continue ──
   slideBar: {
-    position: 'absolute', bottom: 0, left: 0, right: 0, height: 56,
-    marginHorizontal: 16, marginBottom: 16, borderRadius: 8, overflow: 'hidden',
+    position: 'absolute', bottom: 0, left: 0, right: 0, height: hs(56),
+    marginHorizontal: rs(16), marginBottom: hs(16), borderRadius: rs(8), overflow: 'hidden',
     backgroundColor: '#00ADC1',
-    elevation: 4, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 8, shadowOffset: { width: 0, height: 4 },
+    elevation: 4, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: rs(8), shadowOffset: { width: 0, height: 4 },
   },
   slideGrad: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   slideThumb: {
-    width: 64, height: '100%', backgroundColor: '#89DFE9',
+    width: rs(64), height: '100%', backgroundColor: '#89DFE9',
     justifyContent: 'center', alignItems: 'center',
     borderRightWidth: 1, borderRightColor: '#68C3D2',
   },
-  slideHand: { width: 30, height: 30, tintColor: '#FFFFFF' },
-  slideText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.4 },
+  slideHand: { width: rs(30), height: rs(30), tintColor: '#FFFFFF' },
+  slideText: { fontSize: rs(16), fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.4 },
 
   // ── Journey screen ──
-  journeyRoot: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  journeyRoot: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: rs(24) },
   journeyCard: {
-    width: '100%', borderRadius: 16, paddingTop: 30, alignItems: 'center', overflow: 'hidden',
-    elevation: 8, shadowColor: '#00ADC1', shadowOpacity: 0.15, shadowRadius: 20, shadowOffset: { width: 0, height: 8 },
+    width: '100%', borderRadius: rs(16), paddingTop: hs(30), alignItems: 'center', overflow: 'hidden',
+    elevation: 8, shadowColor: '#00ADC1', shadowOpacity: 0.15, shadowRadius: rs(20), shadowOffset: { width: 0, height: 8 },
     backgroundColor: '#FFFFFF',
   },
-  journeyTitle: { fontSize: 28, fontWeight: '900', color: '#4CD6E8', marginBottom: 6, letterSpacing: 0.2 },
-  journeySub: { fontSize: 13, color: '#666', marginBottom: 36, textAlign: 'center' },
-  journeyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 40 },
+  journeyTitle: { fontSize: rs(28), fontWeight: '900', color: '#4CD6E8', marginBottom: hs(6), letterSpacing: 0.2 },
+  journeySub: { fontSize: rs(13), color: '#666', marginBottom: hs(36), textAlign: 'center' },
+  journeyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: hs(40) },
 
   journeyStepCard: {
-    width: 105, height: 105,
+    width: rs(105), height: rs(105),
     backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    shadowColor: '#00ADC1', shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
+    borderRadius: rs(8),
+    shadowColor: '#00ADC1', shadowOpacity: 0.1, shadowRadius: rs(10), shadowOffset: { width: 0, height: 4 },
     elevation: 3,
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 1, borderColor: 'rgba(0, 173, 193, 0.05)',
   },
-  journeyImg: { width: 44, height: 44, marginBottom: 8 },
-  journeyStepLabel: { fontSize: 12, fontWeight: '600', color: '#1A1A1A' },
+  journeyImg: { width: rs(44), height: rs(44), marginBottom: hs(8) },
+  journeyStepLabel: { fontSize: rs(12), fontWeight: '600', color: '#1A1A1A' },
 
-  journeyLineWrap: { width: 60, height: 2, flexDirection: 'row' },
+  journeyLineWrap: { width: rs(60), height: 2, flexDirection: 'row' },
   journeyLineLeft: { flex: 1, backgroundColor: '#FFD54F' },
   journeyLineRight: { flex: 1, backgroundColor: '#00ADC1' },
 
   journeyNote: {
-    fontSize: 13,
+    fontSize: rs(13),
     color: '#7A7A7A',
     textAlign: 'center',
-    paddingHorizontal: 30,
-    marginBottom: 24,
-    lineHeight: 20,
-    marginTop: -10,
+    paddingHorizontal: rs(30),
+    marginBottom: hs(24),
+    lineHeight: rs(20),
+    marginTop: hs(-10),
   },
 
   doneBtn: { width: '100%', overflow: 'hidden' },
-  doneBtnGrad: { paddingVertical: 18, alignItems: 'center', backgroundColor: '#00ADC1' },
-  doneBtnText: { fontSize: 18, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.5 },
+  doneBtnGrad: { paddingVertical: hs(18), alignItems: 'center', backgroundColor: '#00ADC1' },
+  doneBtnText: { fontSize: rs(18), fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.5 },
 });
 
 export default NameDetailScreen;

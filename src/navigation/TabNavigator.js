@@ -167,14 +167,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconContainer: {
-    width: 32,
-    height: 32,
+    width: 24,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
   tabIcon: {
-    width: 28,
-    height: 28,
+    width: 20,
+    height: 20,
   },
 });
 
