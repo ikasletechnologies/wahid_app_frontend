@@ -625,9 +625,9 @@ const styles = StyleSheet.create({
     zIndex: -1,
   },
 
-  doubleTapRow: { flexDirection: 'row', alignItems: 'center', gap: rs(25), bottom: hs(220) },
+  doubleTapRow: { flexDirection: 'row', alignItems: 'center', gap: rs(25), bottom: hs(120) },
   handHint: { width: rs(32), height: rs(32), tintColor: '#00ADC1' },
-  doubleTapText: { fontSize: rs(24), fontWeight: '500', color: '#00ADC1', letterSpacing: 0.5, marginVertical: 20, },
+  doubleTapText: { fontSize: rs(24), fontWeight: '500', color: '#00ADC1', letterSpacing: 0.5, },
 
   // ── Progress bar ──
   progressTrack: {
