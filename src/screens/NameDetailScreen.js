@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Dimensions, Animated, Easing,
-  Image, TouchableOpacity, StatusBar, Pressable, PanResponder,
+  Image, ImageBackground, TouchableOpacity, StatusBar, Pressable, PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -49,7 +49,8 @@ const N_SECTIONS = 6;
 
 const NameDetailScreen = ({ route, navigation }) => {
   const { name } = route.params;
-  const { markAsLearned } = useNames();
+  const { markAsLearned, masteredIds } = useNames();
+  const isMastered = masteredIds ? masteredIds.includes(name.number) : false;
 
 
   const benefits = useMemo(() => parseBenefits(name), [name]);
@@ -75,6 +76,7 @@ const NameDetailScreen = ({ route, navigation }) => {
   const progressAnim = useRef(new Animated.Value(0)).current;
   const handAnim = useRef(new Animated.Value(0)).current;
   const slideBtnScale = useRef(new Animated.Value(1)).current;
+  const scrollViewRef = useRef(null);
 
   const sectionAnims = useRef(
     Array.from({ length: N_SECTIONS }, () => ({
@@ -146,20 +148,33 @@ const NameDetailScreen = ({ route, navigation }) => {
   const revealSections = useCallback((stage) => {
     handLoopRef.current?.stop();
 
-    const progressValue = stage === 1 ? 0.4 : 1;
+    let animSlice = [];
+    let progressValue;
+    if (stage === 1) {
+      animSlice = sectionAnims.slice(0, 3);
+      progressValue = 0.25;
+    } else if (stage === 2) {
+      animSlice = sectionAnims.slice(3, 4);
+      progressValue = 0.50;
+    } else if (stage === 3) {
+      animSlice = sectionAnims.slice(4, 5);
+      progressValue = 0.75;
+    } else if (stage === 4) {
+      animSlice = sectionAnims.slice(5, 6);
+      progressValue = 1.0;
+    }
+
     Animated.timing(progressAnim, {
       toValue: progressValue, duration: 1200, easing: Easing.out(Easing.ease),
       useNativeDriver: false,
     }).start();
 
-    const animSlice = stage === 1 ? sectionAnims.slice(0, 3) : sectionAnims.slice(3, 6);
-
     Animated.stagger(
       150,
       animSlice.map(a =>
         Animated.parallel([
-          Animated.timing(a.opacity, { toValue: 1, duration: 480, easing: Easing.out(Easing.ease), useNativeDriver: true }),
-          Animated.timing(a.translateY, { toValue: 0, duration: 480, easing: Easing.out(Easing.back(1.05)), useNativeDriver: true }),
+          Animated.timing(a.opacity, { toValue: 1, duration: 950, easing: Easing.out(Easing.ease), useNativeDriver: true }),
+          Animated.timing(a.translateY, { toValue: 0, duration: 980, easing: Easing.out(Easing.back(2.05)), useNativeDriver: true }),
         ])
       )
     ).start();
@@ -183,7 +198,16 @@ const NameDetailScreen = ({ route, navigation }) => {
     if (contentStage === 1) {
       setContentStage(2);
       revealSections(2);
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 150);
     } else if (contentStage === 2) {
+      setContentStage(3);
+      revealSections(3);
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 150);
+    } else if (contentStage === 3) {
+      setContentStage(4);
+      revealSections(4);
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 150);
+    } else if (contentStage === 4) {
       goJourney();
     }
   }, [contentStage, revealSections, goJourney]);
@@ -216,16 +240,24 @@ const NameDetailScreen = ({ route, navigation }) => {
           }).start(() => {
             handleSlideTap();
 
-            // if we just revealed the second half of content, snap the slider back for the "Journey" swipe
-            if (contentStage === 1) {
-              slidePanX.setValue(0);
-              handLoopRef.current?.start(); // re-enable hint jumping
+            // if we just revealed content, smoothly slide the slider back for the next swipe
+            if (contentStage < 4) {
+              Animated.spring(slidePanX, {
+                toValue: 0,
+                tension: 40,
+                friction: 4,
+                useNativeDriver: true,
+              }).start(() => {
+                handLoopRef.current?.start(); // re-enable hint jumping
+              });
             }
           });
         } else {
-          // Snaps back
+          // Snaps back smoothly if not fully swiped
           Animated.spring(slidePanX, {
             toValue: 0,
+            tension: 60,
+            friction: 10,
             useNativeDriver: true,
           }).start(() => {
             handLoopRef.current?.start();
@@ -313,25 +345,30 @@ const NameDetailScreen = ({ route, navigation }) => {
             <Text style={styles.journeySub}>Track your mastery of {name.transliteration}</Text>
 
             <View style={styles.journeyRow}>
-              <View style={styles.journeyStep}>
-                <View style={[styles.journeyIcon, { backgroundColor: '#E0F7FA' }]}>
-                  <Image source={require('../../assets/mdi_learn-outline.png')} style={styles.journeyImg} resizeMode="contain" />
-                </View>
+              <View style={styles.journeyStepCard}>
+                <Image source={require('../../assets/mdi_learn-outline.png')} style={[styles.journeyImg, { tintColor: '#4CAF50' }]} resizeMode="contain" />
                 <Text style={styles.journeyStepLabel}>Learned</Text>
               </View>
 
-              <View style={styles.journeyArrow}>
-                <View style={styles.arrowLine} />
-                <Ionicons name="chevron-forward" size={18} color="#00ADC1" />
+              <View style={styles.journeyLineWrap}>
+                <View style={styles.journeyLineLeft} />
+                <View style={styles.journeyLineRight} />
               </View>
 
-              <View style={styles.journeyStep}>
-                <View style={[styles.journeyIcon, { backgroundColor: '#FFF3E0' }]}>
-                  <Image source={require('../../assets/Masterlock.png')} style={styles.journeyImg} resizeMode="contain" />
+              <View style={[styles.journeyStepCard, { opacity: isMastered ? 1 : 0.6 }]}>
+                <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center', marginBottom: 8, height: 44, width: 44 }}>
+                  <Image source={isMastered ? require('../../assets/masterOpen.png') : require('../../assets/Masterlock.png')} style={{ width: 44, height: 44 }} resizeMode="contain" />
+                  {!isMastered && <Ionicons name="lock-closed" size={20} color="#00ADC1" style={{ position: 'absolute', top: 12 }} />}
                 </View>
                 <Text style={styles.journeyStepLabel}>Mastered</Text>
               </View>
             </View>
+
+            <Text style={styles.journeyNote}>
+              {isMastered 
+                ? `You are the master of this journey!`
+                : `If you read more than 3 times you will be master on this course`}
+            </Text>
 
             <TouchableOpacity
               style={styles.doneBtn}
@@ -370,6 +407,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
         {/* Scrollable content */}
         <Animated.ScrollView
+          ref={scrollViewRef}
           style={{ flex: 1, opacity: contentOpacity }}
           contentContainerStyle={styles.contentScroll}
           showsVerticalScrollIndicator={false}
@@ -407,96 +445,131 @@ const NameDetailScreen = ({ route, navigation }) => {
 
           {/* ── Section 2: Divine Words ── */}
           <AnimSection anim={sectionAnims[2]}>
-            <View style={styles.divineCard}>
-              <LinearGradient
-                colors={['#FFF9D6', '#FFE6A3']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFillObject}
-              />
+            <ImageBackground
+              source={require('../../assets/bgCard.png')}
+              style={styles.divineCard}
+              imageStyle={{ borderRadius: 16 }}
+              resizeMode="cover"
+            >
               <Text style={styles.divineName}>Divine Words</Text>
               <Text style={styles.divineSubtitle}>Qur'anic references to this name</Text>
               <View style={styles.quoteBlock}>
                 <Image source={require('../../assets/quatation.png')} style={styles.quoteIconTop} resizeMode="contain" />
                 <Text style={styles.quoteText}>
-                  {quranicRef.translation || `In the name of allah, the most gracious,\nthe most merciful`}
+                  {quranicRef.translation || `In the name of Allah, the Most Gracious, the Most Merciful.`}
                 </Text>
                 <Image source={require('../../assets/quatation.png')} style={styles.quoteIconBottom} resizeMode="contain" />
               </View>
-            </View>
+            </ImageBackground>
           </AnimSection>
 
-          {/* ── Section 3: Ponder & Reflect ── */}
+          {/* ── Section 3: Ponder & Reflect (Merged) ── */}
           <AnimSection anim={sectionAnims[3]} hidden={contentStage < 2}>
-            <View style={styles.sectionCard}>
-              <Text style={styles.sectionCardTitle}>Ponder &amp; Reflect</Text>
-              <View style={styles.reflectBox}>
-                <Text style={styles.reflectText}>
-                  {reflection || `Every breath we take is a mercy from ${name.transliteration}. He did not wait for us to ask — His mercy arrives before any deed of ours.`}
-                </Text>
+            <View style={styles.sectionCardTransparent}>
+              <View style={styles.smallDividerWrap}>
+                <Image source={require('../../assets/lineGold.png')} style={styles.smallDivider} resizeMode="contain" />
               </View>
+              <Text style={styles.sectionCardTitleLeft}>Ponder & Reflect</Text>
+
+              <ImageBackground
+                source={require('../../assets/bgCard2.png')}
+                style={styles.insightRow}
+                imageStyle={{ borderRadius: 14 }}
+                resizeMode="cover"
+              >
+                <Image source={require('../../assets/man.png')} style={styles.manImg} resizeMode="contain" />
+                <View style={styles.insightBox}>
+                  <Text style={styles.insightText}>
+                    {reflection || `Every breath we take is a mercy from Ar-Rahman. He did not wait for us to ask- His mercy arrives before any deed of ours.`}
+                  </Text>
+                </View>
+              </ImageBackground>
+
             </View>
           </AnimSection>
 
           {/* ── Section 4: Learning Insight ── */}
-          <AnimSection anim={sectionAnims[4]} hidden={contentStage < 2}>
-            <View style={styles.sectionCard}>
-              <Text style={styles.sectionCardTitle}>Learning Insight</Text>
-              <View style={styles.insightRow}>
-                <Image source={require('../../assets/man.png')} style={styles.manImg} resizeMode="contain" />
-                <View style={styles.insightBox}>
-                  <Image source={require('../../assets/bgCard2.png')} style={StyleSheet.absoluteFillObject} resizeMode="stretch" borderRadius={14} />
-                  <Text style={styles.insightText}>
-                    {insight || `${name.transliteration} teaches that mercy pervades all existence. When you accept that grace finds you before you deserve it, you begin to live without shame and extend unconditional mercy to others.`}
-                  </Text>
-                </View>
-              </View>
+          <AnimSection anim={sectionAnims[4]} hidden={contentStage < 3}>
+            <View style={styles.sectionCardTransparent}>
+              <Text style={styles.sectionCardTitleLeft}>Learning Insight</Text>
+
+              <ImageBackground
+                source={require('../../assets/quest.png')}
+                style={styles.questBgBox}
+                resizeMode="contain"
+              >
+                <Text style={styles.questInsightText}>
+                  {insight || `Ar-Rahman teaches that mercy precedes all worthiness. When you accept that grace finds you before you deserve it, you begin to live without shame and extend unconditional mercy to others.`}
+                </Text>
+              </ImageBackground>
             </View>
           </AnimSection>
 
-          {/* ── Section 5: Match the Quality (Quiz) ── */}
-          <AnimSection anim={sectionAnims[5]} hidden={contentStage < 2}>
-            <View style={styles.sectionCard}>
-              <View style={styles.quizHeader}>
-                <Image source={require('../../assets/quest.png')} style={styles.questImg} resizeMode="contain" />
-                <View>
-                  <Text style={styles.sectionCardTitle}>Match the Quality</Text>
-                  <Text style={styles.quizSubtitle}>Test your understanding of {name.transliteration}</Text>
-                </View>
+          {/* ── Section 5: Quiz ── */}
+          <AnimSection anim={sectionAnims[5]} hidden={contentStage < 4}>
+            <View style={styles.quizSection}>
+              <View style={styles.smallDividerWrap}>
+                <Image source={require('../../assets/lineGold.png')} style={styles.smallDivider} resizeMode="contain" />
               </View>
+
+              <View style={styles.quizHeader}>
+                <View style={{ alignSelf: 'flex-start' }}>
+                  <Text style={styles.quizTitle}>Match the Quality</Text>
+                  <View style={styles.quizTitleUnderline} />
+                </View>
+                <Text style={styles.quizSubtitle}>
+                  Test your understanding of <Text style={{ fontWeight: '800' }}>{name.transliteration}</Text>
+                </Text>
+              </View>
+
               <Text style={styles.quizQuestion}>{mcq.q}</Text>
-              <View style={styles.optionsList}>
-                {(mcq.opts || []).map((opt, idx) => {
-                  const isChosen = quizAnswer === idx;
+
+              <View style={styles.quizOptions}>
+                {mcq.opts.map((opt, idx) => {
+                  const isSelected = quizAnswer === idx;
                   const isCorrect = idx === mcq.ans;
-                  const isBad = quizDone && isChosen && !isCorrect;
-                  const isGood = quizDone && isCorrect;
+                  const showStatus = quizDone;
+
+                  let borderColor = 'transparent';
+                  let bgColor = '#FFFFFF';
+                  let iconColor = '#00ADC1';
+                  let textColor = '#1A1A1A';
+
+                  if (showStatus) {
+                    if (isSelected && isCorrect) {
+                      borderColor = '#4CAF50';
+                      bgColor = '#E8F5E9';
+                      iconColor = '#4CAF50';
+                    } else if (isSelected && !isCorrect) {
+                      borderColor = '#F44336';
+                      bgColor = '#FFEBEE';
+                      iconColor = '#F44336';
+                    } else if (isCorrect) {
+                      borderColor = '#4CAF50';
+                      bgColor = '#E8F5E9';
+                      iconColor = '#4CAF50';
+                    } else {
+                      iconColor = '#ccc';
+                      textColor = '#888';
+                    }
+                  } else if (isSelected) {
+                    borderColor = '#00ADC1';
+                    bgColor = '#F0FBFC';
+                  }
+
                   return (
                     <TouchableOpacity
                       key={idx}
+                      style={[styles.quizOptionRow, { borderColor, backgroundColor: bgColor, borderWidth: showStatus || isSelected ? 1 : 0 }]}
                       onPress={() => handleQuizOption(idx)}
                       disabled={quizDone}
-                      activeOpacity={0.75}
-                      style={[styles.quizOption,
-                      isGood && styles.quizOptionGood,
-                      isBad && styles.quizOptionBad,
-                      (isChosen && !quizDone) && styles.quizOptionChosen,
-                      ]}
                     >
-                      <View style={[styles.radioOuter,
-                      isGood && { borderColor: '#00ADC1' },
-                      isBad && { borderColor: '#FF4444' },
-                      ]}>
-                        {(isChosen || isGood) && (
-                          <View style={[styles.radioInner, { backgroundColor: isGood ? '#00ADC1' : isBad ? '#FF4444' : '#AAA' }]} />
+                      <View style={[styles.quizRadio, { borderColor: iconColor }]}>
+                        {(showStatus ? (isSelected || isCorrect) : isSelected) && (
+                          <View style={[styles.quizRadioInner, { backgroundColor: iconColor }]} />
                         )}
                       </View>
-                      <Text style={[styles.quizOptText,
-                      isGood && { color: '#00ADC1', fontWeight: '700' },
-                      isBad && { color: '#FF4444' },
-                      ]}>{opt}</Text>
-                      {isGood && <Ionicons name="checkmark-circle" size={18} color="#00ADC1" />}
-                      {isBad && <Ionicons name="close-circle" size={18} color="#FF4444" />}
+                      <Text style={[styles.quizOptionText, { color: textColor }]}>{opt}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -525,7 +598,7 @@ const NameDetailScreen = ({ route, navigation }) => {
               />
             </Animated.View>
             <Text style={[styles.slideText, { marginLeft: 80 }]}>
-              {contentStage === 2 ? 'Continue to Journey' : 'Slide to Continue'}
+              {contentStage === 4 ? 'Continue to Journey' : 'Slide to Continue'}
             </Text>
           </View>
         </Animated.View>
@@ -662,73 +735,115 @@ const styles = StyleSheet.create({
 
   // ── Divine Words card ──
   divineCard: {
-    borderRadius: 18,
-    padding: 20,
+    borderRadius: 16,
+    padding: 24,
     overflow: 'hidden',
-    backgroundColor: '#FFF8E6',
-    shadowColor: '#E6B84C',
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 5,
+    backgroundColor: 'transparent',
+    shadowColor: '#00ADC1',
+    shadowOpacity: 0.15,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
   },
   divineName: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#6B4F00',
+    color: '#000000',
     textAlign: 'center',
     marginBottom: 3,
   },
   divineSubtitle: {
     fontSize: 12,
-    color: '#A07A1A',
+    color: '#4A4A4A',
+    fontWeight: '400',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   quoteBlock: { alignItems: 'center', position: 'relative' },
-  quoteIconTop: { width: 28, height: 20, alignSelf: 'flex-start', tintColor: '#C9A84C', marginBottom: 4 },
-  quoteIconBottom: { width: 28, height: 20, alignSelf: 'flex-end', tintColor: '#C9A84C', transform: [{ rotate: '180deg' }], marginTop: 4 },
+  quoteIconTop: { width: 32, height: 24, alignSelf: 'flex-start', marginBottom: 4 },
+  quoteIconBottom: { width: 32, height: 24, alignSelf: 'flex-end', transform: [{ rotate: '180deg' }], marginTop: 4 },
   quoteText: {
     fontSize: 15,
-    fontStyle: 'italic',
-    color: '#5A4000',
+    fontStyle: 'normal',
+    color: '#1A1A1A',
     textAlign: 'center',
     lineHeight: 24,
   },
 
   // ── Generic section card ──
-  sectionCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16,
-    elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+  sectionCardTransparent: {
+    backgroundColor: 'transparent',
+    paddingTop: 10,
+    paddingBottom: 2,
+    paddingHorizontal: 4,
   },
-  sectionCardTitle: { fontSize: 16, fontWeight: '800', color: '#1A1A1A', marginBottom: 10 },
-
-  // ── Reflect ──
-  reflectBox: { backgroundColor: '#F0FAFB', borderRadius: 12, padding: 14, borderLeftWidth: 3, borderLeftColor: '#00ADC1' },
-  reflectText: { fontSize: 14, color: '#444', lineHeight: 22, fontStyle: 'italic' },
-
-  // ── Insight ──
-  insightRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  manImg: { width: 72, height: 90, marginTop: 4 },
-  insightBox: { flex: 1, borderRadius: 14, padding: 14, minHeight: 90, overflow: 'hidden' },
-  insightText: { fontSize: 13, color: '#333', lineHeight: 20 },
-
-  // ── Quiz ──
-  quizHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  questImg: { width: 36, height: 36 },
-  quizSubtitle: { fontSize: 12, color: '#888', marginTop: 1 },
-  quizQuestion: { fontSize: 15, fontWeight: '700', color: '#1A1A1A', marginBottom: 14, lineHeight: 22 },
-  optionsList: { gap: 9 },
-  quizOption: {
-    flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12,
-    borderRadius: 10, borderWidth: 1.5, borderColor: '#E0E0E0', backgroundColor: '#FAFAFA',
+  sectionCardTitleLeft: {
+    fontSize: 18, fontWeight: '800', color: '#1A1A1A', marginBottom: 12, textAlign: 'left'
   },
-  quizOptionChosen: { borderColor: '#00ADC150', backgroundColor: '#E8F7FB' },
-  quizOptionGood: { borderColor: '#00ADC1', backgroundColor: '#E0F7FA' },
-  quizOptionBad: { borderColor: '#FF4444', backgroundColor: '#FFF0F0' },
-  radioOuter: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#CCCCCC', justifyContent: 'center', alignItems: 'center' },
-  radioInner: { width: 10, height: 10, borderRadius: 5 },
-  quizOptText: { flex: 1, fontSize: 14, color: '#1A1A1A', fontWeight: '500' },
+  smallDividerWrap: { alignItems: 'center', marginBottom: 16 },
+  smallDivider: { width: 140, height: 12, opacity: 0.6 },
+
+  // ── Ponder Insight (Merged) ──
+  insightRow: { flexDirection: 'row', alignItems: 'center', borderRadius: 14, padding: 16, overflow: 'hidden' },
+  manImg: { width: 68, height: 96, marginRight: 12 },
+  insightBox: { flex: 1, justifyContent: 'center' },
+  insightText: { fontSize: 13, color: '#1A1A1A', lineHeight: 20 },
+
+  // ── Learning Insight (Quest) ──
+  questBgBox: {
+    width: SW * 0.95,
+    alignSelf: 'center',
+    aspectRatio: 1200 / 680,
+    paddingLeft: '15%',
+    paddingRight: '10%',
+    paddingBottom: '2%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  questInsightText: {
+    fontSize: 15,
+    color: '#1A1A1A',
+    lineHeight: 25,
+    textAlign: 'center',
+    fontWeight: '400',
+  },
+
+  // ── Quiz Section ──
+  quizSection: { paddingTop: 10, paddingHorizontal: 4 },
+  quizHeader: { marginBottom: 20 },
+  quizTitle: { fontSize: 20, fontWeight: '800', color: '#1A1A1A' },
+  quizTitleUnderline: { height: 3, backgroundColor: '#00ADC1', width: '100%', marginTop: 2, borderRadius: 2 },
+  quizSubtitle: { fontSize: 13, color: '#4A4A4A', marginTop: 8 },
+  quizQuestion: { fontSize: 16, color: '#1A1A1A', fontWeight: '500', marginBottom: 16 },
+  quizOptions: { gap: 12 },
+  quizOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    shadowColor: '#00ADC1',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+    borderWidth: 1,
+  },
+  quizRadio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  quizRadioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  quizOptionText: { fontSize: 14 },
 
   // ── Slide to Continue ──
   slideBar: {
@@ -749,22 +864,43 @@ const styles = StyleSheet.create({
   // ── Journey screen ──
   journeyRoot: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   journeyCard: {
-    width: '100%', borderRadius: 24, padding: 30, alignItems: 'center', overflow: 'hidden',
-    elevation: 6, shadowColor: '#00ADC1', shadowOpacity: 0.15, shadowRadius: 16, shadowOffset: { width: 0, height: 4 },
-    borderWidth: 1, borderColor: '#00ADC120',
+    width: '100%', borderRadius: 16, paddingTop: 30, alignItems: 'center', overflow: 'hidden',
+    elevation: 8, shadowColor: '#00ADC1', shadowOpacity: 0.15, shadowRadius: 20, shadowOffset: { width: 0, height: 8 },
+    backgroundColor: '#FFFFFF',
   },
-  journeyTitle: { fontSize: 26, fontWeight: '900', color: '#1A1A1A', marginBottom: 6, letterSpacing: 0.2 },
-  journeySub: { fontSize: 13, color: '#666', marginBottom: 32, textAlign: 'center' },
-  journeyRow: { flexDirection: 'row', alignItems: 'center', gap: 0, marginBottom: 36 },
-  journeyStep: { alignItems: 'center', gap: 8 },
-  journeyIcon: { width: 70, height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center' },
-  journeyImg: { width: 44, height: 44 },
-  journeyStepLabel: { fontSize: 13, fontWeight: '700', color: '#1A1A1A' },
-  journeyArrow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16 },
-  arrowLine: { width: 30, height: 2, backgroundColor: '#00ADC1', marginRight: -2 },
-  doneBtn: { width: '100%', borderRadius: 14, overflow: 'hidden' },
-  doneBtnGrad: { paddingVertical: 15, alignItems: 'center' },
-  doneBtnText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF', letterSpacing: 0.5 },
+  journeyTitle: { fontSize: 28, fontWeight: '900', color: '#4CD6E8', marginBottom: 6, letterSpacing: 0.2 },
+  journeySub: { fontSize: 13, color: '#666', marginBottom: 36, textAlign: 'center' },
+  journeyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 40 },
+
+  journeyStepCard: {
+    width: 105, height: 105,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    shadowColor: '#00ADC1', shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(0, 173, 193, 0.05)',
+  },
+  journeyImg: { width: 44, height: 44, marginBottom: 8 },
+  journeyStepLabel: { fontSize: 12, fontWeight: '600', color: '#1A1A1A' },
+
+  journeyLineWrap: { width: 60, height: 2, flexDirection: 'row' },
+  journeyLineLeft: { flex: 1, backgroundColor: '#FFD54F' },
+  journeyLineRight: { flex: 1, backgroundColor: '#00ADC1' },
+
+  journeyNote: {
+    fontSize: 13,
+    color: '#7A7A7A',
+    textAlign: 'center',
+    paddingHorizontal: 30,
+    marginBottom: 24,
+    lineHeight: 20,
+    marginTop: -10,
+  },
+
+  doneBtn: { width: '100%', overflow: 'hidden' },
+  doneBtnGrad: { paddingVertical: 18, alignItems: 'center', backgroundColor: '#00ADC1' },
+  doneBtnText: { fontSize: 18, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.5 },
 });
 
 export default NameDetailScreen;

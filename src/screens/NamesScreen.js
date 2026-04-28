@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import {
   View, Text, StyleSheet, Dimensions, Animated, PanResponder,
-  Image, ActivityIndicator, TouchableOpacity, Easing
+  Image, ActivityIndicator, TouchableOpacity, Easing, ImageBackground,
+  Modal, ScrollView, TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,14 +14,14 @@ import { FONTS } from '../theme';
 const { width: SW, height: SH } = Dimensions.get('window');
 
 const TOP_SECTION_HEIGHT = SH * 0.35;
-const CARD_W  = SW - 36;
-const CARD_H  = 390;
+const CARD_W = SW - 36;
+const CARD_H = 390;
 const CARD_SLOT = CARD_H + 70; // vertical distance between adjacent card slots
 
 const STACK_CONFIG = [
-  { width: SW - 110, height: 240, opacity: 0.25, bottom: -40 },
-  { width: SW - 160, height: 210, opacity: 0.5,  bottom: -40 },
-  { width: SW - 220, height: 180, opacity: 0.8,  bottom: -40 },
+  { width: SW - 110, height: 100, opacity: 0.25, bottom: -30 },
+  { width: SW - 160, height: 100, opacity: 0.5, bottom: -50 },
+  { width: SW - 220, height: 50, opacity: 0.8, bottom: -20 },
 ];
 
 // Card position formula:  translateY = (offset + scrollAnim) * CARD_SLOT
@@ -28,17 +29,51 @@ const STACK_CONFIG = [
 //   scrollAnim  0 = rest  |  -1 = swiped up (next enters)  |  +1 = swiped down (prev enters)
 
 const NamesScreen = ({ navigation }) => {
-  const { names, loading } = useNames();
+  const { names, loading, learnedIds, masteredIds, categories } = useNames();
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const activeIndexRef  = useRef(0);
-  const namesRef        = useRef(names);
-  const isAnimating     = useRef(false);
-  const hasSwipedRef    = useRef(false);
-  const pendingReset    = useRef(false);
-  const dragProgress    = useRef(0);
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [tempCat, setTempCat] = useState('All');
+  const [tempStatus, setTempStatus] = useState('All');
+  const [tempNumber, setTempNumber] = useState('');
 
-  useEffect(() => { namesRef.current = names; }, [names]);
+  const [appliedCat, setAppliedCat] = useState('All');
+  const [appliedStatus, setAppliedStatus] = useState('All');
+  const [appliedNumber, setAppliedNumber] = useState('');
+
+  const filteredNames = React.useMemo(() => {
+    let result = names;
+    if (appliedCat !== 'All') {
+      const catId = appliedCat.toLowerCase();
+      result = result.filter(n => n.category === catId);
+    }
+    if (appliedStatus === 'Learned') {
+      result = result.filter(n => learnedIds.includes(n.number) && !masteredIds.includes(n.number));
+    } else if (appliedStatus === 'Mastered') {
+      result = result.filter(n => masteredIds.includes(n.number));
+    }
+    if (appliedNumber && appliedNumber.trim() !== '') {
+      const numPattern = parseInt(appliedNumber, 10);
+      result = result.filter(n => n.number === numPattern);
+    }
+    return result;
+  }, [names, appliedCat, appliedStatus, appliedNumber, learnedIds, masteredIds]);
+
+  const activeIndexRef = useRef(0);
+  const namesRef = useRef(filteredNames);
+  const isAnimating = useRef(false);
+  const hasSwipedRef = useRef(false);
+  const pendingReset = useRef(false);
+  const dragProgress = useRef(0);
+
+  useEffect(() => {
+    namesRef.current = filteredNames;
+    if (filteredNames.length > 0 && activeIndex >= filteredNames.length) {
+      setActiveIndex(0);
+      activeIndexRef.current = 0;
+      pendingReset.current = true;
+    }
+  }, [filteredNames, activeIndex]);
 
   // Single value drives all three cards — no setState during gestures
   const scrollAnim = useRef(new Animated.Value(0)).current;
@@ -47,32 +82,46 @@ const NamesScreen = ({ navigation }) => {
   useLayoutEffect(() => {
     if (pendingReset.current) {
       pendingReset.current = false;
-      isAnimating.current  = false;
+      isAnimating.current = false;
       dragProgress.current = 0;
       scrollAnim.setValue(0);
     }
   }, [activeIndex]);
 
-  const domeOpacity   = useRef(new Animated.Value(1)).current;
-  const anchorAnim    = useRef(new Animated.Value(0)).current;
+  const domeOpacity = useRef(new Animated.Value(1)).current;
+  const anchorAnim = useRef(new Animated.Value(0)).current;
+  const floatAnim = useRef(new Animated.Value(0)).current;
   const anchorLoopRef = useRef(null);
+  const floatLoopRef = useRef(null);
 
   useEffect(() => {
     anchorLoopRef.current = Animated.loop(
       Animated.sequence([
         Animated.timing(anchorAnim, { toValue: -8, duration: 1200, useNativeDriver: true }),
-        Animated.timing(anchorAnim, { toValue:  0, duration: 1200, useNativeDriver: true }),
+        Animated.timing(anchorAnim, { toValue: 0, duration: 1200, useNativeDriver: true }),
       ])
     );
     anchorLoopRef.current.start();
-    return () => anchorLoopRef.current?.stop();
+
+    floatLoopRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, { toValue: 1, duration: 2500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(floatAnim, { toValue: 0, duration: 2500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    floatLoopRef.current.start();
+
+    return () => {
+      anchorLoopRef.current?.stop();
+      floatLoopRef.current?.stop();
+    };
   }, []);
 
   // ── PAN RESPONDER ────────────────────────────────────────────────────────
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => !isAnimating.current,
-      onMoveShouldSetPanResponder:  (_, gs) => !isAnimating.current && Math.abs(gs.dy) > 8,
+      onMoveShouldSetPanResponder: (_, gs) => !isAnimating.current && Math.abs(gs.dy) > 8,
 
       onPanResponderMove: (_, gs) => {
         if (isAnimating.current) return;
@@ -108,7 +157,7 @@ const NamesScreen = ({ navigation }) => {
         }
 
         // Shorter duration if user already dragged most of the way
-        const done     = Math.min(1, Math.abs(dragProgress.current));
+        const done = Math.min(1, Math.abs(dragProgress.current));
         const duration = Math.max(120, Math.round(300 * (1 - done)));
 
         Animated.timing(scrollAnim, {
@@ -117,12 +166,12 @@ const NamesScreen = ({ navigation }) => {
           easing: Easing.out(Easing.ease),
           useNativeDriver: true,
         }).start(() => {
-          const count   = namesRef.current.length || 1;
+          const count = namesRef.current.length || 1;
           const nextIdx = dir === -1
             ? (activeIndexRef.current + 1) % count
             : (activeIndexRef.current - 1 + count) % count;
           activeIndexRef.current = nextIdx;
-          pendingReset.current   = true;
+          pendingReset.current = true;
           setActiveIndex(nextIdx);
           // scrollAnim reset + isAnimating=false handled in useLayoutEffect
         });
@@ -138,46 +187,95 @@ const NamesScreen = ({ navigation }) => {
   // ──────────────────────────────────────────────────────────────────────────
 
   const renderCardContent = (index) => {
-    const item = names[index];
+    const item = filteredNames[index];
     if (!item) return null;
+
+    const isMastered = masteredIds.includes(item.number);
+    const isLearned = learnedIds.includes(item.number) && !isMastered;
+
+    let flagTint = null;
+    let badgeColors = ['#FFFFFF', '#FFFFFF'];
+    let badgeBorder = '#00ADC150';
+    let badgeTextColor = '#1A1A1A';
+    let statusText = null;
+    let statusIcon = null;
+
+    if (isMastered) {
+      flagTint = '#FFC107';
+      badgeColors = ['#FFE875', '#FFB300'];
+      badgeBorder = 'transparent';
+      badgeTextColor = '#1A1A1A';
+      statusText = 'Mastered';
+      statusIcon = 'shield-checkmark';
+    } else if (isLearned) {
+      flagTint = '#4CAF50';
+      badgeColors = ['#4CD964', '#32CD32'];
+      badgeBorder = 'transparent';
+      badgeTextColor = '#FFFFFF';
+      statusText = 'Learned';
+      statusIcon = 'checkmark-circle-outline';
+    }
+
     return (
-      <View style={styles.cardContent}>
-        <LinearGradient
-          colors={['#C5F2F7', '#FFFFFF']}
-          start={{ x: 0, y: 1 }}
-          end={{ x: 1, y: 0 }}
-          style={StyleSheet.absoluteFillObject}
-        />
+      <ImageBackground
+        source={require('../../assets/nameBgCard.png')}
+        style={styles.cardContent}
+        resizeMode="cover"
+      >
         <View style={styles.bookmarkRibbon}>
-          <Image source={require('../../assets/flag.png')} style={styles.flagImage} resizeMode="contain" />
+          <Image
+            source={require('../../assets/flag.png')}
+            style={[styles.flagImage, flagTint ? { tintColor: flagTint } : null]}
+            resizeMode="contain"
+          />
           <View style={styles.bookmarkTextOverlay}>
             <Text style={styles.ribbonText}>{String(item.number).padStart(2, '0')}</Text>
           </View>
         </View>
-        <View style={styles.categoryBadge}>
-          <Text style={styles.categoryText}>Mercy</Text>
+        <View style={styles.rightBadgeContainer}>
+          <LinearGradient
+            colors={badgeColors}
+            style={[styles.categoryBadge, { borderColor: badgeBorder }]}
+          >
+            <Text style={[styles.categoryText, { color: badgeTextColor }]}>
+              {item.category ? item.category.charAt(0).toUpperCase() + item.category.slice(1) : 'General'}
+            </Text>
+          </LinearGradient>
+          {statusText && (
+            <View style={styles.statusRow}>
+              <Ionicons name={statusIcon} size={14} color="#FFFFFF" />
+              <Text style={styles.statusText}>{statusText}</Text>
+            </View>
+          )}
         </View>
         <View style={styles.cardInner}>
-          <Text style={[styles.arabic, { color: '#00ADC1' }]}>{item.arabic}</Text>
-          <Text style={styles.trans}>{item.transliteration}</Text>
-          <Text style={[styles.meaning, { color: '#00ADC1' }]}>{item.meaning}</Text>
+          <Text style={[styles.arabic, { color: '#1A1A1A' }]}>{item.arabic}</Text>
+          <Text style={[styles.trans, { color: '#1A1A1A' }]}>{item.transliteration}</Text>
+          <Text style={[styles.meaning, { color: '#1A1A1A' }]}>{item.meaning}</Text>
         </View>
-        <Image source={require('../../assets/book.png')} style={styles.quranImage} resizeMode="contain" />
-      </View>
+        <Image source={require('../../assets/bookQ.png')} style={styles.quranImage} resizeMode="contain" />
+
+        {isLearned && (
+          <View style={styles.toMasterHint}>
+            <Text style={styles.toMasterTitle}>TO MASTER...</Text>
+            <Text style={styles.toMasterDesc}>Read 3 times to earn Master Badge</Text>
+          </View>
+        )}
+      </ImageBackground>
     );
   };
 
   if (loading) return <ActivityIndicator style={{ flex: 1 }} />;
 
-  const count   = names.length || 1;
+  const count = filteredNames.length || 1;
   const prevIdx = (activeIndex - 1 + count) % count;
   const nextIdx = (activeIndex + 1) % count;
 
   // Three slots with stable keys — React reuses the same views, just updates content
   const cardSlots = [
-    { dataIdx: prevIdx,     offset: -1 },
-    { dataIdx: activeIndex, offset:  0 },
-    { dataIdx: nextIdx,     offset: +1 },
+    { dataIdx: prevIdx, offset: -1 },
+    { dataIdx: activeIndex, offset: 0 },
+    { dataIdx: nextIdx, offset: +1 },
   ];
 
   return (
@@ -190,7 +288,15 @@ const NamesScreen = ({ navigation }) => {
             <Ionicons name="search" size={20} color="#BFBFBF" />
             <Text style={styles.searchPlaceholder}>Name, Meaning, Arabic, .....</Text>
           </View>
-          <TouchableOpacity style={styles.filterCircle}>
+          <TouchableOpacity
+            style={styles.filterCircle}
+            onPress={() => {
+              setTempCat(appliedCat);
+              setTempStatus(appliedStatus);
+              setTempNumber(appliedNumber);
+              setFilterVisible(true);
+            }}
+          >
             <Ionicons name="options-outline" size={20} color="#1A1A1A" />
           </TouchableOpacity>
         </View>
@@ -205,167 +311,252 @@ const NamesScreen = ({ navigation }) => {
       {/* ── CARD STACK ENGINE ── */}
       <View style={styles.stackEngine} {...panResponder.panHandlers}>
 
-        {/* BOTTOM: stack peek frames + dome (behind all cards) */}
-        <View style={styles.bottomArea}>
-          {STACK_CONFIG.map((config, idx) => {
-            const nextConfig = idx === 2
-              ? { width: CARD_W, height: CARD_H, opacity: 1, bottom: 35 }
-              : STACK_CONFIG[idx + 1];
+        {filteredNames.length === 0 ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <Ionicons name="document-text-outline" size={48} color="#ADC1D2" style={{ marginBottom: 16 }} />
+            <Text style={{ fontSize: 16, color: '#1A1A1A', fontWeight: '600' }}>No names match your filter.</Text>
+            <Text style={{ fontSize: 14, color: '#7A7A7A', marginTop: 8 }}>Try adjusting your search criteria.</Text>
+          </View>
+        ) : (
+          <>
+            {/* BOTTOM: stack peek frames + dome (behind all cards) */}
+            <View style={styles.bottomArea}>
+              {STACK_CONFIG.map((config, idx) => {
+                const nextConfig = idx === 2
+                  ? { width: CARD_W, height: CARD_H, opacity: 1, bottom: 35 }
+                  : STACK_CONFIG[idx + 1];
 
-            const sX = nextConfig.width  / config.width;
-            const sY = nextConfig.height / config.height;
-            const tY = -(nextConfig.bottom - config.bottom);
+                const sX = nextConfig.width / config.width;
+                const sY = nextConfig.height / config.height;
+                const tY = -(nextConfig.bottom - config.bottom);
 
-            // Stack advances only on swipe-up (scrollAnim < 0 = next card direction)
-            return (
-              <Animated.View key={idx} style={[styles.peekFrame, {
-                width:  config.width,
-                height: config.height,
-                bottom: 80 + config.bottom,
-                zIndex: idx + 1,
-                opacity: scrollAnim.interpolate({
-                  inputRange:  [-1, 0, 1],
-                  outputRange: [nextConfig.opacity, config.opacity, config.opacity],
-                  extrapolate: 'clamp',
-                }),
-                transform: [
-                  {
-                    scaleX: scrollAnim.interpolate({
-                      inputRange:  [-1, 0, 1],
-                      outputRange: [sX, 1, 1],
+                const floatOffset = floatAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, idx === 0 ? -6 : idx === 1 ? -10 : -14]
+                });
+
+                // Stack advances only on swipe-up (scrollAnim < 0 = next card direction)
+                return (
+                  <Animated.View key={idx} style={[styles.peekFrame, {
+                    width: config.width,
+                    height: config.height,
+                    bottom: 80 + config.bottom,
+                    zIndex: idx + 1,
+                    opacity: scrollAnim.interpolate({
+                      inputRange: [-1, 0, 1],
+                      outputRange: [nextConfig.opacity, config.opacity, config.opacity],
                       extrapolate: 'clamp',
                     }),
-                  },
-                  {
-                    scaleY: scrollAnim.interpolate({
-                      inputRange:  [-1, 0, 1],
-                      outputRange: [sY, 1, 1],
-                      extrapolate: 'clamp',
-                    }),
-                  },
-                  {
-                    translateY: scrollAnim.interpolate({
-                      inputRange:  [-1, 0, 1],
-                      outputRange: [tY, 0, 0],
-                      extrapolate: 'clamp',
-                    }),
-                  },
-                ],
-              }]} />
-            );
-          })}
+                    transform: [
+                      {
+                        translateY: Animated.add(
+                          scrollAnim.interpolate({
+                            inputRange: [-1, 0, 1],
+                            outputRange: [tY, 0, 0],
+                            extrapolate: 'clamp',
+                          }),
+                          floatOffset
+                        ),
+                      },
+                    ],
+                  }]} />
+                );
+              })}
 
-          {/* DOME — fades on first swipe */}
-          <Animated.View style={[styles.dome, {
-            opacity:   domeOpacity,
-            transform: [{ translateY: anchorAnim }],
-          }]}>
-            <Text style={styles.domeLabel}>Swipe to find next</Text>
-            <Image source={require('../../assets/newAnchor.png')} style={styles.anchorImg} resizeMode="contain" />
-          </Animated.View>
-        </View>
+              {/* DOME — fades on first swipe */}
+              <Animated.View style={[styles.dome, {
+                opacity: domeOpacity,
+                transform: [{ translateY: anchorAnim }],
+              }]}>
+                <Text style={styles.domeLabel}>Swipe to find next</Text>
+                <Image source={require('../../assets/newAnchor.png')} style={styles.anchorImg} resizeMode="contain" />
+              </Animated.View>
+            </View>
 
-        {/* THREE CARD SLOTS — stable keys, no mount/unmount on transition */}
-        {cardSlots.map(({ dataIdx, offset }) => (
-          <Animated.View
-            key={`slot${offset}`}
-            style={[styles.baseCardWrapper, {
-              zIndex: offset === 0 ? 20 : 10,
-              opacity: scrollAnim.interpolate({
-                inputRange:  [-1,               0,  1],
-                outputRange: offset === -1 ? [0, 0, 1]
-                           : offset ===  0 ? [0, 1, 0]
-                           :                 [1, 0, 0],
-                extrapolate: 'clamp',
-              }),
-              transform: [{
-                translateY: scrollAnim.interpolate({
-                  inputRange:  [-1, 0, 1],
-                  outputRange: [
-                    (offset - 1) * CARD_SLOT,
-                     offset      * CARD_SLOT,
-                    (offset + 1) * CARD_SLOT,
+            {/* THREE CARD SLOTS — stable keys, no mount/unmount on transition */}
+            {cardSlots.map(({ dataIdx, offset }) => (
+              <Animated.View
+                key={`slot${offset}`}
+                style={[styles.baseCardWrapper, {
+                  zIndex: offset === 0 ? 10 : 30,
+                  opacity: scrollAnim.interpolate({
+                    inputRange: [-1, 0, 1],
+                    outputRange: offset === -1 ? [0, 0, 1]
+                      : offset === 0 ? [1, 1, 1]
+                        : [1, 0, 0],
+                    extrapolate: 'clamp',
+                  }),
+                  transform: [
+                    {
+                      translateY: scrollAnim.interpolate({
+                        inputRange: [-1, 0, 1],
+                        outputRange: offset === -1 ? [-CARD_SLOT, -CARD_SLOT, 0]
+                          : offset === 0 ? [0, 0, 0]
+                            : [0, CARD_SLOT, CARD_SLOT],
+                        extrapolate: 'clamp',
+                      }),
+                    }
                   ],
-                }),
-              }],
-            }]}
-          >
-            {/* Center card is tappable → navigates to detail screen */}
-            {offset === 0 ? (
-              <TouchableOpacity
-                style={styles.mainCard}
-                activeOpacity={0.92}
-                onPress={() => {
-                  if (isAnimating.current) return;
-                  const item = names[dataIdx];
-                  if (item) navigation.navigate('NameDetail', { name: item });
-                }}
+                }]}
               >
-                {renderCardContent(dataIdx)}
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.mainCard}>
-                {renderCardContent(dataIdx)}
-              </View>
-            )}
-          </Animated.View>
-        ))}
+                {/* Center card is tappable → navigates to detail screen */}
+                {offset === 0 ? (
+                  <TouchableOpacity
+                    style={styles.mainCard}
+                    activeOpacity={0.92}
+                    onPress={() => {
+                      if (isAnimating.current) return;
+                      const item = filteredNames[dataIdx];
+                      if (item) navigation.navigate('NameDetail', { name: item });
+                    }}
+                  >
+                    {renderCardContent(dataIdx)}
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.mainCard}>
+                    {renderCardContent(dataIdx)}
+                  </View>
+                )}
+              </Animated.View>
+            ))}
+          </>
+        )}
 
       </View>
+
+      {/* ── FILTER MODAL ── */}
+      <Modal visible={filterVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
+
+            <Text style={styles.filterSectionTitle}>CATEGORY</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterScrollContent}>
+              {['All', ...(categories ? Object.keys(categories).map(k => k.charAt(0).toUpperCase() + k.slice(1)) : [])].map(cat => {
+                const isActive = tempCat === cat;
+                return (
+                  <TouchableOpacity
+                    key={cat}
+                    onPress={() => setTempCat(cat)}
+                    style={[styles.filterPill, isActive && styles.filterPillActive]}
+                  >
+                    <Text style={[styles.filterPillText, isActive && styles.filterPillTextActive]}>{cat}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            <Text style={styles.filterSectionTitle}>STATUS</Text>
+            <View style={styles.filterRow}>
+              {['All', 'Learned', 'Mastered'].map(status => {
+                const isActive = tempStatus === status;
+                return (
+                  <TouchableOpacity
+                    key={status}
+                    onPress={() => setTempStatus(status)}
+                    style={[styles.filterPill, isActive && styles.filterPillActive]}
+                  >
+                    <Text style={[styles.filterPillText, isActive && styles.filterPillTextActive]}>{status}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <Text style={styles.filterSectionTitle}>NAMES</Text>
+            <View style={styles.namesFilterRow}>
+              <Text style={styles.namesFilterLabel}>Select the name number</Text>
+              <View style={styles.numberInputBox}>
+                <TextInput
+                  style={styles.numberInput}
+                  value={tempNumber}
+                  onChangeText={setTempNumber}
+                  keyboardType="number-pad"
+                  maxLength={2}
+                  placeholder="--"
+                  placeholderTextColor="#A0A0A0"
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.applyFilterBtn}
+              onPress={() => {
+                setAppliedCat(tempCat);
+                setAppliedStatus(tempStatus);
+                setAppliedNumber(tempNumber);
+                setActiveIndex(0);
+                activeIndexRef.current = 0;
+                pendingReset.current = true;
+                setFilterVisible(false);
+              }}
+            >
+              <Text style={styles.applyFilterBtnText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  root:       { flex: 1, backgroundColor: '#EDF1F9' },
+  root: { flex: 1, backgroundColor: '#EDF1F9' },
   topSection: { paddingHorizontal: 20, paddingTop: 10, zIndex: 30, borderBottomLeftRadius: 20, borderBottomRightRadius: 20 },
 
-  searchRow:         { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 15, marginTop: 5 },
-  searchPill:        { flex: 1, height: 52, backgroundColor: '#FFFFFF', borderRadius: 26, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, gap: 10, elevation: 2 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 15, marginTop: 5 },
+  searchPill: { flex: 1, height: 52, backgroundColor: '#FFFFFF', borderRadius: 26, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, gap: 10, elevation: 2 },
   searchPlaceholder: { color: '#BFBFBF', fontSize: 14 },
-  filterCircle:      { width: 52, height: 52, backgroundColor: '#FFFFFF', borderRadius: 26, justifyContent: 'center', alignItems: 'center', elevation: 2 },
+  filterCircle: { width: 52, height: 52, backgroundColor: '#FFFFFF', borderRadius: 26, justifyContent: 'center', alignItems: 'center', elevation: 2 },
 
   bannerContainer: { height: '55%', borderRadius: 24, overflow: 'hidden', marginBottom: 10 },
-  bannerImage:     { width: '100%', height: '100%' },
-  ornContainer:    { alignItems: 'center', height: 30, top: -35 },
-  goldDivider:     { width: '120%', height: '210%' },
+  bannerImage: { width: '100%', height: '100%' },
+  ornContainer: { alignItems: 'center', height: 30, top: -35 },
+  goldDivider: { width: '120%', height: '210%' },
 
   stackEngine: { flex: 1, alignItems: 'center', position: 'relative' },
 
   baseCardWrapper: {
-    position:  'absolute',
-    top:       10,
-    width:     CARD_W,
-    height:    CARD_H,
+    position: 'absolute',
+    top: 10,
+    width: CARD_W,
+    height: CARD_H,
     elevation: 20,
   },
   mainCard: {
-    flex:            1,
-    borderRadius:    16,
+    flex: 1,
+    borderRadius: 16,
     backgroundColor: '#FFF',
-    overflow:        'hidden',
-    borderWidth:     1,
-    borderColor:     '#00ADC1',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#00ADC1',
   },
 
   cardContent: { flex: 1 },
-  cardInner:   { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 40 },
-  arabic:      { fontSize: 28, fontFamily: FONTS.arabic, textAlign: 'center', marginBottom: 2 },
-  trans:       { fontSize: 35, fontWeight: '400', textAlign: 'center', color: '#1A1A1A', marginBottom: 4 },
-  meaning:     { fontSize: 20, fontWeight: '400', textAlign: 'center' },
+  cardInner: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 40 },
+  arabic: { fontSize: 28, fontFamily: FONTS.arabic, textAlign: 'center', marginBottom: 2 },
+  trans: { fontSize: 35, fontWeight: '400', textAlign: 'center', color: '#1A1A1A', marginBottom: 4 },
+  meaning: { fontSize: 20, fontWeight: '400', textAlign: 'center' },
 
-  bookmarkRibbon:      { position: 'absolute', top: -5, left: 15, width: 44, height: 66, zIndex: 10 },
-  flagImage:           { width: '100%', height: '100%' },
+  bookmarkRibbon: { position: 'absolute', top: -5, left: 15, width: 44, height: 66, zIndex: 10 },
+  flagImage: { width: '100%', height: '100%' },
   bookmarkTextOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', paddingTop: 6 },
-  ribbonText:          { color: '#FFF', fontSize: 18, fontWeight: '700' },
+  ribbonText: { color: '#FFF', fontSize: 18, fontWeight: '700' },
 
-  categoryBadge: { position: 'absolute', top: 20, right: 20, paddingHorizontal: 20, paddingVertical: 5, borderRadius: 4, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#00ADC150' },
-  categoryText:  { color: '#1A1A1A', fontSize: 18, fontWeight: '400' },
+  rightBadgeContainer: { position: 'absolute', top: 20, right: 20, alignItems: 'flex-end', zIndex: 10 },
+  categoryBadge: { paddingHorizontal: 20, paddingVertical: 5, borderRadius: 4, borderWidth: 1, minWidth: 90, alignItems: 'center' },
+  categoryText: { fontSize: 16, fontWeight: '600' },
+  statusRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4, paddingRight: 4 },
+  statusText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
+
+  toMasterHint: { position: 'absolute', bottom: 20, left: 20, zIndex: 10 },
+  toMasterTitle: { fontSize: 16, color: '#A0A0A0', fontWeight: '800', letterSpacing: 0.5 },
+  toMasterDesc: { fontSize: 10, color: '#1A1A1A', fontWeight: '600', marginTop: 2 },
 
   quranImage: { position: 'absolute', bottom: 15, right: 15, width: 110, height: 110 },
 
   bottomArea: { position: 'absolute', bottom: 0, left: 0, right: 0, alignItems: 'center', height: 180, zIndex: 5 },
-  peekFrame:  { position: 'absolute', borderRadius: 12, backgroundColor: '#FFFFFF', alignSelf: 'center', borderWidth: 1, borderColor: '#00ADC1' },
+  peekFrame: { position: 'absolute', borderRadius: 12, backgroundColor: '#FFFFFF', alignSelf: 'center', borderWidth: 1, borderColor: '#00ADC1' },
 
   dome: {
     position: 'absolute', bottom: 70,
@@ -379,6 +570,30 @@ const styles = StyleSheet.create({
   },
   domeLabel: { color: '#FFFFFF', fontSize: 16, fontWeight: '700', letterSpacing: 0.4, marginVertical: 8 },
   anchorImg: { width: 48, height: 48 },
+
+  // ── FILTER MODAL ──
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  modalHandle: { width: 40, height: 4, backgroundColor: '#E0E0E0', borderRadius: 2, alignSelf: 'center', marginBottom: 24 },
+
+  filterSectionTitle: { fontSize: 12, fontWeight: '800', color: '#1A1A1A', marginTop: 16, marginBottom: 10, letterSpacing: 0.5 },
+  filterScroll: { flexGrow: 0, marginBottom: 16 },
+  filterScrollContent: { gap: 10, paddingRight: 20 },
+  filterRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+
+  filterPill: { paddingHorizontal: 20, paddingVertical: 8, backgroundColor: '#DADBDF', borderRadius: 16, borderWidth: 1, borderColor: 'transparent' },
+  filterPillActive: { backgroundColor: '#E0F6F9', borderColor: '#00ADC1' },
+  filterPillText: { fontSize: 13, color: '#1A1A1A', fontWeight: '500' },
+  filterPillTextActive: { color: '#00ADC1' },
+
+  namesFilterRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 30, gap: 15 },
+  namesFilterLabel: { fontSize: 13, color: '#4A4A4A' },
+  numberInputBox: { backgroundColor: '#DADBDF', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 4 },
+  numberInput: { fontSize: 14, fontWeight: '700', color: '#1A1A1A', textAlign: 'center' },
+
+  applyFilterBtn: { width: '100%', backgroundColor: '#00ADC1', borderRadius: 12, paddingVertical: 16, alignItems: 'center' },
+  applyFilterBtnText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+
 });
 
 export default NamesScreen;
