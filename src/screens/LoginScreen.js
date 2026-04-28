@@ -1,215 +1,168 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  ActivityIndicator,
-  Animated,
-  StatusBar,
-  Pressable,
-  Dimensions,
+  View, Text, StyleSheet, TextInput, TouchableOpacity,
+  KeyboardAvoidingView, Platform, ScrollView,
+  ActivityIndicator, Animated, StatusBar, Pressable,
+  Dimensions, Picker
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, SIZES, SPACE, RADIUS, SHADOW } from '../theme';
 import { useAuth } from '../context/AuthContext';
-import { useAppTheme } from '../context/ThemeContext';
-import { Image } from 'react-native';
+import { FONTS, SIZES, RADIUS } from '../theme';
 
-Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+
+const COUNTRIES = [
+  { code: '+91', name: 'India' },
+  { code: '+1', name: 'USA/CA' },
+  { code: '+44', name: 'UK' },
+  { code: '+971', name: 'UAE' },
+  { code: '+92', name: 'Pakistan' },
+  { code: '+60', name: 'Malaysia' },
+  { code: '+966', name: 'Saudi Arabia' },
+];
 
 const LoginScreen = ({ navigation, route }) => {
   const { identifier: initialIdentifier } = route.params || {};
 
+  const [country, setCountry] = useState(COUNTRIES[0]);
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [identifier, setIdentifier] = useState(initialIdentifier || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  
   const [focusedField, setFocused] = useState(null);
   const { login } = useAuth();
-  const { colors, isDark } = useAppTheme();
-
+  
   const identifierInput = useRef(null);
   const passwordInput = useRef(null);
-  const buttonScale = useRef(new Animated.Value(1)).current;
-
-  const pressIn = () => Animated.spring(buttonScale, { toValue: 0.98, useNativeDriver: true }).start();
-  const pressOut = () => Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true }).start();
 
   const handleLogin = async () => {
     if (!identifier.trim() || !password) {
-      Toast.show({ type: 'error', text1: 'Incomplete Fields', text2: 'Please enter your identifier and password.' });
+      Toast.show({ type: 'error', text1: 'Incomplete Fields', text2: 'Please enter your phone and password.' });
       return;
     }
+    
     setLoading(true);
-    const result = await login(identifier.trim(), password);
+    // Combine country code and phone number
+    const digits = identifier.replace(/\D/g, '');
+    const fullPhone = digits.length >= 7 ? `${country.code}${digits}` : identifier.trim();
+    
+    // In actual auth, we might just pass identifier if username, or compiled fullPhone if phone
+    const result = await login(fullPhone, password);
     setLoading(false);
+    
     if (!result.success) {
-      Toast.show({ type: 'error', text1: 'Login Error', text2: result.message || 'The credentials you entered are incorrect.' });
+      Toast.show({ type: 'error', text1: 'Login Error', text2: result.message || 'Incorrect credentials.' });
     } else {
       Toast.show({ type: 'success', text1: 'Welcome back!', text2: 'Signed in successfully.' });
-      // AuthNavigator will naturally switch to MainApp
     }
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
+      {/* Premium Dark Teal Background */}
       <LinearGradient
-        colors={isDark ? ['rgba(20, 22, 33, 1)', 'rgba(0, 0, 0, 1)'] : [colors.surface, colors.background]}
+        colors={['#0A3B40', '#03080A', '#000000']}
+        locations={[0, 0.4, 1]}
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Decorative Elements */}
-      <View style={styles.glowTop} />
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.kav}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header */}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.kav}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          
           <View style={styles.header}>
-            <View style={[styles.logoWrap, { backgroundColor: isDark ? 'rgba(201, 168, 76, 0.1)' : 'rgba(184, 150, 61, 0.15)', borderColor: isDark ? 'rgba(201, 168, 76, 0.2)' : 'rgba(184, 150, 61, 0.3)' }]}>
-              <Image
-                source={
-                  isDark
-                    ? require('../../assets/logoWhite.png')
-                    : require('../../assets/logoColor.png')
-                }
-                style={styles.logo}
-              />
-            </View>
-            {/* <Text style={[styles.brandName, { color: colors.text }]}>WAHID</Text> */}
-            <Text style={[styles.arabicHeader, { color: colors.primary, opacity: isDark ? 0.8 : 1.0 }]}>بِسْمِ ٱللَّهِ</Text>
-            <View style={[styles.dividerWrap, { opacity: isDark ? 0.6 : 1.0 }]}>
-              <View style={[styles.line, { backgroundColor: colors.primary }]} />
-              <Ionicons name="moon" size={14} color={colors.primary} />
-              <View style={[styles.line, { backgroundColor: colors.primary }]} />
-            </View>
-            <Text style={[styles.headerSub, { color: colors.textMuted }]}>START THE JOURNEY</Text>
+            <Text style={styles.title}>Sign In Your Account</Text>
+            <Text style={styles.subtitle}>Sign In and improve your knowledge today</Text>
           </View>
 
-          {/* Login Card (Glassmorphic) */}
-          <View style={[styles.card, { backgroundColor: colors.glass, borderColor: colors.border }]}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>Welcome Back</Text>
-            <Text style={[styles.cardSub, { color: colors.textMuted }]}>Sign in to continue your spiritual journey</Text>
+          <View style={styles.formSection}>
+            <Text style={styles.label}>Phone Number</Text>
+            <View style={[styles.inputContainer, focusedField === 'phone' && styles.inputFocused]}>
+               <TouchableOpacity style={styles.countrySelector} onPress={() => setShowCountryPicker(!showCountryPicker)}>
+                 <Text style={styles.countryCodeText}>{country.code}</Text>
+                 <Ionicons name="chevron-down" size={14} color="#aaa" style={{ marginLeft: 4 }} />
+               </TouchableOpacity>
+               
+               <View style={styles.divider} />
+               
+               <TextInput
+                 ref={identifierInput}
+                 style={styles.input}
+                 placeholder="Enter a phone number"
+                 placeholderTextColor="#666"
+                 value={identifier}
+                 onChangeText={setIdentifier}
+                 onFocus={() => setFocused('phone')}
+                 onBlur={() => setFocused(null)}
+                 keyboardType="phone-pad"
+                 selectionColor="#00ADC1"
+               />
+            </View>
 
-            {/* Identifier Field */}
-            <Pressable
-              onPress={() => identifierInput.current?.focus()}
-              style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'identifier' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
-            >
-              <View style={styles.inputHeader}>
-                <Ionicons
-                  name="person-outline"
-                  size={14}
-                  color={focusedField === 'identifier' ? colors.primary : colors.textMuted}
-                />
-                <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'identifier' && { color: colors.primary }]}>
-                  USERNAME / PHONE / EMAIL
-                </Text>
-              </View>
-              <TextInput
-                ref={identifierInput}
-                style={[styles.input, { color: colors.text }]}
-                placeholder="Enter your login details"
-                placeholderTextColor={colors.textDimmed}
-                value={identifier}
-                onChangeText={setIdentifier}
-                onFocus={() => setFocused('identifier')}
-                onBlur={() => setFocused(null)}
-                selectionColor="#c9a84c"
-                cursorColor="#c9a84c"
-                autoCapitalize="none"
-              />
-            </Pressable>
+            {/* In-line Country Picker Dropdown (Simplified) */}
+            {showCountryPicker && (
+               <View style={styles.miniPicker}>
+                 {COUNTRIES.map(c => (
+                   <TouchableOpacity key={c.code} style={styles.miniPickerItem} onPress={() => { setCountry(c); setShowCountryPicker(false); }}>
+                     <Text style={{color: '#fff', fontSize: 13}}>{c.code}  <Text style={{color: '#888'}}>{c.name}</Text></Text>
+                   </TouchableOpacity>
+                 ))}
+               </View>
+            )}
 
-            {/* Password Field */}
-            <Pressable
-              onPress={() => passwordInput.current?.focus()}
-              style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'password' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
-            >
-              <View style={styles.inputHeader}>
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={14}
-                  color={focusedField === 'password' ? colors.primary : colors.textMuted}
-                />
-                <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'password' && { color: colors.primary }]}>
-                  PASSWORD
-                </Text>
-              </View>
-              <View style={styles.passwordRow}>
-                <TextInput
-                  ref={passwordInput}
-                  style={[styles.input, { flex: 1, color: colors.text }]}
-                  placeholder="••••••••"
-                  placeholderTextColor={colors.textDimmed}
-                  value={password}
-                  onChangeText={setPassword}
-                  onFocus={() => setFocused('password')}
-                  onBlur={() => setFocused(null)}
-                  selectionColor="#c9a84c"
-                  cursorColor="#c9a84c"
-                  secureTextEntry={!showPassword}
-                />
-                <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn}>
-                  <Ionicons
-                    name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                    size={18}
-                    color={colors.textMuted}
-                  />
-                </TouchableOpacity>
-              </View>
-            </Pressable>
+            <Text style={[styles.label, { marginTop: 24 }]}>Password</Text>
+            <View style={[styles.inputContainer, focusedField === 'password' && styles.inputFocused]}>
+               <TextInput
+                 ref={passwordInput}
+                 style={styles.input}
+                 placeholder="Enter your password"
+                 placeholderTextColor="#666"
+                 value={password}
+                 onChangeText={setPassword}
+                 onFocus={() => setFocused('password')}
+                 onBlur={() => setFocused(null)}
+                 secureTextEntry={!showPassword}
+                 selectionColor="#00ADC1"
+               />
+               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ padding: 10 }}>
+                 <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#fff" />
+               </TouchableOpacity>
+            </View>
+          </View>
 
-            {/* Action Button */}
-            <Animated.View style={{ transform: [{ scale: buttonScale }], marginTop: SPACE.md }}>
-              <TouchableOpacity
-                onPress={handleLogin}
-                onPressIn={pressIn}
-                onPressOut={pressOut}
-                disabled={loading}
-                activeOpacity={0.9}
-              >
-                <LinearGradient
-                  colors={[colors.primary, isDark ? '#8a6d1e' : '#B8963D']}
-                  style={[styles.button, !isDark && { shadowColor: colors.primary, elevation: 6 }]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                >
-                  {loading ? (
-                    <ActivityIndicator color={isDark ? COLORS.black : COLORS.white} size="small" />
-                  ) : (
-                    <>
-                      <Text style={[styles.buttonText, { color: COLORS.white }]}>SIGN IN</Text>
-                      <Ionicons name="arrow-forward" size={16} color={COLORS.white} />
-                    </>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
-
-            {/* Footer */}
-            <View style={styles.footer}>
-              <Text style={[styles.footerText, { color: colors.textMuted }]}>New to Wahid?</Text>
+          <View style={styles.footerWrap}>
+            <View style={styles.signupPrompt}>
+              <Text style={styles.promptText}>Don't have an account? </Text>
               <TouchableOpacity onPress={() => navigation.navigate('Phone')}>
-                <Text style={[styles.footerLink, { color: colors.primary }]}>Create Account</Text>
+                <Text style={styles.signupText}>Sign Up</Text>
               </TouchableOpacity>
             </View>
+
+            <TouchableOpacity 
+              onPress={handleLogin}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#00ADC1', '#00DFE0']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.button}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Sign In</Text>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
+          
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -217,179 +170,123 @@ const LoginScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: COLORS.black,
+  root: { flex: 1, backgroundColor: '#000' },
+  kav: { flex: 1 },
+  scroll: { 
+    flexGrow: 1, 
+    paddingHorizontal: 24,
+    paddingTop: height * 0.15,
+    paddingBottom: 40,
   },
-  kav: {
-    flex: 1,
-  },
-  scroll: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: SPACE.xl,
-    paddingVertical: 100,
-  },
-  glowTop: {
-    position: 'absolute',
-    top: -50,
-    right: -50,
-    width: 200,
-    height: 200,
-    backgroundColor: 'rgba(201, 168, 76, 0.05)',
-    filter: 'blur(50px)',
-  },
-
-  // Header
   header: {
     alignItems: 'center',
-    marginBottom: SPACE.xxl,
-  }, logo: {
-    width: 32,
-    height: 32,
-    resizeMode: 'contain',
+    marginBottom: 50,
   },
-  logoWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(201, 168, 76, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SPACE.md,
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.2)',
-  },
-  brandName: {
+  title: {
     fontFamily: FONTS.bold,
-    fontSize: 28,
-    color: COLORS.white,
-    letterSpacing: 8,
+    fontSize: 26,
+    color: '#fff',
+    marginBottom: 8,
     textAlign: 'center',
   },
-  arabicHeader: {
-    fontFamily: FONTS.arabicBold,
-    fontSize: SIZES.arabic.sm,
-    marginTop: SPACE.xs,
-    marginBottom: SPACE.xs,
-    opacity: 0.8,
-  },
-  dividerWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: SPACE.sm,
-    opacity: 0.6,
-  },
-  line: {
-    width: 32,
-    height: 1,
-    backgroundColor: '#c9a84c',
-  },
-  headerSub: {
-    fontFamily: FONTS.bold,
-    fontSize: 10,
-    color: COLORS.muted,
-    letterSpacing: 2.5,
-  },
-
-  // Card
-  card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: RADIUS.xl,
-    padding: SPACE.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  cardTitle: {
-    fontFamily: FONTS.bold,
-    fontSize: SIZES.xl,
-    color: COLORS.white,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  cardSub: {
+  subtitle: {
     fontFamily: FONTS.regular,
-    fontSize: SIZES.sm,
-    color: COLORS.muted,
+    fontSize: 13,
+    color: '#8A9A9D',
     textAlign: 'center',
-    marginBottom: SPACE.xl,
   },
-
-  // Inputs
-  inputWrap: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: RADIUS.md,
-    paddingHorizontal: SPACE.md,
-    paddingTop: SPACE.sm,
-    paddingBottom: SPACE.xs,
-    marginBottom: SPACE.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+  formSection: {
+    marginBottom: 40,
   },
-  inputHeader: {
+  label: {
+    fontFamily: FONTS.medium,
+    fontSize: 15,
+    color: '#fff',
+    marginBottom: 8,
+  },
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
+    backgroundColor: '#0F1214',
+    borderWidth: 1,
+    borderColor: '#00ADC150',
+    borderRadius: 24,
+    height: 56,
+    paddingHorizontal: 16,
   },
   inputFocused: {
-    borderColor: 'rgba(201, 168, 76, 0.3)',
-    backgroundColor: 'rgba(201, 168, 76, 0.02)',
+    borderColor: '#00ADC1',
+    backgroundColor: '#0A1C20',
   },
-  inputLabel: {
-    fontSize: 9,
-    fontFamily: FONTS.bold,
-    color: COLORS.muted,
-    letterSpacing: 1.5,
+  countrySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingRight: 10,
+  },
+  countryCodeText: {
+    color: '#fff',
+    fontFamily: FONTS.medium,
+    fontSize: 14,
+  },
+  divider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#333',
+    marginRight: 12,
   },
   input: {
+    flex: 1,
+    color: '#fff',
     fontFamily: FONTS.regular,
-    fontSize: SIZES.base,
-    color: COLORS.white,
-    minHeight: 40,
+    fontSize: 15,
+    height: '100%',
   },
-  passwordRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  eyeBtn: {
-    paddingHorizontal: 4,
+  miniPicker: {
+    backgroundColor: '#1A2123',
+    borderRadius: 12,
+    marginTop: 8,
     paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#333',
   },
-
-  // Button
-  button: {
-    height: 54,
-    borderRadius: RADIUS.md,
+  miniPickerItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  footerWrap: {
+    marginTop: 'auto',
+  },
+  signupPrompt: {
     flexDirection: 'row',
     justifyContent: 'center',
+    marginBottom: 24,
+  },
+  promptText: {
+    color: '#8A9A9D',
+    fontSize: 13,
+  },
+  signupText: {
+    color: '#00ADC1',
+    fontSize: 13,
+    fontFamily: FONTS.bold,
+  },
+  button: {
+    height: 56,
+    borderRadius: 30,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 10,
+    shadowColor: '#00ADC1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   buttonText: {
+    color: '#fff',
     fontFamily: FONTS.bold,
-    fontSize: SIZES.base,
-    color: COLORS.black,
-    letterSpacing: 1,
-  },
-
-  // Footer
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: SPACE.xl,
-    gap: 8,
-  },
-  footerText: {
-    color: COLORS.muted,
-    fontSize: SIZES.sm,
-  },
-  footerLink: {
-    color: '#c9a84c',
-    fontFamily: FONTS.bold,
-    fontSize: SIZES.sm,
+    fontSize: 16,
+    letterSpacing: 0.5,
   },
 });
 

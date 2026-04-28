@@ -8,7 +8,6 @@ import LoginScreen     from '../screens/LoginScreen';
 import RegisterScreen  from '../screens/RegisterScreen';
 import TabNavigator    from './TabNavigator';
 import NameDetailScreen from '../screens/NameDetailScreen';
-import RegisterProfileScreen from '../screens/RegisterProfileScreen';
 import NowPlayingScreen from '../screens/NowPlayingScreen';
 
 const Stack = createNativeStackNavigator();
@@ -22,23 +21,19 @@ const AppNavigator = () => {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {user ? (
         // ── Authenticated ────────────────────────────────────────────────
-        !user.name ? (
-          <Stack.Screen name="RegisterProfile" component={RegisterProfileScreen} />
-        ) : (
-          <>
-            <Stack.Screen name="Main" component={TabNavigator} />
-            <Stack.Screen
-              name="NameDetail"
-              component={NameDetailScreen}
-              options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
-            />
-            <Stack.Screen
-              name="NowPlaying"
-              component={NowPlayingScreen}
-              options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true }}
-            />
-          </>
-        )
+        <>
+          <Stack.Screen name="Main" component={TabNavigator} />
+          <Stack.Screen
+            name="NameDetail"
+            component={NameDetailScreen}
+            options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+          />
+          <Stack.Screen
+            name="NowPlaying"
+            component={NowPlayingScreen}
+            options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true }}
+          />
+        </>
       ) : (
         // ── Unauthenticated — OTP + Login + Register flow ────────────────
         <>

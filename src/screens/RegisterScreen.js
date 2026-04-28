@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,17 +9,16 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Animated,
   StatusBar,
-  Pressable,
+  Dimensions
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, SIZES, SPACE, RADIUS, SHADOW } from '../theme';
+import { FONTS } from '../theme';
 import { useAuth } from '../context/AuthContext';
-import { useAppTheme } from '../context/ThemeContext';
-import { Image } from 'react-native';
+
+const { height } = Dimensions.get('window');
 
 const RegisterScreen = ({ navigation, route }) => {
   const { verificationToken, phone } = route.params || {};
@@ -30,17 +29,9 @@ const RegisterScreen = ({ navigation, route }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocused] = useState(null);
+  
   const { signup } = useAuth();
-  const { colors, isDark } = useAppTheme();
-
-  const nameInput = useRef(null);
-  const usernameInput = useRef(null);
-  const passwordInput = useRef(null);
-  const buttonScale = useRef(new Animated.Value(1)).current;
-
-  const pressIn = () => Animated.spring(buttonScale, { toValue: 0.98, useNativeDriver: true }).start();
-  const pressOut = () => Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true }).start();
-
+  
   const handleRegister = async () => {
     if (!username.trim() || !password) {
       Toast.show({ type: 'error', text1: 'Missing Info', text2: 'Username and password are required.' });
@@ -64,185 +55,109 @@ const RegisterScreen = ({ navigation, route }) => {
       Toast.show({ type: 'error', text1: 'Registration Error', text2: result.message || 'Something went wrong.' });
     } else {
       Toast.show({ type: 'success', text1: 'Account Created!', text2: 'Welcome to your spiritual journey.' });
-      // AuthNavigator will naturally switch to MainApp
     }
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
+      {/* Premium Dark Teal Background */}
       <LinearGradient
-        colors={isDark ? ['rgba(20, 22, 33, 1)', 'rgba(0, 0, 0, 1)'] : [colors.surface, colors.background]}
+        colors={['#0A3B40', '#03080A', '#000000']}
+        locations={[0, 0.4, 1]}
         style={StyleSheet.absoluteFill}
       />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.kav}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header */}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.kav}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+
           <View style={styles.header}>
-            <View style={[styles.logoWrap, { backgroundColor: isDark ? 'rgba(201, 168, 76, 0.1)' : 'rgba(184, 150, 61, 0.15)', borderColor: isDark ? 'rgba(201, 168, 76, 0.2)' : 'rgba(184, 150, 61, 0.3)' }]}>
-              <Image
-                source={
-                  isDark
-                    ? require('../../assets/logoWhite.png')
-                    : require('../../assets/logoColor.png')
-                }
-                style={styles.logo}
-              />
-            </View>
-            <Text style={[styles.arabicHeader, { color: colors.primary, opacity: isDark ? 0.9 : 1.0 }]}>بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</Text>
-            <View style={[styles.dividerWrap, { opacity: isDark ? 0.6 : 1.0 }]}>
-              <View style={[styles.line, { backgroundColor: colors.primary }]} />
-              <Ionicons name="moon" size={14} color={colors.primary} />
-              <View style={[styles.line, { backgroundColor: colors.primary }]} />
-            </View>
-            <Text style={[styles.headerSub, { color: colors.textMuted }]}>JOIN THE JOURNEY</Text>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Start your exploration of the 99 Divine Names</Text>
           </View>
 
-          {/* Registration Card */}
-          <View style={[styles.card, { backgroundColor: colors.glass, borderColor: colors.border }]}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>Create Account</Text>
-            <Text style={[styles.cardSub, { color: colors.textMuted }]}>Start your exploration of the 99 Divine Names</Text>
-
-            {/* Name Input */}
-            <Pressable
-              onPress={() => nameInput.current?.focus()}
-              style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'name' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
-            >
-              <View style={styles.inputHeader}>
-                <Ionicons
-                  name="person-outline"
-                  size={14}
-                  color={focusedField === 'name' ? colors.primary : colors.textMuted}
-                />
-                <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'name' && { color: colors.primary }]}>
-                  FULL NAME
-                </Text>
-              </View>
+          <View style={styles.formSection}>
+            {/* Full Name */}
+            <Text style={styles.label}>Full Name</Text>
+            <View style={[styles.inputContainer, focusedField === 'name' && styles.inputFocused]}>
               <TextInput
-                ref={nameInput}
-                style={[styles.input, { color: colors.text }]}
-                placeholder="How should we call you?"
-                placeholderTextColor={colors.textDimmed}
+                style={styles.input}
+                placeholder="Enter your name"
+                placeholderTextColor="#666"
                 value={name}
                 onChangeText={setName}
                 onFocus={() => setFocused('name')}
                 onBlur={() => setFocused(null)}
-                selectionColor="#c9a84c"
-                cursorColor="#c9a84c"
+                selectionColor="#00ADC1"
                 autoCapitalize="words"
               />
-            </Pressable>
+            </View>
 
-            {/* Username Input */}
-            <Pressable
-              onPress={() => usernameInput.current?.focus()}
-              style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'username' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
-            >
-              <View style={styles.inputHeader}>
-                <Ionicons
-                  name="at-outline"
-                  size={14}
-                  color={focusedField === 'username' ? colors.primary : colors.textMuted}
-                />
-                <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'username' && { color: colors.primary }]}>
-                  CHOOSE USERNAME
-                </Text>
-              </View>
+            {/* Username */}
+            <Text style={[styles.label, { marginTop: 24 }]}>Choose Username</Text>
+            <View style={[styles.inputContainer, focusedField === 'username' && styles.inputFocused]}>
               <TextInput
-                ref={usernameInput}
-                style={[styles.input, { color: colors.text }]}
+                style={styles.input}
                 placeholder="your_unique_username"
-                placeholderTextColor={colors.textDimmed}
+                placeholderTextColor="#666"
+                autoCapitalize="none"
                 value={username}
                 onChangeText={setUsername}
                 onFocus={() => setFocused('username')}
                 onBlur={() => setFocused(null)}
-                selectionColor="#c9a84c"
-                cursorColor="#c9a84c"
-                autoCapitalize="none"
+                selectionColor="#00ADC1"
               />
-            </Pressable>
+            </View>
 
-            {/* Password Input */}
-            <Pressable
-              onPress={() => passwordInput.current?.focus()}
-              style={[styles.inputWrap, { backgroundColor: colors.glass, borderColor: colors.border }, focusedField === 'password' && [styles.inputFocused, { borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(184, 150, 61, 0.3)', backgroundColor: isDark ? 'rgba(201, 168, 76, 0.02)' : 'rgba(184, 150, 61, 0.02)' }]]}
-            >
-              <View style={styles.inputHeader}>
+            {/* Password */}
+            <Text style={[styles.label, { marginTop: 24 }]}>Password</Text>
+            <View style={[styles.inputContainer, focusedField === 'password' && styles.inputFocused]}>
+              <TextInput
+                style={styles.input}
+                placeholder="••••••••"
+                placeholderTextColor="#666"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={setPassword}
+                onFocus={() => setFocused('password')}
+                onBlur={() => setFocused(null)}
+                selectionColor="#00ADC1"
+              />
+              <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn}>
                 <Ionicons
-                  name="lock-closed-outline"
-                  size={14}
-                  color={focusedField === 'password' ? colors.primary : colors.textMuted}
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#fff"
                 />
-                <Text style={[styles.inputLabel, { color: colors.textDimmed }, focusedField === 'password' && { color: colors.primary }]}>
-                  SECURE PASSWORD
-                </Text>
-              </View>
-              <View style={styles.passwordRow}>
-                <TextInput
-                  ref={passwordInput}
-                  style={[styles.input, { flex: 1, color: colors.text }]}
-                  placeholder="••••••••"
-                  placeholderTextColor={colors.textDimmed}
-                  value={password}
-                  onChangeText={setPassword}
-                  onFocus={() => setFocused('password')}
-                  onBlur={() => setFocused(null)}
-                  selectionColor="#c9a84c"
-                  cursorColor="#c9a84c"
-                  secureTextEntry={!showPassword}
-                />
-                <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn}>
-                  <Ionicons
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={18}
-                    color={colors.textMuted}
-                  />
-                </TouchableOpacity>
-              </View>
-            </Pressable>
-
-            {/* Action Button */}
-            <Animated.View style={{ transform: [{ scale: buttonScale }], marginTop: SPACE.md }}>
-              <TouchableOpacity
-                onPress={handleRegister}
-                onPressIn={pressIn}
-                onPressOut={pressOut}
-                disabled={loading}
-                activeOpacity={0.9}
-              >
-                <LinearGradient
-                  colors={[colors.primary, isDark ? '#8a6d1e' : '#B8963D']}
-                  style={[styles.button, !isDark && { shadowColor: colors.primary, elevation: 6 }]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                >
-                  {loading ? (
-                    <ActivityIndicator color={isDark ? COLORS.black : COLORS.white} size="small" />
-                  ) : (
-                    <Text style={[styles.buttonText, { color: COLORS.white }]}>CREATE ACCOUNT</Text>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
-
-            {/* Footer */}
-            <View style={styles.footer}>
-              <Text style={[styles.footerText, { color: colors.textMuted }]}>Already part of WAHID?</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={[styles.footerLink, { color: colors.primary }]}>Sign In</Text>
               </TouchableOpacity>
             </View>
           </View>
+
+          <View style={styles.footerWrap}>
+            <TouchableOpacity 
+              onPress={handleRegister}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#00ADC1', '#00DFE0']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.button}
+              >
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Create Account</Text>}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <View style={styles.loginFooter}>
+              <Text style={styles.loginFooterText}>Already part of WAHID?</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={styles.loginFooterLink}> Sign In</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -250,155 +165,100 @@ const RegisterScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: COLORS.black },
+  root: { flex: 1, backgroundColor: '#000' },
   kav: { flex: 1 },
-  scroll: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: SPACE.xl,
-    paddingVertical: 100,
+  scroll: { 
+    flexGrow: 1, 
+    paddingHorizontal: 24,
+    paddingTop: height * 0.12,
+    paddingBottom: 40,
   },
-
-  // Header
   header: {
     alignItems: 'center',
-    marginBottom: SPACE.xxl,
-  }, logo: {
-    width: 32,
-    height: 32,
-    resizeMode: 'contain',
+    marginBottom: 40,
   },
-  logoWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(201, 168, 76, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SPACE.md,
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.2)',
-  },
-  arabicHeader: {
-    fontFamily: FONTS.arabicBold,
-    fontSize: SIZES.arabic.sm,
+  title: {
+    fontFamily: FONTS.bold,
+    fontSize: 28,
+    color: '#fff',
+    marginBottom: 8,
     textAlign: 'center',
+  },
+  subtitle: {
+    fontFamily: FONTS.regular,
+    fontSize: 14,
+    color: '#8A9A9D',
+    textAlign: 'center',
+  },
+  formSection: {
+    marginBottom: 40,
+  },
+  label: {
+    fontFamily: FONTS.medium,
+    fontSize: 16,
+    color: '#fff',
     marginBottom: 8,
   },
-  dividerWrap: {
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: SPACE.sm,
-    opacity: 0.6,
-  },
-  line: {
-    width: 32,
-    height: 1,
-    backgroundColor: '#c9a84c',
-  },
-  headerSub: {
-    fontFamily: FONTS.bold,
-    fontSize: 10,
-    color: COLORS.muted,
-    letterSpacing: 2.5,
-  },
-
-  // Card
-  card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: RADIUS.xl,
-    padding: SPACE.xl,
+    backgroundColor: '#0F1214',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-  },
-  cardTitle: {
-    fontFamily: FONTS.bold,
-    fontSize: SIZES.xl,
-    color: COLORS.white,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  cardSub: {
-    fontFamily: FONTS.regular,
-    fontSize: SIZES.sm,
-    color: COLORS.muted,
-    textAlign: 'center',
-    marginBottom: SPACE.xl,
-  },
-
-  // Inputs
-  inputWrap: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: RADIUS.md,
-    paddingHorizontal: SPACE.md,
-    paddingTop: SPACE.sm,
-    paddingBottom: SPACE.xs,
-    marginBottom: SPACE.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  inputHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
+    borderColor: '#00ADC150',
+    borderRadius: 28,
+    height: 56,
+    paddingHorizontal: 16,
   },
   inputFocused: {
-    borderColor: 'rgba(201, 168, 76, 0.3)',
-    backgroundColor: 'rgba(201, 168, 76, 0.02)',
-  },
-  inputLabel: {
-    fontSize: 9,
-    fontFamily: FONTS.bold,
-    color: COLORS.muted,
-    letterSpacing: 1.5,
+    borderColor: '#00ADC1',
+    backgroundColor: '#0A1C20',
   },
   input: {
+    flex: 1,
+    color: '#fff',
     fontFamily: FONTS.regular,
-    fontSize: SIZES.base,
-    color: COLORS.white,
-    minHeight: 40,
-  },
-  passwordRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    fontSize: 15,
+    height: '100%',
   },
   eyeBtn: {
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
     paddingVertical: 8,
   },
-
-  // Button
+  footerWrap: {
+    marginTop: 'auto',
+  },
   button: {
-    height: 54,
-    borderRadius: RADIUS.md,
+    height: 56,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#00ADC1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   buttonText: {
+    color: '#fff',
     fontFamily: FONTS.bold,
-    fontSize: SIZES.base,
-    color: COLORS.black,
-    letterSpacing: 1,
+    fontSize: 16,
+    letterSpacing: 0.5,
   },
-
-  // Footer
-  footer: {
+  loginFooter: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: SPACE.xl,
-    gap: 8,
+    marginTop: 24,
   },
-  footerText: {
-    color: COLORS.muted,
-    fontSize: SIZES.sm,
+  loginFooterText: {
+    color: '#8A9A9D',
+    fontSize: 14,
+    fontFamily: FONTS.regular,
   },
-  footerLink: {
-    color: '#c9a84c',
+  loginFooterLink: {
+    color: '#00ADC1',
+    fontSize: 14,
     fontFamily: FONTS.bold,
-    fontSize: SIZES.sm,
   },
 });
 

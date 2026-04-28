@@ -1,45 +1,37 @@
-/**
- * PhoneScreen — Step 1 of OTP login
- * 
- * User enters their phone number with country code.
- * Calls POST /api/auth/send-otp → navigates to OTPScreen.
- * 
- * Design updated to use ArchedHeader (curved design).
- */
 import React, { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, ScrollView,
-  ActivityIndicator, Animated, StatusBar, Modal, FlatList,
+  ActivityIndicator, StatusBar, Dimensions
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../context/AuthContext';
-import { useAppTheme } from '../context/ThemeContext';
-import { COLORS, FONTS, SIZES, SPACE, RADIUS, SHADOW } from '../theme';
-import ArchedHeader from '../components/ArchedHeader';
+import { FONTS } from '../theme';
 
-// --- Country codes ------------------------------------------------------------
+const { height } = Dimensions.get('window');
+
 const COUNTRIES = [
-  { code: '+91', flag: '🇮🇳', name: 'India' },
-  { code: '+1', flag: '🇺🇸', name: 'USA / Canada' },
-  { code: '+44', flag: '🇬🇧', name: 'United Kingdom' },
-  { code: '+971', flag: '🇦🇪', name: 'UAE' },
-  { code: '+9 Pakistan', flag: '🇵🇰', name: 'Pakistan' },
-  { code: '+60', flag: '🇲🇾', name: 'Malaysia' },
-  { code: '+966', flag: '🇸🇦', name: 'Saudi Arabia' },
+  { code: '+91', name: 'India' },
+  { code: '+1', name: 'USA/CA' },
+  { code: '+44', name: 'UK' },
+  { code: '+971', name: 'UAE' },
+  { code: '+92', name: 'Pakistan' },
+  { code: '+60', name: 'Malaysia' },
+  { code: '+966', name: 'Saudi Arabia' },
 ];
 
 const PhoneScreen = ({ navigation }) => {
   const { sendOTP } = useAuth();
-  const { colors, isDark } = useAppTheme();
 
   const [country, setCountry] = useState(COUNTRIES[0]);
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [focused, setFocused] = useState(false);
+
+  const phoneInput = useRef(null);
 
   const handleSend = async () => {
     const digits = phone.replace(/\D/g, '');
@@ -60,150 +52,214 @@ const PhoneScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.background }]}>
+    <View style={styles.root}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      <ArchedHeader
-        title="Sign Up !"
-        subtitle="Start your journey with WAHID"
+      {/* Premium Dark Teal Background */}
+      <LinearGradient
+        colors={['#0A3B40', '#03080A', '#000000']}
+        locations={[0, 0.4, 1]}
+        style={StyleSheet.absoluteFill}
       />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.kav}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
-          <View style={[styles.card, { backgroundColor: isDark ? colors.surface : '#fff' }, SHADOW.card]}>
-            <Text style={[styles.label, { color: colors.textMuted }]}>Enter Mobile Number</Text>
+          <View style={styles.header}>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Start your journey with <Text style={styles.brand}>WAHID</Text></Text>
+          </View>
 
-            <View style={[styles.inputRow, focused && { borderColor: colors.primary }]}>
-              <TouchableOpacity style={styles.countryBtn} onPress={() => setShowPicker(true)}>
-                <Text style={styles.flag}>{country.flag}</Text>
-                <Text style={[styles.code, { color: colors.text }]}>{country.code}</Text>
-
+          <View style={styles.formSection}>
+            <Text style={styles.label}>Enter Mobile Number</Text>
+            
+            <View style={[styles.inputContainer, focused && styles.inputFocused]}>
+              <TouchableOpacity style={styles.countrySelector} onPress={() => setShowPicker(!showPicker)}>
+                <Text style={styles.countryCodeText}>{country.code}</Text>
+                <Ionicons name="chevron-down" size={14} color="#aaa" style={{ marginLeft: 4 }} />
               </TouchableOpacity>
-
+              
+              <View style={styles.divider} />
+              
               <TextInput
-                style={[styles.input, { color: colors.text }]}
-                placeholder="98765 43210"
-                placeholderTextColor={colors.textDimmed}
+                ref={phoneInput}
+                style={styles.input}
+                placeholder="Enter a phone number"
+                placeholderTextColor="#666"
                 value={phone}
                 onChangeText={setPhone}
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
                 keyboardType="phone-pad"
                 maxLength={15}
+                selectionColor="#00ADC1"
               />
             </View>
 
-            <View style={styles.footerRow}>
-              <Text style={{ color: colors.textMuted, fontSize: 13 }}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={{ color: colors.primary, fontFamily: FONTS.bold, fontSize: 13 }}>Sign In</Text>
-              </TouchableOpacity>
-            </View>
+            {showPicker && (
+               <View style={styles.miniPicker}>
+                 {COUNTRIES.map(c => (
+                   <TouchableOpacity key={c.code} style={styles.miniPickerItem} onPress={() => { setCountry(c); setShowPicker(false); }}>
+                     <Text style={{color: '#fff', fontSize: 13}}>{c.code}  <Text style={{color: '#888'}}>{c.name}</Text></Text>
+                   </TouchableOpacity>
+                 ))}
+               </View>
+            )}
           </View>
 
-          <TouchableOpacity
-            onPress={handleSend}
-            disabled={loading}
-            style={[styles.submitBtn, { backgroundColor: colors.primary }]}
-            activeOpacity={0.9}
-          >
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>Submit</Text>}
-          </TouchableOpacity>
+          <View style={styles.footerWrap}>
+            <View style={styles.loginPrompt}>
+              <Text style={styles.promptText}>Already have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={styles.loginText}>Sign In</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity 
+              onPress={handleSend}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#00ADC1', '#00DFE0']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.button}
+              >
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Get OTP</Text>}
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
 
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <Modal visible={showPicker} transparent animationType="slide">
-        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setShowPicker(false)} />
-        <View style={[styles.sheet, { backgroundColor: isDark ? '#111' : '#fff' }]}>
-          <Text style={[styles.sheetTitle, { color: colors.text }]}>Select Country</Text>
-          <FlatList
-            data={COUNTRIES}
-            keyExtractor={item => item.code}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.pickerRow}
-                onPress={() => { setCountry(item); setShowPicker(false); }}
-              >
-                <Text style={styles.pickerFlag}>{item.flag}</Text>
-                <Text style={[styles.pickerName, { color: colors.text }]}>{item.name}</Text>
-                <Text style={[styles.pickerCode, { color: colors.textMuted }]}>{item.code}</Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, backgroundColor: '#000' },
   kav: { flex: 1 },
-  scroll: { flexGrow: 1, paddingHorizontal: SPACE.xl, paddingTop: 200 },
-
-  card: {
-    borderRadius: RADIUS.lg,
-    padding: SPACE.xl,
-    paddingVertical: 32,
-    marginBottom: SPACE.xxl,
+  scroll: { 
+    flexGrow: 1, 
+    paddingHorizontal: 24,
+    paddingTop: height * 0.15,
+    paddingBottom: 40,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 50,
+  },
+  title: {
+    fontFamily: FONTS.bold,
+    fontSize: 26,
+    color: '#fff',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: '#8A9A9D',
+    textAlign: 'center',
+  },
+  brand: {
+    color: '#00ADC1',
+    fontFamily: FONTS.bold,
+  },
+  formSection: {
+    marginBottom: 40,
   },
   label: {
-    fontFamily: FONTS.regular,
-    fontSize: 12,
-    textAlign: 'center',
-    marginBottom: SPACE.md,
+    fontFamily: FONTS.medium,
+    fontSize: 15,
+    color: '#fff',
+    marginBottom: 8,
   },
-  inputRow: {
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    borderBottomWidth: 1.5,
-    borderColor: 'rgba(0,0,0,0.05)',
-    paddingBottom: 8,
+    backgroundColor: '#0F1214',
+    borderWidth: 1,
+    borderColor: '#00ADC150',
+    borderRadius: 24,
+    height: 56,
+    paddingHorizontal: 16,
   },
-  countryBtn: {
+  inputFocused: {
+    borderColor: '#00ADC1',
+    backgroundColor: '#0A1C20',
+  },
+  countrySelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    paddingVertical: 10,
+    paddingRight: 10,
   },
-  flag: { fontSize: 20 },
-  code: { fontFamily: FONTS.bold, fontSize: 16 },
+  countryCodeText: {
+    color: '#fff',
+    fontFamily: FONTS.medium,
+    fontSize: 14,
+  },
+  divider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#333',
+    marginRight: 12,
+  },
   input: {
     flex: 1,
-    fontFamily: FONTS.bold,
-    fontSize: 22,
-    letterSpacing: 1,
+    color: '#fff',
+    fontFamily: FONTS.regular,
+    fontSize: 15,
+    height: '100%',
   },
-  footerRow: {
+  miniPicker: {
+    backgroundColor: '#1A2123',
+    borderRadius: 12,
+    marginTop: 8,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  miniPickerItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  footerWrap: {
+    marginTop: 'auto',
+  },
+  loginPrompt: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: SPACE.xl,
+    marginBottom: 24,
   },
-
-  submitBtn: {
+  promptText: {
+    color: '#8A9A9D',
+    fontSize: 13,
+  },
+  loginText: {
+    color: '#00ADC1',
+    fontSize: 13,
+    fontFamily: FONTS.bold,
+  },
+  button: {
     height: 56,
-    borderRadius: RADIUS.full,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 'auto',
-    marginBottom: SPACE.xl,
+    shadowColor: '#00ADC1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  submitText: {
-    fontFamily: FONTS.bold,
-    fontSize: SIZES.base,
+  buttonText: {
     color: '#fff',
-    letterSpacing: 1,
+    fontFamily: FONTS.bold,
+    fontSize: 16,
+    letterSpacing: 0.5,
   },
-
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
-  sheet: { borderTopLeftRadius: RADIUS.xl, borderTopRightRadius: RADIUS.xl, padding: SPACE.md, maxHeight: '60%' },
-  sheetTitle: { fontFamily: FONTS.bold, textAlign: 'center', marginBottom: SPACE.md },
-  pickerRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, gap: 12 },
-  pickerFlag: { fontSize: 22 },
-  pickerName: { flex: 1, fontSize: 14 },
-  pickerCode: { fontFamily: FONTS.bold, fontSize: 14 },
 });
 
 export default PhoneScreen;
