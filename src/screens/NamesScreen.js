@@ -30,13 +30,14 @@ const DOME_H = hs(115);
 
 const STACK_CONFIG = [
   { width: SW - rs(110), height: hs(100), opacity: 0.25, bottom: hs(-30) },
-  { width: SW - rs(160), height: hs(100), opacity: 0.5,  bottom: hs(-50) },
-  { width: SW - rs(220), height: hs(50),  opacity: 0.8,  bottom: hs(-20) },
+  { width: SW - rs(160), height: hs(100), opacity: 0.5, bottom: hs(-50) },
+  { width: SW - rs(220), height: hs(50), opacity: 0.8, bottom: hs(-20) },
 ];
 
 const NamesScreen = ({ navigation }) => {
   const { names, loading, learnedIds, masteredIds, categories } = useNames();
   const [activeIndex, setActiveIndex] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [filterVisible, setFilterVisible] = useState(false);
   const [tempCat, setTempCat] = useState('All');
@@ -62,8 +63,16 @@ const NamesScreen = ({ navigation }) => {
       const numPattern = parseInt(appliedNumber, 10);
       result = result.filter(n => n.number === numPattern);
     }
+    if (searchQuery && searchQuery.trim() !== '') {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter(n =>
+        (n.transliteration && n.transliteration.toLowerCase().includes(q)) ||
+        (n.meaning && n.meaning.toLowerCase().includes(q)) ||
+        (n.arabic && n.arabic.includes(searchQuery.trim()))
+      );
+    }
     return result;
-  }, [names, appliedCat, appliedStatus, appliedNumber, learnedIds, masteredIds]);
+  }, [names, appliedCat, appliedStatus, appliedNumber, searchQuery, learnedIds, masteredIds]);
 
   const activeIndexRef = useRef(0);
   const namesRef = useRef(filteredNames);
@@ -284,8 +293,20 @@ const NamesScreen = ({ navigation }) => {
       <View style={[styles.topSection, { height: TOP_SECTION_HEIGHT }]}>
         <View style={styles.searchRow}>
           <View style={styles.searchPill}>
-            <Ionicons name="search" size={rs(20)} color="#BFBFBF" />
-            <Text style={styles.searchPlaceholder}>Name, Meaning, Arabic, .....</Text>
+            <Ionicons name="search" size={rs(18)} color="#BFBFBF" />
+            <TextInput
+              style={styles.searchInput}
+              value={searchQuery}
+              onChangeText={(text) => {
+                setSearchQuery(text);
+                setActiveIndex(0);
+                activeIndexRef.current = 0;
+              }}
+              placeholder="Name, Meaning, Arabic....."
+              placeholderTextColor="#BFBFBF"
+              returnKeyType="search"
+              clearButtonMode="while-editing"
+            />
           </View>
           <TouchableOpacity
             style={styles.filterCircle}
@@ -296,7 +317,7 @@ const NamesScreen = ({ navigation }) => {
               setFilterVisible(true);
             }}
           >
-            <Ionicons name="options-outline" size={rs(20)} color="#1A1A1A" />
+            <Ionicons name="options-outline" size={rs(18)} color="#1A1A1A" />
           </TouchableOpacity>
         </View>
         <View style={styles.bannerContainer}>
@@ -499,15 +520,15 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#EDF1F9' },
   topSection: { paddingHorizontal: rs(20), paddingTop: hs(10), zIndex: 30, borderBottomLeftRadius: rs(20), borderBottomRightRadius: rs(20) },
 
-  searchRow: { flexDirection: 'row', alignItems: 'center', gap: rs(12), marginBottom: hs(15), marginTop: hs(5) },
-  searchPill: { flex: 1, height: rs(52), backgroundColor: '#FFFFFF', borderRadius: rs(26), flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(20), gap: rs(10), elevation: 2 },
-  searchPlaceholder: { color: '#BFBFBF', fontSize: rs(14) },
-  filterCircle: { width: rs(52), height: rs(52), backgroundColor: '#FFFFFF', borderRadius: rs(26), justifyContent: 'center', alignItems: 'center', elevation: 2 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: rs(10), marginBottom: hs(10), marginTop: hs(4) },
+  searchPill: { flex: 1, height: rs(38), backgroundColor: '#FFFFFF', borderRadius: rs(19), flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(14), gap: rs(8), elevation: 2 },
+  searchInput: { flex: 1, fontSize: rs(13), color: '#1A1A1A', paddingVertical: 0, height: rs(38) },
+  filterCircle: { width: rs(38), height: rs(38), backgroundColor: '#FFFFFF', borderRadius: rs(19), justifyContent: 'center', alignItems: 'center', elevation: 2 },
 
-  bannerContainer: { height: '55%', borderRadius: rs(24), overflow: 'hidden', marginBottom: hs(10) },
-  bannerImage: { width: '100%', height: '100%' },
-  ornContainer: { alignItems: 'center', height: hs(30), top: hs(-35) },
-  goldDivider: { width: '120%', height: '210%' },
+  bannerContainer: { height: '55%', borderRadius: rs(20), overflow: 'hidden', marginBottom: hs(6) },
+  bannerImage: { width: '100%', height: '100%', borderRadius: rs(20) },
+  ornContainer: { alignItems: 'center', height: hs(28), marginTop: hs(-8), overflow: 'visible' },
+  goldDivider: { width: '100%', height: hs(60), marginTop: hs(-16) },
 
   stackEngine: { flex: 1, alignItems: 'center', position: 'relative' },
 
