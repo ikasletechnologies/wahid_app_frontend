@@ -9,9 +9,16 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://wahid-mobile-backend.vercel.app"
+      }
     },
-    "production": {}
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://wahid-mobile-backend.vercel.app"
+      }
+    }
   },
   "submit": {
     "production": {}
