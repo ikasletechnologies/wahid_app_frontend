@@ -69,6 +69,7 @@ export const PALETTE = {
 
 export const FONTS = {
   regular:    'Inter-Regular',
+  medium:     'Inter-Medium',
   bold:       'Inter-Bold',
   arabic:     'Amiri-Regular',
   arabicBold: 'Amiri-Bold',

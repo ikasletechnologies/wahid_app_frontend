@@ -1,44 +1,48 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  ActivityIndicator,
-  StatusBar,
-  Dimensions
+  View, Text, StyleSheet, TextInput, TouchableOpacity,
+  KeyboardAvoidingView, Platform, ScrollView,
+  ActivityIndicator, StatusBar, Dimensions,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { FONTS } from '../theme';
 import { useAuth } from '../context/AuthContext';
 
 const { height } = Dimensions.get('window');
 
+const GENDERS = ['Male', 'Female', 'Other'];
+
 const RegisterScreen = ({ navigation, route }) => {
   const { verificationToken, phone } = route.params || {};
-
-  const [name, setName] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [focusedField, setFocused] = useState(null);
-  
   const { signup } = useAuth();
-  
+
+  const [name, setName]               = useState('');
+  const [username, setUsername]       = useState('');
+  const [password, setPassword]       = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [gender, setGender]           = useState('Male');
+  const [dob, setDob]                 = useState(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [loading, setLoading]         = useState(false);
+  const [focused, setFocused]         = useState(null);
+
+  const formattedDob = dob
+    ? dob.toLocaleDateString('en-GB') // DD/MM/YYYY
+    : null;
+
   const handleRegister = async () => {
-    if (!username.trim() || !password) {
-      Toast.show({ type: 'error', text1: 'Missing Info', text2: 'Username and password are required.' });
+    if (!name.trim()) {
+      Toast.show({ type: 'error', text1: 'Missing Info', text2: 'Please enter your full name.' });
       return;
     }
-    if (password.length < 6) {
-      Toast.show({ type: 'error', text1: 'Weak Password', text2: 'Password should be at least 6 characters long.' });
+    if (!username.trim()) {
+      Toast.show({ type: 'error', text1: 'Missing Info', text2: 'Please enter a username.' });
+      return;
+    }
+    if (!password || password.length < 6) {
+      Toast.show({ type: 'error', text1: 'Weak Password', text2: 'Password must be at least 6 characters.' });
       return;
     }
     if (!verificationToken) {
@@ -48,13 +52,24 @@ const RegisterScreen = ({ navigation, route }) => {
     }
 
     setLoading(true);
-    const result = await signup(verificationToken, username.trim(), password, name.trim());
+    const result = await signup(
+      verificationToken,
+      username.trim(),
+      password,
+      name.trim(),
+      gender,
+      formattedDob,
+    );
     setLoading(false);
 
     if (!result.success) {
       Toast.show({ type: 'error', text1: 'Registration Error', text2: result.message || 'Something went wrong.' });
     } else {
-      Toast.show({ type: 'success', text1: 'Account Created!', text2: 'Welcome to your spiritual journey.' });
+      navigation.replace('Success', {
+        user:         result.user,
+        accessToken:  result.accessToken,
+        refreshToken: result.refreshToken,
+      });
     }
   };
 
@@ -62,98 +77,156 @@ const RegisterScreen = ({ navigation, route }) => {
     <View style={styles.root}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      {/* Premium Dark Teal Background */}
       <LinearGradient
-        colors={['#0A3B40', '#03080A', '#000000']}
-        locations={[0, 0.4, 1]}
+        colors={['#02889D', '#041518', '#000000']}
+        locations={[0, 0.42, 1]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.kav}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* ── Header ── */}
           <View style={styles.header}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Start your exploration of the 99 Divine Names</Text>
+            <Text style={styles.title}>Personal Information</Text>
+            <Text style={styles.subtitle}>Tell us more about yourself</Text>
           </View>
 
-          <View style={styles.formSection}>
+          {/* ── Form ── */}
+          <View style={styles.form}>
+
             {/* Full Name */}
             <Text style={styles.label}>Full Name</Text>
-            <View style={[styles.inputContainer, focusedField === 'name' && styles.inputFocused]}>
+            <View style={[styles.inputRow, focused === 'name' && styles.inputRowFocused]}>
               <TextInput
                 style={styles.input}
                 placeholder="Enter your name"
-                placeholderTextColor="#666"
+                placeholderTextColor="#4A5568"
                 value={name}
                 onChangeText={setName}
                 onFocus={() => setFocused('name')}
                 onBlur={() => setFocused(null)}
-                selectionColor="#00ADC1"
                 autoCapitalize="words"
+                selectionColor="#03B7CE"
               />
             </View>
 
             {/* Username */}
-            <Text style={[styles.label, { marginTop: 24 }]}>Choose Username</Text>
-            <View style={[styles.inputContainer, focusedField === 'username' && styles.inputFocused]}>
+            <Text style={[styles.label, { marginTop: 20 }]}>Username</Text>
+            <View style={[styles.inputRow, focused === 'username' && styles.inputRowFocused]}>
               <TextInput
                 style={styles.input}
                 placeholder="your_unique_username"
-                placeholderTextColor="#666"
-                autoCapitalize="none"
+                placeholderTextColor="#4A5568"
                 value={username}
                 onChangeText={setUsername}
                 onFocus={() => setFocused('username')}
                 onBlur={() => setFocused(null)}
-                selectionColor="#00ADC1"
+                autoCapitalize="none"
+                selectionColor="#03B7CE"
               />
             </View>
 
             {/* Password */}
-            <Text style={[styles.label, { marginTop: 24 }]}>Password</Text>
-            <View style={[styles.inputContainer, focusedField === 'password' && styles.inputFocused]}>
+            <Text style={[styles.label, { marginTop: 20 }]}>Password</Text>
+            <View style={[styles.inputRow, focused === 'password' && styles.inputRowFocused]}>
               <TextInput
                 style={styles.input}
-                placeholder="••••••••"
-                placeholderTextColor="#666"
-                secureTextEntry={!showPassword}
+                placeholder="Enter your password"
+                placeholderTextColor="#4A5568"
                 value={password}
                 onChangeText={setPassword}
                 onFocus={() => setFocused('password')}
                 onBlur={() => setFocused(null)}
-                selectionColor="#00ADC1"
+                secureTextEntry={!showPassword}
+                selectionColor="#03B7CE"
               />
-              <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn}>
-                <Ionicons
-                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                  size={20}
-                  color="#fff"
-                />
+              <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn} activeOpacity={0.7}>
+                <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#7A8FA6" />
               </TouchableOpacity>
             </View>
-          </View>
 
-          <View style={styles.footerWrap}>
-            <TouchableOpacity 
-              onPress={handleRegister}
-              disabled={loading}
+            {/* Gender */}
+            <Text style={[styles.label, { marginTop: 20 }]}>Gender</Text>
+            <View style={styles.genderRow}>
+              {GENDERS.map(g => (
+                <TouchableOpacity
+                  key={g}
+                  style={[styles.genderBtn, gender === g && styles.genderBtnActive]}
+                  onPress={() => setGender(g)}
+                  activeOpacity={0.75}
+                >
+                  {gender === g ? (
+                    <LinearGradient
+                      colors={['#02889D', '#03B7CE', '#4BD5E8']}
+                      locations={[0, 0.5048, 1]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
+                      style={styles.genderBtnGradient}
+                    >
+                      <Text style={styles.genderTextActive}>{g}</Text>
+                    </LinearGradient>
+                  ) : (
+                    <Text style={styles.genderText}>{g}</Text>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Date of Birth */}
+            <Text style={[styles.label, { marginTop: 20 }]}>Date of Birth</Text>
+            <TouchableOpacity
+              style={[styles.inputRow, focused === 'dob' && styles.inputRowFocused]}
+              onPress={() => { setFocused('dob'); setShowDatePicker(true); }}
               activeOpacity={0.8}
             >
+              <Text style={[styles.input, { paddingTop: 2 }, !formattedDob && { color: '#4A5568' }]}>
+                {formattedDob || 'DD/MM/YYYY'}
+              </Text>
+              <Ionicons name="calendar-outline" size={20} color="#7A8FA6" />
+            </TouchableOpacity>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={dob || new Date(2000, 0, 1)}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                maximumDate={new Date()}
+                onChange={(event, selected) => {
+                  setShowDatePicker(Platform.OS === 'ios');
+                  setFocused(null);
+                  if (selected) setDob(selected);
+                }}
+              />
+            )}
+          </View>
+
+          {/* ── Footer ── */}
+          <View style={styles.footer}>
+            <TouchableOpacity onPress={handleRegister} disabled={loading} activeOpacity={0.85}>
               <LinearGradient
-                colors={['#00ADC1', '#00DFE0']}
+                colors={['#02889D', '#03B7CE', '#4BD5E8']}
+                locations={[0, 0.5048, 1]}
                 start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
+                end={{ x: 0, y: 1 }}
                 style={styles.button}
               >
-                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Create Account</Text>}
+                {loading
+                  ? <ActivityIndicator color="#fff" />
+                  : <Text style={styles.buttonText}>Submit</Text>
+                }
               </LinearGradient>
             </TouchableOpacity>
 
-            <View style={styles.loginFooter}>
-              <Text style={styles.loginFooterText}>Already part of WAHID?</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={styles.loginFooterLink}> Sign In</Text>
+            <View style={styles.signinRow}>
+              <Text style={styles.signinText}>Already have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')} activeOpacity={0.7}>
+                <Text style={styles.signinLink}>Sign In</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -166,65 +239,106 @@ const RegisterScreen = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
-  kav: { flex: 1 },
-  scroll: { 
-    flexGrow: 1, 
+  kav:  { flex: 1 },
+
+  scroll: {
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: height * 0.12,
-    paddingBottom: 40,
+    paddingTop: height * 0.1,
+    paddingBottom: 36,
   },
+
   header: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 36,
   },
   title: {
-    fontFamily: FONTS.bold,
-    fontSize: 28,
-    color: '#fff',
-    marginBottom: 8,
+    fontSize: 30,
+    fontWeight: '700',
+    color: '#FFFFFF',
     textAlign: 'center',
+    marginBottom: 8,
+    letterSpacing: 0.3,
   },
   subtitle: {
-    fontFamily: FONTS.regular,
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '400',
     color: '#8A9A9D',
     textAlign: 'center',
   },
-  formSection: {
-    marginBottom: 40,
+
+  form: {
+    marginBottom: 28,
   },
   label: {
-    fontFamily: FONTS.medium,
-    fontSize: 16,
-    color: '#fff',
-    marginBottom: 8,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 10,
   },
-  inputContainer: {
+  inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0F1214',
-    borderWidth: 1,
-    borderColor: '#00ADC150',
+    backgroundColor: '#0D1517',
+    borderWidth: 1.5,
+    borderColor: 'rgba(3,183,206,0.3)',
     borderRadius: 28,
     height: 56,
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
   },
-  inputFocused: {
-    borderColor: '#00ADC1',
-    backgroundColor: '#0A1C20',
+  inputRowFocused: {
+    borderColor: '#03B7CE',
+    backgroundColor: '#091A1E',
   },
   input: {
     flex: 1,
-    color: '#fff',
-    fontFamily: FONTS.regular,
+    color: '#FFFFFF',
     fontSize: 15,
     height: '100%',
   },
   eyeBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    padding: 6,
   },
-  footerWrap: {
+
+  /* Gender */
+  genderRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  genderBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: 'rgba(3,183,206,0.35)',
+    backgroundColor: '#0D1517',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  genderBtnActive: {
+    borderColor: '#03B7CE',
+  },
+  genderBtnGradient: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 22,
+  },
+  genderText: {
+    color: '#8A9A9D',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  genderTextActive: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  /* Footer */
+  footer: {
     marginTop: 'auto',
   },
   button: {
@@ -232,33 +346,33 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#00ADC1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    borderWidth: 0.5,
+    borderColor: '#FDFEFE',
     elevation: 6,
+    shadowColor: '#4BD5E8',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.24,
+    shadowRadius: 4,
   },
   buttonText: {
     color: '#fff',
-    fontFamily: FONTS.bold,
     fontSize: 16,
+    fontWeight: '700',
     letterSpacing: 0.5,
   },
-  loginFooter: {
+  signinRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 24,
+    marginTop: 20,
   },
-  loginFooterText: {
+  signinText: {
     color: '#8A9A9D',
-    fontSize: 14,
-    fontFamily: FONTS.regular,
+    fontSize: 13,
   },
-  loginFooterLink: {
-    color: '#00ADC1',
-    fontSize: 14,
-    fontFamily: FONTS.bold,
+  signinLink: {
+    color: '#03B7CE',
+    fontSize: 13,
+    fontWeight: '700',
   },
 });
 

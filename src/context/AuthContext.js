@@ -68,33 +68,39 @@ export const AuthProvider = ({ children }) => {
 
   // ── Signup (Collect Credentials after Phone is verified) ─────────────────
   
-  const signup = async (verificationToken, username, password, name) => {
+  const signup = async (verificationToken, username, password, name, gender, dob) => {
     try {
-      const response = await http.post(ENDPOINTS.signup, { 
-        verificationToken, 
-        username, 
-        password, 
-        name 
+      const response = await http.post(ENDPOINTS.signup, {
+        verificationToken,
+        username,
+        password,
+        name,
+        ...(gender && { gender }),
+        ...(dob    && { dob }),
       });
 
       const { user: u, accessToken, refreshToken } = response.data;
-      
-      setUser(u);
-      setToken(accessToken);
 
-      await Promise.all([
-        AsyncStorage.setItem('user', JSON.stringify(u)),
-        AsyncStorage.setItem('accessToken', accessToken),
-        AsyncStorage.setItem('refreshToken', refreshToken),
-      ]);
-
-      return { success: true };
+      // Return credentials without setting state yet — caller navigates to
+      // SuccessScreen first, then calls completeLogin() to finalize auth.
+      return { success: true, user: u, accessToken, refreshToken };
     } catch (error) {
       return {
         success: false,
         message: error.response?.data?.message || 'Account creation failed.',
       };
     }
+  };
+
+  // Called from SuccessScreen after user taps "Continue to the course"
+  const completeLogin = async (userData, accessToken, refreshToken) => {
+    setUser(userData);
+    setToken(accessToken);
+    await Promise.all([
+      AsyncStorage.setItem('user', JSON.stringify(userData)),
+      AsyncStorage.setItem('accessToken', accessToken),
+      AsyncStorage.setItem('refreshToken', refreshToken),
+    ]);
   };
 
   // ── Standard Login (Identifier + Password) ──────────────────────────────
@@ -165,12 +171,13 @@ export const AuthProvider = ({ children }) => {
       user, 
       token, 
       loading, 
-      sendOTP, 
-      verifyOTP, 
-      signup, 
-      login, 
-      updateProfile, 
-      logout 
+      sendOTP,
+      verifyOTP,
+      signup,
+      completeLogin,
+      login,
+      updateProfile,
+      logout
     }}>
       {children}
     </AuthContext.Provider>

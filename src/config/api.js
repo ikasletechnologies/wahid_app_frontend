@@ -1,16 +1,8 @@
-import Constants from 'expo-constants';
-
-// Detect the local IP of the dev machine to allow mobile app to connect seamlessly
-const getLocalIp = () => {
-  const debuggerHost = Constants.expoConfig?.hostUri;
-  if (debuggerHost) {
-    const ip = debuggerHost.split(':')[0];
-    return `http://${ip}:3000`;
-  }
-  return 'http://10.0.2.2:3000'; // Default Android emulator fallback
-};
-
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || getLocalIp();
+// Set EXPO_PUBLIC_API_URL in .env — see comments below for each scenario:
+//   Physical device (same Wi-Fi):  http://<your-PC-LAN-IP>:3000
+//   Android emulator:              http://10.0.2.2:3000
+//   Production:                    https://wahid-mobile-backend.vercel.app
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:3000';
 
 export const ENDPOINTS = {
   // Auth — OTP flow (Twilio Verify)

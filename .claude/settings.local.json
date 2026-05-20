@@ -9,7 +9,10 @@
       "Bash(curl -s -X POST http://localhost:3000/api/auth/register -H \"Content-Type: application/json\" -d '{\"name\":\"Test\",\"email\":\"test@test.com\",\"password\":\"Test123\"}')",
       "Bash(curl -v -X POST http://localhost:3000/api/auth/register -H \"Content-Type: application/json\" -d '{\"name\":\"Test\",\"email\":\"test999@test.com\",\"password\":\"Test123\"}')",
       "Bash(netstat -ano)",
-      "Bash(findstr \":3000\")"
+      "Bash(findstr \":3000\")",
+      "Bash(dir \"c:\\\\Users\\\\Admin\\\\Desktop\\\\Wahid_Mobile_FrontEnd\\\\assets\" /b)",
+      "Bash(findstr -i \"sucess\\\\|success\\\\|check\\\\|badge\")",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\Admin\\\\Desktop\\\\Wahid_Mobile_FrontEnd\\\\assets\" | Where-Object { $_.Name -match \"sucess|success|check|badge\" })"
     ]
   }
 }
