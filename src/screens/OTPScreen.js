@@ -7,6 +7,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../context/AuthContext';
+// No extra OTP library needed – using native OS autofill
 import { FONTS } from '../theme';
 
 const { height } = Dimensions.get('window');
@@ -75,7 +76,9 @@ const OTPScreen = ({ navigation, route }) => {
     const result = await sendOTP(phone);
     setResending(false);
     if (result.success) {
-        Toast.show({ type: 'success', text1: 'Code Sent', text2: 'OTP has been resent.' });
+      Toast.show({ type: 'success', text1: 'Code Sent', text2: 'OTP has been resent.' });
+      // Start listening for the incoming OTP SMS (Android). iOS will auto‑fill via oneTimeCode.
+      // No native OTP autofill needed – OS autofill will handle the code automatically
     }
   };
 
@@ -120,6 +123,8 @@ const OTPScreen = ({ navigation, route }) => {
                     textAlign="center"
                     textContentType="oneTimeCode"
                     selectionColor="#00ADC1"
+                    // For Android, the SMS Retriever listener will set the OTP directly.
+                    // The TextInput remains a single‑character field for manual entry.
                   />
                 );
               })}

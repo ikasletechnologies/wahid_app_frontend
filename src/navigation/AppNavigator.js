@@ -1,12 +1,12 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
-import SplashScreen    from '../screens/SplashScreen';
-import PhoneScreen     from '../screens/PhoneScreen';
-import OTPScreen       from '../screens/OTPScreen';
-import LoginScreen     from '../screens/LoginScreen';
-import RegisterScreen  from '../screens/RegisterScreen';
-import TabNavigator    from './TabNavigator';
+import SplashScreen from '../screens/SplashScreen';
+import PhoneScreen from '../screens/PhoneScreen';
+import OTPScreen from '../screens/OTPScreen';
+import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
+import TabNavigator from './TabNavigator';
 import NameDetailScreen from '../screens/NameDetailScreen';
 import NowPlayingScreen from '../screens/NowPlayingScreen';
 
