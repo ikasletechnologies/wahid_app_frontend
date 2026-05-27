@@ -6,7 +6,6 @@ import PhoneScreen     from '../screens/PhoneScreen';
 import OTPScreen       from '../screens/OTPScreen';
 import LoginScreen     from '../screens/LoginScreen';
 import RegisterScreen  from '../screens/RegisterScreen';
-import SuccessScreen   from '../screens/SuccessScreen';
 import TabNavigator    from './TabNavigator';
 import NameDetailScreen from '../screens/NameDetailScreen';
 import NowPlayingScreen from '../screens/NowPlayingScreen';

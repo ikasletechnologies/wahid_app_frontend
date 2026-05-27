@@ -7,6 +7,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../context/AuthContext';
+import { FONTS } from '../theme';
 
 const { height } = Dimensions.get('window');
 
@@ -65,7 +66,7 @@ const OTPScreen = ({ navigation, route }) => {
     const result = await sendOTP(phone);
     setResending(false);
     if (result.success) {
-      Toast.show({ type: 'success', text1: 'Code Sent', text2: 'OTP has been resent.' });
+        Toast.show({ type: 'success', text1: 'Code Sent', text2: 'OTP has been resent.' });
     }
   };
 
@@ -99,21 +100,27 @@ const OTPScreen = ({ navigation, route }) => {
           <View style={styles.formSection}>
             <Text style={styles.label}>Enter OTP</Text>
             <View style={styles.otpRow}>
-              {otp.map((digit, i) => (
-                <TextInput
-                  key={i}
-                  ref={el => { inputs.current[i] = el; }}
-                  style={[styles.otpBox, digit !== '' && styles.otpBoxActive]}
-                  value={digit}
-                  onChangeText={text => handleChange(text, i)}
-                  onKeyPress={e => handleKeyPress(e, i)}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  textAlign="center"
-                  textContentType="oneTimeCode"
-                  selectionColor="#03B7CE"
-                />
-              ))}
+              {otp.map((digit, i) => {
+                const isActive = digit !== '';
+                return (
+                  <TextInput
+                    key={i}
+                    ref={el => { inputs.current[i] = el; }}
+                    style={[
+                      styles.otpBox, 
+                      isActive && styles.otpBoxActive
+                    ]}
+                    value={digit}
+                    onChangeText={text => handleChange(text, i)}
+                    onKeyPress={e => handleKeyPress(e, i)}
+                    keyboardType="number-pad"
+                    maxLength={1}
+                    textAlign="center"
+                    textContentType="oneTimeCode"
+                    selectionColor="#00ADC1"
+                  />
+                );
+              })}
             </View>
           </View>
 
