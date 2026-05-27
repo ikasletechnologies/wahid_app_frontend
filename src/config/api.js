@@ -6,10 +6,12 @@ export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:
 
 export const ENDPOINTS = {
   // Auth — OTP flow (Twilio Verify)
+  checkPhone: `${API_BASE_URL}/api/auth/check-phone`, // POST { phone } → { exists: bool }
   sendOtp:   `${API_BASE_URL}/api/auth/send-otp`,   // POST { phone }
   verifyOtp: `${API_BASE_URL}/api/auth/verify-otp`, // POST { phone, code } → { verificationToken }
-  signup:    `${API_BASE_URL}/api/auth/signup`,    // POST { verificationToken, username, password }
-  refresh:   `${API_BASE_URL}/api/auth/refresh`,   // POST { refreshToken }
+  signup:          `${API_BASE_URL}/api/auth/signup`,           // POST { verificationToken, username, password }
+  checkUsername:   `${API_BASE_URL}/api/auth/check-username`,  // GET ?username=xxx → { available: bool }
+  refresh:         `${API_BASE_URL}/api/auth/refresh`,         // POST { refreshToken }
   logout:    `${API_BASE_URL}/api/auth/logout`,    // POST { refreshToken }
   profile:   `${API_BASE_URL}/api/me`,
 

@@ -22,15 +22,30 @@ const COUNTRIES = [
 ];
 
 const PhoneScreen = ({ navigation }) => {
-  const { sendOTP } = useAuth();
+  const { checkPhone, sendOTP } = useAuth();
 
-  const [country, setCountry]       = useState(COUNTRIES[0]);
-  const [phone, setPhone]           = useState('');
-  const [loading, setLoading]       = useState(false);
-  const [showPicker, setShowPicker] = useState(false);
-  const [focused, setFocused]       = useState(false);
+  const [country, setCountry]           = useState(COUNTRIES[0]);
+  const [phone, setPhone]               = useState('');
+  const [loading, setLoading]           = useState(false);
+  const [showPicker, setShowPicker]     = useState(false);
+  const [focused, setFocused]           = useState(false);
+  const [accountExists, setAccountExists] = useState(false);
+  const [existingPhone, setExistingPhone] = useState('');
 
   const phoneInput = useRef(null);
+
+  const handlePhoneChange = (text) => {
+    if (accountExists) setAccountExists(false);
+    if (text.startsWith('+')) {
+      const matched = COUNTRIES.find(c => text.startsWith(c.code));
+      if (matched) {
+        setCountry(matched);
+        setPhone(text.slice(matched.code.length));
+        return;
+      }
+    }
+    setPhone(text);
+  };
 
   const handleSend = async () => {
     const digits = phone.replace(/\D/g, '');
@@ -39,14 +54,47 @@ const PhoneScreen = ({ navigation }) => {
       return;
     }
     const fullPhone = `${country.code}${digits}`;
+
     setLoading(true);
-    const result = await sendOTP(fullPhone);
+    const check = await checkPhone(fullPhone);
+    setLoading(false);
+
+    if (!check.success) {
+      Toast.show({ type: 'error', text1: 'Error', text2: check.message });
+      return;
+    }
+
+    if (check.exists) {
+      setExistingPhone(fullPhone);
+      setAccountExists(true);
+      return;
+    }
+
+    // New user — send OTP and proceed to verification
+    setLoading(true);
+    const otpResult = await sendOTP(fullPhone);
+    setLoading(false);
+
+    if (!otpResult.success) {
+      Toast.show({ type: 'error', text1: 'Could Not Send OTP', text2: otpResult.message });
+      return;
+    }
+    navigation.navigate('OTP', { phone: fullPhone });
+  };
+
+  const handleSignInWithPassword = () => {
+    navigation.navigate('Login', { identifier: existingPhone });
+  };
+
+  const handleSignInWithOTP = async () => {
+    setLoading(true);
+    const result = await sendOTP(existingPhone);
     setLoading(false);
     if (!result.success) {
       Toast.show({ type: 'error', text1: 'Could Not Send OTP', text2: result.message });
       return;
     }
-    navigation.navigate('OTP', { phone: fullPhone });
+    navigation.navigate('OTP', { phone: existingPhone });
   };
 
   return (
@@ -97,7 +145,7 @@ const PhoneScreen = ({ navigation }) => {
                 placeholder="Enter a phone number"
                 placeholderTextColor="#4A5568"
                 value={phone}
-                onChangeText={setPhone}
+                onChangeText={handlePhoneChange}
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
                 keyboardType="phone-pad"
@@ -126,27 +174,70 @@ const PhoneScreen = ({ navigation }) => {
 
           {/* ── Footer ── */}
           <View style={styles.footer}>
-            <View style={styles.promptRow}>
-              <Text style={styles.promptText}>Already have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Login')} activeOpacity={0.7}>
-                <Text style={styles.promptLink}>Sign In</Text>
-              </TouchableOpacity>
-            </View>
+            {accountExists ? (
+              <>
+                <View style={styles.existsBox}>
+                  <Text style={styles.existsTitle}>Account already exists.</Text>
+                  <Text style={styles.existsSubtitle}>Please sign in.</Text>
+                </View>
 
-            <TouchableOpacity onPress={handleSend} disabled={loading} activeOpacity={0.85}>
-              <LinearGradient
-                colors={['#02889D', '#03B7CE', '#4BD5E8']}
-                locations={[0, 0.5048, 1]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={styles.button}
-              >
-                {loading
-                  ? <ActivityIndicator color="#fff" />
-                  : <Text style={styles.buttonText}>Get OTP</Text>
-                }
-              </LinearGradient>
-            </TouchableOpacity>
+                <TouchableOpacity onPress={handleSignInWithPassword} disabled={loading} activeOpacity={0.85}>
+                  <LinearGradient
+                    colors={['#02889D', '#03B7CE', '#4BD5E8']}
+                    locations={[0, 0.5048, 1]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={styles.button}
+                  >
+                    <Text style={styles.buttonText}>Sign In with Password</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={handleSignInWithOTP}
+                  disabled={loading}
+                  activeOpacity={0.85}
+                  style={styles.outlineButton}
+                >
+                  {loading
+                    ? <ActivityIndicator color="#03B7CE" />
+                    : <Text style={styles.outlineButtonText}>Sign In with OTP</Text>
+                  }
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => setAccountExists(false)}
+                  style={styles.resetRow}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.promptLink}>Use a different number</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <View style={styles.promptRow}>
+                  <Text style={styles.promptText}>Already have an account? </Text>
+                  <TouchableOpacity onPress={() => navigation.navigate('Login')} activeOpacity={0.7}>
+                    <Text style={styles.promptLink}>Sign In</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity onPress={handleSend} disabled={loading} activeOpacity={0.85}>
+                  <LinearGradient
+                    colors={['#02889D', '#03B7CE', '#4BD5E8']}
+                    locations={[0, 0.5048, 1]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={styles.button}
+                  >
+                    {loading
+                      ? <ActivityIndicator color="#fff" />
+                      : <Text style={styles.buttonText}>Get OTP</Text>
+                    }
+                  </LinearGradient>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -255,6 +346,47 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: 'auto',
   },
+
+  existsBox: {
+    backgroundColor: 'rgba(3,183,206,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(3,183,206,0.3)',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  existsTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  existsSubtitle: {
+    color: '#8A9A9D',
+    fontSize: 13,
+  },
+  outlineButton: {
+    height: 56,
+    borderRadius: 30,
+    borderWidth: 1.5,
+    borderColor: '#03B7CE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  outlineButtonText: {
+    color: '#03B7CE',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  resetRow: {
+    alignItems: 'center',
+    marginTop: 18,
+  },
+
   promptRow: {
     flexDirection: 'row',
     justifyContent: 'center',

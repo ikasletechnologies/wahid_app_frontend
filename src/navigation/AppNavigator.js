@@ -9,6 +9,7 @@ import RegisterScreen  from '../screens/RegisterScreen';
 import TabNavigator    from './TabNavigator';
 import NameDetailScreen from '../screens/NameDetailScreen';
 import NowPlayingScreen from '../screens/NowPlayingScreen';
+import SuccessScreen    from '../screens/SuccessScreen';
 
 const Stack = createNativeStackNavigator();
 

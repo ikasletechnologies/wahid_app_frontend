@@ -35,7 +35,25 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // ── OTP flow (Handled via Twilio Verify backend) ─────────────────────────
-  
+
+  const checkPhone = async (phone) => {
+    try {
+      const response = await http.post(ENDPOINTS.checkPhone, { phone });
+      return { success: true, exists: response.data?.exists ?? false };
+    } catch (error) {
+      const status = error.response?.status;
+      // 404 means the backend endpoint isn't implemented yet — treat as "new user"
+      // so signup can still proceed rather than blocking the user entirely.
+      if (status === 404) {
+        return { success: true, exists: false };
+      }
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Could not check phone number.',
+      };
+    }
+  };
+
   const sendOTP = async (phone) => {
     try {
       const response = await http.post(ENDPOINTS.sendOtp, { phone });
@@ -167,10 +185,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      token, 
-      loading, 
+    <AuthContext.Provider value={{
+      user,
+      token,
+      loading,
+      checkPhone,
       sendOTP,
       verifyOTP,
       signup,

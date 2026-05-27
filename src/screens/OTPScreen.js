@@ -17,34 +17,14 @@ const OTPScreen = ({ navigation, route }) => {
   const { phone } = route.params;
   const { sendOTP, verifyOTP } = useAuth();
 
-  const [otp, setOtp]           = useState(Array(OTP_LENGTH).fill(''));
-  const [loading, setLoading]   = useState(false);
+  const [otpValue, setOtpValue]   = useState('');
+  const [loading, setLoading]     = useState(false);
   const [resending, setResending] = useState(false);
+  const [focused, setFocused]     = useState(false);
 
-  const inputs = useRef([]);
+  const inputRef = useRef(null);
 
-  const handleChange = (text, index) => {
-    const digit = text.replace(/\D/g, '').slice(-1);
-    const next  = [...otp];
-    next[index] = digit;
-    setOtp(next);
-    if (digit && index < OTP_LENGTH - 1) {
-      inputs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyPress = (e, index) => {
-    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
-      inputs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleVerify = async () => {
-    const code = otp.join('');
-    if (code.length < OTP_LENGTH) {
-      Toast.show({ type: 'error', text1: 'Incomplete', text2: `Please enter all ${OTP_LENGTH} digits.` });
-      return;
-    }
+  const verifyAndNavigate = async (code) => {
     setLoading(true);
     const result = await verifyOTP(phone, code);
     setLoading(false);
@@ -61,12 +41,28 @@ const OTPScreen = ({ navigation, route }) => {
     }
   };
 
+  const handleOtpChange = (text) => {
+    const digits = text.replace(/\D/g, '').slice(0, OTP_LENGTH);
+    setOtpValue(digits);
+    if (digits.length === OTP_LENGTH) {
+      verifyAndNavigate(digits);
+    }
+  };
+
+  const handleVerify = async () => {
+    if (otpValue.length < OTP_LENGTH) {
+      Toast.show({ type: 'error', text1: 'Incomplete', text2: `Please enter all ${OTP_LENGTH} digits.` });
+      return;
+    }
+    await verifyAndNavigate(otpValue);
+  };
+
   const handleResend = async () => {
     setResending(true);
     const result = await sendOTP(phone);
     setResending(false);
     if (result.success) {
-        Toast.show({ type: 'success', text1: 'Code Sent', text2: 'OTP has been resent.' });
+      Toast.show({ type: 'success', text1: 'Code Sent', text2: 'OTP has been resent.' });
     }
   };
 
@@ -99,29 +95,48 @@ const OTPScreen = ({ navigation, route }) => {
           {/* ── OTP Boxes ── */}
           <View style={styles.formSection}>
             <Text style={styles.label}>Enter OTP</Text>
-            <View style={styles.otpRow}>
-              {otp.map((digit, i) => {
-                const isActive = digit !== '';
+
+            {/*
+              Tapping anywhere on the row focuses the hidden input.
+              The hidden input captures typed digits AND SMS autofill.
+              The six View boxes are purely visual.
+            */}
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={() => inputRef.current?.focus()}
+              style={styles.otpRow}
+            >
+              {Array(OTP_LENGTH).fill(0).map((_, i) => {
+                const isCursor = focused && otpValue.length === i;
+                const isFilled = i < otpValue.length;
                 return (
-                  <TextInput
+                  <View
                     key={i}
-                    ref={el => { inputs.current[i] = el; }}
                     style={[
-                      styles.otpBox, 
-                      isActive && styles.otpBoxActive
+                      styles.otpBox,
+                      (isFilled || isCursor) && styles.otpBoxActive,
                     ]}
-                    value={digit}
-                    onChangeText={text => handleChange(text, i)}
-                    onKeyPress={e => handleKeyPress(e, i)}
-                    keyboardType="number-pad"
-                    maxLength={1}
-                    textAlign="center"
-                    textContentType="oneTimeCode"
-                    selectionColor="#00ADC1"
-                  />
+                  >
+                    <Text style={styles.otpDigit}>{otpValue[i] || ''}</Text>
+                  </View>
                 );
               })}
-            </View>
+
+              {/* Single hidden input — handles both manual typing and SMS autofill */}
+              <TextInput
+                ref={inputRef}
+                style={styles.hiddenInput}
+                value={otpValue}
+                onChangeText={handleOtpChange}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                maxLength={OTP_LENGTH}
+                keyboardType="number-pad"
+                textContentType="oneTimeCode"
+                autoComplete="sms-otp"
+                caretHidden
+              />
+            </TouchableOpacity>
           </View>
 
           {/* ── Footer ── */}
@@ -197,6 +212,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: 16,
   },
+
   otpRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -209,13 +225,28 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: 'rgba(3,183,206,0.25)',
     borderRadius: 14,
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   otpBoxActive: {
     borderColor: '#03B7CE',
     backgroundColor: '#091A1E',
+  },
+  otpDigit: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+
+  // Covers the full otpRow area but invisible — receives all input
+  hiddenInput: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0,
+    color: 'transparent',
   },
 
   footerWrap: {

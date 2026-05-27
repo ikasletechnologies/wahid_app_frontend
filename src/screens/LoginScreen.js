@@ -24,9 +24,20 @@ const COUNTRIES = [
 const LoginScreen = ({ navigation, route }) => {
   const { identifier: initialIdentifier } = route.params || {};
 
-  const [country, setCountry]           = useState(COUNTRIES[0]);
-  const [showPicker, setShowPicker]     = useState(false);
-  const [identifier, setIdentifier]     = useState(initialIdentifier || '');
+  const [country, setCountry] = useState(() => {
+    if (initialIdentifier?.startsWith('+')) {
+      return COUNTRIES.find(c => initialIdentifier.startsWith(c.code)) || COUNTRIES[0];
+    }
+    return COUNTRIES[0];
+  });
+  const [showPicker, setShowPicker] = useState(false);
+  const [identifier, setIdentifier] = useState(() => {
+    if (initialIdentifier?.startsWith('+')) {
+      const matched = COUNTRIES.find(c => initialIdentifier.startsWith(c.code));
+      return matched ? initialIdentifier.slice(matched.code.length) : initialIdentifier;
+    }
+    return initialIdentifier || '';
+  });
   const [password, setPassword]         = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading]           = useState(false);
@@ -41,8 +52,8 @@ const LoginScreen = ({ navigation, route }) => {
       return;
     }
     setLoading(true);
-    const digits    = identifier.replace(/\D/g, '');
-    const fullPhone = digits.length >= 7 ? `${country.code}${digits}` : identifier.trim();
+    const raw       = identifier.trim();
+    const fullPhone = raw.startsWith('+') ? raw : `${country.code}${raw.replace(/\D/g, '')}`;
     const result    = await login(fullPhone, password);
     setLoading(false);
     if (!result.success) {

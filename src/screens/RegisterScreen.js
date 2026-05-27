@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, ScrollView,
@@ -9,17 +9,23 @@ import Toast from 'react-native-toast-message';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import http from '../config/http';
+import { ENDPOINTS } from '../config/api';
 
 const { height } = Dimensions.get('window');
 
 const GENDERS = ['Male', 'Female', 'Other'];
 
+// username check statuses
+const US = { IDLE: 'idle', CHECKING: 'checking', AVAILABLE: 'available', TAKEN: 'taken' };
+
 const RegisterScreen = ({ navigation, route }) => {
-  const { verificationToken, phone } = route.params || {};
+  const { verificationToken } = route.params || {};
   const { signup } = useAuth();
 
   const [name, setName]               = useState('');
   const [username, setUsername]       = useState('');
+  const [usernameStatus, setUsernameStatus] = useState(US.IDLE);
   const [password, setPassword]       = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [gender, setGender]           = useState('Male');
@@ -28,9 +34,46 @@ const RegisterScreen = ({ navigation, route }) => {
   const [loading, setLoading]         = useState(false);
   const [focused, setFocused]         = useState(null);
 
+  const debounceTimer = useRef(null);
+
   const formattedDob = dob
-    ? dob.toLocaleDateString('en-GB') // DD/MM/YYYY
+    ? dob.toLocaleDateString('en-GB')
     : null;
+
+  // Debounced username availability check
+  useEffect(() => {
+    const trimmed = username.trim();
+
+    clearTimeout(debounceTimer.current);
+
+    if (!trimmed || trimmed.length < 3) {
+      setUsernameStatus(US.IDLE);
+      return;
+    }
+
+    debounceTimer.current = setTimeout(async () => {
+      setUsernameStatus(US.CHECKING);
+      try {
+        const res = await http.get(ENDPOINTS.checkUsername, {
+          params: { username: trimmed },
+          validateStatus: (s) => s < 500,
+        });
+        if (res.status === 404) {
+          setUsernameStatus(US.AVAILABLE);
+          return;
+        }
+        if (res.status !== 200) {
+          setUsernameStatus(US.IDLE);
+          return;
+        }
+        setUsernameStatus(res.data?.available ? US.AVAILABLE : US.TAKEN);
+      } catch {
+        setUsernameStatus(US.IDLE);
+      }
+    }, 500);
+
+    return () => clearTimeout(debounceTimer.current);
+  }, [username]);
 
   const handleRegister = async () => {
     if (!name.trim()) {
@@ -39,6 +82,10 @@ const RegisterScreen = ({ navigation, route }) => {
     }
     if (!username.trim()) {
       Toast.show({ type: 'error', text1: 'Missing Info', text2: 'Please enter a username.' });
+      return;
+    }
+    if (usernameStatus === US.TAKEN) {
+      Toast.show({ type: 'error', text1: 'Username Taken', text2: 'Please choose a different username.' });
       return;
     }
     if (!password || password.length < 6) {
@@ -71,6 +118,26 @@ const RegisterScreen = ({ navigation, route }) => {
         refreshToken: result.refreshToken,
       });
     }
+  };
+
+  const renderUsernameIcon = () => {
+    if (usernameStatus === US.CHECKING) {
+      return <ActivityIndicator size="small" color="#03B7CE" style={styles.statusIcon} />;
+    }
+    if (usernameStatus === US.AVAILABLE) {
+      return <Ionicons name="checkmark-circle" size={24} color="#22C55E" style={styles.statusIcon} />;
+    }
+    if (usernameStatus === US.TAKEN) {
+      return <Ionicons name="close-circle" size={24} color="#EF4444" style={styles.statusIcon} />;
+    }
+    return null;
+  };
+
+  const usernameBorderColor = () => {
+    if (focused === 'username')          return '#03B7CE';
+    if (usernameStatus === US.AVAILABLE) return '#22C55E';
+    if (usernameStatus === US.TAKEN)     return '#EF4444';
+    return 'rgba(3,183,206,0.3)';
   };
 
   return (
@@ -118,19 +185,31 @@ const RegisterScreen = ({ navigation, route }) => {
 
             {/* Username */}
             <Text style={[styles.label, { marginTop: 20 }]}>Username</Text>
-            <View style={[styles.inputRow, focused === 'username' && styles.inputRowFocused]}>
+            <View style={[
+              styles.inputRow,
+              { borderColor: usernameBorderColor() },
+              focused === 'username' && styles.inputRowFocused,
+            ]}>
               <TextInput
                 style={styles.input}
                 placeholder="your_unique_username"
                 placeholderTextColor="#4A5568"
                 value={username}
-                onChangeText={setUsername}
+                onChangeText={(val) => setUsername(val.toLowerCase().replace(/[^a-z0-9_.]/g, ''))}
                 onFocus={() => setFocused('username')}
                 onBlur={() => setFocused(null)}
                 autoCapitalize="none"
+                autoCorrect={false}
                 selectionColor="#03B7CE"
               />
+              {renderUsernameIcon()}
             </View>
+            {usernameStatus === US.AVAILABLE && (
+              <Text style={styles.hintAvailable}>Username is available</Text>
+            )}
+            {usernameStatus === US.TAKEN && (
+              <Text style={styles.hintTaken}>Username is already taken</Text>
+            )}
 
             {/* Password */}
             <Text style={[styles.label, { marginTop: 20 }]}>Password</Text>
@@ -185,7 +264,7 @@ const RegisterScreen = ({ navigation, route }) => {
               onPress={() => { setFocused('dob'); setShowDatePicker(true); }}
               activeOpacity={0.8}
             >
-              <Text style={[styles.input, { paddingTop: 2 }, !formattedDob && { color: '#4A5568' }]}>
+              <Text style={[styles.dobText, !formattedDob && styles.dobPlaceholder]}>
                 {formattedDob || 'DD/MM/YYYY'}
               </Text>
               <Ionicons name="calendar-outline" size={20} color="#7A8FA6" />
@@ -197,7 +276,7 @@ const RegisterScreen = ({ navigation, route }) => {
                 mode="date"
                 display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                 maximumDate={new Date()}
-                onChange={(event, selected) => {
+                onChange={(_event, selected) => {
                   setShowDatePicker(Platform.OS === 'ios');
                   setFocused(null);
                   if (selected) setDob(selected);
@@ -287,8 +366,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   inputRowFocused: {
-    borderColor: '#03B7CE',
     backgroundColor: '#091A1E',
+  },
+  inputRowGlow: {
+    shadowColor: '#03B7CE',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+  },
+  inputRowGlowGreen: {
+    shadowColor: '#22C55E',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  inputRowGlowRed: {
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   input: {
     flex: 1,
@@ -298,6 +394,32 @@ const styles = StyleSheet.create({
   },
   eyeBtn: {
     padding: 6,
+  },
+  statusIcon: {
+    marginLeft: 8,
+  },
+  hintAvailable: {
+    color: '#22C55E',
+    fontSize: 12,
+    marginTop: 6,
+    marginLeft: 14,
+  },
+  hintTaken: {
+    color: '#EF4444',
+    fontSize: 12,
+    marginTop: 6,
+    marginLeft: 14,
+  },
+
+  // DOB text — separate from input so height:'100%' doesn't misalign it
+  dobText: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 15,
+    textAlignVertical: 'center',
+  },
+  dobPlaceholder: {
+    color: '#4A5568',
   },
 
   /* Gender */

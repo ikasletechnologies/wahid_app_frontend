@@ -1,109 +1,101 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { useAppTheme } from '../context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 
-/**
- * A theme-aware Toast component that adapts its styling
- * based on the current application theme (Light/Dark).
- */
-const ThemedToast = () => {
-  const { colors, isDark } = useAppTheme();
+const VARIANTS = {
+  info: {
+    iconName: 'information-circle',
+    iconColor: '#0EA5E9',
+    iconBg:    '#E0F2FE',
+  },
+  success: {
+    iconName: 'checkmark-circle',
+    iconColor: '#22C55E',
+    iconBg:    '#DCFCE7',
+  },
+  warning: {
+    iconName: 'warning',
+    iconColor: '#F59E0B',
+    iconBg:    '#FEF3C7',
+  },
+  error: {
+    iconName: 'alert-circle',
+    iconColor: '#EF4444',
+    iconBg:    '#FEE2E2',
+  },
+};
 
-  const toastConfig = {
-    success: ({ text1, text2 }) => (
+const ToastCard = ({ text1, text2, hide, type }) => {
+  const v = VARIANTS[type] || VARIANTS.info;
+
+  return (
+    <View style={{
+      width: '92%',
+      alignSelf: 'center',
+      backgroundColor: '#FFFFFF',
+      borderRadius: 16,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+      elevation: 8,
+    }}>
+
+      {/* Icon box */}
       <View style={{
-        width: '92%',
-        alignSelf: 'center',
-        backgroundColor: isDark ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.98)',
-        borderRadius: 16,
-        padding: 16,
-        borderWidth: 1,
-        borderColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(45, 106, 79, 0.2)',
-        borderLeftWidth: 6,
-        borderLeftColor: colors.primary,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-        elevation: 12,
-      }}>
-        <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text, marginBottom: text2 ? 4 : 0 }}>
-          {text1}
-        </Text>
-        {text2 ? (
-          <Text style={{ fontSize: 13, color: colors.textMuted, lineHeight: 18 }}>
-            {text2}
-          </Text>
-        ) : null}
-      </View>
-    ),
-    info: ({ text1, text2 }) => (
-      <View style={{
-        width: '92%',
-        alignSelf: 'center',
-        backgroundColor: isDark ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.98)',
-        borderRadius: 16,
-        padding: 16,
-        borderWidth: 1,
-        borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-        borderLeftWidth: 6,
-        borderLeftColor: isDark ? '#FFF' : '#666',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-        elevation: 10,
-      }}>
-        <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text, marginBottom: text2 ? 4 : 0 }}>
-          {text1}
-        </Text>
-        {text2 ? (
-          <Text style={{ fontSize: 13, color: colors.textMuted, lineHeight: 18 }}>
-            {text2}
-          </Text>
-        ) : null}
-      </View>
-    ),
-    error: ({ text1, text2 }) => (
-      <View style={{
-        width: '95%',
-        alignSelf: 'center',
-        backgroundColor: isDark ? 'rgba(26, 26, 26, 0.98)' : 'rgba(255, 255, 255, 0.98)',
-        borderRadius: 14,
-        padding: 16,
-        borderWidth: 1,
-        borderColor: isDark ? 'rgba(255, 68, 68, 0.3)' : 'rgba(255, 68, 68, 0.2)',
-        borderLeftWidth: 5,
-        borderLeftColor: '#FF4444',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: isDark ? 0.4 : 0.15,
-        shadowRadius: 10,
-        elevation: 10,
-        flexDirection: 'column',
+        width: 52,
+        height: 52,
+        borderRadius: 12,
+        backgroundColor: v.iconBg,
         justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 14,
+        flexShrink: 0,
       }}>
-        <Text style={{ 
-          fontSize: 15, 
-          fontWeight: '700', 
-          color: colors.text, 
-          marginBottom: text2 ? 4 : 0,
-          letterSpacing: 0.3
+        <Ionicons name={v.iconName} size={28} color={v.iconColor} />
+      </View>
+
+      {/* Text */}
+      <View style={{ flex: 1 }}>
+        <Text style={{
+          fontSize: 15,
+          fontWeight: '700',
+          color: '#111827',
+          marginBottom: text2 ? 3 : 0,
         }}>
           {text1}
         </Text>
         {text2 ? (
-          <Text style={{ 
-            fontSize: 13, 
-            color: colors.textMuted,
-            lineHeight: 18
-          }}>
+          <Text style={{ fontSize: 13, color: '#6B7280', lineHeight: 18 }}>
             {text2}
           </Text>
         ) : null}
       </View>
-    )
+
+      {/* Close */}
+      <TouchableOpacity
+        onPress={hide}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        style={{ paddingLeft: 8 }}
+      >
+        <Ionicons name="close" size={18} color="#9CA3AF" />
+      </TouchableOpacity>
+
+    </View>
+  );
+};
+
+const ThemedToast = () => {
+  const toastConfig = {
+    success: (props) => <ToastCard {...props} type="success" />,
+    error:   (props) => <ToastCard {...props} type="error" />,
+    info:    (props) => <ToastCard {...props} type="info" />,
+    warning: (props) => <ToastCard {...props} type="warning" />,
   };
 
   return <Toast config={toastConfig} position="top" topOffset={65} />;
