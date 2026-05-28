@@ -11,16 +11,39 @@ import * as SplashScreen from 'expo-splash-screen';
 import AppNavigator from './src/navigation/AppNavigator';
 import ThemedToast from './src/components/ThemedToast';
 import NetworkStatusBanner from './src/components/NetworkStatusBanner';
+import NetworkScreen from './src/screens/NetworkScreen';
+import NetInfo from '@react-native-community/netinfo';
 
 // Keep the native splash screen visible until the app is ready
 SplashScreen.preventAutoHideAsync();
 
 export default function App() {
+  const [isOffline, setIsOffline] = React.useState(false);
+
   React.useEffect(() => {
     // Hide the native splash screen as soon as the JS is ready.
     // This allows the custom animated SplashScreen to take over.
     SplashScreen.hideAsync();
+
+    // Listen to network status changes
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      const offline = state.isConnected === false || state.isInternetReachable === false;
+      setIsOffline(offline);
+    });
+
+    return () => unsubscribe();
   }, []);
+
+  if (isOffline) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ThemeProvider>
+          <NetworkScreen onConnectionRestored={() => setIsOffline(false)} />
+          <ThemedToast />
+        </ThemeProvider>
+      </GestureHandlerRootView>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -45,3 +68,4 @@ export default function App() {
     </GestureHandlerRootView>
   );
 }
+

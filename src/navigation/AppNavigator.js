@@ -10,6 +10,7 @@ import TabNavigator    from './TabNavigator';
 import NameDetailScreen from '../screens/NameDetailScreen';
 import NowPlayingScreen from '../screens/NowPlayingScreen';
 import SuccessScreen    from '../screens/SuccessScreen';
+import StreakScreen     from '../screens/StreakScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -33,6 +34,11 @@ const AppNavigator = () => {
             name="NowPlaying"
             component={NowPlayingScreen}
             options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true }}
+          />
+          <Stack.Screen
+            name="Streak"
+            component={StreakScreen}
+            options={{ animation: 'slide_from_right' }}
           />
         </>
       ) : (

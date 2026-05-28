@@ -47,23 +47,23 @@ export const PALETTE = {
     playerBg: ['#0A1F14', '#0D2B1A'], // dark-mode player header
   },
   light: {
-    // ── Islamic sage-green light theme ──────────────────────────────────────
-    background: '#F2F7F4',            // very light sage
+    // ── Premium Pastel Lavender-Blue Theme ──────────────────────────────────
+    background: '#EDF1FD',            // premium soft lavender-blue
     surface: '#FFFFFF',
     card: '#FFFFFF',
 
-    text: '#1A2E22',                  // dark green-tinted text
-    textMuted: '#4D6B5A',             // muted sage
-    textDimmed: '#A0B8A8',            // very muted sage
+    text: '#0F172A',                  // slate dark
+    textMuted: '#64748B',             // slate-500
+    textDimmed: '#94A3B8',            // slate-400
 
-    border: 'rgba(45, 106, 79, 0.14)',
-    borderStrong: 'rgba(45, 106, 79, 0.26)',
+    border: 'rgba(15, 23, 42, 0.06)',
+    borderStrong: 'rgba(6, 182, 212, 0.15)', // cyan accent border
 
-    glass: 'rgba(45, 106, 79, 0.05)',
-    overlay: 'rgba(242, 247, 244, 0.85)',
+    glass: 'rgba(6, 182, 212, 0.05)',
+    overlay: 'rgba(237, 241, 253, 0.85)',
 
-    primary: '#2D6A4F',               // forest green (replaces gold in light)
-    playerBg: ['#2D6A4F', '#1B4332'], // light-mode player header gradient
+    primary: '#06b6d4',               // vibrant premium cyan
+    playerBg: ['#06b6d4', '#0891b2'], // cyan player gradient
   },
 };
 

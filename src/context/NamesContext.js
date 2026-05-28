@@ -123,6 +123,10 @@ export const NamesProvider = ({ children }) => {
   const [learnedIds, setLearnedIds] = useState([]);
   const [masteredIds, setMasteredIds] = useState([]);
   const [streak, setStreak] = useState(0);
+  const [streakDetails, setStreakDetails] = useState({
+    activeDates: [],
+    weeklyProgress: { Sun: false, Mon: false, Tue: false, Wed: false, Thu: false, Fri: false, Sat: false },
+  });
   const [revisitCounts, setRevisitCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -136,15 +140,20 @@ export const NamesProvider = ({ children }) => {
       setLearnedIds([]);
       setMasteredIds([]);
       setStreak(0);
+      setStreakDetails({
+        activeDates: [],
+        weeklyProgress: { Sun: false, Mon: false, Tue: false, Wed: false, Thu: false, Fri: false, Sat: false },
+      });
     }
   }, [token]);
 
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      const [cachedNames, cachedProgress] = await Promise.all([
+      const [cachedNames, cachedProgress, cachedStreak] = await Promise.all([
         AsyncStorage.getItem('names_cache'),
         AsyncStorage.getItem('progress_cache'),
+        AsyncStorage.getItem('streak_details_cache'),
       ]);
 
       if (cachedNames) {
@@ -160,6 +169,9 @@ export const NamesProvider = ({ children }) => {
         setStreak(s || 0);
         if (revisits) setRevisitCounts(revisits);
       }
+      if (cachedStreak) {
+        setStreakDetails(JSON.parse(cachedStreak));
+      }
 
       await syncWithBackend();
     } catch (error) {
@@ -172,9 +184,11 @@ export const NamesProvider = ({ children }) => {
   const syncWithBackend = async () => {
     if (!token) return;
     try {
-      const [namesRes, progressRes] = await Promise.all([
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const [namesRes, progressRes, streakRes] = await Promise.all([
         http.get(`${ENDPOINTS.names}?limit=100`),
         http.get(ENDPOINTS.progress),
+        http.get(`${ENDPOINTS.streak}?localDate=${todayStr}`),
       ]);
 
       if (namesRes.data?.success && Array.isArray(namesRes.data?.data)) {
@@ -196,6 +210,14 @@ export const NamesProvider = ({ children }) => {
           revisits: revisits || {},
         }));
       }
+
+      if (streakRes.data?.success && streakRes.data?.data) {
+        const { streak: s, activeDates, weeklyProgress } = streakRes.data.data;
+        if (s !== undefined) setStreak(s || 0);
+        const details = { activeDates: activeDates || [], weeklyProgress: weeklyProgress || {} };
+        setStreakDetails(details);
+        AsyncStorage.setItem('streak_details_cache', JSON.stringify(details));
+      }
     } catch (error) {
       console.error('[NamesContext] Sync Error:', error.message);
     }
@@ -215,7 +237,8 @@ export const NamesProvider = ({ children }) => {
       if (!learnedIds.includes(nameNumber)) {
         setLearnedIds(prev => [...prev, nameNumber]);
       }
-      const res = await http.post(ENDPOINTS.learn, { nameNumber });
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const res = await http.post(ENDPOINTS.learn, { nameNumber, localDate: todayStr });
       if (res.data?.success) {
         if (res.data.data?.streak !== undefined) setStreak(res.data.data.streak);
         if (res.data.data?.mastered && !masteredIds.includes(nameNumber)) {
@@ -351,6 +374,7 @@ export const NamesProvider = ({ children }) => {
       learnedIds,
       masteredIds,
       streak,
+      streakDetails,
       revisitCounts,
       loading,
       refreshing,

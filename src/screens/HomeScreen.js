@@ -8,6 +8,8 @@ import {
   Dimensions,
   StatusBar,
   RefreshControl,
+  Image,
+  ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,9 +24,19 @@ const { width } = Dimensions.get('window');
 const HomeScreen = ({ navigation }) => {
   const { user } = useAuth();
   const { colors, isDark } = useAppTheme();
-  const { names, learnedIds, masteredIds, streak, getNameOfDay, refresh, refreshing } = useNames();
+  const { names, learnedIds, masteredIds, streak, refresh, refreshing } = useNames();
 
-  const nameOfDay = useMemo(() => getNameOfDay(), [getNameOfDay]);
+  const greeting = useMemo(() => {
+    const hours = new Date().getHours();
+    if (hours < 12) return 'Good Morning!';
+    if (hours < 18) return 'Good Afternoon!';
+    return 'Good Evening!';
+  }, []);
+
+  const initial = useMemo(() => {
+    const name = user?.name || 'Wahid';
+    return name.charAt(0).toUpperCase();
+  }, [user]);
 
   const stats = useMemo(() => {
     const total = 99;
@@ -54,169 +66,268 @@ const HomeScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top']}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+
+      {/* ── Pinned Top Section ── */}
+      <View style={styles.fixedTopContainer}>
+        {/* ── Header ── */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <View style={[styles.avatarBubble, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : '#cffafe' }]}>
+              <Text style={[styles.avatarInitial, { color: '#06b6d4' }]}>{initial}</Text>
+            </View>
+            <View style={styles.headerTextCol}>
+              <Text style={[styles.welcomeText, { color: isDark ? colors.textMuted : '#475569' }]}>
+                Hello {user?.name || 'Wahid'},
+              </Text>
+              <Text style={[styles.userName, { color: isDark ? colors.text : '#0f172a' }]}>
+                {greeting}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.headerRight}>
+            <TouchableOpacity 
+              style={styles.streakBadge} 
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('Streak')}
+            >
+              <View style={[
+                styles.streakContainer,
+                {
+                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'
+                }
+              ]}>
+                <Image
+                  source={require('../../assets/streak.png')}
+                  style={styles.streakIconImage}
+                  resizeMode="contain"
+                />
+                <Text style={styles.streakText}>{String(streak || 1).padStart(2, '0')}</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.bellButton,
+                {
+                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'
+                }
+              ]}
+              activeOpacity={0.8}
+            >
+              <View style={styles.bellIconWrapper}>
+                <Ionicons name="notifications" size={21} color="#06b6d4" />
+                <View style={styles.notificationDot} />
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* ── Progress Card ── */}
+        <View style={[
+          styles.progressContainer,
+          {
+            backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'
+          }
+        ]}>
+          <View style={styles.progressHeader}>
+            <Text style={styles.progressTitle}>Your Progress</Text>
+            <Text style={[styles.progressPercentText, { color: colors.text }]}>
+              {Math.round(stats.progress)}% Completed
+            </Text>
+          </View>
+
+          <View style={[
+            styles.progressBarBg,
+            { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }
+          ]}>
+            <LinearGradient
+              colors={['#06b6d4', '#22d3ee']}
+              style={[styles.progressBarFill, { width: `${stats.progress}%` }]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            />
+          </View>
+
+          <View style={styles.metricsRow}>
+            {/* Learned Metric Card */}
+            <TouchableOpacity
+              style={styles.metricCardWrap}
+              activeOpacity={0.75}
+              onPress={() => navigation.navigate('Names', { statusFilter: 'learned', filter: null })}
+            >
+              <ImageBackground
+                source={require('../../assets/sml-Card.png')}
+                style={styles.metricCardBackground}
+                imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
+              >
+                <View style={styles.metricCardInner}>
+                  <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.learned}</Text>
+                  <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Learned</Text>
+
+                  {/* Icon Bubble */}
+                  <View style={styles.iconBubble}>
+                    <Image
+                      source={require('../../assets/learnIcon.png')}
+                      style={styles.metricCardIconImage}
+                      resizeMode="contain"
+                    />
+                  </View>
+                </View>
+              </ImageBackground>
+            </TouchableOpacity>
+
+            {/* Mastered Metric Card */}
+            <TouchableOpacity
+              style={styles.metricCardWrap}
+              activeOpacity={0.75}
+              onPress={() => navigation.navigate('Names', { statusFilter: 'mastered', filter: null })}
+            >
+              <ImageBackground
+                source={require('../../assets/sml-Card.png')}
+                style={styles.metricCardBackground}
+                imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
+              >
+                <View style={styles.metricCardInner}>
+                  <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.mastered}</Text>
+                  <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Mastered</Text>
+
+                  {/* Icon Bubble */}
+                  <View style={styles.iconBubble}>
+                    <Image
+                      source={require('../../assets/masterIcon.png')}
+                      style={styles.metricCardIconImage}
+                      resizeMode="contain"
+                    />
+                  </View>
+                </View>
+              </ImageBackground>
+            </TouchableOpacity>
+
+            {/* Remaining Metric Card */}
+            <TouchableOpacity
+              style={styles.metricCardWrap}
+              activeOpacity={0.75}
+              onPress={() => navigation.navigate('Names', { statusFilter: 'remaining', filter: null })}
+            >
+              <ImageBackground
+                source={require('../../assets/sml-Card.png')}
+                style={styles.metricCardBackground}
+                imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
+              >
+                <View style={styles.metricCardInner}>
+                  <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.remaining}</Text>
+                  <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Remaining</Text>
+
+                  {/* Icon Bubble */}
+                  <View style={styles.iconBubble}>
+                    <Image
+                      source={require('../../assets/remainIcon.png')}
+                      style={styles.metricCardIconImage}
+                      resizeMode="contain"
+                    />
+                  </View>
+                </View>
+              </ImageBackground>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* ── Categories Section Title ── */}
+        <View style={styles.categoriesHeaderRow}>
+          <Text style={[styles.categoriesTitle, { color: colors.text }]}>Categories</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Names')} activeOpacity={0.7}>
+            <Ionicons name="list" size={22} color="#06b6d4" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* ── Scrollable Categories Feed ── */}
       <ScrollView
+        style={styles.scrollList}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={refresh}
-            tintColor="#c9a84c"
-            colors={['#c9a84c']}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
         }
       >
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.welcomeText, { color: colors.textMuted }]}>Assalamu Alaikum,</Text>
-            <Text style={[styles.userName, { color: colors.text }]}>{user?.name || 'Brother/Sister'}</Text>
-          </View>
-          <TouchableOpacity style={styles.streakBadge}>
-            <LinearGradient
-              colors={[colors.primary, isDark ? '#8a6d1e' : '#e6c867']}
-              style={styles.streakGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="flame" size={16} color={isDark ? COLORS.black : COLORS.white} />
-              <Text style={[styles.streakText, { color: isDark ? COLORS.black : COLORS.white }]}>{streak}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-
-        {/* ── Name of the Day Card ── */}
-        {nameOfDay && (
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={() => navigation.navigate('NameDetail', { name: nameOfDay })}
-          >
-            <LinearGradient
-              colors={isDark ? ['rgba(20, 22, 33, 1)', 'rgba(15, 17, 25, 1)'] : [colors.card, colors.surface]}
-              style={[styles.notdCard, { borderColor: colors.borderStrong }]}
-            >
-              <View style={styles.notdLabelWrap}>
-                <Text style={[styles.notdLabel, { color: colors.primary }]}>NAME OF THE DAY</Text>
-              </View>
-
-              <Text style={[styles.arabicName, { color: colors.primary }]}>{nameOfDay.arabic}</Text>
-              <Text style={[styles.transName, { color: colors.text }]}>{nameOfDay.transliteration}</Text>
-              <Text style={[styles.meaningText, { color: colors.textMuted }]}>{nameOfDay.meaning}</Text>
-
-              <Text style={[styles.bgNumber, { color: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.03)' }]}>{nameOfDay.number}</Text>
-
-              <View style={styles.notdFooter}>
-                <View style={[styles.learnBtn, { backgroundColor: colors.primary }]}>
-                  <Text style={[styles.learnBtnText, { color: isDark ? COLORS.black : COLORS.white }]}>STUDY NOW</Text>
-                </View>
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
-        )}
-
-        {/* ── Progress Summary ── */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>YOUR PROGRESS</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Journey')}>
-            <Text style={[styles.seeAllText, { color: colors.primary }]}>DASHBOARD</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.metricsGrid}>
-          <TouchableOpacity
-            style={[styles.metricCard, { backgroundColor: colors.glass, borderColor: colors.border }]}
-            activeOpacity={0.75}
-            onPress={() => navigation.navigate('Names', { statusFilter: 'learned', filter: null })}
-          >
-            <Text style={styles.metricValue}>{stats.learned}</Text>
-            <Text style={[styles.metricLabel, { color: colors.textMuted }]}>LEARNED</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.metricCard, { backgroundColor: colors.glass, borderColor: colors.border }]}
-            activeOpacity={0.75}
-            onPress={() => navigation.navigate('Names', { statusFilter: 'mastered', filter: null })}
-          >
-            <Text style={[styles.metricValue, { color: colors.primary }]}>{stats.mastered}</Text>
-            <Text style={[styles.metricLabel, { color: colors.textMuted }]}>MASTERED</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.metricCard, { backgroundColor: colors.glass, borderColor: colors.border }]}
-            activeOpacity={0.75}
-            onPress={() => navigation.navigate('Names', { statusFilter: 'remaining', filter: null })}
-          >
-            <Text style={[styles.metricValue, { color: colors.textMuted }]}>{stats.remaining}</Text>
-            <Text style={[styles.metricLabel, { color: colors.textMuted }]}>REMAINING</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Progress Bar */}
-        <View style={styles.progressBarContainer}>
-          <View style={styles.progressTop}>
-            <Text style={styles.progressPercent}>{Math.round(stats.progress)}% COMPLETED</Text>
-          </View>
-          <View style={[styles.progressBg, { backgroundColor: colors.borderSolid || colors.borderStrong }]}>
-            <LinearGradient
-              colors={['#2d9c96', colors.primary]}
-              style={[styles.progressFill, { width: `${stats.progress}%` }]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            />
-          </View>
-        </View>
-
-        {/* ── Categories 2-Column Grid ── */}
-        <View style={[styles.sectionHeader, { marginTop: SPACE.sm }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>CATEGORIES</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Names')}>
-            <Text style={[styles.seeAllText, { color: colors.primary }]}>SEE ALL</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.catGrid}>
+        <View style={styles.catVerticalList}>
           {Object.values(CATEGORIES).map((cat) => {
             const cs = categoryStats[cat.id] || { total: 0, learned: 0 };
             const pct = cs.total > 0 ? Math.round((cs.learned / cs.total) * 100) : 0;
+            const isCompleted = pct === 100;
+
+            const cardBgColors = isDark
+              ? (isCompleted ? ['#062f1d', '#022c22'] : ['#0f172a', '#020617'])
+              : (isCompleted ? ['#f0fdf4', '#dcfce7'] : ['#ecfeff', '#cffafe']);
+
+            const cardBorderColor = isDark
+              ? (isCompleted ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255,255,255,0.05)')
+              : (isCompleted ? '#bbf7d0' : '#cffafe');
+
+            const progressColor = isCompleted ? '#22c55e' : '#06b6d4';
+
             return (
               <TouchableOpacity
                 key={cat.id}
-                style={[styles.catCard, { backgroundColor: colors.glass, borderColor: colors.border }]}
-                activeOpacity={0.82}
+                style={[
+                  styles.verticalCatCard,
+                  {
+                    borderColor: cardBorderColor,
+                  }
+                ]}
+                activeOpacity={0.85}
                 onPress={() => navigation.navigate('Names', { filter: cat.id, statusFilter: null })}
               >
-                <View
-                  style={[
-                    styles.catIconWrap,
-                    {
-                      backgroundColor: cat.color + '20',
-                      borderColor: cat.color + '40',
-                    },
-                  ]}
+                <LinearGradient
+                  colors={cardBgColors}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.catCardInner}
                 >
-                  <Ionicons name={cat.icon} size={20} color={cat.color} />
-                </View>
+                  <View style={styles.catLeftSection}>
+                    <Text style={[styles.verticalCatName, { color: colors.text }]}>{cat.name}</Text>
+                    <Text style={[styles.verticalCatSubtitle, { color: colors.textMuted }]}>{cs.total} Names</Text>
 
-                <Text style={[styles.catName, { color: colors.text }]} numberOfLines={2}>
-                  {cat.name}
-                </Text>
+                    <View style={styles.catProgressWrapper}>
+                      <View style={styles.catProgressHeaderRow}>
+                        <Text style={[styles.catProgressDetails, { color: colors.textMuted }]}>
+                          {cs.learned}/{cs.total} - {pct}% Completed
+                        </Text>
+                      </View>
+                      <View style={[styles.catProgressBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }]}>
+                        <LinearGradient
+                          colors={isCompleted ? ['#22c55e', '#4ade80'] : ['#06b6d4', '#22d3ee']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          style={[styles.catProgressBarFill, { width: `${pct}%` }]}
+                        />
+                      </View>
+                    </View>
+                  </View>
 
-                <Text style={[styles.catMeta, { color: colors.textMuted }]}>
-                  {cs.total > 0 ? `${cs.total} names` : '– names'} · {pct}%
-                </Text>
-
-                <View style={[styles.catProgressBg, { backgroundColor: colors.borderStrong }]}>
-                  <View
-                    style={[
-                      styles.catProgressFill,
-                      { width: `${pct}%`, backgroundColor: cat.color },
-                    ]}
-                  />
-                </View>
+                  <View style={styles.catRightSection}>
+                    <Text
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      style={[styles.giantPercentage, { color: progressColor, opacity: isDark ? 0.12 : 0.22 }]}
+                    >
+                      {pct}%
+                    </Text>
+                  </View>
+                </LinearGradient>
               </TouchableOpacity>
             );
           })}
         </View>
-
-        <View style={{ height: 100 }} />
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -225,239 +336,306 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.black,
   },
-  scrollContent: {
+  fixedTopContainer: {
     paddingHorizontal: SPACE.md,
     paddingTop: SPACE.md,
   },
+  scrollList: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: SPACE.md,
+    paddingTop: SPACE.xs,
+    paddingBottom: 80,
+  },
 
-  // ── Header ──
+  // ── Header Styles ──
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: SPACE.lg,
+    marginTop: SPACE.xs,
   },
-  welcomeText: {
-    color: COLORS.muted,
-    fontFamily: FONTS.regular,
-    fontSize: SIZES.sm,
-    letterSpacing: 0.5,
-  },
-  userName: {
-    color: COLORS.white,
-    fontFamily: FONTS.bold,
-    fontSize: SIZES.xl,
-    marginTop: 2,
-  },
-  streakBadge: {
-    borderRadius: RADIUS.sm,
-    overflow: 'hidden',
-  },
-  streakGradient: {
+  headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
+  },
+  avatarBubble: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#ffffff',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  avatarInitial: {
+    fontFamily: FONTS.bold,
+    fontSize: SIZES.xl,
+    textAlign: 'center',
+  },
+  headerTextCol: {
+    justifyContent: 'center',
+  },
+  welcomeText: {
+    fontFamily: FONTS.regular,
+    fontSize: SIZES.sm,
+    lineHeight: 18,
+  },
+  userName: {
+    fontFamily: FONTS.bold,
+    fontSize: SIZES.md,
+    lineHeight: 22,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  streakBadge: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  streakContainer: {
+    flexDirection: 'row',
     paddingVertical: 6,
     paddingHorizontal: 12,
-    gap: 6,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  streakIconImage: {
+    width: 18,
+    height: 22,
+    marginRight: 6,
   },
   streakText: {
-    color: COLORS.black,
+    color: '#06b6d4',
     fontFamily: FONTS.bold,
     fontSize: SIZES.base,
   },
-
-  // ── Name of the Day ──
-  notdCard: {
-    borderRadius: RADIUS.lg,
-    padding: SPACE.xl,
-    marginBottom: SPACE.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  notdLabelWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: SPACE.md,
-  },
-  notdLabel: {
-    color: '#c9a84c',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 2,
-  },
-  arabicName: {
-    color: '#c9a84c',
-    fontFamily: FONTS.arabic,
-    fontSize: 52,
-    textAlign: 'center',
-    marginVertical: SPACE.xs,
-  },
-  transName: {
-    color: COLORS.white,
-    fontFamily: FONTS.bold,
-    fontSize: SIZES.xl,
-    textAlign: 'center',
-    letterSpacing: -0.5,
-  },
-  meaningText: {
-    color: COLORS.muted,
-    fontFamily: FONTS.regular,
-    fontSize: SIZES.sm,
-    textAlign: 'center',
-    fontStyle: 'italic',
-    marginTop: SPACE.xs,
-  },
-  bgNumber: {
-    position: 'absolute',
-    right: 20,
-    bottom: -5,
-    fontSize: 50,
-    color: 'rgba(255, 255, 255, 0.06)',
-    fontFamily: FONTS.bold,
-  },
-  notdFooter: {
-    marginTop: SPACE.lg,
-    alignItems: 'center',
-  },
-  learnBtn: {
-    backgroundColor: '#c9a84c',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: RADIUS.xs,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  learnBtnText: {
-    color: COLORS.black,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-
-  // ── Section Headers ──
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACE.md,
-  },
-  sectionTitle: {
-    color: COLORS.muted,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 2.5,
-  },
-  seeAllText: {
-    color: '#c9a84c',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-
-  // ── Progress Metrics ──
-  metricsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: SPACE.md,
-  },
-  metricCard: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    padding: SPACE.md,
-    borderRadius: RADIUS.sm,
-    alignItems: 'center',
-    marginHorizontal: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-  },
-  metricValue: {
-    color: '#2d9c96',
-    fontFamily: FONTS.bold,
-    fontSize: SIZES.lg,
-  },
-  metricLabel: {
-    color: COLORS.muted,
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 1,
-    marginTop: 4,
-  },
-
-  // ── Progress Bar ──
-  progressBarContainer: {
-    marginBottom: SPACE.xl,
-    paddingHorizontal: 4,
-  },
-  progressTop: {
-    marginBottom: 8,
-  },
-  progressPercent: {
-    color: COLORS.muted,
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-  },
-  progressBg: {
-    height: 4,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-
-  // ── 2-Column Category Grid ──
-  catGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  catCard: {
-    width: (width - SPACE.md * 2 - 10) / 2,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: RADIUS.md,
-    padding: SPACE.md,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  catIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: RADIUS.xs,
+  bellButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SPACE.sm,
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  bellIconWrapper: {
+    position: 'relative',
+    width: 22,
+    height: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 0,
+    right: 1,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#06b6d4',
     borderWidth: 1,
+    borderColor: '#ffffff',
   },
-  catName: {
-    color: COLORS.white,
-    fontFamily: FONTS.bold,
-    fontSize: SIZES.sm,
-    marginBottom: 4,
-    lineHeight: 18,
+
+  // ── Progress Card Styles ──
+  progressContainer: {
+    borderRadius: RADIUS.md,
+    padding: SPACE.md,
+    marginBottom: SPACE.lg,
+    borderWidth: 1,
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 16,
+    elevation: 3,
   },
-  catMeta: {
-    color: COLORS.muted,
-    fontSize: 10,
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: SPACE.sm,
   },
-  catProgressBg: {
-    height: 2,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 1,
+  progressTitle: {
+    color: '#06b6d4',
+    fontFamily: FONTS.bold,
+    fontSize: SIZES.base,
+  },
+  progressPercentText: {
+    fontFamily: FONTS.medium,
+    fontSize: 11,
+  },
+  progressBarBg: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: SPACE.md,
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  metricsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  metricCardWrap: {
+    flex: 1,
+  },
+  metricCardBackground: {
+    width: '100%',
+    height: 72,
+  },
+  metricCardImageStyle: {
+    borderRadius: 14,
+    resizeMode: 'stretch',
+  },
+  metricCardInner: {
+    flex: 1,
+    paddingVertical: SPACE.xs + 2,
+    paddingHorizontal: SPACE.sm,
+    justifyContent: 'space-between',
+    position: 'relative',
+  },
+  newMetricValue: {
+    fontFamily: FONTS.bold,
+    fontSize: 22,
+    lineHeight: 26,
+  },
+  newMetricLabel: {
+    fontFamily: FONTS.medium,
+    fontSize: 11,
+  },
+  iconBubble: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 4,
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+  },
+  metricCardIconImage: {
+    width: 14,
+    height: 14,
+  },
+
+  // ── Categories Header Styles ──
+  categoriesHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACE.sm,
+    marginTop: SPACE.xs,
+    paddingHorizontal: 2,
+  },
+  categoriesTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: SIZES.md,
+  },
+
+  // ── Categories List Styles ──
+  catVerticalList: {
+    gap: 10,
+  },
+  verticalCatCard: {
+    borderRadius: RADIUS.md,
+    overflow: 'hidden',
+    borderWidth: 1,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  catCardInner: {
+    padding: SPACE.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    height: 104,
+  },
+  catLeftSection: {
+    flex: 1,
+    paddingRight: SPACE.sm,
+    justifyContent: 'center',
+  },
+  catRightSection: {
+    width: 100,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+  },
+  verticalCatName: {
+    fontFamily: FONTS.bold,
+    fontSize: SIZES.base,
+    marginBottom: 2,
+  },
+  verticalCatSubtitle: {
+    fontFamily: FONTS.regular,
+    fontSize: 11,
+    marginBottom: 8,
+  },
+  catProgressWrapper: {
+    width: '100%',
+    marginTop: SPACE.xs,
+  },
+  catProgressHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 4,
+  },
+  catProgressBarBg: {
+    width: '100%',
+    height: 7,
+    borderRadius: 3.5,
     overflow: 'hidden',
   },
-  catProgressFill: {
+  catProgressBarFill: {
     height: '100%',
-    borderRadius: 1,
+    borderRadius: 3.5,
+  },
+  catProgressDetails: {
+    fontFamily: FONTS.semibold,
+    fontSize: 10,
+    textAlign: 'right',
+  },
+  giantPercentage: {
+    fontFamily: FONTS.bold,
+    fontSize: 44,
+    textAlign: 'right',
+    lineHeight: 48,
   },
 });
 

@@ -23,6 +23,7 @@ export const ENDPOINTS = {
   names:    `${API_BASE_URL}/api/names`,
   progress: `${API_BASE_URL}/api/progress`,
   learn:    `${API_BASE_URL}/api/progress/learn`,
+  streak:   `${API_BASE_URL}/api/progress/streak`,
 
   // Content cards (admin-managed)
   content:       `${API_BASE_URL}/api/content`,          // GET all published cards
