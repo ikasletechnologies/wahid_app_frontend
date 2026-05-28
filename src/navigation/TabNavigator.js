@@ -4,7 +4,7 @@ import { View, Platform, Animated, TouchableOpacity, StyleSheet, Dimensions, Ima
 import HomeScreen from '../screens/HomeScreen';
 import NamesScreen from '../screens/NamesScreen';
 import PlaylistScreen from '../screens/PlaylistScreen';
-import JourneyScreen from '../screens/JourneyScreen';
+import MilestoneScreen from '../screens/MilestoneScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import { useAppTheme } from '../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,7 +24,7 @@ const TAB_ICONS = {
   Home: require('../../assets/HOME.png'),
   Names: require('../../assets/NAMES.png'),
   Playlist: require('../../assets/PLAYLIST.png'),
-  Journey: require('../../assets/JOURNEY.png'),
+  Milestones: require('../../assets/JOURNEY.png'),
   Profile: require('../../assets/PROFILE.png'),
 };
 
@@ -189,7 +189,7 @@ const TabNavigator = () => {
       >
         <Tab.Screen name="Home" component={HomeScreen} />
         <Tab.Screen name="Names" component={NamesScreen} />
-        <Tab.Screen name="Journey" component={JourneyScreen} />
+        <Tab.Screen name="Milestones" component={MilestoneScreen} />
         <Tab.Screen name="Profile" component={ProfileScreen} />
       </Tab.Navigator>
       <MiniPlayer />

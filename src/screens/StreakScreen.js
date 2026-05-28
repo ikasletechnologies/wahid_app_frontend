@@ -27,28 +27,26 @@ const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const CELL_W = (width - 64) / 7;
 
 const StreakScreen = ({ navigation }) => {
-  const { streak } = useNames();
+  const { streak, streakDetails } = useNames();
   const currentStreak = streak || 0;
 
   const today = useMemo(() => new Date(), []);
-
-  // Set of date keys for each streak day (last N days up to today)
-  const streakDates = useMemo(() => {
-    const set = new Set();
-    for (let i = 0; i < currentStreak; i++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      set.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
-    }
-    return set;
-  }, [currentStreak, today]);
-
-  const isStreakDay = (y, m, d) => streakDates.has(`${y}-${m}-${d}`);
-
   const year = today.getFullYear();
   const month = today.getMonth();
   const todayDate = today.getDate();
   const todayDOW = today.getDay();
+
+  // Build a Set of "Y-M-D" keys from the real backend activeDates
+  const streakDates = useMemo(() => {
+    const set = new Set();
+    (streakDetails?.activeDates || []).forEach(dateStr => {
+      const d = new Date(dateStr);
+      set.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+    });
+    return set;
+  }, [streakDetails?.activeDates]);
+
+  const isStreakDay = (y, m, d) => streakDates.has(`${y}-${m}-${d}`);
 
   // A helper to determine if a week row has all valid days active
   const isWeekFullyActive = useMemo(() => {
@@ -57,7 +55,7 @@ const StreakScreen = ({ navigation }) => {
       if (validDays.length === 0) return false;
       return validDays.every(d => isStreakDay(year, month, d));
     };
-  }, [year, month, isStreakDay]);
+  }, [year, month, streakDates]);
 
   // Build calendar week rows for current month
   const calendarWeeks = useMemo(() => {
@@ -76,16 +74,12 @@ const StreakScreen = ({ navigation }) => {
     return weeks;
   }, [year, month]);
 
-  // Current week streak status (Sun-Sat)
-  const currentWeek = useMemo(() => {
-    return DAY_LABELS.map((label, i) => {
-      const d = new Date(today);
-      d.setDate(d.getDate() - todayDOW + i);
-      const isFuture = d.getTime() > today.getTime();
-      const active = !isFuture && isStreakDay(d.getFullYear(), d.getMonth(), d.getDate());
-      return { label, active };
-    });
-  }, [today, streakDates]);
+  // Weekly bar — driven by real weeklyProgress from backend
+  const weeklyProgress = streakDetails?.weeklyProgress || {};
+  const currentWeek = DAY_LABELS.map(label => ({
+    label,
+    active: !!weeklyProgress[label],
+  }));
 
   const firstActiveIdx = currentWeek.findIndex(d => d.active);
   const activeCount = currentWeek.filter(d => d.active).length;
@@ -160,7 +154,7 @@ const StreakScreen = ({ navigation }) => {
                   </Text>
                   {/* Cyan bottom half overlay */}
                   <View style={styles.gradientBottomHalfOverlay}>
-                    <Text style={[styles.streakCountNumber, { color: '#06b6d4', position: 'absolute', bottom: 0, left: 0 }]}>
+                    <Text style={[styles.streakCountNumber, { color: '#03B7CE', position: 'absolute', bottom: 0, left: 0 }]}>
                       {String(currentStreak).padStart(2, '0')}
                     </Text>
                   </View>
@@ -183,7 +177,7 @@ const StreakScreen = ({ navigation }) => {
                       {String(currentStreak).padStart(2, '0')}
                     </Text>
                     <View style={styles.gradientBottomHalfOverlay}>
-                      <Text style={[styles.streakCountNumber, { color: '#06b6d4', position: 'absolute', bottom: 0, left: 0 }]}>
+                      <Text style={[styles.streakCountNumber, { color: '#03B7CE', position: 'absolute', bottom: 0, left: 0 }]}>
                         {String(currentStreak).padStart(2, '0')}
                       </Text>
                     </View>
@@ -264,7 +258,7 @@ const StreakScreen = ({ navigation }) => {
               return fullyActive ? (
                 <LinearGradient
                   key={wi}
-                  colors={['rgba(34,211,238,0.85)', 'rgba(6,182,212,0.55)']}
+                  colors={['rgba(75,213,232,0.85)', 'rgba(3,183,206,0.55)']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.weekPillGradientFullyActive}
@@ -298,7 +292,7 @@ const StreakScreen = ({ navigation }) => {
             {/* Teal gradient pill behind active days */}
             {activeCount > 0 && (
               <LinearGradient
-                colors={['rgba(6,182,212,0.6)', 'rgba(34,211,238,0.25)']}
+                colors={['rgba(2,136,157,0.6)', 'rgba(75,213,232,0.25)']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={[
@@ -431,7 +425,7 @@ const styles = StyleSheet.create({
   streakCountLabel: {
     fontFamily: FONTS.medium,
     fontSize: 15,
-    color: '#22d3ee',
+    color: '#4BD5E8',
     letterSpacing: 0.3,
   },
 
@@ -506,7 +500,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   weekdayActive: {
-    color: '#06b6d4',
+    color: '#03B7CE',
     fontFamily: FONTS.bold,
   },
   calendarGrid: {
@@ -532,7 +526,7 @@ const styles = StyleSheet.create({
   weekPillGradientFullyActive: {
     borderRadius: 19,
     borderWidth: 1,
-    borderColor: 'rgba(6,182,212,0.5)',
+    borderColor: 'rgba(3,183,206,0.5)',
     overflow: 'hidden',
   },
   dayTextFullyActive: {
@@ -546,12 +540,12 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#06b6d4',
+    backgroundColor: '#03B7CE',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#ffffff',
-    shadowColor: '#06b6d4',
+    borderColor: '#4BD5E8',
+    shadowColor: '#03B7CE',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 6,
@@ -598,7 +592,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   weeklyDayLabelActive: {
-    color: '#06b6d4',
+    color: '#03B7CE',
     fontFamily: FONTS.bold,
   },
   weeklyChecksRow: {
@@ -613,7 +607,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     zIndex: 0,
     borderWidth: 1,
-    borderColor: 'rgba(6,182,212,0.4)',
+    borderColor: 'rgba(3,183,206,0.4)',
   },
   weeklyCell: {
     width: CELL_W,
@@ -625,12 +619,12 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#06b6d4',
+    backgroundColor: '#03B7CE',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#ffffff',
-    shadowColor: '#06b6d4',
+    borderColor: '#4BD5E8',
+    shadowColor: '#03B7CE',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6,
     shadowRadius: 6,

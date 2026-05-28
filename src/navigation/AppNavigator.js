@@ -10,7 +10,10 @@ import TabNavigator    from './TabNavigator';
 import NameDetailScreen from '../screens/NameDetailScreen';
 import NowPlayingScreen from '../screens/NowPlayingScreen';
 import SuccessScreen    from '../screens/SuccessScreen';
-import StreakScreen     from '../screens/StreakScreen';
+import StreakScreen        from '../screens/StreakScreen';
+import MilestoneScreen    from '../screens/MilestoneScreen';
+import PersonalDetailsScreen from '../screens/PersonalDetailsScreen';
+import SettingsScreen     from '../screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -38,6 +41,21 @@ const AppNavigator = () => {
           <Stack.Screen
             name="Streak"
             component={StreakScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="Milestones"
+            component={MilestoneScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="PersonalDetails"
+            component={PersonalDetailsScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="Settings"
+            component={SettingsScreen}
             options={{ animation: 'slide_from_right' }}
           />
         </>

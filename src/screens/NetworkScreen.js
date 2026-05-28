@@ -108,7 +108,7 @@ const NetworkScreen = ({ onConnectionRestored }) => {
 
       {/* ── Subtitle ── */}
       <Text style={styles.subtitle}>
-        Your internet connection is down. please fix it{"\n"}and then you can continue using{' '}
+        Your internet connection is down, please fix it{"\n"}and then you can continue using{' '}
         <Text style={styles.boldBrand}>WAHID</Text>
       </Text>
 
@@ -119,13 +119,11 @@ const NetworkScreen = ({ onConnectionRestored }) => {
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           onPress={handleRetry}
-          style={styles.buttonOuterRing}
+          style={styles.buttonContainer}
         >
-          <View style={styles.buttonInner}>
-            <Animated.View style={{ transform: [{ rotate: spin }] }}>
-              <Ionicons name="refresh" size={24} color="#06B6D4" />
-            </Animated.View>
-          </View>
+          <Animated.View style={{ transform: [{ rotate: spin }] }}>
+            <Ionicons name="refresh" size={24} color="#06B6D4" />
+          </Animated.View>
         </TouchableOpacity>
       </Animated.View>
     </View>
@@ -165,27 +163,20 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     color: '#0F172A',
   },
-  buttonOuterRing: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(6, 182, 212, 0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  buttonInner: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  buttonContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: '#FFFFFF',
+    borderColor: '#EBECF0',
+    borderWidth: 4,
     justifyContent: 'center',
     alignItems: 'center',
-    // Premium soft shadow matching iOS and Android
-    elevation: 4,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
+    elevation: 3,
   },
 });
 

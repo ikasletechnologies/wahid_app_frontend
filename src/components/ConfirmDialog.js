@@ -5,45 +5,22 @@ import {
   StyleSheet,
   TouchableOpacity,
   Modal,
-  Dimensions,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { useAppTheme } from '../context/ThemeContext';
-import { COLORS, FONTS, SIZES, SPACE, RADIUS } from '../theme';
 
-const { width } = Dimensions.get('window');
-
-/**
- * ConfirmDialog — Reusable themed confirmation modal
- *
- * Props:
- *   visible       {bool}     — controls modal visibility
- *   title         {string}   — headline text
- *   message       {string}   — body text
- *   icon          {string}   — Ionicons name for the top icon
- *   iconColor     {string}   — color of the icon (default: '#ff6b6b')
- *   confirmLabel  {string}   — confirm button label (default: 'Confirm')
- *   cancelLabel   {string}   — cancel button label (default: 'Cancel')
- *   confirmColor  {string}   — confirm button color (default: '#ff6b6b')
- *   onConfirm     {func}     — called on confirm press
- *   onCancel      {func}     — called on cancel press
- */
 const ConfirmDialog = ({
   visible,
   title = 'Are you sure?',
   message,
   icon = 'alert-circle-outline',
-  iconColor = '#ff6b6b',
+  iconColor = '#ff4d4d',
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
-  confirmColor = '#ff6b6b',
+  confirmColor = '#ff4d4d',
   onConfirm,
   onCancel,
 }) => {
-  const { colors, isDark } = useAppTheme();
-
   return (
     <Modal
       transparent
@@ -52,48 +29,43 @@ const ConfirmDialog = ({
       statusBarTranslucent
       onRequestClose={onCancel}
     >
-      {/* Backdrop */}
-      <TouchableOpacity
-        style={styles.backdrop}
-        activeOpacity={1}
-        onPress={onCancel}
-      >
-        <BlurView intensity={isDark ? 20 : 40} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
+      {/* Blurred backdrop */}
+      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onCancel}>
+        <BlurView intensity={30} tint="light" style={StyleSheet.absoluteFill} />
       </TouchableOpacity>
 
-      {/* Dialog Card */}
+      {/* Dialog card */}
       <View style={styles.centeredView}>
-        <View style={[styles.card, { backgroundColor: isDark ? 'rgba(20, 22, 32, 0.98)' : 'rgba(255, 255, 255, 0.98)', borderColor: colors.borderStrong }]}>
-          {/* Decorative top border */}
-          <View style={[styles.topAccent, { backgroundColor: iconColor + '40' }]} />
+        <View style={styles.card}>
 
-          {/* Icon Badge */}
-          <View style={[styles.iconBadge, { backgroundColor: iconColor + '15', borderColor: iconColor + '30' }]}>
-            <Ionicons name={icon} size={28} color={iconColor} />
+          {/* Neumorphic icon ring — same style as profile setting icons */}
+          <View style={styles.iconOuterRing}>
+            <View style={styles.iconInnerCircle}>
+              <Ionicons name={icon} size={26} color={iconColor} />
+            </View>
           </View>
 
-          {/* Text */}
-          <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-          {message ? <Text style={[styles.message, { color: colors.textMuted }]}>{message}</Text> : null}
-
-          {/* Divider */}
-          <View style={[styles.divider, { backgroundColor: colors.borderStrong }]} />
+          <Text style={styles.title}>{title.toUpperCase()}</Text>
+          {message ? <Text style={styles.message}>{message}</Text> : null}
 
           {/* Buttons */}
           <View style={styles.btnRow}>
-            <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: colors.glass, borderColor: colors.border }]} onPress={onCancel} activeOpacity={0.7}>
-              <Text style={[styles.cancelLabel, { color: colors.textMuted }]}>{cancelLabel}</Text>
+            <TouchableOpacity style={styles.cancelBtn} onPress={onCancel} activeOpacity={0.8}>
+              <Text style={styles.cancelLabel}>{cancelLabel}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.confirmBtn, { backgroundColor: confirmColor + '15', borderColor: confirmColor + '40' }]}
+              style={[styles.confirmBtn, { backgroundColor: confirmColor + '22' }]}
               onPress={onConfirm}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
-              <Ionicons name="log-out-outline" size={14} color={confirmColor} style={{ marginRight: 6 }} />
+              <View style={[styles.confirmIconWrap, { backgroundColor: confirmColor + '18' }]}>
+                <Ionicons name={icon} size={14} color={confirmColor} />
+              </View>
               <Text style={[styles.confirmLabel, { color: confirmColor }]}>{confirmLabel}</Text>
             </TouchableOpacity>
           </View>
+
         </View>
       </View>
     </Modal>
@@ -103,104 +75,112 @@ const ConfirmDialog = ({
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.25)',
   },
   centeredView: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: SPACE.xl,
+    paddingHorizontal: 28,
   },
   card: {
     width: '100%',
-    backgroundColor: 'rgba(20, 22, 32, 0.98)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
-    paddingTop: SPACE.xl,
-    paddingBottom: SPACE.lg,
-    paddingHorizontal: SPACE.xl,
-    overflow: 'hidden',
+    paddingTop: 36,
+    paddingBottom: 24,
+    paddingHorizontal: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.5,
-    shadowRadius: 30,
-    elevation: 20,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 12,
   },
-  topAccent: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 2,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-  },
-  iconBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    borderWidth: 1,
+
+  /* Neumorphic outer ring */
+  iconOuterRing: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#EBEBEF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SPACE.md,
-    marginTop: SPACE.xs,
+    borderWidth: 4,
+    borderColor: '#EBECF0',
+    shadowColor: '#B0B0BE',
+    shadowOffset: { width: 5, height: 5 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 8,
+    marginBottom: 20,
   },
+  iconInnerCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#F4F4F8',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   title: {
-    color: COLORS.white,
-    fontFamily: FONTS.bold,
-    fontSize: SIZES.lg,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1A1A2E',
     textAlign: 'center',
-    marginBottom: 8,
-    letterSpacing: -0.3,
+    letterSpacing: 1.5,
+    marginBottom: 10,
   },
   message: {
-    color: COLORS.muted,
-    fontSize: SIZES.sm,
+    fontSize: 13,
+    color: '#888',
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: SPACE.xs,
+    marginBottom: 28,
   },
-  divider: {
-    width: '100%',
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    marginVertical: SPACE.md,
-  },
+
   btnRow: {
     flexDirection: 'row',
     gap: 12,
     width: '100%',
   },
+
+  /* Cancel — dark charcoal */
   cancelBtn: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: RADIUS.sm,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#D4DEE5',
     alignItems: 'center',
-  },
-  cancelLabel: {
-    color: COLORS.muted,
-    fontFamily: FONTS.bold,
-    fontSize: SIZES.sm,
-    letterSpacing: 0.5,
-  },
-  confirmBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
-    alignItems: 'center',
-    flexDirection: 'row',
     justifyContent: 'center',
   },
+  cancelLabel: {
+    color: '#4A5568',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+
+  /* Confirm — soft pink with icon */
+  confirmBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  confirmIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   confirmLabel: {
-    fontFamily: FONTS.bold,
-    fontSize: SIZES.sm,
-    letterSpacing: 0.5,
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
 
