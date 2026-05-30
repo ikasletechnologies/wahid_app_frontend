@@ -98,7 +98,7 @@ const HomeScreen = ({ navigation }) => {
                 }
               ]}>
                 <Image
-                  source={require('../../assets/streak.png')}
+                  source={require('../../assets/home/streak.png')}
                   style={styles.streakIconImage}
                   resizeMode="contain"
                 />
@@ -159,7 +159,7 @@ const HomeScreen = ({ navigation }) => {
               onPress={() => navigation.navigate('Names', { statusFilter: 'learned', filter: null })}
             >
               <ImageBackground
-                source={require('../../assets/sml-Card.png')}
+                source={require('../../assets/home/sml_card.png')}
                 style={styles.metricCardBackground}
                 imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
               >
@@ -170,7 +170,7 @@ const HomeScreen = ({ navigation }) => {
                   {/* Icon Bubble */}
                   <View style={styles.iconBubble}>
                     <Image
-                      source={require('../../assets/learnIcon.png')}
+                      source={require('../../assets/home/learn_icon.png')}
                       style={styles.metricCardIconImage}
                       resizeMode="contain"
                     />
@@ -186,7 +186,7 @@ const HomeScreen = ({ navigation }) => {
               onPress={() => navigation.navigate('Names', { statusFilter: 'mastered', filter: null })}
             >
               <ImageBackground
-                source={require('../../assets/sml-Card.png')}
+                source={require('../../assets/home/sml_card.png')}
                 style={styles.metricCardBackground}
                 imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
               >
@@ -197,7 +197,7 @@ const HomeScreen = ({ navigation }) => {
                   {/* Icon Bubble */}
                   <View style={styles.iconBubble}>
                     <Image
-                      source={require('../../assets/masterIcon.png')}
+                      source={require('../../assets/home/master_icon.png')}
                       style={styles.metricCardIconImage}
                       resizeMode="contain"
                     />
@@ -213,7 +213,7 @@ const HomeScreen = ({ navigation }) => {
               onPress={() => navigation.navigate('Names', { statusFilter: 'remaining', filter: null })}
             >
               <ImageBackground
-                source={require('../../assets/sml-Card.png')}
+                source={require('../../assets/home/sml_card.png')}
                 style={styles.metricCardBackground}
                 imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
               >
@@ -224,7 +224,7 @@ const HomeScreen = ({ navigation }) => {
                   {/* Icon Bubble */}
                   <View style={styles.iconBubble}>
                     <Image
-                      source={require('../../assets/remainIcon.png')}
+                      source={require('../../assets/home/remain_icon.png')}
                       style={styles.metricCardIconImage}
                       resizeMode="contain"
                     />

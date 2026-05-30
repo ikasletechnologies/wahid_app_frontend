@@ -112,19 +112,19 @@ const StreakScreen = ({ navigation }) => {
             <View style={styles.flameColumn}>
               <View style={styles.flameWrapper}>
                 <Image
-                  source={require('../../assets/streakCircle.png')}
+                  source={require('../../assets/streak/streak_circle.png')}
                   style={styles.sparkleCircle}
                   resizeMode="contain"
                 />
                 <Image
-                  source={require('../../assets/bigStreak.png')}
+                  source={require('../../assets/streak/big_streak.png')}
                   style={styles.bigStreakImage}
                   resizeMode="contain"
                 />
               </View>
               {/* Teal glow bloom under the flame */}
               <Image
-                source={require('../../assets/streakBottomBlur.png')}
+                source={require('../../assets/streak/streak_bottom_blur.png')}
                 style={styles.streakBlurImg}
                 resizeMode="contain"
               />
@@ -132,7 +132,7 @@ const StreakScreen = ({ navigation }) => {
               {/* Element-wise Flame Reflection */}
               <View style={styles.flameReflectionContainer} pointerEvents="none">
                 <Image
-                  source={require('../../assets/bigStreak.png')}
+                  source={require('../../assets/streak/big_streak.png')}
                   style={[styles.bigStreakImage, styles.reflectFlip, { opacity: 0.12 }]}
                   resizeMode="contain"
                 />
@@ -164,7 +164,7 @@ const StreakScreen = ({ navigation }) => {
 
               {/* Cyan glow bloom under the text */}
               <Image
-                source={require('../../assets/textBottomBlur.png')}
+                source={require('../../assets/streak/text_bottom_blur.png')}
                 style={styles.textBlurImg}
                 resizeMode="contain"
               />

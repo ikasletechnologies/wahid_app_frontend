@@ -294,20 +294,20 @@ const NameDetailScreen = ({ route, navigation }) => {
                 <Animated.View style={{ transform: [{ translateY: floatAnim }] }}>
                   <Image
                     source={giftOpened
-                      ? require('../../assets/openGiftBox.png')
-                      : require('../../assets/giftBox.png')}
+                      ? require('../../assets/name_detail/open_gift_box.png')
+                      : require('../../assets/name_detail/gift_box.png')}
                     style={styles.giftBoxImg}
                     resizeMode="contain"
                   />
                 </Animated.View>
               </Pressable>
-              <Image source={require('../../assets/Ellipse 5.png')} style={styles.giftShadow} resizeMode="contain" />
+              <Image source={require('../../assets/name_detail/ellipse_5.png')} style={styles.giftShadow} resizeMode="contain" />
             </View>
 
             <View style={styles.doubleTapRow}>
-              <Image source={require('../../assets/signHand.png')} style={styles.handHint} resizeMode="contain" />
+              <Image source={require('../../assets/name_detail/sign_hand.png')} style={styles.handHint} resizeMode="contain" />
               <Text style={styles.doubleTapText}>Double Tap to Open</Text>
-              <Image source={require('../../assets/signHand.png')} style={[styles.handHint, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
+              <Image source={require('../../assets/name_detail/sign_hand.png')} style={[styles.handHint, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
             </View>
           </Animated.View>
         </SafeAreaView>
@@ -336,7 +336,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
             <View style={styles.journeyRow}>
               <View style={styles.journeyStepCard}>
-                <Image source={require('../../assets/mdi_learn-outline.png')} style={[styles.journeyImg, { tintColor: '#4CAF50' }]} resizeMode="contain" />
+                <Image source={require('../../assets/name_detail/mdi_learn_outline.png')} style={[styles.journeyImg, { tintColor: '#4CAF50' }]} resizeMode="contain" />
                 <Text style={styles.journeyStepLabel}>Learned</Text>
               </View>
 
@@ -347,7 +347,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
               <View style={[styles.journeyStepCard, { opacity: isMastered ? 1 : 0.6 }]}>
                 <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center', marginBottom: rs(8), height: rs(44), width: rs(44) }}>
-                  <Image source={isMastered ? require('../../assets/masterOpen.png') : require('../../assets/Masterlock.png')} style={{ width: rs(44), height: rs(44) }} resizeMode="contain" />
+                  <Image source={isMastered ? require('../../assets/name_detail/master_open.png') : require('../../assets/name_detail/master_lock.png')} style={{ width: rs(44), height: rs(44) }} resizeMode="contain" />
                   {!isMastered && <Ionicons name="lock-closed" size={rs(20)} color="#00ADC1" style={{ position: 'absolute', top: rs(12) }} />}
                 </View>
                 <Text style={styles.journeyStepLabel}>Mastered</Text>
@@ -425,14 +425,14 @@ const NameDetailScreen = ({ route, navigation }) => {
           {/* ── Section 1: Gold divider ── */}
           <AnimSection anim={sectionAnims[1]}>
             <View style={styles.dividerWrap}>
-              <Image source={require('../../assets/lineGold.png')} style={styles.goldDivider} resizeMode="contain" />
+              <Image source={require('../../assets/name_detail/line_gold.png')} style={styles.goldDivider} resizeMode="contain" />
             </View>
           </AnimSection>
 
           {/* ── Section 2: Divine Words ── */}
           <AnimSection anim={sectionAnims[2]}>
             <ImageBackground
-              source={require('../../assets/bgCard.png')}
+              source={require('../../assets/name_detail/bg_card.png')}
               style={styles.divineCard}
               imageStyle={{ borderRadius: rs(16) }}
               resizeMode="cover"
@@ -440,11 +440,11 @@ const NameDetailScreen = ({ route, navigation }) => {
               <Text style={styles.divineName}>Divine Words</Text>
               <Text style={styles.divineSubtitle}>Qur'anic references to this name</Text>
               <View style={styles.quoteBlock}>
-                <Image source={require('../../assets/quatation.png')} style={styles.quoteIconTop} resizeMode="contain" />
+                <Image source={require('../../assets/name_detail/quotation.png')} style={styles.quoteIconTop} resizeMode="contain" />
                 <Text style={styles.quoteText}>
                   {quranicRef.translation || `In the name of Allah, the Most Gracious, the Most Merciful.`}
                 </Text>
-                <Image source={require('../../assets/quatation.png')} style={styles.quoteIconBottom} resizeMode="contain" />
+                <Image source={require('../../assets/name_detail/quotation.png')} style={styles.quoteIconBottom} resizeMode="contain" />
               </View>
             </ImageBackground>
           </AnimSection>
@@ -453,17 +453,17 @@ const NameDetailScreen = ({ route, navigation }) => {
           <AnimSection anim={sectionAnims[3]} hidden={contentStage < 2}>
             <View style={styles.sectionCardTransparent}>
               <View style={styles.smallDividerWrap}>
-                <Image source={require('../../assets/lineGold.png')} style={styles.smallDivider} resizeMode="contain" />
+                <Image source={require('../../assets/name_detail/line_gold.png')} style={styles.smallDivider} resizeMode="contain" />
               </View>
               <Text style={styles.sectionCardTitleLeft}>Ponder & Reflect</Text>
 
               <ImageBackground
-                source={require('../../assets/bgCard2.png')}
+                source={require('../../assets/name_detail/bg_card_2.png')}
                 style={styles.insightRow}
                 imageStyle={{ borderRadius: rs(14) }}
                 resizeMode="cover"
               >
-                <Image source={require('../../assets/man.png')} style={styles.manImg} resizeMode="contain" />
+                <Image source={require('../../assets/name_detail/man.png')} style={styles.manImg} resizeMode="contain" />
                 <View style={styles.insightBox}>
                   <Text style={styles.insightText}>
                     {reflection || `Every breath we take is a mercy from Ar-Rahman. He did not wait for us to ask- His mercy arrives before any deed of ours.`}
@@ -479,7 +479,7 @@ const NameDetailScreen = ({ route, navigation }) => {
               <Text style={styles.sectionCardTitleLeft}>Learning Insight</Text>
 
               <ImageBackground
-                source={require('../../assets/quest.png')}
+                source={require('../../assets/name_detail/quest.png')}
                 style={styles.questBgBox}
                 resizeMode="contain"
               >
@@ -494,7 +494,7 @@ const NameDetailScreen = ({ route, navigation }) => {
           <AnimSection anim={sectionAnims[5]} hidden={contentStage < 4}>
             <View style={styles.quizSection}>
               <View style={styles.smallDividerWrap}>
-                <Image source={require('../../assets/lineGold.png')} style={styles.smallDivider} resizeMode="contain" />
+                <Image source={require('../../assets/name_detail/line_gold.png')} style={styles.smallDivider} resizeMode="contain" />
               </View>
 
               <View style={styles.quizHeader}>
@@ -569,7 +569,7 @@ const NameDetailScreen = ({ route, navigation }) => {
               ]}
             >
               <Animated.Image
-                source={require('../../assets/signHand.png')}
+                source={require('../../assets/name_detail/sign_hand.png')}
                 style={[styles.slideHand, { transform: [{ translateX: handX }] }]}
                 resizeMode="contain"
               />

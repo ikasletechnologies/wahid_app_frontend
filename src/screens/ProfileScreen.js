@@ -1,274 +1,645 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+    View,
+    Text,
+    StyleSheet,
+    StatusBar,
+    TouchableOpacity,
+    ScrollView,
+    Modal,
+    Dimensions,
+} from "react-native";
+
+import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import CircleIcon from '@hugeicons/core-free-icons/dist/esm/CircleIcon.js';
+import MaskedView from '@react-native-masked-view/masked-view';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import UserIcon from '@hugeicons/core-free-icons/dist/esm/UserIcon.js';
+import SecurityIcon from '@hugeicons/core-free-icons/dist/esm/SecurityIcon.js';
+import Settings02Icon from '@hugeicons/core-free-icons/dist/esm/Settings02Icon.js';
+import InformationCircleIcon from '@hugeicons/core-free-icons/dist/esm/InformationCircleIcon.js';
+import Logout01Icon from '@hugeicons/core-free-icons/dist/esm/Logout01Icon.js';
 import { useAuth } from '../context/AuthContext';
-import ConfirmDialog from '../components/ConfirmDialog';
-import { useNavigation } from '@react-navigation/native';
-import { useAppTheme } from '../context/ThemeContext';
 
-const ProfileScreen = () => {
-  const { user, logout } = useAuth();
-  const navigation = useNavigation();
-  const { colors, isDark } = useAppTheme();
-  const [showSignOut, setShowSignOut] = useState(false);
+const { width } = Dimensions.get('window');
 
-  const handleLogout = () => setShowSignOut(true);
-
-  return (
-    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
-      {/* ── Header ── */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Profile</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ── Avatar + Name ── */}
-        <View style={styles.avatarSection}>
-          {/* <Image 
-            source={require('../../assets/man.png')} // assuming man.png is the 3D avatar, fallback to a network URL if needed
-            style={styles.avatar} 
-            defaultSource={{uri: 'https://cdn3d.iconscout.com/3d/premium/thumb/boy-avatar-6299533-5187871.png'}}
-          /> */}
-          <Text style={[styles.userName, { color: colors.text }]}>{user?.name || 'Wahid'}</Text>
-          <Text style={[styles.userEmail, { color: colors.textMuted }]}>{user?.email || 'Wahid123@gmail.com'}</Text>
-        </View>
-
-        {/* ── Settings ── */}
-        <View style={styles.settingsContainer}>
-          <SettingItem
-            icon="person-outline"
-            label="Personal Details"
-            colors={colors}
-            isDark={isDark}
-            onPress={() => navigation.navigate('PersonalDetails')}
-          />
-          <SettingItem
-            icon="shield-checkmark-outline"
-            label="Privacy & Security"
-            colors={colors}
-            isDark={isDark}
-            onPress={() => {}}
-          />
-          <SettingItem
-            icon="notifications-outline"
-            label="Notifications"
-            colors={colors}
-            isDark={isDark}
-            onPress={() => {}}
-          />
-          <SettingItem
-            icon="settings-outline"
-            label="Settings"
-            colors={colors}
-            isDark={isDark}
-            onPress={() => navigation.navigate('Settings')}
-          />
-          <SettingItem
-            icon="information-circle-outline"
-            label="About Wahid"
-            value="v1.0.0"
-            colors={colors}
-            isDark={isDark}
-            onPress={() => {}}
-          />
-        </View>
-
-        {/* ── Log Out Card ── */}
-        <TouchableOpacity
-          style={[styles.signOutCard, {
-            backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
-            shadowOpacity: isDark ? 0 : 0.06,
-            borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'transparent',
-            borderWidth: isDark ? 1 : 0,
-          }]}
-          onPress={handleLogout}
-          activeOpacity={0.7}
-        >
-          <View style={[styles.signOutIconWrap, { backgroundColor: isDark ? 'rgba(255,77,77,0.12)' : '#fff0f0' }]}>
-            <Ionicons name="log-out-outline" size={18} color="#ff4d4d" />
-          </View>
-          <Text style={styles.signOutLabel}>Log Out</Text>
-        </TouchableOpacity>
-
-      </ScrollView>
-
-      {/* ── Sign Out Confirmation ── */}
-      <ConfirmDialog
-        visible={showSignOut}
-        title="Log Out"
-        message="Are you sure you want to log out of your account?"
-        icon="log-out-outline"
-        iconColor="#ff4d4d"
-        confirmLabel="Log Out"
-        cancelLabel="Cancel"
-        confirmColor="#ff4d4d"
-        onConfirm={() => { setShowSignOut(false); logout(); }}
-        onCancel={() => setShowSignOut(false)}
-      />
-    </SafeAreaView>
-  );
-};
-
-const SettingItem = ({ icon, label, value, onPress, colors, isDark }) => (
-  <TouchableOpacity 
-    style={[
-      styles.settingRow, 
-      { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.05, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'transparent', borderWidth: isDark ? 1 : 0 }
-    ]} 
-    onPress={onPress} 
-    activeOpacity={0.7}
-  >
-    <View style={styles.settingLeft}>
-      <View style={[styles.iconCircle, { backgroundColor: isDark ? colors.surface : '#ffffff', shadowOpacity: isDark ? 0 : 0.15, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#EBECF0', borderWidth: isDark ? 1 : 6 }]}>
-        <Ionicons name={icon} size={15} color="#06b6d4" />
-      </View>
-      <Text style={[styles.settingLabel, { color: colors.text }]}>{label}</Text>
-    </View>
-    {value ? (
-      <Text style={[styles.settingValue, { color: '#06b6d4' }]}>{value}</Text>
-    ) : (
-      <View style={[styles.arrowCircle, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.15, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#EBECF0', borderWidth: isDark ? 1 : 6 }]}>
-        <Ionicons name="arrow-forward" size={12} color="#06b6d4" />
-      </View>
-    )}
-  </TouchableOpacity>
+const MaskedGradient = ({ children, width, height }) => (
+    <MaskedView
+        style={{ width, height }}
+        maskElement={
+            <View style={{ backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
+                {children}
+            </View>
+        }
+    >
+        <LinearGradient
+            colors={['#7FEAF5', '#41bacaff']}
+            style={{ flex: 1 }}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+        />
+    </MaskedView>
 );
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 20,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginLeft: 4,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-    gap: 12,
-  },
-  avatarSection: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    marginBottom: 12,
-    backgroundColor: '#fdeee0',
-  },
-  userName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  userEmail: {
-    fontSize: 13,
-  },
-  settingsContainer: {
-    gap: 12,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  settingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  iconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  settingLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  arrowCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  settingValue: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  signOutCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 3,
-    elevation: 2,
-    gap: 14,
-  },
-  signOutIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  signOutLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#ff4d4d',
-  },
-});
+export default function ProfileScreen({ navigation }) {
+    const { user, logout } = useAuth();
+    const [isLogoutVisible, setIsLogoutVisible] = useState(false);
 
-export default ProfileScreen;
+    return (
+        <SafeAreaView style={styles.container}>
+
+            <StatusBar
+                barStyle="dark-content"
+                backgroundColor="#d3e5fcff"
+            />
+
+            {/* HEADER */}
+            <View style={styles.headerContainer}>
+
+                <TouchableOpacity
+                    style={styles.backButton}
+                    activeOpacity={0.7}
+                    onPress={() => navigation.navigate('Home')}
+                >
+                    <Ionicons
+                        name="chevron-back"
+                        size={24}
+                        color="#000000ff"
+                    />
+                </TouchableOpacity>
+
+                <Text style={styles.headerTitle}>
+                    Profile
+                </Text>
+
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
+
+                {/* PROFILE SECTION */}
+                <View style={styles.profileSection}>
+
+                    {/* EMPTY ROUND PROFILE */}
+                    <View style={styles.profileCircle} />
+
+                    {/* NAME */}
+                    <Text style={styles.profileName}>
+                        {user?.name || 'Wahid'}
+                    </Text>
+
+                    {/* EMAIL */}
+                    <Text style={styles.profileEmail}>
+                        {user?.email || 'Wahid123@gmail.com'}
+                    </Text>
+
+                </View>
+
+                {/* PERSONAL DETAILS CARD */}
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => navigation.navigate('PersonalDetails')}
+                >
+
+                    <LinearGradient
+                        colors={['#FFFFFF', '#FFFFFF']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.card}
+                    >
+
+                        {/* LEFT SIDE */}
+                        <View style={styles.leftSection}>
+
+                            {/* PROFILE ICON */}
+                            <View style={styles.iconCircle}>
+                                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                    <HugeiconsIcon icon={CircleIcon} size={40} color="#EBECF0" />
+                                </View>
+                                <MaskedGradient width={24} height={24}>
+                                    <HugeiconsIcon icon={UserIcon} size={20} color="white" />
+                                </MaskedGradient>
+                            </View>
+
+                            {/* TEXT */}
+                            <Text style={styles.cardTitle}>
+                                Personal Details
+                            </Text>
+
+                        </View>
+
+                        {/* RIGHT ARROW */}
+                        <View style={{ width: 34, height: 34, justifyContent: 'center', alignItems: 'center' }}>
+                            <View style={StyleSheet.absoluteFill}>
+                                <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                            </View>
+                            <MaskedGradient width={24} height={24}>
+                                <Ionicons
+                                    name="arrow-forward"
+                                    size={20}
+                                    marginLeft={7}
+                                    marginTop={7}
+                                    color="white"
+                                />
+                            </MaskedGradient>
+                        </View>
+
+                    </LinearGradient>
+
+                </TouchableOpacity>
+
+                {/* PRIVACY & SECURITY CARD */}
+                <TouchableOpacity activeOpacity={0.8} style={{ marginTop: 15 }}>
+
+                    <LinearGradient
+                        colors={['#FFFFFF', '#FFFFFF']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.card}
+                    >
+
+                        {/* LEFT SIDE */}
+                        <View style={styles.leftSection}>
+
+                            {/* ICON */}
+                            <View style={styles.iconCircle}>
+                                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                    <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                                </View>
+                                <MaskedGradient width={24} height={24}>
+                                    <HugeiconsIcon icon={SecurityIcon} size={20} color="white" />
+                                </MaskedGradient>
+                            </View>
+
+                            {/* TEXT */}
+                            <Text style={styles.cardTitle}>
+                                Privacy & Security
+                            </Text>
+
+                        </View>
+
+                        {/* RIGHT ARROW */}
+                        <View style={{ width: 34, height: 34, justifyContent: 'center', alignItems: 'center' }}>
+                            <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                            </View>
+                            <MaskedGradient width={18} height={18}>
+                                <Ionicons
+                                    name="arrow-forward"
+                                    size={18}
+                                    color="black"
+                                />
+                            </MaskedGradient>
+                        </View>
+
+                    </LinearGradient>
+
+                </TouchableOpacity>
+
+                {/* NOTIFICATIONS CARD */}
+                <TouchableOpacity activeOpacity={0.8} style={{ marginTop: 15 }}>
+
+                    <LinearGradient
+                        colors={['#FFFFFF', '#FFFFFF']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.card}
+                    >
+
+                        {/* LEFT SIDE */}
+                        <View style={styles.leftSection}>
+
+                            {/* ICON */}
+                            <View style={styles.iconCircle}>
+                                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                    <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                                </View>
+                                <MaskedGradient width={24} height={24}>
+                                    <Ionicons
+                                        name="notifications-outline"
+                                        size={20}
+                                        color="white"
+                                    />
+                                </MaskedGradient>
+                            </View>
+
+                            {/* TEXT */}
+                            <Text style={styles.cardTitle}>
+                                Notifications
+                            </Text>
+
+                        </View>
+
+                        {/* RIGHT ARROW */}
+                        <View style={{ width: 34, height: 34, justifyContent: 'center', alignItems: 'center' }}>
+                            <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                            </View>
+                            <MaskedGradient width={18} height={18}>
+                                <Ionicons
+                                    name="arrow-forward"
+                                    size={18}
+                                    color="black"
+                                />
+                            </MaskedGradient>
+                        </View>
+
+                    </LinearGradient>
+
+                </TouchableOpacity>
+
+                {/* SETTINGS CARD */}
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    style={{ marginTop: 15 }}
+                    onPress={() => navigation.navigate('Settings')}
+                >
+
+                    <LinearGradient
+                        colors={['#FFFFFF', '#FFFFFF']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.card}
+                    >
+
+                        {/* LEFT SIDE */}
+                        <View style={styles.leftSection}>
+
+                            {/* ICON */}
+                            <View style={styles.iconCircle}>
+                                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                    <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                                </View>
+                                <MaskedGradient width={24} height={24}>
+                                    <HugeiconsIcon icon={Settings02Icon} size={20} color="white" />
+                                </MaskedGradient>
+                            </View>
+
+                            {/* TEXT */}
+                            <Text style={styles.cardTitle}>
+                                Settings
+                            </Text>
+
+                        </View>
+
+                        {/* RIGHT ARROW */}
+                        <View style={{ width: 34, height: 34, justifyContent: 'center', alignItems: 'center' }}>
+                            <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                            </View>
+                            <MaskedGradient width={18} height={18}>
+                                <Ionicons
+                                    name="arrow-forward"
+                                    size={18}
+                                    color="black"
+                                />
+                            </MaskedGradient>
+                        </View>
+
+                    </LinearGradient>
+
+                </TouchableOpacity>
+
+                {/* ABOUT WAHID CARD */}
+                <TouchableOpacity activeOpacity={0.8} style={{ marginTop: 15 }}>
+
+                    <LinearGradient
+                        colors={['#FFFFFF', '#FFFFFF']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.card}
+                    >
+
+                        {/* LEFT SIDE */}
+                        <View style={styles.leftSection}>
+
+                            {/* ICON */}
+                            <View style={styles.iconCircle}>
+                                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                    <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                                </View>
+                                <MaskedGradient width={24} height={24}>
+                                    <HugeiconsIcon icon={InformationCircleIcon} size={20} color="white" />
+                                </MaskedGradient>
+                            </View>
+
+                            {/* TEXT */}
+                            <Text style={styles.cardTitle}>
+                                About Wahid
+                            </Text>
+
+                        </View>
+
+                        {/* VERSION TEXT */}
+                        <MaskedGradient width={60} height={25}>
+                            <Text style={{ fontSize: 18, color: 'black', fontWeight: '500' }}>
+                                v1.0.0
+                            </Text>
+                        </MaskedGradient>
+
+                    </LinearGradient>
+
+                </TouchableOpacity>
+
+            </ScrollView>
+
+            {/* LOGOUT CARD */}
+            <TouchableOpacity
+                activeOpacity={0.8}
+                style={{ marginBottom: 20 }}
+                onPress={() => setIsLogoutVisible(true)}
+            >
+
+                <LinearGradient
+                    colors={['#FFFFFF', '#FFFFFF']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.card}
+                >
+
+                    {/* LEFT SIDE */}
+                    <View style={styles.leftSection}>
+
+                        {/* ICON */}
+                        <View style={styles.iconCircle}>
+                            <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                            </View>
+                            <HugeiconsIcon icon={Logout01Icon} size={20} color="red" />
+                        </View>
+
+                        {/* TEXT */}
+                        <Text style={[styles.cardTitle, { color: 'red' }]}>
+                            Logout
+                        </Text>
+
+                    </View>
+
+                </LinearGradient>
+
+            </TouchableOpacity>
+
+            {/* LOGOUT MODAL */}
+            <Modal
+                transparent={true}
+                visible={isLogoutVisible}
+                animationType="fade"
+                onRequestClose={() => setIsLogoutVisible(false)}
+            >
+                <View style={styles.overlay}>
+                    <View style={styles.modalContainer}>
+
+                        {/* TOP ICON */}
+                        <View style={styles.iconWrapper}>
+                            <View style={StyleSheet.absoluteFill}>
+                                <HugeiconsIcon icon={CircleIcon} size={70} color="#EBECF0" />
+                            </View>
+                            <HugeiconsIcon icon={Logout01Icon} size={30} color="#FF5252" />
+                        </View>
+
+                        {/* TEXT CONTENT */}
+                        <Text style={styles.modalTitle}>LOG OUT</Text>
+                        <Text style={styles.modalMessage}>
+                            Are you sure you want to log out of your account?
+                        </Text>
+
+                        {/* BUTTONS */}
+                        <View style={styles.buttonRow}>
+                            <TouchableOpacity
+                                style={styles.cancelButton}
+                                onPress={() => setIsLogoutVisible(false)}
+                            >
+                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.logoutButtonModal}
+                                onPress={() => {
+                                    setIsLogoutVisible(false);
+                                    logout();
+                                }}
+                            >
+                                <View style={styles.logoutButtonContent}>
+                                    <View style={styles.smallIconCircle}>
+                                        <HugeiconsIcon icon={Logout01Icon} size={18} color="#FF5252" />
+                                    </View>
+                                    <Text style={styles.logoutButtonText}>Log Out</Text>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+
+                    </View>
+                </View>
+            </Modal>
+        </SafeAreaView>
+    );
+}
+
+const styles = StyleSheet.create({
+
+    container: {
+        flex: 1,
+        backgroundColor: '#d3e5fcff',
+        paddingHorizontal: 15,
+    },
+
+    /* HEADER */
+
+    headerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingTop: 10,
+    },
+
+    backButton: {
+        marginRight: 5,
+        padding: 5,
+    },
+
+    headerTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#000',
+    },
+
+    /* PROFILE SECTION */
+
+    profileSection: {
+        alignItems: 'center',
+        marginTop: 30,
+        marginBottom: 30,
+    },
+
+    profileCircle: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: '#FFFFFF',
+
+        borderWidth: 2,
+        borderColor: '#FFFFFF',
+
+        shadowColor: '#63F3FF',
+
+        shadowOffset: {
+            width: 0,
+            height: 0,
+        },
+
+        shadowOpacity: 0.5,
+        shadowRadius: 10,
+
+        elevation: 8,
+    },
+
+    profileName: {
+        marginTop: 15,
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#000',
+    },
+
+    profileEmail: {
+        marginTop: 5,
+        fontSize: 14,
+        color: '#666',
+    },
+
+    /* CARD */
+
+    card: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+
+        paddingHorizontal: 15,
+        paddingVertical: 14,
+
+        borderRadius: 14,
+
+        shadowColor: "#fcffffff",
+
+        shadowOffset: {
+            width: 0,
+            height: 0,
+        },
+
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+
+        elevation: 5,
+    },
+
+    leftSection: {
+        flexDirection: "row",
+        alignItems: "center"
+    },
+
+    iconCircle: {
+        width: 44,
+        height: 34,
+        borderRadius: 17,
+
+        backgroundColor: "#FFFFFF",
+
+        justifyContent: "center",
+        alignItems: "center",
+
+        marginRight: 12,
+    },
+
+    cardTitle: {
+        fontSize: 15,
+        fontWeight: "600",
+        color: "#000000ff",
+    },
+
+    /* MODAL STYLES */
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContainer: {
+        width: width * 0.85,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 25,
+        alignItems: 'center',
+        elevation: 10,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.25,
+        shadowRadius: 15,
+    },
+    iconWrapper: {
+        width: 70,
+        height: 70,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    modalTitle: {
+        fontSize: 22,
+        fontWeight: '900',
+        color: '#000',
+        marginBottom: 10,
+    },
+    modalMessage: {
+        fontSize: 14,
+        color: '#666',
+        textAlign: 'center',
+        marginBottom: 30,
+        lineHeight: 20,
+        paddingHorizontal: 10,
+    },
+    buttonRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+    cancelButton: {
+        flex: 1,
+        backgroundColor: '#DDE3E9',
+        paddingVertical: 14,
+        borderRadius: 10,
+        marginRight: 10,
+        alignItems: 'center',
+    },
+    cancelButtonText: {
+        color: '#333',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    logoutButtonModal: {
+        flex: 1,
+        backgroundColor: '#FFE5E5',
+        paddingVertical: 14,
+        borderRadius: 10,
+        marginLeft: 10,
+        alignItems: 'center',
+    },
+    logoutButtonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    smallIconCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#FFFFFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 8,
+        borderWidth: 2.5,
+        borderColor: '#EBECF0',
+    },
+    logoutButtonText: {
+        color: '#FF5252',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+
+});

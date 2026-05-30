@@ -98,7 +98,7 @@ const NetworkScreen = ({ onConnectionRestored }) => {
 
       {/* ── Illustration ── */}
       <Image
-        source={require('../../assets/network.png')}
+        source={require('../../assets/network/network.png')}
         style={styles.image}
         resizeMode="contain"
       />

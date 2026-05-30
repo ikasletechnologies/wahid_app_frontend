@@ -227,13 +227,13 @@ const NamesScreen = ({ navigation }) => {
 
     return (
       <ImageBackground
-        source={require('../../assets/nameBgCard.png')}
+        source={require('../../assets/names/name_bg_card.png')}
         style={styles.cardContent}
         resizeMode="cover"
       >
         <View style={styles.bookmarkRibbon}>
           <Image
-            source={require('../../assets/flag.png')}
+            source={require('../../assets/names/flag.png')}
             style={[styles.flagImage, flagTint ? { tintColor: flagTint } : null]}
             resizeMode="contain"
           />
@@ -262,7 +262,7 @@ const NamesScreen = ({ navigation }) => {
           <Text style={[styles.trans, { color: '#1A1A1A' }]}>{item.transliteration}</Text>
           <Text style={[styles.meaning, { color: '#1A1A1A' }]}>{item.meaning}</Text>
         </View>
-        <Image source={require('../../assets/bookQ.png')} style={styles.quranImage} resizeMode="contain" />
+        <Image source={require('../../assets/names/book_q.png')} style={styles.quranImage} resizeMode="contain" />
 
         {isLearned && (
           <View style={styles.toMasterHint}>
@@ -321,10 +321,10 @@ const NamesScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
         <View style={styles.bannerContainer}>
-          <Image source={require('../../assets/nameHeroCard.png')} style={styles.bannerImage} resizeMode="cover" />
+          <Image source={require('../../assets/names/name_hero_card.png')} style={styles.bannerImage} resizeMode="cover" />
         </View>
         <View style={styles.ornContainer}>
-          <Image source={require('../../assets/lineGold.png')} style={styles.goldDivider} resizeMode="contain" />
+          <Image source={require('../../assets/names/line_gold.png')} style={styles.goldDivider} resizeMode="contain" />
         </View>
       </View>
 
@@ -386,7 +386,7 @@ const NamesScreen = ({ navigation }) => {
                 transform: [{ translateY: anchorAnim }],
               }]}>
                 <Text style={styles.domeLabel}>Swipe to find next</Text>
-                <Image source={require('../../assets/newAnchor.png')} style={styles.anchorImg} resizeMode="contain" />
+                <Image source={require('../../assets/names/new_anchor.png')} style={styles.anchorImg} resizeMode="contain" />
               </Animated.View>
             </View>
 

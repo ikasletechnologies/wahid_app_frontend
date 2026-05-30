@@ -77,7 +77,7 @@ const SuccessScreen = ({ route }) => {
       {/* Badge */}
       <Animated.View style={[styles.badgeWrap, { opacity: badgeOpacity, transform: [{ scale: badgeScale }] }]}>
         <Image
-          source={require('../../assets/sucess.png')}
+          source={require('../../assets/success/success.png')}
           style={styles.badge}
           resizeMode="contain"
         />

@@ -21,11 +21,11 @@ const ICON_ACTIVE_SCALE = 1.2; // Animation pop
 // ──────────────────────────────────────────────────────────────────────────
 
 const TAB_ICONS = {
-  Home: require('../../assets/HOME.png'),
-  Names: require('../../assets/NAMES.png'),
-  Playlist: require('../../assets/PLAYLIST.png'),
-  Milestones: require('../../assets/JOURNEY.png'),
-  Profile: require('../../assets/PROFILE.png'),
+  Home: require('../../assets/navigation/home.png'),
+  Names: require('../../assets/navigation/names.png'),
+  Playlist: require('../../assets/navigation/playlist.png'),
+  Milestones: require('../../assets/navigation/journey.png'),
+  Profile: require('../../assets/navigation/profile.png'),
 };
 
 const CustomTabBar = ({ state, descriptors, navigation, isDark }) => {
