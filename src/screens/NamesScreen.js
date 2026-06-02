@@ -2,13 +2,17 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import {
   View, Text, StyleSheet, Dimensions, Animated, PanResponder,
   Image, ActivityIndicator, TouchableOpacity, Easing, ImageBackground,
-  Modal, ScrollView, TextInput
+  Modal, ScrollView, TextInput, StatusBar
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, ClipPath, G, Circle } from 'react-native-svg';
+import FlagSvg from '../../assets/names/flag.svg';
 import { useNames } from '../context/NamesContext';
 import { FONTS } from '../theme';
+import TimeBasedBackground from '../components/TimeBasedBackground';
+import http from '../config/http';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 
@@ -20,7 +24,7 @@ const hScale = SH / BASE_H;
 const rs = (n) => Math.round(n * wScale);  // scale by screen width
 const hs = (n) => Math.round(n * hScale);  // scale by screen height
 
-const TOP_SECTION_HEIGHT = SH * 0.35;
+const TOP_SECTION_HEIGHT = hs(220);
 const CARD_W = SW - 36;
 const CARD_H = hs(351);
 const CARD_SLOT = CARD_H + rs(60);
@@ -34,10 +38,124 @@ const STACK_CONFIG = [
   { width: SW - rs(220), height: hs(50), opacity: 0.8, bottom: hs(-20) },
 ];
 
+const TextureBlob = ({ style }) => (
+  <Svg width={rs(130)} height={hs(130)} viewBox="0 0 160 160" style={style}>
+    <Defs>
+      <SvgLinearGradient id="blobGrad" x1="0" y1="1" x2="0.9" y2="0" gradientUnits="objectBoundingBox">
+        <Stop offset="0" stopColor="#02889D" stopOpacity="0.9" />
+        <Stop offset="0.55" stopColor="#03B7CE" stopOpacity="0.65" />
+        <Stop offset="1" stopColor="#4BD5E8" stopOpacity="0.05" />
+      </SvgLinearGradient>
+    </Defs>
+    <Path
+      d="M 0 160 C 5 130 15 105 38 88 C 60 70 90 72 110 55 C 130 38 128 12 112 3 C 95 -6 70 3 52 18 C 34 33 18 62 10 88 C 2 114 0 140 0 160 Z"
+      fill="url(#blobGrad)"
+    />
+  </Svg>
+);
+
+const NameCardBackground = ({ width, height, style }) => {
+  const r = Math.min(rs(16), height * 0.16);
+  const nw = width * 0.45;
+  const nh = height * 0.046;
+  const nr = Math.min(rs(6), nh * 0.375);
+
+  const x1 = (width - nw) / 2;
+  const x2 = (width + nw) / 2;
+
+  const d = `
+    M ${r} 0
+    L ${width - r} 0
+    A ${r} ${r} 0 0 1 ${width} ${r}
+    L ${width} ${height - r}
+    A ${r} ${r} 0 0 1 ${width - r} ${height}
+    L ${x2 + nr} ${height}
+    A ${nr} ${nr} 0 0 1 ${x2} ${height - nr}
+    L ${x2} ${height - nh + nr}
+    A ${nr} ${nr} 0 0 0 ${x2 - nr} ${height - nh}
+    L ${x1 + nr} ${height - nh}
+    A ${nr} ${nr} 0 0 0 ${x1} ${height - nh + nr}
+    L ${x1} ${height - nr}
+    A ${nr} ${nr} 0 0 1 ${x1 - nr} ${height}
+    L ${r} ${height}
+    A ${r} ${r} 0 0 1 0 ${height - r}
+    L 0 ${r}
+    A ${r} ${r} 0 0 1 ${r} 0
+    Z
+  `.replace(/\s+/g, ' ').trim();
+
+  return (
+    <View style={style}>
+      <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+        <Defs>
+          <SvgLinearGradient id="cardGrad" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#FFFFFF" />
+            <Stop offset="1" stopColor="#BCECF7" />
+          </SvgLinearGradient>
+        </Defs>
+        <Path
+          d={d}
+          fill="url(#cardGrad)"
+          stroke="#A0DCE9"
+          strokeWidth={1.5}
+        />
+      </Svg>
+    </View>
+  );
+};
+
 const NamesScreen = ({ navigation }) => {
   const { names, loading, learnedIds, masteredIds, categories } = useNames();
   const [activeIndex, setActiveIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [lastReadName, setLastReadName] = useState(null);
+
+  useEffect(() => {
+    const fetchLastRead = async () => {
+      try {
+        const res = await http.get('/api/progress');
+        if (res.data?.success && res.data?.data?.progress) {
+          const progressList = res.data.data.progress;
+          if (progressList.length > 0) {
+            // Sort by lastRevisitAt DESC
+            const sorted = [...progressList].sort(
+              (a, b) => new Date(b.lastRevisitAt) - new Date(a.lastRevisitAt)
+            );
+            const latest = sorted[0];
+            const nameObj = names.find(n => n.number === latest.nameNumber);
+            if (nameObj) {
+              setLastReadName(nameObj);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch last read name progress', err.message);
+      }
+    };
+
+    if (names.length > 0) {
+      fetchLastRead();
+    }
+  }, [names]);
+
+  const handleBackToReading = () => {
+    if (!lastReadName) return;
+
+    // Reset filters
+    setSearchQuery('');
+    setAppliedCat('All');
+    setAppliedStatus('All');
+    setAppliedNumber('');
+
+    setTimeout(() => {
+      const idx = names.findIndex(n => n.number === lastReadName.number);
+      if (idx !== -1) {
+        setActiveIndex(idx);
+        activeIndexRef.current = idx;
+        scrollAnim.setValue(0);
+      }
+    }, 50);
+  };
 
   const [filterVisible, setFilterVisible] = useState(false);
   const [tempCat, setTempCat] = useState('All');
@@ -226,11 +344,10 @@ const NamesScreen = ({ navigation }) => {
     }
 
     return (
-      <ImageBackground
-        source={require('../../assets/names/name_bg_card.png')}
-        style={styles.cardContent}
-        resizeMode="cover"
-      >
+      <View style={styles.cardContent}>
+        <NameCardBackground width={CARD_W} height={CARD_H} style={StyleSheet.absoluteFillObject} />
+        <TextureBlob style={styles.leftTexture} />
+        <TextureBlob style={styles.rightTexture} />
         <View style={styles.bookmarkRibbon}>
           <Image
             source={require('../../assets/names/flag.png')}
@@ -257,12 +374,11 @@ const NamesScreen = ({ navigation }) => {
             </View>
           )}
         </View>
-        <View style={styles.cardInner}>
+        <View style={[styles.cardInner, isLearned && { paddingBottom: hs(75) }]}>
           <Text style={[styles.arabic, { color: '#1A1A1A' }]}>{item.arabic}</Text>
           <Text style={[styles.trans, { color: '#1A1A1A' }]}>{item.transliteration}</Text>
-          <Text style={[styles.meaning, { color: '#1A1A1A' }]}>{item.meaning}</Text>
+          <Text style={[styles.meaning, { color: '#555555' }]}>{item.meaning}</Text>
         </View>
-        <Image source={require('../../assets/names/book_q.png')} style={styles.quranImage} resizeMode="contain" />
 
         {isLearned && (
           <View style={styles.toMasterHint}>
@@ -270,7 +386,7 @@ const NamesScreen = ({ navigation }) => {
             <Text style={styles.toMasterDesc}>Read 3 times to earn Master Badge</Text>
           </View>
         )}
-      </ImageBackground>
+      </View>
     );
   };
 
@@ -288,271 +404,411 @@ const NamesScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-
-      {/* ── TOP SECTION ── */}
-      <View style={[styles.topSection, { height: TOP_SECTION_HEIGHT }]}>
-        <View style={styles.searchRow}>
-          <View style={styles.searchPill}>
-            <Ionicons name="search" size={rs(18)} color="#BFBFBF" />
-            <TextInput
-              style={styles.searchInput}
-              value={searchQuery}
-              onChangeText={(text) => {
-                setSearchQuery(text);
-                setActiveIndex(0);
-                activeIndexRef.current = 0;
-              }}
-              placeholder="Name, Meaning, Arabic....."
-              placeholderTextColor="#BFBFBF"
-              returnKeyType="search"
-              clearButtonMode="while-editing"
-            />
-          </View>
-          <TouchableOpacity
-            style={styles.filterCircle}
-            onPress={() => {
-              setTempCat(appliedCat);
-              setTempStatus(appliedStatus);
-              setTempNumber(appliedNumber);
-              setFilterVisible(true);
-            }}
-          >
-            <Ionicons name="options-outline" size={rs(18)} color="#1A1A1A" />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.bannerContainer}>
-          <Image source={require('../../assets/names/name_hero_card.png')} style={styles.bannerImage} resizeMode="cover" />
-        </View>
-        <View style={styles.ornContainer}>
-          <Image source={require('../../assets/names/line_gold.png')} style={styles.goldDivider} resizeMode="contain" />
-        </View>
-      </View>
-
-      {/* ── CARD STACK ENGINE ── */}
-      <View style={styles.stackEngine} {...panResponder.panHandlers}>
-
-        {filteredNames.length === 0 ? (
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Ionicons name="document-text-outline" size={rs(48)} color="#ADC1D2" style={{ marginBottom: rs(16) }} />
-            <Text style={{ fontSize: rs(16), color: '#1A1A1A', fontWeight: '600' }}>No names match your filter.</Text>
-            <Text style={{ fontSize: rs(14), color: '#7A7A7A', marginTop: rs(8) }}>Try adjusting your search criteria.</Text>
-          </View>
-        ) : (
+      <TimeBasedBackground showElements={false}>
+        {({ isNight }) => (
           <>
-            {/* BOTTOM: stack peek frames + dome (behind all cards) */}
-            <View style={styles.bottomArea}>
-              {STACK_CONFIG.map((config, idx) => {
-                const nextConfig = idx === 2
-                  ? { width: CARD_W, height: CARD_H, opacity: 1, bottom: hs(35) }
-                  : STACK_CONFIG[idx + 1];
+            <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
+            {/* ── TOP SECTION ── */}
+            <View style={styles.topSection}>
+              <View style={styles.headerContainer}>
+                <View style={styles.headerDividerRow}>
+                  <View style={styles.headerLine} />
+                  <Text style={styles.headerDiamond}>✦</Text>
+                  <View style={styles.headerLine} />
+                </View>
+                <Text style={styles.headerTitleText}>99 Names of Allah</Text>
+                <View style={styles.headerDividerRow}>
+                  <View style={styles.headerLine} />
+                  <Text style={styles.headerDiamond}>✦</Text>
+                  <View style={styles.headerLine} />
+                </View>
+              </View>
 
-                const tY = -(nextConfig.bottom - config.bottom);
+              <View style={styles.lastReadCardWrapper}>
+                <LinearGradient
+                  colors={['#4BD5E8', '#FDFEFE']}
+                  start={{ x: 0.5, y: 0 }}
+                  end={{ x: 0.5, y: 0.9 }}
+                  style={styles.lastReadCard}
+                >
+                  <View style={styles.lastReadLeft}>
+                    <View style={styles.lastReadBadge}>
+                      <Image
+                        source={require('../../assets/navigation/names.png')}
+                        style={styles.lastReadBadgeIcon}
+                        resizeMode="contain"
+                      />
+                      <Text style={styles.lastReadBadgeText}>Last Read</Text>
+                    </View>
 
-                const floatOffset = floatAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, idx === 0 ? -6 : idx === 1 ? -10 : -14]
-                });
+                    <View style={styles.lastReadTextGroup}>
+                      <Text style={styles.lastReadArabic}>{lastReadName?.arabic || 'الرحمن'}</Text>
+                      <Text style={styles.lastReadTrans}>{lastReadName?.transliteration || 'Ar-rahman'}</Text>
+                      <Text style={styles.lastReadMeaning}>{lastReadName?.meaning || 'The Most Gracious'}</Text>
+                    </View>
 
-                return (
-                  <Animated.View key={idx} style={[styles.peekFrame, {
-                    width: config.width,
-                    height: config.height,
-                    bottom: hs(80) + config.bottom,
-                    zIndex: idx + 1,
-                    opacity: scrollAnim.interpolate({
-                      inputRange: [-1, 0, 1],
-                      outputRange: [nextConfig.opacity, config.opacity, config.opacity],
-                      extrapolate: 'clamp',
-                    }),
-                    transform: [
-                      {
-                        translateY: Animated.add(
-                          scrollAnim.interpolate({
-                            inputRange: [-1, 0, 1],
-                            outputRange: [tY, 0, 0],
-                            extrapolate: 'clamp',
-                          }),
-                          floatOffset
-                        ),
-                      },
-                    ],
-                  }]} />
-                );
-              })}
-
-              {/* DOME — fades on first swipe */}
-              <Animated.View style={[styles.dome, {
-                opacity: domeOpacity,
-                transform: [{ translateY: anchorAnim }],
-              }]}>
-                <Text style={styles.domeLabel}>Swipe to find next</Text>
-                <Image source={require('../../assets/names/new_anchor.png')} style={styles.anchorImg} resizeMode="contain" />
-              </Animated.View>
-            </View>
-
-            {/* THREE CARD SLOTS — stable keys, no mount/unmount on transition */}
-            {cardSlots.map(({ dataIdx, offset }) => (
-              <Animated.View
-                key={`slot${offset}`}
-                style={[styles.baseCardWrapper, {
-                  zIndex: offset === 0 ? 10 : 30,
-                  opacity: scrollAnim.interpolate({
-                    inputRange: [-1, 0, 1],
-                    outputRange: offset === -1 ? [0, 0, 1]
-                      : offset === 0 ? [1, 1, 1]
-                        : [1, 0, 0],
-                    extrapolate: 'clamp',
-                  }),
-                  transform: [
-                    {
-                      translateY: scrollAnim.interpolate({
-                        inputRange: [-1, 0, 1],
-                        outputRange: offset === -1 ? [-CARD_SLOT, -CARD_SLOT, 0]
-                          : offset === 0 ? [0, 0, 0]
-                            : [0, CARD_SLOT, CARD_SLOT],
-                        extrapolate: 'clamp',
-                      }),
-                    }
-                  ],
-                }]}
-              >
-                {offset === 0 ? (
-                  <TouchableOpacity
-                    style={styles.mainCard}
-                    activeOpacity={0.92}
-                    onPress={() => {
-                      if (isAnimating.current) return;
-                      const item = filteredNames[dataIdx];
-                      if (item) navigation.navigate('NameDetail', { name: item });
-                    }}
-                  >
-                    {renderCardContent(dataIdx)}
-                  </TouchableOpacity>
-                ) : (
-                  <View style={styles.mainCard}>
-                    {renderCardContent(dataIdx)}
+                    <TouchableOpacity
+                      style={styles.backToReadingBtn}
+                      activeOpacity={0.8}
+                      onPress={handleBackToReading}
+                    >
+                      <Text style={styles.backToReadingText}>Back to reading</Text>
+                      <Ionicons name="chevron-forward" size={15} color="#ffffff" style={{ marginLeft: 20, marginTop: 4 }} />
+                    </TouchableOpacity>
                   </View>
-                )}
-              </Animated.View>
-            ))}
-          </>
-        )}
 
-      </View>
-
-      {/* ── FILTER MODAL ── */}
-      <Modal visible={filterVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHandle} />
-
-            <Text style={styles.filterSectionTitle}>CATEGORY</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterScrollContent}>
-              {['All', ...(categories ? Object.keys(categories).map(k => k.charAt(0).toUpperCase() + k.slice(1)) : [])].map(cat => {
-                const isActive = tempCat === cat;
-                return (
-                  <TouchableOpacity
-                    key={cat}
-                    onPress={() => setTempCat(cat)}
-                    style={[styles.filterPill, isActive && styles.filterPillActive]}
-                  >
-                    <Text style={[styles.filterPillText, isActive && styles.filterPillTextActive]}>{cat}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-
-            <Text style={styles.filterSectionTitle}>STATUS</Text>
-            <View style={styles.filterRow}>
-              {['All', 'Learned', 'Mastered'].map(status => {
-                const isActive = tempStatus === status;
-                return (
-                  <TouchableOpacity
-                    key={status}
-                    onPress={() => setTempStatus(status)}
-                    style={[styles.filterPill, isActive && styles.filterPillActive]}
-                  >
-                    <Text style={[styles.filterPillText, isActive && styles.filterPillTextActive]}>{status}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <Text style={styles.filterSectionTitle}>NAMES</Text>
-            <View style={styles.namesFilterRow}>
-              <Text style={styles.namesFilterLabel}>Select the name number</Text>
-              <View style={styles.numberInputBox}>
-                <TextInput
-                  style={styles.numberInput}
-                  value={tempNumber}
-                  onChangeText={setTempNumber}
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  placeholder="--"
-                  placeholderTextColor="#A0A0A0"
-                />
+                  <View style={styles.lastReadRight}>
+                    <Image
+                      source={require('../../assets/names/book.png')}
+                      style={styles.lastReadBookImage}
+                      resizeMode="contain"
+                    />
+                  </View>
+                </LinearGradient>
               </View>
             </View>
 
-            <TouchableOpacity
-              style={styles.applyFilterBtn}
-              onPress={() => {
-                setAppliedCat(tempCat);
-                setAppliedStatus(tempStatus);
-                setAppliedNumber(tempNumber);
-                setActiveIndex(0);
-                activeIndexRef.current = 0;
-                pendingReset.current = true;
-                setFilterVisible(false);
-              }}
-            >
-              <Text style={styles.applyFilterBtnText}>Done</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+            {/* ── CARD STACK ENGINE ── */}
+            <View style={styles.stackEngine} {...panResponder.panHandlers}>
 
+              {filteredNames.length === 0 ? (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                  <Ionicons name="document-text-outline" size={rs(48)} color="#ADC1D2" style={{ marginBottom: rs(16) }} />
+                  <Text style={{ fontSize: rs(16), color: '#1A1A1A', fontWeight: '600' }}>No names match your filter.</Text>
+                  <Text style={{ fontSize: rs(14), color: '#7A7A7A', marginTop: rs(8) }}>Try adjusting your search criteria.</Text>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.bottomArea}>
+                    {STACK_CONFIG.map((config, idx) => {
+                      const nextConfig = idx === 2
+                        ? { width: CARD_W, height: CARD_H, opacity: 1, bottom: hs(35) }
+                        : STACK_CONFIG[idx + 1];
+
+                      const tY = -(nextConfig.bottom - config.bottom);
+
+                      const floatOffset = floatAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, idx === 0 ? -6 : idx === 1 ? -10 : -14]
+                      });
+
+                      return (
+                        <Animated.View key={idx} style={[styles.peekFrame, {
+                          width: config.width,
+                          height: config.height,
+                          bottom: hs(80) + config.bottom,
+                          zIndex: idx + 1,
+                          opacity: scrollAnim.interpolate({
+                            inputRange: [-1, 0, 1],
+                            outputRange: [nextConfig.opacity, config.opacity, config.opacity],
+                            extrapolate: 'clamp',
+                          }),
+                          transform: [
+                            {
+                              translateY: Animated.add(
+                                scrollAnim.interpolate({
+                                  inputRange: [-1, 0, 1],
+                                  outputRange: [tY, 0, 0],
+                                  extrapolate: 'clamp',
+                                }),
+                                floatOffset
+                              ),
+                            },
+                          ],
+                        }]}>
+                          <NameCardBackground width={config.width} height={config.height} style={StyleSheet.absoluteFillObject} />
+                        </Animated.View>
+                      );
+                    })}
+
+                    <Animated.View style={[styles.dome, {
+                      opacity: domeOpacity,
+                      transform: [{ translateY: anchorAnim }],
+                    }]}>
+                      <Text style={styles.domeLabel}>Swipe to find next</Text>
+                      <Image source={require('../../assets/names/new_anchor.png')} style={styles.anchorImg} resizeMode="contain" />
+                    </Animated.View>
+                  </View>
+
+                  {cardSlots.map(({ dataIdx, offset }) => (
+                    <Animated.View
+                      key={`slot${offset}`}
+                      style={[styles.baseCardWrapper, {
+                        zIndex: offset === 0 ? 10 : 30,
+                        opacity: scrollAnim.interpolate({
+                          inputRange: [-1, 0, 1],
+                          outputRange: offset === -1 ? [0, 0, 1]
+                            : offset === 0 ? [1, 1, 1]
+                              : [1, 0, 0],
+                          extrapolate: 'clamp',
+                        }),
+                        transform: [
+                          {
+                            translateY: scrollAnim.interpolate({
+                              inputRange: [-1, 0, 1],
+                              outputRange: offset === -1 ? [-CARD_SLOT, -CARD_SLOT, 0]
+                                : offset === 0 ? [0, 0, 0]
+                                  : [0, CARD_SLOT, CARD_SLOT],
+                              extrapolate: 'clamp',
+                            }),
+                          }
+                        ],
+                      }]}
+                    >
+                      {offset === 0 ? (
+                        <TouchableOpacity
+                          style={styles.mainCard}
+                          activeOpacity={0.92}
+                          onPress={() => {
+                            if (isAnimating.current) return;
+                            const item = filteredNames[dataIdx];
+                            if (item) navigation.navigate('NameDetail', { name: item });
+                          }}
+                        >
+                          {renderCardContent(dataIdx)}
+                        </TouchableOpacity>
+                      ) : (
+                        <View style={styles.mainCard}>
+                          {renderCardContent(dataIdx)}
+                        </View>
+                      )}
+                    </Animated.View>
+                  ))}
+                </>
+              )}
+
+            </View>
+
+            {/* ── FILTER MODAL ── */}
+            <Modal visible={filterVisible} animationType="slide" transparent={true}>
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <View style={styles.modalHandle} />
+
+                  <Text style={styles.filterSectionTitle}>CATEGORY</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterScrollContent}>
+                    {['All', ...(categories ? Object.keys(categories).map(k => k.charAt(0).toUpperCase() + k.slice(1)) : [])].map(cat => {
+                      const isActive = tempCat === cat;
+                      return (
+                        <TouchableOpacity
+                          key={cat}
+                          onPress={() => setTempCat(cat)}
+                          style={[styles.filterPill, isActive && styles.filterPillActive]}
+                        >
+                          <Text style={[styles.filterPillText, isActive && styles.filterPillTextActive]}>{cat}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+
+                  <Text style={styles.filterSectionTitle}>STATUS</Text>
+                  <View style={styles.filterRow}>
+                    {['All', 'Learned', 'Mastered'].map(status => {
+                      const isActive = tempStatus === status;
+                      return (
+                        <TouchableOpacity
+                          key={status}
+                          onPress={() => setTempStatus(status)}
+                          style={[styles.filterPill, isActive && styles.filterPillActive]}
+                        >
+                          <Text style={[styles.filterPillText, isActive && styles.filterPillTextActive]}>{status}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  <Text style={styles.filterSectionTitle}>NAMES</Text>
+                  <View style={styles.namesFilterRow}>
+                    <Text style={styles.namesFilterLabel}>Select the name number</Text>
+                    <View style={styles.numberInputBox}>
+                      <TextInput
+                        style={styles.numberInput}
+                        value={tempNumber}
+                        onChangeText={setTempNumber}
+                        keyboardType="number-pad"
+                        maxLength={2}
+                        placeholder="--"
+                        placeholderTextColor="#A0A0A0"
+                      />
+                    </View>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.applyFilterBtn}
+                    onPress={() => {
+                      setAppliedCat(tempCat);
+                      setAppliedStatus(tempStatus);
+                      setAppliedNumber(tempNumber);
+                      setActiveIndex(0);
+                      activeIndexRef.current = 0;
+                      pendingReset.current = true;
+                      setFilterVisible(false);
+                    }}
+                  >
+                    <Text style={styles.applyFilterBtnText}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
+          </>
+        )}
+      </TimeBasedBackground>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#EDF1F9' },
-  topSection: { paddingHorizontal: rs(20), paddingTop: hs(10), zIndex: 30, borderBottomLeftRadius: rs(20), borderBottomRightRadius: rs(20) },
+  root: { flex: 1, backgroundColor: 'transparent' },
+  topSection: { paddingHorizontal: rs(20), paddingTop: hs(15), zIndex: 30 },
+  headerContainer: {
+    alignItems: 'center',
+    marginBottom: hs(15),
+  },
+  headerDividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: rs(140),
+  },
+  headerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#0891b2',
+    opacity: 0.35,
+  },
+  headerDiamond: {
+    color: '#0891b2',
+    fontSize: rs(10),
+    marginHorizontal: rs(6),
+  },
+  headerTitleText: {
+    fontFamily: FONTS.bold,
+    fontSize: rs(18),
+    color: '#0891b2',
+    marginVertical: hs(4),
+    textAlign: 'center',
+  },
+  lastReadCardWrapper: {
+    width: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+    elevation: 4,
+    marginBottom: hs(16),
+  },
+  lastReadCard: {
+    flexDirection: 'row',
+    borderRadius: rs(10),
+    paddingVertical: hs(12),
+    paddingHorizontal: rs(16),
+    height: hs(180),
+    position: 'relative',
+    overflow: 'visible',
+  },
+  lastReadLeft: {
+    flex: 1.2,
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  lastReadBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  lastReadBadgeIcon: {
+    width: rs(14),
+    height: rs(14),
+    marginTop: hs(2),
+    tintColor: '#000000',
+  },
+  lastReadBadgeText: {
+    fontFamily: FONTS.medium,
+    fontSize: rs(12),
+    color: '#000000',
+    marginLeft: 2,
+  },
+  lastReadTextGroup: {
+    marginTop: hs(20),
+    marginBottom: hs(20),
+  },
+  lastReadArabic: {
+    fontSize: rs(10),
+    fontFamily: FONTS.arabic,
+    color: '#000000ff',
+  },
+  lastReadTrans: {
+    fontFamily: FONTS.bold,
+    fontSize: rs(18),
+    color: '#000000',
+    lineHeight: rs(22),
+  },
+  lastReadMeaning: {
+    fontFamily: FONTS.medium,
+    fontSize: rs(10),
+    color: '#374151',
+  },
+  backToReadingBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#000000',
+    borderRadius: rs(8),
+    paddingHorizontal: rs(14),
+    paddingVertical: hs(8),
+    alignSelf: 'flex-start',
+    marginTop: hs(2),
+  },
+  backToReadingText: {
+    fontFamily: FONTS.medium,
+    fontSize: rs(12),
+    color: '#ffffff',
+  },
+  lastReadRight: {
+    flex: 0.8,
+    position: 'relative',
+    overflow: 'visible',
+  },
+  lastReadBookImage: {
+    position: 'absolute',
+    right: rs(-80),
+    top: hs(10),
+    width: rs(140),
+    height: hs(140),
+    zIndex: 3,
+    transform: [{ rotate: '-6deg' }],
+  },
 
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: rs(10), marginBottom: hs(10), marginTop: hs(4) },
   searchPill: { flex: 1, height: rs(38), backgroundColor: '#FFFFFF', borderRadius: rs(19), flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(14), gap: rs(8), elevation: 2 },
   searchInput: { flex: 1, fontSize: rs(13), color: '#1A1A1A', paddingVertical: 0, height: rs(38) },
   filterCircle: { width: rs(38), height: rs(38), backgroundColor: '#FFFFFF', borderRadius: rs(19), justifyContent: 'center', alignItems: 'center', elevation: 2 },
 
-  bannerContainer: { height: '55%', borderRadius: rs(20), overflow: 'hidden', marginBottom: hs(6) },
-  bannerImage: { width: '100%', height: '100%', borderRadius: rs(20) },
-  ornContainer: { alignItems: 'center', height: hs(28), marginTop: hs(-8), overflow: 'visible' },
-  goldDivider: { width: '100%', height: hs(60), marginTop: hs(-16) },
-
   stackEngine: { flex: 1, alignItems: 'center', position: 'relative' },
 
   baseCardWrapper: {
     position: 'absolute',
-    top: hs(10),
+    top: hs(50),
     width: CARD_W,
     height: CARD_H,
-    elevation: 20,
+    shadowColor: '#00ADC1',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 8,
   },
   mainCard: {
     flex: 1,
-    borderRadius: rs(16),
-    backgroundColor: '#FFF',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#00ADC1',
+    backgroundColor: 'transparent',
+    overflow: 'visible',
   },
 
   cardContent: { flex: 1 },
-  cardInner: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: hs(40) },
-  arabic: { fontSize: rs(28), fontFamily: FONTS.arabic, textAlign: 'center', marginBottom: hs(2) },
-  trans: { fontSize: rs(35), fontWeight: '400', textAlign: 'center', color: '#1A1A1A', marginBottom: hs(4) },
-  meaning: { fontSize: rs(20), fontWeight: '400', textAlign: 'center' },
+  leftTexture: { position: 'absolute', bottom: 0, left: 0 },
+  rightTexture: { position: 'absolute', bottom: 0, right: 0, transform: [{ scaleX: -1 }] },
+  cardInner: { flex: 1, justifyContent: 'flex-end', alignItems: 'flex-start', paddingLeft: rs(24), paddingBottom: hs(35) },
+  arabic: { fontSize: rs(28), fontFamily: FONTS.arabic, textAlign: 'left', marginBottom: hs(4) },
+  trans: { fontSize: rs(35), fontWeight: '700', textAlign: 'left', color: '#1A1A1A', marginBottom: hs(4) },
+  meaning: { fontSize: rs(18), fontWeight: '500', textAlign: 'left' },
 
   bookmarkRibbon: { position: 'absolute', top: hs(-5), left: rs(15), width: rs(44), height: hs(66), zIndex: 10 },
   flagImage: { width: '100%', height: '100%' },
@@ -572,7 +828,7 @@ const styles = StyleSheet.create({
   quranImage: { position: 'absolute', bottom: hs(15), right: rs(15), width: rs(110), height: rs(110) },
 
   bottomArea: { position: 'absolute', bottom: 0, left: 0, right: 0, alignItems: 'center', height: hs(180), zIndex: 5 },
-  peekFrame: { position: 'absolute', borderRadius: rs(12), backgroundColor: '#FFFFFF', alignSelf: 'center', borderWidth: 1, borderColor: '#00ADC1' },
+  peekFrame: { position: 'absolute', alignSelf: 'center' },
 
   dome: {
     position: 'absolute', bottom: hs(70),

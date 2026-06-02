@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNames } from '../context/NamesContext';
 import { FONTS, SPACE, RADIUS } from '../theme';
+import TimeBasedBackground from '../components/TimeBasedBackground';
 
 const { width } = Dimensions.get('window');
 
@@ -86,7 +87,10 @@ const StreakScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      <TimeBasedBackground showElements={false}>
+        {({ isNight }) => (
+          <>
+            <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -318,6 +322,9 @@ const StreakScreen = ({ navigation }) => {
 
         <View style={{ height: 80 }} />
       </ScrollView>
+          </>
+        )}
+      </TimeBasedBackground>
     </SafeAreaView>
   );
 };
@@ -325,7 +332,7 @@ const StreakScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: 'transparent',
   },
   header: {
     paddingHorizontal: SPACE.md,

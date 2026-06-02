@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { usePlaylist } from '../context/PlaylistContext';
 import { useAppTheme } from '../context/ThemeContext';
+import TimeBasedBackground from '../components/TimeBasedBackground';
 
 const { width, height } = Dimensions.get('window');
 const ARTWORK_SIZE = width - 64;
@@ -109,12 +110,11 @@ export default function NowPlayingScreen() {
 
   return (
     <Animated.View style={[styles.root, { transform: [{ translateY }] }]} {...panResponder.panHandlers}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
-      <LinearGradient
-        colors={['#000000', '#0a0a0a', '#000000']}
-        style={StyleSheet.absoluteFill}
-      />
-      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <TimeBasedBackground showElements={false}>
+        {({ isNight }) => (
+          <>
+            <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
+            <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
 
         {/* ── Top Bar ── */}
         <View style={styles.topBar}>
@@ -266,6 +266,9 @@ export default function NowPlayingScreen() {
         </View>
 
       </SafeAreaView>
+          </>
+        )}
+      </TimeBasedBackground>
     </Animated.View>
   );
 }
@@ -273,7 +276,7 @@ export default function NowPlayingScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: 'transparent',
   },
   safe: {
     flex: 1,

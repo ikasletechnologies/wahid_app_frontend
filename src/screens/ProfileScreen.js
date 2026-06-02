@@ -25,6 +25,8 @@ import { useAuth } from '../context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
+import TimeBasedBackground from '../components/TimeBasedBackground';
+
 const MaskedGradient = ({ children, width, height }) => (
     <MaskedView
         style={{ width, height }}
@@ -49,11 +51,14 @@ export default function ProfileScreen({ navigation }) {
 
     return (
         <SafeAreaView style={styles.container}>
-
-            <StatusBar
-                barStyle="dark-content"
-                backgroundColor="#d3e5fcff"
-            />
+            <TimeBasedBackground showElements={false}>
+                {({ isNight }) => (
+                    <>
+                        <StatusBar
+                            barStyle={isNight ? "light-content" : "dark-content"}
+                            backgroundColor="transparent"
+                            translucent
+                        />
 
             {/* HEADER */}
             <View style={styles.headerContainer}>
@@ -432,6 +437,9 @@ export default function ProfileScreen({ navigation }) {
                     </View>
                 </View>
             </Modal>
+                    </>
+                )}
+            </TimeBasedBackground>
         </SafeAreaView>
     );
 }
@@ -440,7 +448,7 @@ const styles = StyleSheet.create({
 
     container: {
         flex: 1,
-        backgroundColor: '#d3e5fcff',
+        backgroundColor: 'transparent',
         paddingHorizontal: 15,
     },
 

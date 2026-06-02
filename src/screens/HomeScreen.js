@@ -10,6 +10,8 @@ import {
   RefreshControl,
   Image,
   ImageBackground,
+  TextInput,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,13 +20,192 @@ import { useNames, CATEGORIES } from '../context/NamesContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS } from '../theme';
+import TimeBasedBackground from '../components/TimeBasedBackground';
+import http from '../config/http';
 
 const { width } = Dimensions.get('window');
+
+const SURAHS = [
+  { number: 1, name: "Al-Fatihah" },
+  { number: 2, name: "Al-Baqarah" },
+  { number: 3, name: "Aal-e-Imran" },
+  { number: 4, name: "An-Nisa" },
+  { number: 5, name: "Al-Ma'idah" },
+  { number: 6, name: "Al-An'am" },
+  { number: 7, name: "Al-A'raf" },
+  { number: 8, name: "Al-Anfal" },
+  { number: 9, name: "At-Tawbah" },
+  { number: 10, name: "Yunus" },
+  { number: 11, name: "Hud" },
+  { number: 12, name: "Yusuf" },
+  { number: 13, name: "Ar-Ra'd" },
+  { number: 14, name: "Ibrahim" },
+  { number: 15, name: "Al-Hijr" },
+  { number: 16, name: "An-Nahl" },
+  { number: 17, name: "Al-Isra" },
+  { number: 18, name: "Al-Kahf" },
+  { number: 19, name: "Maryam" },
+  { number: 20, name: "Ta-Ha" },
+  { number: 21, name: "Al-Anbiya" },
+  { number: 22, name: "Al-Hajj" },
+  { number: 23, name: "Al-Mu'minun" },
+  { number: 24, name: "An-Nur" },
+  { number: 25, name: "Al-Furqan" },
+  { number: 26, name: "Ash-Shu'ara" },
+  { number: 27, name: "An-Naml" },
+  { number: 28, name: "Al-Qasas" },
+  { number: 29, name: "Al-Ankabut" },
+  { number: 30, name: "Ar-Rum" },
+  { number: 31, name: "Luqman" },
+  { number: 32, name: "As-Sajdah" },
+  { number: 33, name: "Al-Ahzab" },
+  { number: 34, name: "Saba" },
+  { number: 35, name: "Fatir" },
+  { number: 36, name: "Ya-Sin" },
+  { number: 37, name: "As-Saffat" },
+  { number: 38, name: "Sad" },
+  { number: 39, name: "Az-Zumar" },
+  { number: 40, name: "Ghafir" },
+  { number: 41, name: "Fussilat" },
+  { number: 42, name: "Ash-Shura" },
+  { number: 43, name: "Az-Zukhruf" },
+  { number: 44, name: "Ad-Dukhan" },
+  { number: 45, name: "Al-Jathiyah" },
+  { number: 46, name: "Al-Ahqaf" },
+  { number: 47, name: "Muhammad" },
+  { number: 48, name: "Al-Fath" },
+  { number: 49, name: "Al-Hujurat" },
+  { number: 50, name: "Qaf" },
+  { number: 51, name: "Adh-Dhariyat" },
+  { number: 52, name: "At-Tur" },
+  { number: 53, name: "An-Najm" },
+  { number: 54, name: "Al-Qamar" },
+  { number: 55, name: "Ar-Rahman" },
+  { number: 56, name: "Al-Waqi'ah" },
+  { number: 57, name: "Al-Hadid" },
+  { number: 58, name: "Al-Mujadilah" },
+  { number: 59, name: "Al-Hashr" },
+  { number: 60, name: "Al-Mumtahanah" },
+  { number: 61, name: "As-Saff" },
+  { number: 62, name: "Al-Jumu'ah" },
+  { number: 63, name: "Al-Munafiqun" },
+  { number: 64, name: "At-Taghabun" },
+  { number: 65, name: "At-Talaq" },
+  { number: 66, name: "At-Tahrim" },
+  { number: 67, name: "Al-Mulk" },
+  { number: 68, name: "Al-Qalam" },
+  { number: 69, name: "Al-Haqqah" },
+  { number: 70, name: "Al-Ma'arij" },
+  { number: 71, name: "Nuh" },
+  { number: 72, name: "Al-Jinn" },
+  { number: 73, name: "Al-Muzzammil" },
+  { number: 74, name: "Al-Muddaththir" },
+  { number: 75, name: "Al-Qiyamah" },
+  { number: 76, name: "Al-Insan" },
+  { number: 77, name: "Al-Mursalat" },
+  { number: 78, name: "An-Naba" },
+  { number: 79, name: "An-Nazi'at" },
+  { number: 80, name: "'Abasa" },
+  { number: 81, name: "At-Takwir" },
+  { number: 82, name: "Al-Infitar" },
+  { number: 83, name: "Al-Mutaffifin" },
+  { number: 84, name: "Al-Inshiqaq" },
+  { number: 85, name: "Al-Buruj" },
+  { number: 86, name: "At-Tariq" },
+  { number: 87, name: "Al-A'la" },
+  { number: 88, name: "Al-Ghashiyah" },
+  { number: 89, name: "Al-Fajr" },
+  { number: 90, name: "Al-Balad" },
+  { number: 91, name: "Ash-Shams" },
+  { number: 92, name: "Al-Layl" },
+  { number: 93, name: "Ad-Duha" },
+  { number: 94, name: "Ash-Sharh" },
+  { number: 95, name: "At-Tin" },
+  { number: 96, name: "Al-'Alaq" },
+  { number: 97, name: "Al-Qadr" },
+  { number: 98, name: "Al-Bayyinah" },
+  { number: 99, name: "Az-Zalzalah" },
+  { number: 100, name: "Al-'Adiyat" },
+  { number: 101, name: "Al-Qari'ah" },
+  { number: 102, name: "At-Takathur" },
+  { number: 103, name: "Al-'Asr" },
+  { number: 104, name: "Al-Humazah" },
+  { number: 105, name: "Al-Fil" },
+  { number: 106, name: "Quraysh" },
+  { number: 107, name: "Al-Ma'un" },
+  { number: 108, name: "Al-Kauthar" },
+  { number: 109, name: "Al-Kafirun" },
+  { number: 110, name: "An-Nasr" },
+  { number: 111, name: "Al-Masad" },
+  { number: 112, name: "Al-Ikhlas" },
+  { number: 113, name: "Al-Falaq" },
+  { number: 114, name: "An-Nas" }
+];
 
 const HomeScreen = ({ navigation }) => {
   const { user } = useAuth();
   const { colors, isDark } = useAppTheme();
   const { names, learnedIds, masteredIds, streak, refresh, refreshing } = useNames();
+
+  const [readingProgress, setReadingProgress] = React.useState({
+    surahName: 'Al-Fatihah',
+    surahNumber: 1,
+    ayahNumber: 1,
+  });
+  const [modalVisible, setModalVisible] = React.useState(false);
+  const [searchText, setSearchText] = React.useState('');
+  const [selectedSurah, setSelectedSurah] = React.useState(SURAHS[0]);
+  const [ayahInput, setAyahInput] = React.useState('1');
+
+  const fetchReadingProgress = async () => {
+    try {
+      const res = await http.get('/api/reading');
+      if (res.data?.success && res.data?.data) {
+        setReadingProgress(res.data.data);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch reading progress', err.message);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchReadingProgress();
+  }, []);
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      refresh(),
+      fetchReadingProgress()
+    ]);
+  };
+
+  const filteredSurahs = useMemo(() => {
+    if (!searchText) return SURAHS;
+    return SURAHS.filter(s => s.name.toLowerCase().includes(searchText.toLowerCase()));
+  }, [searchText]);
+
+  const handleSaveProgress = async () => {
+    const ayahNum = parseInt(ayahInput) || 1;
+    const updatePayload = {
+      surahName: selectedSurah.name,
+      surahNumber: selectedSurah.number,
+      ayahNumber: ayahNum
+    };
+    
+    // 1. Optimistic Update
+    setReadingProgress(updatePayload);
+    setModalVisible(false);
+
+    // 2. POST request to backend
+    try {
+      const res = await http.post('/api/reading', updatePayload);
+      if (res.data?.success && res.data?.data) {
+        setReadingProgress(res.data.data);
+      }
+    } catch (err) {
+      console.warn("Failed to save reading progress", err.message);
+    }
+  };
 
   const greeting = useMemo(() => {
     const hours = new Date().getHours();
@@ -64,10 +245,12 @@ const HomeScreen = ({ navigation }) => {
   }, [names, learnedIds]);
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top']}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-
-      {/* ── Pinned Top Section ── */}
+    <SafeAreaView style={[styles.root, { backgroundColor: 'transparent' }]} edges={['top']}>
+      <TimeBasedBackground showElements={false}>
+        {({ isNight }) => (
+          <>
+            <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
+            {/* ── Pinned Top Section ── */}
       <View style={styles.fixedTopContainer}>
         {/* ── Header ── */}
         <View style={styles.header}>
@@ -252,12 +435,45 @@ const HomeScreen = ({ navigation }) => {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={refresh}
+            onRefresh={handleRefresh}
             tintColor={colors.primary}
             colors={[colors.primary]}
           />
         }
       >
+        {/* ── Qur'an Card ── */}
+        <TouchableOpacity
+          style={[
+            styles.quranCard,
+            {
+              backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
+            }
+          ]}
+          activeOpacity={0.85}
+          onPress={() => {
+            setSearchText('');
+            setSelectedSurah(SURAHS.find(s => s.name === readingProgress.surahName) || SURAHS[0]);
+            setAyahInput(String(readingProgress.ayahNumber));
+            setModalVisible(true);
+          }}
+        >
+          <View style={styles.quranCardLeft}>
+            <Text style={styles.quranCardTitle}>QUR'AN</Text>
+            <Text style={[styles.quranCardSub, { color: isDark ? colors.textMuted : '#64748b' }]}>Last Read</Text>
+            <Text style={[styles.quranCardSurah, { color: colors.text }]}>Surah {readingProgress.surahName}</Text>
+            <Text style={[styles.quranCardAyah, { color: colors.textMuted }]}>Ayah {readingProgress.ayahNumber}</Text>
+            <Text style={styles.quranCardAction}>Back to reading &gt;</Text>
+          </View>
+          <View style={styles.quranCardRight}>
+            <Image
+              source={require('../../assets/names/book.png')}
+              style={styles.quranCardBookImage}
+              resizeMode="contain"
+            />
+          </View>
+        </TouchableOpacity>
+
         <View style={styles.catVerticalList}>
           {Object.values(CATEGORIES).map((cat) => {
             const cs = categoryStats[cat.id] || { total: 0, learned: 0 };
@@ -329,6 +545,109 @@ const HomeScreen = ({ navigation }) => {
         </View>
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* ── Update Reading Progress Modal ── */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}
+        >
+          <TouchableOpacity
+            style={[styles.modalContent, { backgroundColor: isDark ? '#1e293b' : '#ffffff' }]}
+            activeOpacity={1}
+          >
+            <View style={styles.modalHandle} />
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Update Reading Progress</Text>
+            
+            {/* Search Surah */}
+            <View style={[styles.modalSearchRow, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9' }]}>
+              <Ionicons name="search" size={18} color={isDark ? 'rgba(255,255,255,0.4)' : '#64748b'} />
+              <TextInput
+                style={[styles.modalSearchInput, { color: colors.text }]}
+                placeholder="Search Surah..."
+                placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : '#64748b'}
+                value={searchText}
+                onChangeText={setSearchText}
+              />
+            </View>
+
+            {/* Selected Surah Label */}
+            <Text style={[styles.selectedLabel, { color: colors.textMuted }]}>
+              Selected: <Text style={{ fontWeight: 'bold', color: '#06b6d4' }}>{selectedSurah.name} (Surah {selectedSurah.number})</Text>
+            </Text>
+
+            {/* Surah List */}
+            <View style={[styles.surahListContainer, { borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }]}>
+              <ScrollView nestedScrollEnabled={true} style={{ maxHeight: 150 }}>
+                {filteredSurahs.map((s) => (
+                  <TouchableOpacity
+                    key={s.number}
+                    style={[
+                      styles.surahRow,
+                      selectedSurah.number === s.number && { backgroundColor: 'rgba(6, 182, 212, 0.15)' }
+                    ]}
+                    onPress={() => setSelectedSurah(s)}
+                  >
+                    <Text style={[styles.surahRowText, { color: colors.text }, selectedSurah.number === s.number && { fontWeight: '700', color: '#06b6d4' }]}>
+                      {s.number}. {s.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* Ayah Input */}
+            <View style={styles.ayahInputSection}>
+              <Text style={[styles.ayahInputLabel, { color: colors.text }]}>Ayah Number:</Text>
+              <View style={styles.ayahInputRow}>
+                <TouchableOpacity
+                  style={[styles.counterBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#e2e8f0' }]}
+                  onPress={() => {
+                    const val = Math.max(1, (parseInt(ayahInput) || 1) - 1);
+                    setAyahInput(String(val));
+                  }}
+                >
+                  <Ionicons name="remove" size={20} color={colors.text} />
+                </TouchableOpacity>
+
+                <TextInput
+                  style={[styles.ayahInputText, { color: colors.text, borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#cbd5e1' }]}
+                  keyboardType="number-pad"
+                  value={ayahInput}
+                  onChangeText={(val) => setAyahInput(val.replace(/[^0-9]/g, ''))}
+                />
+
+                <TouchableOpacity
+                  style={[styles.counterBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#e2e8f0' }]}
+                  onPress={() => {
+                    const val = (parseInt(ayahInput) || 1) + 1;
+                    setAyahInput(String(val));
+                  }}
+                >
+                  <Ionicons name="add" size={20} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Save Button */}
+            <TouchableOpacity
+              style={styles.saveBtn}
+              onPress={handleSaveProgress}
+            >
+              <Text style={styles.saveBtnText}>Save Progress</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+          </>
+        )}
+      </TimeBasedBackground>
     </SafeAreaView>
   );
 };
@@ -636,6 +955,166 @@ const styles = StyleSheet.create({
     fontSize: 44,
     textAlign: 'right',
     lineHeight: 48,
+  },
+
+  // ── Qur'an Card Styles ──
+  quranCard: {
+    flexDirection: 'row',
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    padding: SPACE.md,
+    marginBottom: SPACE.md,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  quranCardLeft: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  quranCardTitle: {
+    fontSize: 12,
+    fontFamily: FONTS.bold,
+    color: '#06b6d4',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  quranCardSub: {
+    fontSize: 10,
+    fontFamily: FONTS.semibold,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  quranCardSurah: {
+    fontSize: 18,
+    fontFamily: FONTS.bold,
+    marginBottom: 2,
+  },
+  quranCardAyah: {
+    fontSize: 13,
+    fontFamily: FONTS.medium,
+    marginBottom: 12,
+  },
+  quranCardAction: {
+    fontSize: 13,
+    fontFamily: FONTS.semibold,
+    color: '#06b6d4',
+  },
+  quranCardRight: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingLeft: SPACE.sm,
+  },
+  quranCardBookImage: {
+    width: 80,
+    height: 80,
+  },
+
+  // ── Modal Styles ──
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: RADIUS.lg,
+    borderTopRightRadius: RADIUS.lg,
+    padding: SPACE.lg,
+    minHeight: 400,
+    paddingBottom: 40,
+  },
+  modalHandle: {
+    width: 40,
+    height: 5,
+    backgroundColor: '#cbd5e1',
+    borderRadius: 2.5,
+    alignSelf: 'center',
+    marginBottom: SPACE.md,
+  },
+  modalTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: SIZES.lg,
+    marginBottom: SPACE.md,
+    textAlign: 'center',
+  },
+  modalSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: SPACE.sm,
+    height: 44,
+    marginBottom: SPACE.sm,
+  },
+  modalSearchInput: {
+    flex: 1,
+    marginLeft: SPACE.xs,
+    fontFamily: FONTS.regular,
+    fontSize: 14,
+    paddingVertical: 0,
+  },
+  selectedLabel: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    marginBottom: SPACE.xs,
+  },
+  surahListContainer: {
+    borderWidth: 1,
+    borderRadius: RADIUS.sm,
+    overflow: 'hidden',
+    marginBottom: SPACE.md,
+  },
+  surahRow: {
+    paddingVertical: SPACE.sm,
+    paddingHorizontal: SPACE.md,
+  },
+  surahRowText: {
+    fontFamily: FONTS.medium,
+    fontSize: 14,
+  },
+  ayahInputSection: {
+    marginBottom: SPACE.lg,
+  },
+  ayahInputLabel: {
+    fontFamily: FONTS.semibold,
+    fontSize: 14,
+    marginBottom: SPACE.sm,
+  },
+  ayahInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  counterBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ayahInputText: {
+    width: 80,
+    height: 40,
+    borderWidth: 1,
+    borderRadius: RADIUS.sm,
+    textAlign: 'center',
+    marginHorizontal: SPACE.md,
+    fontFamily: FONTS.bold,
+    fontSize: 16,
+  },
+  saveBtn: {
+    backgroundColor: '#06b6d4',
+    borderRadius: RADIUS.sm,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: SPACE.xs,
+  },
+  saveBtnText: {
+    fontFamily: FONTS.bold,
+    color: '#ffffff',
+    fontSize: 16,
   },
 });
 

@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNames } from '../context/NamesContext';
 import NameDetailHeader from '../components/NameDetailHeader';
+import TimeBasedBackground from '../components/TimeBasedBackground';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 
@@ -272,45 +273,50 @@ const NameDetailScreen = ({ route, navigation }) => {
   if (phase === 'gift') {
     return (
       <View style={styles.root}>
-        <StatusBar barStyle="dark-content" />
+        <TimeBasedBackground showElements={false}>
+          {({ isNight }) => (
+            <>
+              <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
+              <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+                <NameDetailHeader name={name} onClose={() => navigation.goBack()} />
 
-        <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
-          <NameDetailHeader name={name} onClose={() => navigation.goBack()} />
+                <View style={styles.progressTrack} />
 
-          <View style={styles.progressTrack} />
+                <Animated.View style={[styles.giftBody, { opacity: giftOpacity }]}>
+                  <View style={styles.giftTopInfo}>
+                    <Text style={styles.giftTitle}>Gifts of this Name</Text>
+                    <View style={styles.giftSubtitleContainer}>
+                      <Text style={styles.giftSubtitle}>
+                        What learning {name.transliteration} brings to your life
+                      </Text>
+                    </View>
+                  </View>
 
-          <Animated.View style={[styles.giftBody, { opacity: giftOpacity }]}>
-            <View style={styles.giftTopInfo}>
-              <Text style={styles.giftTitle}>Gifts of this Name</Text>
-              <View style={styles.giftSubtitleContainer}>
-                <Text style={styles.giftSubtitle}>
-                  What learning {name.transliteration} brings to your life
-                </Text>
-              </View>
-            </View>
+                  <View style={styles.giftBoxWrap}>
+                    <Pressable onPress={handleGiftTap}>
+                      <Animated.View style={{ transform: [{ translateY: floatAnim }] }}>
+                        <Image
+                          source={giftOpened
+                            ? require('../../assets/name_detail/open_gift_box.png')
+                            : require('../../assets/name_detail/gift_box.png')}
+                          style={styles.giftBoxImg}
+                          resizeMode="contain"
+                        />
+                      </Animated.View>
+                    </Pressable>
+                    <Image source={require('../../assets/name_detail/ellipse_5.png')} style={styles.giftShadow} resizeMode="contain" />
+                  </View>
 
-            <View style={styles.giftBoxWrap}>
-              <Pressable onPress={handleGiftTap}>
-                <Animated.View style={{ transform: [{ translateY: floatAnim }] }}>
-                  <Image
-                    source={giftOpened
-                      ? require('../../assets/name_detail/open_gift_box.png')
-                      : require('../../assets/name_detail/gift_box.png')}
-                    style={styles.giftBoxImg}
-                    resizeMode="contain"
-                  />
+                  <View style={styles.doubleTapRow}>
+                    <Image source={require('../../assets/name_detail/sign_hand.png')} style={styles.handHint} resizeMode="contain" />
+                    <Text style={styles.doubleTapText}>Double Tap to Open</Text>
+                    <Image source={require('../../assets/name_detail/sign_hand.png')} style={[styles.handHint, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
+                  </View>
                 </Animated.View>
-              </Pressable>
-              <Image source={require('../../assets/name_detail/ellipse_5.png')} style={styles.giftShadow} resizeMode="contain" />
-            </View>
-
-            <View style={styles.doubleTapRow}>
-              <Image source={require('../../assets/name_detail/sign_hand.png')} style={styles.handHint} resizeMode="contain" />
-              <Text style={styles.doubleTapText}>Double Tap to Open</Text>
-              <Image source={require('../../assets/name_detail/sign_hand.png')} style={[styles.handHint, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
-            </View>
-          </Animated.View>
-        </SafeAreaView>
+              </SafeAreaView>
+            </>
+          )}
+        </TimeBasedBackground>
       </View>
     );
   }
@@ -321,56 +327,62 @@ const NameDetailScreen = ({ route, navigation }) => {
   if (phase === 'journey') {
     return (
       <View style={styles.root}>
-        <StatusBar barStyle="dark-content" />
-        <SafeAreaView style={styles.journeyRoot} edges={['top']}>
-          <Animated.View style={[styles.journeyCard, {
-            opacity: journeyOpacity,
-            transform: [{ translateY: journeyTranslate }],
-          }]}>
-            <LinearGradient
-              colors={['#E8F7FB', '#FFFFFF']}
-              style={StyleSheet.absoluteFillObject}
-            />
-            <Text style={styles.journeyTitle}>Your Journey</Text>
-            <Text style={styles.journeySub}>Track your mastery of {name.transliteration}</Text>
+        <TimeBasedBackground showElements={false}>
+          {({ isNight }) => (
+            <>
+              <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
+              <SafeAreaView style={styles.journeyRoot} edges={['top']}>
+                <Animated.View style={[styles.journeyCard, {
+                  opacity: journeyOpacity,
+                  transform: [{ translateY: journeyTranslate }],
+                }]}>
+                  <LinearGradient
+                    colors={['#E8F7FB', '#FFFFFF']}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <Text style={styles.journeyTitle}>Your Journey</Text>
+                  <Text style={styles.journeySub}>Track your mastery of {name.transliteration}</Text>
 
-            <View style={styles.journeyRow}>
-              <View style={styles.journeyStepCard}>
-                <Image source={require('../../assets/name_detail/mdi_learn_outline.png')} style={[styles.journeyImg, { tintColor: '#4CAF50' }]} resizeMode="contain" />
-                <Text style={styles.journeyStepLabel}>Learned</Text>
-              </View>
+                  <View style={styles.journeyRow}>
+                    <View style={styles.journeyStepCard}>
+                      <Image source={require('../../assets/name_detail/mdi_learn_outline.png')} style={[styles.journeyImg, { tintColor: '#4CAF50' }]} resizeMode="contain" />
+                      <Text style={styles.journeyStepLabel}>Learned</Text>
+                    </View>
 
-              <View style={styles.journeyLineWrap}>
-                <View style={styles.journeyLineLeft} />
-                <View style={styles.journeyLineRight} />
-              </View>
+                    <View style={styles.journeyLineWrap}>
+                      <View style={styles.journeyLineLeft} />
+                      <View style={styles.journeyLineRight} />
+                    </View>
 
-              <View style={[styles.journeyStepCard, { opacity: isMastered ? 1 : 0.6 }]}>
-                <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center', marginBottom: rs(8), height: rs(44), width: rs(44) }}>
-                  <Image source={isMastered ? require('../../assets/name_detail/master_open.png') : require('../../assets/name_detail/master_lock.png')} style={{ width: rs(44), height: rs(44) }} resizeMode="contain" />
-                  {!isMastered && <Ionicons name="lock-closed" size={rs(20)} color="#00ADC1" style={{ position: 'absolute', top: rs(12) }} />}
-                </View>
-                <Text style={styles.journeyStepLabel}>Mastered</Text>
-              </View>
-            </View>
+                    <View style={[styles.journeyStepCard, { opacity: isMastered ? 1 : 0.6 }]}>
+                      <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center', marginBottom: rs(8), height: rs(44), width: rs(44) }}>
+                        <Image source={isMastered ? require('../../assets/name_detail/master_open.png') : require('../../assets/name_detail/master_lock.png')} style={{ width: rs(44), height: rs(44) }} resizeMode="contain" />
+                        {!isMastered && <Ionicons name="lock-closed" size={rs(20)} color="#00ADC1" style={{ position: 'absolute', top: rs(12) }} />}
+                      </View>
+                      <Text style={styles.journeyStepLabel}>Mastered</Text>
+                    </View>
+                  </View>
 
-            <Text style={styles.journeyNote}>
-              {isMastered
-                ? `You are the master of this journey!`
-                : `If you read more than 3 times you will be master on this course`}
-            </Text>
+                  <Text style={styles.journeyNote}>
+                    {isMastered
+                      ? `You are the master of this journey!`
+                      : `If you read more than 3 times you will be master on this course`}
+                  </Text>
 
-            <TouchableOpacity
-              style={styles.doneBtn}
-              onPress={() => navigation.goBack()}
-              activeOpacity={0.85}
-            >
-              <LinearGradient colors={['#00ADC1', '#0090A8']} style={styles.doneBtnGrad}>
-                <Text style={styles.doneBtnText}>Done</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </Animated.View>
-        </SafeAreaView>
+                  <TouchableOpacity
+                    style={styles.doneBtn}
+                    onPress={() => navigation.goBack()}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient colors={['#00ADC1', '#0090A8']} style={styles.doneBtnGrad}>
+                      <Text style={styles.doneBtnText}>Done</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </Animated.View>
+              </SafeAreaView>
+            </>
+          )}
+        </TimeBasedBackground>
       </View>
     );
   }
@@ -382,9 +394,11 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" />
-
-      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <TimeBasedBackground showElements={false}>
+        {({ isNight }) => (
+          <>
+            <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
+            <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
         <NameDetailHeader name={name} onClose={() => navigation.goBack()} />
 
         <View style={styles.progressTrack}>
@@ -580,6 +594,9 @@ const NameDetailScreen = ({ route, navigation }) => {
           </View>
         </Animated.View>
       </SafeAreaView>
+          </>
+        )}
+      </TimeBasedBackground>
     </View>
   );
 };
@@ -598,7 +615,7 @@ const AnimSection = ({ anim, hidden, children }) => (
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F0F2FB', borderTopLeftRadius: rs(36), borderTopRightRadius: rs(36), overflow: 'hidden' },
+  root: { flex: 1, backgroundColor: 'transparent', borderTopLeftRadius: rs(36), borderTopRightRadius: rs(36), overflow: 'hidden' },
 
   // ── Gift phase ──
   giftBody: { flex: 1, alignItems: 'center', justifyContent: 'space-between', paddingBottom: hs(50), paddingHorizontal: rs(24), zIndex: 1 },

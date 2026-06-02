@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
+import TimeBasedBackground from '../components/TimeBasedBackground';
 
 const PersonalDetailsScreen = () => {
   const { user } = useAuth();
@@ -17,15 +18,19 @@ const PersonalDetailsScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Personal Details</Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={[styles.root, { backgroundColor: 'transparent' }]} edges={['top']}>
+      <TimeBasedBackground showElements={false}>
+        {({ isNight }) => (
+          <>
+            <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
+            <View style={styles.header}>
+              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <Ionicons name="chevron-back" size={24} color={colors.text} />
+                <Text style={[styles.headerTitle, { color: colors.text }]}>Personal Details</Text>
+              </TouchableOpacity>
+            </View>
 
-      <View style={styles.formContainer}>
+            <View style={styles.formContainer}>
         <View style={[styles.inputContainer, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.05, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
           <TextInput
             style={[styles.input, { color: colors.text }]}
@@ -73,6 +78,9 @@ const PersonalDetailsScreen = () => {
           <Text style={[styles.saveBtnText, { color: isDark ? colors.background : '#FFFFFF' }]}>Save Changes</Text>
         </TouchableOpacity>
       </View>
+          </>
+        )}
+      </TimeBasedBackground>
     </SafeAreaView>
   );
 };

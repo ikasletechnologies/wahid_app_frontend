@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TextInput,
-  TouchableOpacity, Animated, Modal, ActivityIndicator,
+  TouchableOpacity, Animated, Modal, ActivityIndicator, StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import { useNavigation } from '@react-navigation/native';
 import { usePlaylist } from '../context/PlaylistContext';
 import { useNames } from '../context/NamesContext';
 import { useAppTheme } from '../context/ThemeContext';
+import TimeBasedBackground from '../components/TimeBasedBackground';
 import http from '../config/http';
 import Toast from 'react-native-toast-message';
 import PlaylistPicker from '../components/PlaylistPicker';
@@ -593,7 +594,11 @@ export default function PlaylistScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.root, { backgroundColor: 'transparent' }]} edges={['top']}>
+      <TimeBasedBackground showElements={false}>
+        {({ isNight }) => (
+          <>
+            <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
       {/* Route between views */}
       {isSubView && viewMode === 'playlists'
         ? renderPlaylistsView()
@@ -690,6 +695,9 @@ export default function PlaylistScreen() {
           />
         </SafeAreaView>
       </Modal>
+          </>
+        )}
+      </TimeBasedBackground>
     </SafeAreaView>
   );
 }
