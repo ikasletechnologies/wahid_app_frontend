@@ -431,9 +431,22 @@ const NamesScreen = ({ navigation }) => {
                   </View>
 
                   <View style={styles.lastReadRight}>
-                    <Image
+                    <Animated.Image
                       source={require('../../assets/names/book.png')}
-                      style={styles.lastReadBookImage}
+                      style={[
+                        styles.lastReadBookImage,
+                        {
+                          transform: [
+                            { rotate: '-6deg' },
+                            {
+                              translateY: floatAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [0, -10]
+                              })
+                            }
+                          ]
+                        }
+                      ]}
                       resizeMode="contain"
                     />
                   </View>
@@ -625,7 +638,7 @@ const NamesScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: 'transparent' },
-  topSection: { paddingHorizontal: rs(20), paddingTop: hs(15), zIndex: 30 },
+  topSection: { alignItems: 'center', paddingTop: hs(15), zIndex: 30 },
   headerContainer: {
     alignItems: 'center',
     marginBottom: hs(15),
@@ -655,7 +668,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   lastReadCardWrapper: {
-    width: '85%',
+    width: CARD_W,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
@@ -736,12 +749,11 @@ const styles = StyleSheet.create({
   },
   lastReadBookImage: {
     position: 'absolute',
-    right: rs(-80),
+    right: rs(-20),
     top: hs(10),
     width: rs(140),
     height: hs(140),
     zIndex: 3,
-    transform: [{ rotate: '-6deg' }],
   },
 
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: rs(10), marginBottom: hs(10), marginTop: hs(4) },
@@ -768,10 +780,10 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
 
-  cardContent: { flex: 1 },
+  cardContent: { flex: 1, top: rs(-45) },
   textureWrapper: { ...StyleSheet.absoluteFillObject, overflow: 'hidden', borderRadius: rs(16) },
   leftTexture: { position: 'absolute', bottom: -150, left: -150, width: rs(250), height: hs(250) },
-  rightTexture: { position: 'absolute', bottom: 0, right: 0, width: rs(120), height: hs(120), transform: [{ scaleX: -1 }] },
+  rightTexture: { position: 'absolute', bottom: -150, right: -150, width: rs(250), height: hs(250), transform: [{ scaleX: -1 }] },
 
   cardTextArea: { position: 'absolute', top: hs(38), left: 0, right: 0, alignItems: 'center', paddingHorizontal: rs(20) },
   arabic: { fontSize: rs(13), fontFamily: FONTS.arabic, textAlign: 'center', color: '#1A1A1A', marginBottom: hs(2) },
@@ -789,7 +801,7 @@ const styles = StyleSheet.create({
   bookholderWrapper: { position: 'absolute', bottom: hs(50), left: 0, right: 0, alignItems: 'center' },
   bookholderImage: { width: rs(170), height: hs(155) },
 
-  getStartedRow: { position: 'absolute', bottom: hs(-2), alignSelf: 'center', flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: rs(24), paddingVertical: hs(10), paddingLeft: rs(22), paddingRight: rs(6), gap: rs(14), shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: rs(8), shadowOffset: { width: 0, height: 3 }, elevation: 4 },
+  getStartedRow: { position: 'absolute', bottom: hs(-40), alignSelf: 'center', flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: rs(10), paddingVertical: hs(10), paddingLeft: rs(24), paddingRight: rs(8), gap: rs(14), shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: rs(8), shadowOffset: { width: 0, height: 3 }, elevation: 4 },
   getStartedText: { fontSize: rs(14), fontWeight: '600', color: '#1A1A1A' },
   getStartedArrow: { width: rs(30), height: rs(30), borderRadius: rs(15), justifyContent: 'center', alignItems: 'center' },
 
