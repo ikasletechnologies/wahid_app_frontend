@@ -255,9 +255,9 @@ const HomeScreen = ({ navigation }) => {
         {/* ── Header ── */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <View style={[styles.avatarBubble, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : '#cffafe' }]}>
+            <TouchableOpacity style={[styles.avatarBubble, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : '#cffafe' }]} activeOpacity={0.8} onPress={() => navigation.navigate('Profile')}>
               <Text style={[styles.avatarInitial, { color: '#06b6d4' }]}>{initial}</Text>
-            </View>
+            </TouchableOpacity>
             <View style={styles.headerTextCol}>
               <Text style={[styles.welcomeText, { color: isDark ? colors.textMuted : '#475569' }]}>
                 Hello {user?.name || 'Wahid'},
@@ -441,38 +441,6 @@ const HomeScreen = ({ navigation }) => {
           />
         }
       >
-        {/* ── Qur'an Card ── */}
-        <TouchableOpacity
-          style={[
-            styles.quranCard,
-            {
-              backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
-            }
-          ]}
-          activeOpacity={0.85}
-          onPress={() => {
-            setSearchText('');
-            setSelectedSurah(SURAHS.find(s => s.name === readingProgress.surahName) || SURAHS[0]);
-            setAyahInput(String(readingProgress.ayahNumber));
-            setModalVisible(true);
-          }}
-        >
-          <View style={styles.quranCardLeft}>
-            <Text style={styles.quranCardTitle}>QUR'AN</Text>
-            <Text style={[styles.quranCardSub, { color: isDark ? colors.textMuted : '#64748b' }]}>Last Read</Text>
-            <Text style={[styles.quranCardSurah, { color: colors.text }]}>Surah {readingProgress.surahName}</Text>
-            <Text style={[styles.quranCardAyah, { color: colors.textMuted }]}>Ayah {readingProgress.ayahNumber}</Text>
-            <Text style={styles.quranCardAction}>Back to reading &gt;</Text>
-          </View>
-          <View style={styles.quranCardRight}>
-            <Image
-              source={require('../../assets/names/book.png')}
-              style={styles.quranCardBookImage}
-              resizeMode="contain"
-            />
-          </View>
-        </TouchableOpacity>
 
         <View style={styles.catVerticalList}>
           {Object.values(CATEGORIES).map((cat) => {
