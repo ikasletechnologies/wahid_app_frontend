@@ -122,6 +122,7 @@ export const NamesProvider = ({ children }) => {
   const [names, setNames] = useState([]);
   const [learnedIds, setLearnedIds] = useState([]);
   const [masteredIds, setMasteredIds] = useState([]);
+  const [viewedIds, setViewedIds] = useState([]);
   const [streak, setStreak] = useState(0);
   const [streakDetails, setStreakDetails] = useState({
     activeDates: [],
@@ -131,6 +132,23 @@ export const NamesProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Load persisted viewed IDs from AsyncStorage whenever the user logs in
+  useEffect(() => {
+    if (!token) { setViewedIds([]); return; }
+    AsyncStorage.getItem('viewed_name_ids')
+      .then(saved => { if (saved) setViewedIds(JSON.parse(saved)); })
+      .catch(() => {});
+  }, [token]);
+
+  const markAsViewed = useCallback((nameNumber) => {
+    setViewedIds(prev => {
+      if (prev.includes(nameNumber)) return prev;
+      const next = [...prev, nameNumber];
+      AsyncStorage.setItem('viewed_name_ids', JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     if (token) {
       loadInitialData();
@@ -139,6 +157,7 @@ export const NamesProvider = ({ children }) => {
       setNames([]);
       setLearnedIds([]);
       setMasteredIds([]);
+      setViewedIds([]);
       setStreak(0);
       setStreakDetails({
         activeDates: [],
@@ -373,6 +392,7 @@ export const NamesProvider = ({ children }) => {
       names,
       learnedIds,
       masteredIds,
+      viewedIds,
       streak,
       streakDetails,
       revisitCounts,
@@ -382,6 +402,7 @@ export const NamesProvider = ({ children }) => {
       refresh,
       markAsLearned,
       unmarkAsLearned,
+      markAsViewed,
       getMoodPlaylist,
       getDailyPlaylist,
       getNameOfDay,

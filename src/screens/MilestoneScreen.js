@@ -1,10 +1,17 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Animated } from 'react-native';
+import {
+  View, Text, Image, StyleSheet, TouchableOpacity,
+  Dimensions, Animated,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Polygon, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
+import Svg, {
+  Polygon, Circle, Defs,
+  LinearGradient as SvgLinearGradient, Stop,
+} from 'react-native-svg';
 
 import TimeBasedBackground from '../components/TimeBasedBackground';
+import { useMilestones } from '../context/MilestoneContext';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 const ROAD_H = SH;
@@ -12,158 +19,135 @@ const ROAD_W = SW * 0.85;
 const W_TOP = ROAD_W * 0.18;
 const W_BOTTOM = ROAD_W;
 
-const getRoadWidthAtY = (y) => {
-  return W_TOP + (W_BOTTOM - W_TOP) * (y / ROAD_H);
+const getRoadWidthAtY = y => W_TOP + (W_BOTTOM - W_TOP) * (y / ROAD_H);
+
+const Y_TOP    = ROAD_H - 340;
+const Y_BOTTOM = ROAD_H - 65;
+const wTop     = getRoadWidthAtY(Y_TOP);
+const wBottom  = getRoadWidthAtY(Y_BOTTOM);
+const xLeftTop    = (ROAD_W - wTop)    / 1.65;
+const xRightTop   = (ROAD_W + wTop)    / 2.05;
+const xLeftBottom = (ROAD_W - wBottom) / 2;
+const xRightBottom= (ROAD_W + wBottom) / 2;
+
+// Stone images — one per milestone (index 0 = milestone 1)
+const STONE_IMAGES = [
+  require('../../assets/milestone/Stone/Stone1.png'),
+  require('../../assets/milestone/Stone/Stone2.png'),
+  require('../../assets/milestone/Stone/Stone3.png'),
+  require('../../assets/milestone/Stone/Stone4.png'),
+  require('../../assets/milestone/Stone/Stone5.png'),
+  require('../../assets/milestone/Stone/Stone6.png'),
+  require('../../assets/milestone/Stone/Stone7.png'),
+];
+
+const ACTIVE_STONE = require('../../assets/milestone/Stone/mileStone.png');
+
+// 7 perspective slots — bottom (large/close) → top (small/distant)
+const SLOTS = [
+  { size: 240, bottomRatio: 0.08 },
+  { size: 108, bottomRatio: 0.32 },
+  { size: 76,  bottomRatio: 0.49 },
+  { size: 56,  bottomRatio: 0.62 },
+  { size: 42,  bottomRatio: 0.72 },
+  { size: 31,  bottomRatio: 0.80 },
+  { size: 23,  bottomRatio: 0.87 },
+];
+const N_NODES = SLOTS.length;
+
+const interpolateSlot = (virtualIndex) => {
+  if (virtualIndex <= 0) {
+    const s = SLOTS[0];
+    return {
+      bottom:  SH * (s.bottomRatio + virtualIndex * 0.28),
+      size:    s.size * (1 + virtualIndex * 0.15),
+      opacity: Math.max(0, 1 + virtualIndex),
+    };
+  }
+  if (virtualIndex >= N_NODES - 1) {
+    const s = SLOTS[N_NODES - 1];
+    return {
+      bottom:  SH * (s.bottomRatio + (virtualIndex - (N_NODES - 1)) * 0.05),
+      size:    Math.max(4, s.size * Math.max(0.1, 1 - (virtualIndex - (N_NODES - 1)) * 0.2)),
+      opacity: Math.max(0, 1 - (virtualIndex - (N_NODES - 1))),
+    };
+  }
+  const lo = Math.floor(virtualIndex);
+  const hi = Math.ceil(virtualIndex);
+  const t  = virtualIndex - lo;
+  return {
+    bottom:  SH  * (SLOTS[lo].bottomRatio + (SLOTS[hi].bottomRatio - SLOTS[lo].bottomRatio) * t),
+    size:    SLOTS[lo].size + (SLOTS[hi].size - SLOTS[lo].size) * t,
+    opacity: 1,
+  };
 };
 
-const Y_TOP = ROAD_H - 340;
-const Y_BOTTOM = ROAD_H - 65;
-
-const wTop = getRoadWidthAtY(Y_TOP);
-const wBottom = getRoadWidthAtY(Y_BOTTOM);
-
-const xLeftTop = (ROAD_W - wTop) / 1.65;
-const xRightTop = (ROAD_W + wTop) / 2.05;
-
-const xLeftBottom = (ROAD_W - wBottom) / 2;
-const xRightBottom = (ROAD_W + wBottom) / 2;
-
+// Hexagon SVG shape
 const SvgHex = ({ size, color = '#FFFFFF' }) => {
-  const w = size;
-  const h = size * 0.9;
-  const points = `
-    ${w * 0.25},0 
-    ${w * 0.75},0 
-    ${w},${h * 0.5} 
-    ${w * 0.75},${h} 
-    ${w * 0.25},${h} 
-    0,${h * 0.5}
-  `;
+  const w = size, h = size * 0.9;
+  const pts = `${w*.25},0 ${w*.75},0 ${w},${h*.5} ${w*.75},${h} ${w*.25},${h} 0,${h*.5}`;
   return (
     <Svg width={w} height={h}>
-      <Polygon
-        points={points}
-        fill={color}
-        stroke={color}
-        strokeWidth={1}
-        strokeLinejoin="round"
-      />
+      <Polygon points={pts} fill={color} stroke={color} strokeWidth={1} strokeLinejoin="round" />
     </Svg>
   );
 };
 
-const LockedNode = ({ level = 1 }) => {
+// Locked milestone node
+const LockedNode = ({ milestoneId }) => {
   const baseSize = 100;
-  const w = baseSize;
-  const h = baseSize * 0.9;
-  
-  const hexColor = level === 2 ? '#FFFDF0' : '#FFFFFF';
-  const lockColor = level === 2 ? '#FF9800' : '#00BCD4';
-  
+  const w = baseSize, h = baseSize * 0.9;
+  const tier = milestoneId > 4 ? 2 : 1;
+  const hexColor = tier === 2 ? '#FFFDF0' : '#FFFFFF';
+  const lockColor = tier === 2 ? '#FF9800' : '#00BCD4';
   return (
-    <View
-      style={{
-        width: w,
-        height: h,
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: level === 2 ? '#FF9800' : '#000000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: level === 2 ? 0.35 : 0.15,
-        shadowRadius: 6,
-        elevation: 4,
-      }}
-    >
+    <View style={{ width: w, height: h, justifyContent: 'center', alignItems: 'center',
+      shadowColor: lockColor, shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.35, shadowRadius: 6, elevation: 4 }}>
       <View style={{ position: 'absolute', top: 0, left: 0, width: w, height: h }}>
         <SvgHex size={baseSize} color={hexColor} />
       </View>
-      <Ionicons name="lock-closed" size={baseSize * 0.30} color={lockColor} style={{ zIndex: 2 }} />
-      <Text 
-        style={{ 
-          zIndex: 2, 
-          fontSize: 10, 
-          fontWeight: 'bold', 
-          color: lockColor, 
-          marginTop: -2 
-        }}
-      >
-        {level === 2 ? 'L2' : 'L1'}
+      <Ionicons name="lock-closed" size={baseSize * 0.28} color={lockColor} style={{ zIndex: 2 }} />
+      <Text style={{ zIndex: 2, fontSize: 9, fontWeight: 'bold', color: lockColor, marginTop: -2 }}>
+        {`M${milestoneId}`}
       </Text>
     </View>
   );
 };
 
-const SLOTS = [
-  { size: 250, bottomRatio: 0.10 },
-  { size: 80,  bottomRatio: 0.38 },
-  { size: 68,  bottomRatio: 0.50 },
-  { size: 58,  bottomRatio: 0.60 },
-  { size: 50,  bottomRatio: 0.68 },
-  { size: 43,  bottomRatio: 0.75 },
-  { size: 37,  bottomRatio: 0.81 },
-  { size: 32,  bottomRatio: 0.86 },
-  { size: 28,  bottomRatio: 0.90 },
-  { size: 24,  bottomRatio: 0.93 },
-  { size: 21,  bottomRatio: 0.95 },
-  { size: 18,  bottomRatio: 0.965 },
-  { size: 16,  bottomRatio: 0.976 },
-  { size: 14,  bottomRatio: 0.985 },
-  { size: 12,  bottomRatio: 0.991 },
-  { size: 11,  bottomRatio: 0.995 },
-  { size: 10,  bottomRatio: 0.998 },
-  { size: 9,   bottomRatio: 1.0 },
-];
-
-const interpolateSlot = (virtualIndex) => {
-  if (virtualIndex <= 0) {
-    const slot0 = SLOTS[0];
-    return {
-      bottom: SH * (slot0.bottomRatio + virtualIndex * 0.3),
-      size: slot0.size * (1 + virtualIndex * 0.15),
-      opacity: Math.max(0, 1 + virtualIndex),
-    };
-  }
-  
-  if (virtualIndex >= SLOTS.length - 1) {
-    const lastSlot = SLOTS[SLOTS.length - 1];
-    return {
-      bottom: SH * (lastSlot.bottomRatio + (virtualIndex - (SLOTS.length - 1)) * 0.05),
-      size: Math.max(5, lastSlot.size * Math.max(0.1, 1 - (virtualIndex - (SLOTS.length - 1)) * 0.2)),
-      opacity: Math.max(0, 1 - (virtualIndex - (SLOTS.length - 1))),
-    };
-  }
-
-  const indexL = Math.floor(virtualIndex);
-  const indexH = Math.ceil(virtualIndex);
-  const t = virtualIndex - indexL;
-
-  const slotL = SLOTS[indexL];
-  const slotH = SLOTS[indexH];
-
-  const bottomRatio = slotL.bottomRatio + (slotH.bottomRatio - slotL.bottomRatio) * t;
-  const size = slotL.size + (slotH.size - slotL.size) * t;
-
-  return {
-    bottom: SH * bottomRatio,
-    size: size,
-    opacity: 1,
-  };
+// Progress ring overlaid on the active milestone stone
+const ProgressRing = ({ progress, size }) => {
+  const r   = size * 0.46;
+  const cx  = size / 2;
+  const cy  = size / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = circ * Math.min(1, Math.max(0, progress));
+  return (
+    <Svg width={size} height={size} style={StyleSheet.absoluteFillObject}>
+      <Circle cx={cx} cy={cy} r={r} stroke="rgba(255,255,255,0.18)" strokeWidth={4} fill="none" />
+      <Circle
+        cx={cx} cy={cy} r={r}
+        stroke="#3DF3FF" strokeWidth={4} fill="none"
+        strokeDasharray={`${dash} ${circ}`}
+        strokeLinecap="round"
+        rotation={-90} origin={`${cx},${cy}`}
+      />
+    </Svg>
+  );
 };
 
 const MilestoneScreen = ({ navigation }) => {
   const scrollY = React.useRef(new Animated.Value(0)).current;
+  const { milestones, allCompleted } = useMilestones();
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
       <TimeBasedBackground>
         {({ isNight }) => (
           <>
-            {/* Ring decorations */}
-            <Image source={require('../../assets/milestone/ring.png')} style={s.ringLeft} resizeMode="contain" />
-            <Image source={require('../../assets/milestone/ring.png')} style={s.ringRight} resizeMode="contain" />
-
-            {/* Pattern clusters */}
-            <Image source={require('../../assets/milestone/Pattern.png')} style={s.patternLeft} resizeMode="contain" />
+            <Image source={require('../../assets/milestone/ring.png')}    style={s.ringLeft}    resizeMode="contain" />
+            <Image source={require('../../assets/milestone/ring.png')}    style={s.ringRight}   resizeMode="contain" />
+            <Image source={require('../../assets/milestone/Pattern.png')} style={s.patternLeft}  resizeMode="contain" />
             <Image source={require('../../assets/milestone/Pattern.png')} style={s.patternRight} resizeMode="contain" />
 
             {/* Header */}
@@ -174,22 +158,25 @@ const MilestoneScreen = ({ navigation }) => {
                   Milestones
                 </Text>
               </TouchableOpacity>
+
+              {allCompleted && (
+                <View style={s.allDoneBadge}>
+                  <Ionicons name="trophy" size={14} color="#FFD700" />
+                  <Text style={s.allDoneText}>All Complete!</Text>
+                </View>
+              )}
             </View>
 
-            {/* Fixed Road */}
-            <Image
-              source={require('../../assets/milestone/road.png')}
-              style={s.road}
-              resizeMode="stretch"
-            />
+            {/* Road */}
+            <Image source={require('../../assets/milestone/road.png')} style={s.road} resizeMode="stretch" />
 
-            {/* Tapered Glowing Light Band Effect */}
+            {/* Tapered glow band */}
             <Svg width={ROAD_W} height={ROAD_H} style={[s.road, { zIndex: 2 }]}>
               <Defs>
                 <SvgLinearGradient id="lightGrad" x1="0" y1="0" x2="0" y2="1">
-                  <Stop offset="0%" stopColor="#3DF3FF" stopOpacity="0" />
-                  <Stop offset="25%" stopColor="#3DF3FF" stopOpacity="0.75" />
-                  <Stop offset="75%" stopColor="#3DF3FF" stopOpacity="0.75" />
+                  <Stop offset="0%"   stopColor="#3DF3FF" stopOpacity="0" />
+                  <Stop offset="25%"  stopColor="#3DF3FF" stopOpacity="0.75" />
+                  <Stop offset="75%"  stopColor="#3DF3FF" stopOpacity="0.75" />
                   <Stop offset="100%" stopColor="#3DF3FF" stopOpacity="0" />
                 </SvgLinearGradient>
               </Defs>
@@ -199,99 +186,81 @@ const MilestoneScreen = ({ navigation }) => {
               />
             </Svg>
 
-            {/* Scrollable Milestone Nodes */}
-            {Array.from({ length: 18 }).map((_, i) => {
-              const inputRange = [];
-              const outputBottom = [];
-              const outputSize = [];
-              const outputOpacity = [];
+            {/* Milestone nodes */}
+            {milestones.map((milestone, i) => {
+              const inputRange  = [];
+              const outBottom   = [];
+              const outSize     = [];
+              const outOpacity  = [];
 
-              for (let v = 18; v >= -2; v--) {
+              for (let v = N_NODES; v >= -2; v--) {
                 const scrollVal = (i - v) * 120;
                 inputRange.push(scrollVal);
-                const interpolated = interpolateSlot(v);
-                
-                // Scale transform scales from center. Base height is 90 (when size is 100).
-                // Offset bottom to keep the visual bottom edge aligned with the target ratio.
-                const adjustedBottom = i === 0
-                  ? interpolated.bottom
-                  : interpolated.bottom - 45 + (0.45 * interpolated.size);
-
-                outputBottom.push(adjustedBottom);
-                outputSize.push(interpolated.size);
-                outputOpacity.push(interpolated.opacity);
+                const interp = interpolateSlot(v);
+                const adjBottom = i === 0
+                  ? interp.bottom
+                  : interp.bottom - 45 + 0.45 * interp.size;
+                outBottom.push(adjBottom);
+                outSize.push(interp.size);
+                outOpacity.push(interp.opacity);
               }
 
-              const bottom = scrollY.interpolate({
-                inputRange,
-                outputRange: outputBottom,
-                extrapolate: 'clamp',
-              });
+              const bottom  = scrollY.interpolate({ inputRange, outputRange: outBottom,  extrapolate: 'clamp' });
+              const size    = scrollY.interpolate({ inputRange, outputRange: outSize,    extrapolate: 'clamp' });
+              const opacity = scrollY.interpolate({ inputRange, outputRange: outOpacity, extrapolate: 'clamp' });
+              const left    = scrollY.interpolate({ inputRange, outputRange: outSize.map(sz => (SW - sz) / 2), extrapolate: 'clamp' });
+              const scale   = scrollY.interpolate({ inputRange, outputRange: outSize.map(sz => sz / 100), extrapolate: 'clamp' });
 
-              const size = scrollY.interpolate({
-                inputRange,
-                outputRange: outputSize,
-                extrapolate: 'clamp',
-              });
+              const { status } = milestone;
 
-              const opacity = scrollY.interpolate({
-                inputRange,
-                outputRange: outputOpacity,
-                extrapolate: 'clamp',
-              });
-
-              const left = scrollY.interpolate({
-                inputRange,
-                outputRange: outputSize.map(s => (SW - s) / 2),
-                extrapolate: 'clamp',
-              });
-
-              if (i === 0) {
+              if (status === 'completed') {
                 return (
                   <Animated.Image
-                    key={`active-milestone`}
-                    source={require('../../assets/milestone/mileStone.png')}
-                    style={{
-                      position: 'absolute',
-                      bottom: bottom,
-                      left: left,
-                      width: size,
-                      height: size,
-                      opacity: opacity,
-                      zIndex: 30 - i,
-                    }}
+                    key={`stone-${i}`}
+                    source={STONE_IMAGES[i]}
+                    style={{ position: 'absolute', bottom, left, width: size, height: size, opacity, zIndex: 30 - i }}
                     resizeMode="contain"
                   />
                 );
-              } else {
-                const scale = scrollY.interpolate({
-                  inputRange,
-                  outputRange: outputSize.map(s => s / 100),
-                  extrapolate: 'clamp',
-                });
+              }
 
+              if (status === 'in_progress') {
                 return (
                   <Animated.View
-                    key={`locked-node-${i}`}
-                    style={{
-                      position: 'absolute',
-                      bottom: bottom,
-                      left: SW / 2 - 50,
-                      width: 100,
-                      height: 90,
-                      transform: [{ scale: scale }],
-                      opacity: opacity,
-                      zIndex: 30 - i,
-                    }}
+                    key={`active-${i}`}
+                    style={{ position: 'absolute', bottom, left, width: size, height: size, opacity, zIndex: 30 - i }}
                   >
-                    <LockedNode level={i >= 11 ? 2 : 1} />
+                    <Animated.Image
+                      source={ACTIVE_STONE}
+                      style={{ width: '100%', height: '100%' }}
+                      resizeMode="contain"
+                    />
+                    {/* Progress ring — only visible when node is large enough */}
+                    {i === 0 && (
+                      <ProgressRing progress={milestone.progress} size={SLOTS[0].size} />
+                    )}
                   </Animated.View>
                 );
               }
+
+              // locked
+              return (
+                <Animated.View
+                  key={`locked-${i}`}
+                  style={{
+                    position: 'absolute', bottom, left: SW / 2 - 50,
+                    width: 100, height: 90,
+                    transform: [{ scale }],
+                    opacity, zIndex: 30 - i,
+                  }}
+                >
+                  <LockedNode milestoneId={milestone.id} />
+                </Animated.View>
+              );
             })}
 
-            {/* Dashed center line scrolling in sync */}
-            {Array.from({ length: 36 }).map((_, i) => {
+            {/* Dashed center line */}
+            {Array.from({ length: 20 }).map((_, i) => {
               const dashBottom = scrollY.interpolate({
                 inputRange: [0, 5000],
                 outputRange: [35 + i * 120, 35 + i * 120 - 5000],
@@ -300,44 +269,36 @@ const MilestoneScreen = ({ navigation }) => {
               return (
                 <Animated.View
                   key={`dash-${i}`}
-                  style={[
-                    s.dash,
-                    {
-                      position: 'absolute',
-                      bottom: dashBottom,
-                      height: 48,
-                      width: 6,
-                      left: SW / 2 - 3,
-                      backgroundColor: '#D9D9D9',
-                      borderRadius: 0,
-                      opacity: 1,
-                      zIndex: 3,
-                    },
-                  ]}
+                  style={[s.dash, { position: 'absolute', bottom: dashBottom, zIndex: 3 }]}
                 />
               );
             })}
 
+            {/* Progress summary strip */}
+            <View style={s.progressStrip}>
+              {milestones.map((m) => (
+                <View
+                  key={m.id}
+                  style={[
+                    s.progressDot,
+                    m.status === 'completed'  && s.progressDotDone,
+                    m.status === 'in_progress' && s.progressDotActive,
+                  ]}
+                />
+              ))}
+            </View>
+
             {/* Scroll track overlay */}
             <Animated.ScrollView
-              style={{
-                position: 'absolute',
-                top: 0,
-                bottom: 0,
-                left: 0,
-                right: 0,
-                zIndex: 50,
-              }}
-              contentContainerStyle={{ height: SH + 1200 }}
+              style={s.scrollOverlay}
+              contentContainerStyle={{ height: SH + 900 }}
               showsVerticalScrollIndicator={false}
               onScroll={Animated.event(
                 [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                { useNativeDriver: false }
+                { useNativeDriver: false },
               )}
               scrollEventThrottle={16}
-            >
-              {/* spacer content */}
-            </Animated.ScrollView>
+            />
           </>
         )}
       </TimeBasedBackground>
@@ -348,56 +309,54 @@ const MilestoneScreen = ({ navigation }) => {
 const s = StyleSheet.create({
   root: { flex: 1 },
 
-
-
   road: {
-    position: 'absolute',
-    bottom: 0,
+    position: 'absolute', bottom: 0,
     width: SW * 0.85,
     left: (SW - SW * 0.85) / 2,
-    height: ROAD_H,
-    zIndex: 1,
+    height: ROAD_H, zIndex: 1,
   },
 
   dash: {
-    position: 'absolute',
-    left: SW / 2 - 2,
-    width: 4,
-    height: 12,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.45)',
-    zIndex: 3,
+    left: SW / 2 - 3, width: 6, height: 48,
+    backgroundColor: '#D9D9D9', borderRadius: 0, opacity: 1,
   },
 
-  ringLeft: {
-    position: 'absolute',
-    width: 160, height: 160,
-    left: -70, top: SH * 0.10,
-  },
-  ringRight: {
-    position: 'absolute',
-    width: 150, height: 150,
-    right: -65, top: SH * 0.37,
-  },
-
-  patternLeft: {
-    position: 'absolute',
-    width: 72, height: 58,
-    left: SW * 0.04, top: SH * 0.35,
-  },
-  patternRight: {
-    position: 'absolute',
-    width: 72, height: 58,
-    right: SW * 0.04, top: SH * 0.65,
-  },
+  ringLeft:    { position: 'absolute', width: 160, height: 160, left: -70,  top: SH * 0.10 },
+  ringRight:   { position: 'absolute', width: 150, height: 150, right: -65, top: SH * 0.37 },
+  patternLeft: { position: 'absolute', width: 72,  height: 58,  left: SW * 0.04,  top: SH * 0.35 },
+  patternRight:{ position: 'absolute', width: 72,  height: 58,  right: SW * 0.04, top: SH * 0.65 },
 
   header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 12,
-    zIndex: 100,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 12, zIndex: 100,
   },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   headerTitle: { fontSize: 20, fontWeight: 'bold' },
+
+  allDoneBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 20,
+    paddingHorizontal: 12, paddingVertical: 5,
+  },
+  allDoneText: { color: '#FFD700', fontWeight: '700', fontSize: 13 },
+
+  progressStrip: {
+    position: 'absolute', bottom: 20, alignSelf: 'center',
+    flexDirection: 'row', gap: 8, zIndex: 100,
+  },
+  progressDot: {
+    width: 8, height: 8, borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  progressDotDone: { backgroundColor: '#3DF3FF' },
+  progressDotActive: {
+    backgroundColor: '#FFFFFF',
+    width: 20, borderRadius: 4,
+  },
+
+  scrollOverlay: {
+    position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, zIndex: 50,
+  },
 });
 
 export default MilestoneScreen;

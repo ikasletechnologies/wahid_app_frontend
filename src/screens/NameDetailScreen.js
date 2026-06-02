@@ -67,9 +67,8 @@ const NameDetailScreen = ({ route, navigation }) => {
   const insight = getField(name, 'learning_insight', 'learningInsight', 'reflection', 'description');
   const mcq = useMemo(() => parseMcq(name), [name]);
 
-  const [phase, setPhase] = useState('gift');
-  const [contentStage, setContentStage] = useState(0);
-  const [giftOpened, setGiftOpened] = useState(false);
+  const [phase, setPhase] = useState('content');
+  const [contentStage, setContentStage] = useState(1);
   const [quizAnswer, setQuizAnswer] = useState(null);
   const [quizDone, setQuizDone] = useState(false);
 
@@ -121,29 +120,11 @@ const NameDetailScreen = ({ route, navigation }) => {
     return () => { handLoopRef.current?.stop(); handAnim.setValue(0); };
   }, [phase]);
 
-  const handleGiftTap = useCallback(() => {
-    const now = Date.now();
-    if (now - lastTapRef.current < 350) {
-      floatLoopRef.current?.stop();
-      setGiftOpened(true);
-
-      Animated.sequence([
-        Animated.delay(350),
-        Animated.timing(giftOpacity, {
-          toValue: 0, duration: 1550,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setPhase('content');
-        setContentStage(1);
-        Animated.timing(contentOpacity, {
-          toValue: 1, duration: 350, useNativeDriver: true,
-        }).start(() => revealSections(1));
-      });
-    }
-    lastTapRef.current = now;
-  }, []);
+  useEffect(() => {
+    Animated.timing(contentOpacity, {
+      toValue: 1, duration: 350, useNativeDriver: true,
+    }).start(() => revealSections(1));
+  }, [contentOpacity, revealSections]);
 
   const revealSections = useCallback((stage) => {
     handLoopRef.current?.stop();
@@ -238,10 +219,10 @@ const NameDetailScreen = ({ route, navigation }) => {
           }).start(() => {
             handleSlideTap();
             if (contentStage < 4) {
-              Animated.spring(slidePanX, {
+              Animated.timing(slidePanX, {
                 toValue: 0,
-                tension: 40,
-                friction: 4,
+                duration: 400,
+                easing: Easing.out(Easing.ease),
                 useNativeDriver: true,
               }).start(() => {
                 handLoopRef.current?.start();
@@ -249,10 +230,10 @@ const NameDetailScreen = ({ route, navigation }) => {
             }
           });
         } else {
-          Animated.spring(slidePanX, {
+          Animated.timing(slidePanX, {
             toValue: 0,
-            tension: 60,
-            friction: 10,
+            duration: 400,
+            easing: Easing.out(Easing.ease),
             useNativeDriver: true,
           }).start(() => {
             handLoopRef.current?.start();
@@ -270,56 +251,6 @@ const NameDetailScreen = ({ route, navigation }) => {
   }, [quizDone, mcq.ans, name.number, markAsLearned]);
 
 
-  if (phase === 'gift') {
-    return (
-      <View style={styles.root}>
-        <TimeBasedBackground showElements={false}>
-          {({ isNight }) => (
-            <>
-              <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
-              <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
-                <NameDetailHeader name={name} onClose={() => navigation.goBack()} />
-
-                <View style={styles.progressTrack} />
-
-                <Animated.View style={[styles.giftBody, { opacity: giftOpacity }]}>
-                  <View style={styles.giftTopInfo}>
-                    <Text style={styles.giftTitle}>Gifts of this Name</Text>
-                    <View style={styles.giftSubtitleContainer}>
-                      <Text style={styles.giftSubtitle}>
-                        What learning {name.transliteration} brings to your life
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.giftBoxWrap}>
-                    <Pressable onPress={handleGiftTap}>
-                      <Animated.View style={{ transform: [{ translateY: floatAnim }] }}>
-                        <Image
-                          source={giftOpened
-                            ? require('../../assets/name_detail/open_gift_box.png')
-                            : require('../../assets/name_detail/gift_box.png')}
-                          style={styles.giftBoxImg}
-                          resizeMode="contain"
-                        />
-                      </Animated.View>
-                    </Pressable>
-                    <Image source={require('../../assets/name_detail/ellipse_5.png')} style={styles.giftShadow} resizeMode="contain" />
-                  </View>
-
-                  <View style={styles.doubleTapRow}>
-                    <Image source={require('../../assets/name_detail/sign_hand.png')} style={styles.handHint} resizeMode="contain" />
-                    <Text style={styles.doubleTapText}>Double Tap to Open</Text>
-                    <Image source={require('../../assets/name_detail/sign_hand.png')} style={[styles.handHint, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
-                  </View>
-                </Animated.View>
-              </SafeAreaView>
-            </>
-          )}
-        </TimeBasedBackground>
-      </View>
-    );
-  }
 
   // ─────────────────────────────────────────────────────────────────────────
   //  JOURNEY PHASE
@@ -413,10 +344,6 @@ const NameDetailScreen = ({ route, navigation }) => {
           contentContainerStyle={styles.contentScroll}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.giftTitleScroll}>Gifts of this Name</Text>
-          <Text style={styles.giftSubtitleSmall}>
-            What learning {name.transliteration} brings to your life
-          </Text>
 
           {/* ── Section 0: Benefits ── */}
           <AnimSection anim={sectionAnims[0]}>

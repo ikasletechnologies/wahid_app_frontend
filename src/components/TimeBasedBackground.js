@@ -7,14 +7,12 @@ const { width: SW } = Dimensions.get('window');
 const getPeriod = (h) => {
   if (h >= 6 && h < 12) return 'morning';
   if (h >= 12 && h < 18) return 'afternoon';
-  if (h >= 18 && h < 20) return 'evening';
   return 'night';
 };
 
 const SKY = {
   morning:   ['#F0F0FF', '#F0F0FF'],
   afternoon: ['#F0F0FF', '#F0F0FF'],
-  evening:   ['#F0F0FF', '#F0F0FF'],
   night:     ['#0F172A', '#1E293B'],
 };
 

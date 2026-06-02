@@ -11,6 +11,7 @@ import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, ClipPath, G
 import { useNames } from '../context/NamesContext';
 import { FONTS } from '../theme';
 import TimeBasedBackground from '../components/TimeBasedBackground';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import http from '../config/http';
 
 const { width: SW, height: SH } = Dimensions.get('window');
@@ -86,56 +87,51 @@ const NameCardBackground = ({ width, height, style, gradEnd = '#BCECF7', strokeC
 };
 
 const NamesScreen = ({ navigation }) => {
-  const { names, loading, learnedIds, masteredIds, categories } = useNames();
+  const { names, loading, learnedIds, masteredIds, categories, markAsViewed } = useNames();
   const [activeIndex, setActiveIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [lastReadName, setLastReadName] = useState(null);
 
+  // Load the last-read card from AsyncStorage when names become available.
   useEffect(() => {
-    const fetchLastRead = async () => {
-      try {
-        const res = await http.get('/api/progress');
-        if (res.data?.success && res.data?.data?.progress) {
-          const progressList = res.data.data.progress;
-          if (progressList.length > 0) {
-            // Sort by lastRevisitAt DESC
-            const sorted = [...progressList].sort(
-              (a, b) => new Date(b.lastRevisitAt) - new Date(a.lastRevisitAt)
-            );
-            const latest = sorted[0];
-            const nameObj = names.find(n => n.number === latest.nameNumber);
-            if (nameObj) {
-              setLastReadName(nameObj);
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to fetch last read name progress', err.message);
-      }
-    };
+    if (names.length === 0) return;
 
-    if (names.length > 0) {
-      fetchLastRead();
-    }
+    AsyncStorage.getItem('last_viewed_name')
+      .then(saved => {
+        if (saved === null) return;
+        const nameObj = names.find(n => n.number === parseInt(saved, 10));
+        if (nameObj) setLastReadName(nameObj);
+      })
+      .catch(() => {});
   }, [names]);
+
+  // Ref that signals the filteredNames effect to skip card-preservation and
+  // honour an explicit navigation jump instead.
+  const isNavigatingRef = useRef(false);
 
   const handleBackToReading = () => {
     if (!lastReadName) return;
 
-    // Reset filters
+    const idx = names.findIndex(n => n.number === lastReadName.number);
+    if (idx === -1) return;
+
+    // Tell the filteredNames effect not to override this jump
+    isNavigatingRef.current = true;
+
+    // Snap animation state clean before the re-render
+    scrollAnim.setValue(0);
+    isAnimating.current = false;
+    dragProgress.current = 0;
+
+    // Update the ref immediately so the effect sees the right target
+    activeIndexRef.current = idx;
+
+    // All state updates batched in one commit
     setSearchQuery('');
     setAppliedCat('All');
     setAppliedStatus('All');
     setAppliedNumber('');
-
-    setTimeout(() => {
-      const idx = names.findIndex(n => n.number === lastReadName.number);
-      if (idx !== -1) {
-        setActiveIndex(idx);
-        activeIndexRef.current = idx;
-        scrollAnim.setValue(0);
-      }
-    }, 50);
+    setActiveIndex(idx);
   };
 
   const [filterVisible, setFilterVisible] = useState(false);
@@ -181,12 +177,19 @@ const NamesScreen = ({ navigation }) => {
 
   useEffect(() => {
     namesRef.current = filteredNames;
-    if (filteredNames.length > 0 && activeIndex >= filteredNames.length) {
-      setActiveIndex(0);
+
+    if (isNavigatingRef.current) {
+      isNavigatingRef.current = false;
+      return;
+    }
+
+    // Only correct out-of-bounds; never reorder mid-swipe
+    if (filteredNames.length > 0 && activeIndexRef.current >= filteredNames.length) {
       activeIndexRef.current = 0;
       pendingReset.current = true;
+      setActiveIndex(0);
     }
-  }, [filteredNames, activeIndex]);
+  }, [filteredNames]);
 
   const scrollAnim = useRef(new Animated.Value(0)).current;
 
@@ -245,29 +248,46 @@ const NamesScreen = ({ navigation }) => {
 
         isAnimating.current = true;
 
+        // Snapshot the list length NOW — syncWithBackend can update namesRef
+        // mid-animation, which would give the wrong count in the callback and
+        // skip or repeat a card.
+        const count = namesRef.current.length || 1;
+
         const done = Math.min(1, Math.abs(dragProgress.current));
-        const duration = Math.max(120, Math.round(300 * (1 - done)));
+        const duration = Math.max(100, Math.round(250 * (1 - done)));
 
         Animated.timing(scrollAnim, {
           toValue: dir,
           duration,
           easing: Easing.out(Easing.ease),
           useNativeDriver: true,
-        }).start(() => {
-          const count = namesRef.current.length || 1;
+        }).start(({ finished }) => {
+          // If animation was interrupted (e.g. terminate fired), bail out —
+          // terminate already reset isAnimating and scrollAnim.
+          if (!finished) return;
+
+          // Use the snapshotted count (closure), not namesRef.current
           const nextIdx = dir === -1
             ? (activeIndexRef.current + 1) % count
             : (activeIndexRef.current - 1 + count) % count;
+
+          // Reset before setState so the next render sees a clean scrollAnim=0.
+          // This also handles the edge case where nextIdx === activeIndexRef.current
+          // (single-card wrap) where setActiveIndex won't trigger a re-render and
+          // useLayoutEffect would never fire to do this cleanup.
+          scrollAnim.setValue(0);
+          isAnimating.current = false;
+          dragProgress.current = 0;
+
           activeIndexRef.current = nextIdx;
-          pendingReset.current = true;
           setActiveIndex(nextIdx);
         });
       },
 
       onPanResponderTerminate: () => {
         dragProgress.current = 0;
-        scrollAnim.setValue(0);
         isAnimating.current = false;
+        scrollAnim.setValue(0);
       },
     })
   ).current;
@@ -389,7 +409,7 @@ const NamesScreen = ({ navigation }) => {
                   <Text style={styles.headerDiamond}>✦</Text>
                   <View style={styles.headerLine} />
                 </View>
-                <Text style={styles.headerTitleText}>99 Names of Allah</Text>
+                <Text style={styles.headerTitleText}>Beautiful Names of Allah</Text>
                 <View style={styles.headerDividerRow}>
                   <View style={styles.headerLine} />
                   <Text style={styles.headerDiamond}>✦</Text>
@@ -541,7 +561,11 @@ const NamesScreen = ({ navigation }) => {
                           onPress={() => {
                             if (isAnimating.current) return;
                             const item = filteredNames[dataIdx];
-                            if (item) navigation.navigate('NameDetail', { name: item });
+                            if (!item) return;
+                            setLastReadName(item);
+                            AsyncStorage.setItem('last_viewed_name', String(item.number)).catch(() => {});
+                            markAsViewed(item.number);
+                            navigation.navigate('NameDetail', { name: item });
                           }}
                         >
                           {renderCardContent(dataIdx)}
