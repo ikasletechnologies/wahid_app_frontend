@@ -8,7 +8,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, ClipPath, G, Circle } from 'react-native-svg';
-import FlagSvg from '../../assets/names/flag.svg';
 import { useNames } from '../context/NamesContext';
 import { FONTS } from '../theme';
 import TimeBasedBackground from '../components/TimeBasedBackground';
@@ -29,8 +28,6 @@ const CARD_W = SW - 36;
 const CARD_H = hs(351);
 const CARD_SLOT = CARD_H + rs(60);
 
-const DOME_W = rs(230);
-const DOME_H = hs(115);
 
 const STACK_CONFIG = [
   { width: SW - rs(110), height: hs(100), opacity: 0.25, bottom: hs(-30) },
@@ -38,23 +35,7 @@ const STACK_CONFIG = [
   { width: SW - rs(220), height: hs(50), opacity: 0.8, bottom: hs(-20) },
 ];
 
-const TextureBlob = ({ style }) => (
-  <Svg width={rs(130)} height={hs(130)} viewBox="0 0 160 160" style={style}>
-    <Defs>
-      <SvgLinearGradient id="blobGrad" x1="0" y1="1" x2="0.9" y2="0" gradientUnits="objectBoundingBox">
-        <Stop offset="0" stopColor="#02889D" stopOpacity="0.9" />
-        <Stop offset="0.55" stopColor="#03B7CE" stopOpacity="0.65" />
-        <Stop offset="1" stopColor="#4BD5E8" stopOpacity="0.05" />
-      </SvgLinearGradient>
-    </Defs>
-    <Path
-      d="M 0 160 C 5 130 15 105 38 88 C 60 70 90 72 110 55 C 130 38 128 12 112 3 C 95 -6 70 3 52 18 C 34 33 18 62 10 88 C 2 114 0 140 0 160 Z"
-      fill="url(#blobGrad)"
-    />
-  </Svg>
-);
-
-const NameCardBackground = ({ width, height, style }) => {
+const NameCardBackground = ({ width, height, style, gradEnd = '#BCECF7', strokeColor = '#A0DCE9' }) => {
   const r = Math.min(rs(16), height * 0.16);
   const nw = width * 0.45;
   const nh = height * 0.046;
@@ -90,13 +71,13 @@ const NameCardBackground = ({ width, height, style }) => {
         <Defs>
           <SvgLinearGradient id="cardGrad" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor="#FFFFFF" />
-            <Stop offset="1" stopColor="#BCECF7" />
+            <Stop offset="1" stopColor={gradEnd} />
           </SvgLinearGradient>
         </Defs>
         <Path
           d={d}
           fill="url(#cardGrad)"
-          stroke="#A0DCE9"
+          stroke={strokeColor}
           strokeWidth={1.5}
         />
       </Svg>
@@ -195,7 +176,6 @@ const NamesScreen = ({ navigation }) => {
   const activeIndexRef = useRef(0);
   const namesRef = useRef(filteredNames);
   const isAnimating = useRef(false);
-  const hasSwipedRef = useRef(false);
   const pendingReset = useRef(false);
   const dragProgress = useRef(0);
 
@@ -219,21 +199,10 @@ const NamesScreen = ({ navigation }) => {
     }
   }, [activeIndex]);
 
-  const domeOpacity = useRef(new Animated.Value(1)).current;
-  const anchorAnim = useRef(new Animated.Value(0)).current;
   const floatAnim = useRef(new Animated.Value(0)).current;
-  const anchorLoopRef = useRef(null);
   const floatLoopRef = useRef(null);
 
   useEffect(() => {
-    anchorLoopRef.current = Animated.loop(
-      Animated.sequence([
-        Animated.timing(anchorAnim, { toValue: -8, duration: 1200, useNativeDriver: true }),
-        Animated.timing(anchorAnim, { toValue: 0, duration: 1200, useNativeDriver: true }),
-      ])
-    );
-    anchorLoopRef.current.start();
-
     floatLoopRef.current = Animated.loop(
       Animated.sequence([
         Animated.timing(floatAnim, { toValue: 1, duration: 2500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
@@ -243,7 +212,6 @@ const NamesScreen = ({ navigation }) => {
     floatLoopRef.current.start();
 
     return () => {
-      anchorLoopRef.current?.stop();
       floatLoopRef.current?.stop();
     };
   }, []);
@@ -276,14 +244,6 @@ const NamesScreen = ({ navigation }) => {
         }
 
         isAnimating.current = true;
-
-        if (!hasSwipedRef.current) {
-          hasSwipedRef.current = true;
-          anchorLoopRef.current?.stop();
-          Animated.timing(domeOpacity, {
-            toValue: 0, duration: 400, useNativeDriver: true,
-          }).start();
-        }
 
         const done = Math.min(1, Math.abs(dragProgress.current));
         const duration = Math.max(120, Math.round(300 * (1 - done)));
@@ -320,72 +280,85 @@ const NamesScreen = ({ navigation }) => {
     const isMastered = masteredIds.includes(item.number);
     const isLearned = learnedIds.includes(item.number) && !isMastered;
 
-    let flagTint = null;
-    let badgeColors = ['#FFFFFF', '#FFFFFF'];
-    let badgeBorder = '#00ADC150';
-    let badgeTextColor = '#1A1A1A';
-    let statusText = null;
-    let statusIcon = null;
+    let gradEnd = '#BCECF7';
+    let strokeColor = '#A0DCE9';
+    let accentColor = '#03B7CE';
+    let badgeBg = '#0B0C0C';
+    let badgeIcon = 'checkmark-circle';
+    let badgeTextColor = '#4BD5E8';
+    let flagSource = require('../../assets/names/flag/normal.png');
+    let textureSource = require('../../assets/names/texture/normal.png');
+    let bookholderSource = require('../../assets/names/bookHolder/normalHolder.png');
 
     if (isMastered) {
-      flagTint = '#FFC107';
-      badgeColors = ['#FFE875', '#FFB300'];
-      badgeBorder = 'transparent';
-      badgeTextColor = '#1A1A1A';
-      statusText = 'Mastered';
-      statusIcon = 'shield-checkmark';
+      gradEnd = '#FFF3C0';
+      strokeColor = '#FFD700';
+      accentColor = '#FFC107';
+      badgeBg = '#0B0C0C';
+      badgeIcon = 'trophy';
+      badgeTextColor = '#FFB300';
+      flagSource = require('../../assets/names/flag/master.png');
+      textureSource = require('../../assets/names/texture/master.png');
+      bookholderSource = require('../../assets/names/bookHolder/masterHolder.png');
     } else if (isLearned) {
-      flagTint = '#4CAF50';
-      badgeColors = ['#4CD964', '#32CD32'];
-      badgeBorder = 'transparent';
-      badgeTextColor = '#FFFFFF';
-      statusText = 'Learned';
-      statusIcon = 'checkmark-circle-outline';
+      gradEnd = '#C8F5D0';
+      strokeColor = '#4CAF50';
+      accentColor = '#4CAF50';
+      badgeBg = '#0B0C0C';
+      badgeIcon = 'shield-checkmark';
+      badgeTextColor = '#00C853';
+      flagSource = require('../../assets/names/flag/learn.png');
+      textureSource = require('../../assets/names/texture/learn.png');
+      bookholderSource = require('../../assets/names/bookHolder/learnHolder.png');
     }
+
+    const category = item.category
+      ? item.category.charAt(0).toUpperCase() + item.category.slice(1)
+      : 'General';
 
     return (
       <View style={styles.cardContent}>
-        <NameCardBackground width={CARD_W} height={CARD_H} style={StyleSheet.absoluteFillObject} />
-        <TextureBlob style={styles.leftTexture} />
-        <TextureBlob style={styles.rightTexture} />
+        <NameCardBackground width={CARD_W} height={CARD_H} style={StyleSheet.absoluteFillObject} gradEnd={gradEnd} strokeColor={strokeColor} />
+
+        {/* Texture corners */}
+        <View style={styles.textureWrapper}>
+          <Image source={textureSource} style={styles.leftTexture} resizeMode="contain" />
+          <Image source={textureSource} style={styles.rightTexture} resizeMode="contain" />
+        </View>
+
+        {/* Flag */}
         <View style={styles.bookmarkRibbon}>
-          <Image
-            source={require('../../assets/names/flag.png')}
-            style={[styles.flagImage, flagTint ? { tintColor: flagTint } : null]}
-            resizeMode="contain"
-          />
+          <Image source={flagSource} style={styles.flagImage} resizeMode="contain" />
           <View style={styles.bookmarkTextOverlay}>
             <Text style={styles.ribbonText}>{String(item.number).padStart(2, '0')}</Text>
           </View>
         </View>
-        <View style={styles.rightBadgeContainer}>
-          <LinearGradient
-            colors={badgeColors}
-            style={[styles.categoryBadge, { borderColor: badgeBorder }]}
-          >
-            <Text style={[styles.categoryText, { color: badgeTextColor }]}>
-              {item.category ? item.category.charAt(0).toUpperCase() + item.category.slice(1) : 'General'}
-            </Text>
-          </LinearGradient>
-          {statusText && (
-            <View style={styles.statusRow}>
-              <Ionicons name={statusIcon} size={rs(14)} color="#FFFFFF" />
-              <Text style={styles.statusText}>{statusText}</Text>
-            </View>
-          )}
-        </View>
-        <View style={[styles.cardInner, isLearned && { paddingBottom: hs(75) }]}>
-          <Text style={[styles.arabic, { color: '#1A1A1A' }]}>{item.arabic}</Text>
-          <Text style={[styles.trans, { color: '#1A1A1A' }]}>{item.transliteration}</Text>
-          <Text style={[styles.meaning, { color: '#555555' }]}>{item.meaning}</Text>
+
+        {/* Category + status badge */}
+        <View style={[styles.categoryPill, { backgroundColor: badgeBg }]}>
+          {badgeIcon && <Ionicons name={badgeIcon} size={rs(13)} color={badgeTextColor} style={{ marginRight: rs(4) }} />}
+          <Text style={[styles.categoryPillText, { color: badgeTextColor }]}>{category.toUpperCase()}</Text>
         </View>
 
-        {isLearned && (
-          <View style={styles.toMasterHint}>
-            <Text style={styles.toMasterTitle}>TO MASTER...</Text>
-            <Text style={styles.toMasterDesc}>Read 3 times to earn Master Badge</Text>
+        {/* Centered text */}
+        <View style={styles.cardTextArea}>
+          <Text style={styles.arabic}>{item.arabic}</Text>
+          <Text style={styles.trans}>{item.transliteration}</Text>
+          <Text style={styles.meaning}>{item.meaning}</Text>
+        </View>
+
+        {/* Book holder */}
+        <View style={styles.bookholderWrapper}>
+          <Image source={bookholderSource} style={styles.bookholderImage} resizeMode="contain" />
+        </View>
+
+        {/* Get Started button */}
+        <View style={styles.getStartedRow}>
+          <Text style={styles.getStartedText}>Get Started</Text>
+          <View style={[styles.getStartedArrow, { backgroundColor: accentColor }]}>
+            <Ionicons name="arrow-forward" size={rs(14)} color="#FFFFFF" />
           </View>
-        )}
+        </View>
       </View>
     );
   };
@@ -521,13 +494,6 @@ const NamesScreen = ({ navigation }) => {
                       );
                     })}
 
-                    <Animated.View style={[styles.dome, {
-                      opacity: domeOpacity,
-                      transform: [{ translateY: anchorAnim }],
-                    }]}>
-                      <Text style={styles.domeLabel}>Swipe to find next</Text>
-                      <Image source={require('../../assets/names/new_anchor.png')} style={styles.anchorImg} resizeMode="contain" />
-                    </Animated.View>
                   </View>
 
                   {cardSlots.map(({ dataIdx, offset }) => (
@@ -803,45 +769,33 @@ const styles = StyleSheet.create({
   },
 
   cardContent: { flex: 1 },
-  leftTexture: { position: 'absolute', bottom: 0, left: 0 },
-  rightTexture: { position: 'absolute', bottom: 0, right: 0, transform: [{ scaleX: -1 }] },
-  cardInner: { flex: 1, justifyContent: 'flex-end', alignItems: 'flex-start', paddingLeft: rs(24), paddingBottom: hs(35) },
-  arabic: { fontSize: rs(28), fontFamily: FONTS.arabic, textAlign: 'left', marginBottom: hs(4) },
-  trans: { fontSize: rs(35), fontWeight: '700', textAlign: 'left', color: '#1A1A1A', marginBottom: hs(4) },
-  meaning: { fontSize: rs(18), fontWeight: '500', textAlign: 'left' },
+  textureWrapper: { ...StyleSheet.absoluteFillObject, overflow: 'hidden', borderRadius: rs(16) },
+  leftTexture: { position: 'absolute', bottom: -150, left: -150, width: rs(250), height: hs(250) },
+  rightTexture: { position: 'absolute', bottom: 0, right: 0, width: rs(120), height: hs(120), transform: [{ scaleX: -1 }] },
 
-  bookmarkRibbon: { position: 'absolute', top: hs(-5), left: rs(15), width: rs(44), height: hs(66), zIndex: 10 },
+  cardTextArea: { position: 'absolute', top: hs(38), left: 0, right: 0, alignItems: 'center', paddingHorizontal: rs(20) },
+  arabic: { fontSize: rs(13), fontFamily: FONTS.arabic, textAlign: 'center', color: '#1A1A1A', marginBottom: hs(2) },
+  trans: { fontSize: rs(28), fontWeight: '700', textAlign: 'center', color: '#1A1A1A', marginBottom: hs(2) },
+  meaning: { fontSize: rs(13), fontWeight: '500', textAlign: 'center', color: '#555555' },
+
+  bookmarkRibbon: { position: 'absolute', top: hs(-5), left: rs(15), width: rs(50), height: hs(66), zIndex: 10 },
   flagImage: { width: '100%', height: '100%' },
-  bookmarkTextOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', paddingTop: hs(6) },
-  ribbonText: { color: '#FFF', fontSize: rs(18), fontWeight: '700' },
+  bookmarkTextOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', paddingBottom: hs(8) },
+  ribbonText: { color: '#FFF', fontSize: rs(16), fontWeight: '700', fontStyle: 'italic' },
 
-  rightBadgeContainer: { position: 'absolute', top: hs(20), right: rs(20), alignItems: 'flex-end', zIndex: 10 },
-  categoryBadge: { paddingHorizontal: rs(20), paddingVertical: hs(5), borderRadius: rs(4), borderWidth: 1, minWidth: rs(90), alignItems: 'center' },
-  categoryText: { fontSize: rs(16), fontWeight: '600' },
-  statusRow: { flexDirection: 'row', alignItems: 'center', marginTop: hs(4), gap: rs(4), paddingRight: rs(4) },
-  statusText: { color: '#FFFFFF', fontSize: rs(13), fontWeight: '600' },
+  categoryPill: { position: 'absolute', top: 0, right: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(14), paddingVertical: hs(8), borderTopLeftRadius: 0, borderTopRightRadius: rs(16), borderBottomLeftRadius: rs(20), borderBottomRightRadius: 0, zIndex: 10 },
+  categoryPillText: { color: '#FFFFFF', fontSize: rs(12), fontWeight: '700', letterSpacing: 1 },
 
-  toMasterHint: { position: 'absolute', bottom: hs(20), left: rs(20), zIndex: 10 },
-  toMasterTitle: { fontSize: rs(16), color: '#A0A0A0', fontWeight: '800', letterSpacing: 0.5 },
-  toMasterDesc: { fontSize: rs(10), color: '#1A1A1A', fontWeight: '600', marginTop: hs(2) },
+  bookholderWrapper: { position: 'absolute', bottom: hs(50), left: 0, right: 0, alignItems: 'center' },
+  bookholderImage: { width: rs(170), height: hs(155) },
 
-  quranImage: { position: 'absolute', bottom: hs(15), right: rs(15), width: rs(110), height: rs(110) },
+  getStartedRow: { position: 'absolute', bottom: hs(-2), alignSelf: 'center', flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: rs(24), paddingVertical: hs(10), paddingLeft: rs(22), paddingRight: rs(6), gap: rs(14), shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: rs(8), shadowOffset: { width: 0, height: 3 }, elevation: 4 },
+  getStartedText: { fontSize: rs(14), fontWeight: '600', color: '#1A1A1A' },
+  getStartedArrow: { width: rs(30), height: rs(30), borderRadius: rs(15), justifyContent: 'center', alignItems: 'center' },
 
   bottomArea: { position: 'absolute', bottom: 0, left: 0, right: 0, alignItems: 'center', height: hs(180), zIndex: 5 },
   peekFrame: { position: 'absolute', alignSelf: 'center' },
 
-  dome: {
-    position: 'absolute', bottom: hs(70),
-    width: DOME_W, height: DOME_H,
-    borderTopLeftRadius: DOME_W / 2, borderTopRightRadius: DOME_W / 2,
-    backgroundColor: '#00ADC1',
-    alignItems: 'center', justifyContent: 'center',
-    zIndex: 20,
-    shadowColor: '#00ADC1', shadowOpacity: 0.2, shadowRadius: rs(10),
-    shadowOffset: { width: 0, height: -3 }, elevation: 15,
-  },
-  domeLabel: { color: '#FFFFFF', fontSize: rs(16), fontWeight: '700', letterSpacing: 0.4, marginVertical: hs(8) },
-  anchorImg: { width: rs(48), height: rs(48) },
 
   // ── FILTER MODAL ──
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
