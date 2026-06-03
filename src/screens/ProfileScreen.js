@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     ScrollView,
     Modal,
+    useColorScheme,
     Dimensions,
 } from "react-native";
 
@@ -28,27 +29,27 @@ const { width } = Dimensions.get('window');
 
 // ── Night / day colour tokens ─────────────────────────────────────────────
 const DAY = {
-    headerText:   '#000000',
-    nameText:     '#000000',
-    emailText:    '#666666',
-    cardBg:       ['#FFFFFF', '#FFFFFF'],
-    cardText:     '#000000',
+    headerText: '#000000',
+    nameText: '#000000',
+    emailText: '#666666',
+    cardBg: ['#FFFFFF', '#FFFFFF'],
+    cardText: '#000000',
     iconCircleBg: '#FFFFFF',
-    iconRing:     '#EBECF0',
-    cardShadow:   '#fcfcfc',
-    cardBorder:   'transparent',
+    iconRing: '#EBECF0',
+    cardShadow: '#fcfcfc',
+    cardBorder: 'transparent',
 };
 
 const NIGHT = {
-    headerText:   '#FFFFFF',
-    nameText:     '#FFFFFF',
-    emailText:    'rgba(255,255,255,0.55)',
-    cardBg:       ['#1A2744', '#1A2744'],
-    cardText:     '#FFFFFF',
+    headerText: '#FFFFFF',
+    nameText: '#FFFFFF',
+    emailText: 'rgba(255,255,255,0.55)',
+    cardBg: ['#1A2744', '#1A2744'],
+    cardText: '#FFFFFF',
     iconCircleBg: '#0F1D36',
-    iconRing:     'rgba(61,243,255,0.20)',
-    cardShadow:   '#3DF3FF',
-    cardBorder:   'rgba(61,243,255,0.12)',
+    iconRing: 'rgba(61,243,255,0.20)',
+    cardShadow: '#3DF3FF',
+    cardBorder: 'rgba(61,243,255,0.12)',
 };
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -95,6 +96,9 @@ const MenuCard = ({ t, onPress, left, right, style }) => (
 export default function ProfileScreen({ navigation }) {
     const { user, logout } = useAuth();
     const [isLogoutVisible, setIsLogoutVisible] = useState(false);
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const initial = user?.name?.charAt(0) ?? '';
 
     return (
         <SafeAreaView style={styles.container}>
@@ -126,7 +130,9 @@ export default function ProfileScreen({ navigation }) {
 
                                 {/* PROFILE SECTION */}
                                 <View style={styles.profileSection}>
-                                    <View style={[styles.profileCircle, isNight && styles.profileCircleNight]} />
+                                    <TouchableOpacity style={[styles.avatarBubble, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : '#cffafe' }]} activeOpacity={0.8}>
+                                        <Text style={[styles.avatarInitial, { color: '#06b6d4' }]}>{initial}</Text>
+                                    </TouchableOpacity>
                                     <Text style={[styles.profileName, { color: t.nameText }]}>
                                         {user?.name || 'Wahid'}
                                     </Text>
@@ -161,7 +167,7 @@ export default function ProfileScreen({ navigation }) {
                                                 <HugeiconsIcon icon={CircleIcon} size={45} color={t.iconRing} />
                                             </View>
                                             <MaskedGradient width={24} height={24}>
-                                                <Ionicons name="arrow-forward" size={20} marginLeft={7} marginTop={7} color="white" />
+                                                <Ionicons name="arrow-forward" size={20} style={{marginLeft: 7, marginTop: 7}} color="white" />
                                             </MaskedGradient>
                                         </View>
                                     </LinearGradient>
@@ -382,22 +388,18 @@ const styles = StyleSheet.create({
         marginTop: 30,
         marginBottom: 30,
     },
-    profileCircle: {
+    avatarBubble: {
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 2,
-        borderColor: '#FFFFFF',
-        shadowColor: '#63F3FF',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 10,
-        elevation: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 15,
     },
-    profileCircleNight: {
-        borderColor: 'rgba(61,243,255,0.4)',
-        shadowOpacity: 0.8,
+    avatarInitial: {
+        fontSize: 36,
+        fontWeight: 'bold',
+        color: '#06b6d4',
     },
     profileName: {
         marginTop: 15,
