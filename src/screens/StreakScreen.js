@@ -24,6 +24,7 @@ import Svg, {
 } from "react-native-svg";
 
 export default function StreakScreen({ navigation }) {
+  const streakCount = 10;
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
@@ -46,63 +47,43 @@ export default function StreakScreen({ navigation }) {
 
         {/* HERO SECTION */}
         <View style={styles.heroRow}>
-
           {/* LEFT */}
           <View style={styles.leftSection}>
             <View style={styles.flameContainer}>
-
               <StreakRound width={160} height={160} />
-
               <View style={styles.iconOverlay}>
-                <StreakIcon width={90} height={90} />
+                <StreakIcon width={80} height={80} />
               </View>
-
               <View style={styles.shadowOverlay}>
-                <StreakShadow width={100} height={30} />
+                <StreakShadow width={120} height={35} />
               </View>
-
             </View>
           </View>
 
           {/* RIGHT */}
           <View style={styles.rightSection}>
-
             {/* 10 */}
-            <Svg width={90} height={72}>
+            <Svg width={100} height={90}>
               <Defs>
-                <SvgGradient id="numGrad" x1="0" y1="0" x2="0" y2="1">
+                <SvgGradient id="numGrad" x1="1" y1="1" x2="1" y2="0">
                   <Stop offset="0" stopColor="#FFFFFF" />
                   <Stop offset="1" stopColor="#3EDCF0" />
                 </SvgGradient>
               </Defs>
-
-              <SvgText
-                fill="url(#numGrad)"
-                fontSize="64"
-                fontWeight="bold"
-                x="0"
-                y="66"
-              >
+              <SvgText fill="url(#numGrad)" fontSize="84" fontWeight="bold" x="0" y="80">
                 10
               </SvgText>
             </Svg>
 
             {/* DAYS TEXT */}
-            <Svg width={120} height={20}>
+            <Svg width={110} height={30} style={styles.daysTextSvg}>
               <Defs>
-                <SvgGradient id="daysGrad" x1="0" y1="0" x2="1" y2="0">
+                <SvgGradient id="daysGrad" x1="1" y1="1" x2="1" y2="0">
                   <Stop offset="0" stopColor="#FFFFFF" />
                   <Stop offset="1" stopColor="#3EDCF0" />
                 </SvgGradient>
               </Defs>
-
-              <SvgText
-                fill="url(#daysGrad)"
-                fontSize="14"
-                fontWeight="500"
-                x="0"
-                y="15"
-              >
+              <SvgText fill="url(#daysGrad)" fontSize="16" fontWeight="500" x="0" y="24">
                 days streak !
               </SvgText>
             </Svg>
@@ -110,7 +91,6 @@ export default function StreakScreen({ navigation }) {
             <View style={styles.textShadowContainer}>
               <Image source={require('../../assets/streak/text_bottom_blur.png')} style={styles.blurImage} />
             </View>
-
           </View>
         </View>
 
@@ -130,57 +110,38 @@ export default function StreakScreen({ navigation }) {
             {/* LEFT REFLECTION */}
             <View style={styles.leftSection}>
               <View style={styles.flameContainer}>
-
-                <StreakRound width={160} height={160} />
-
+                <StreakRound width={130} height={130} />
                 <View style={styles.iconOverlay}>
-                  <StreakIcon width={90} height={90} />
+                  <StreakIcon width={80} height={80} />
                 </View>
-
                 <View style={styles.shadowOverlay}>
-                  <StreakShadow width={100} height={30} />
+                  <StreakShadow width={120} height={35} />
                 </View>
-
               </View>
             </View>
 
             {/* RIGHT REFLECTION */}
             <View style={styles.rightSection}>
-
-              <Svg width={90} height={72}>
+              <Svg width={100} height={80} style={{ paddingRight: 105 }}>
                 <Defs>
                   <SvgGradient id="numGradRef" x1="0" y1="0" x2="0" y2="1">
-                    <Stop offset="0" stopColor="#FFFFFF" />
-                    <Stop offset="1" stopColor="#3EDCF0" />
+                    <Stop offset="1" stopColor="#FFFFFF" />
+                    <Stop offset="0" stopColor="#3EDCF0" />
                   </SvgGradient>
                 </Defs>
-
-                <SvgText
-                  fill="url(#numGradRef)"
-                  fontSize="64"
-                  fontWeight="bold"
-                  x="0"
-                  y="66"
-                >
+                <SvgText fill="url(#numGradRef)" fontSize="84" fontWeight="bold" x="0" y="80">
                   10
                 </SvgText>
               </Svg>
 
-              <Svg width={120} height={20}>
+              <Svg width={100} height={40} style={styles.daysTextSvg} style={{ paddingRight: 105 }}>
                 <Defs>
                   <SvgGradient id="daysGradRef" x1="0" y1="0" x2="1" y2="0">
                     <Stop offset="0" stopColor="#FFFFFF" />
                     <Stop offset="1" stopColor="#3EDCF0" />
                   </SvgGradient>
                 </Defs>
-
-                <SvgText
-                  fill="url(#daysGradRef)"
-                  fontSize="14"
-                  fontWeight="500"
-                  x="0"
-                  y="15"
-                >
+                <SvgText fill="url(#daysGradRef)" fontSize="16" fontWeight="300" x="0" y="34">
                   days streak !
                 </SvgText>
               </Svg>
@@ -188,7 +149,6 @@ export default function StreakScreen({ navigation }) {
               <View style={styles.textShadowContainer}>
                 <Image source={require('../../assets/streak/text_bottom_blur.png')} style={styles.blurImage} />
               </View>
-
             </View>
           </View>
 
@@ -226,7 +186,7 @@ export default function StreakScreen({ navigation }) {
           </View>
 
           {/* WEEK 1 */}
-          <LinearGradient colors={["#FFFFFF", "#3EDCF0"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.weekContainer}>
+          <LinearGradient colors={["#FFFFFF", "#3EDCF0"]} start={{ x: 0, y: 0 }} end={{ x: 1.2, y: 0 }} style={[styles.weekContainer, { borderColor: "#3EDCF0" }]}>
             <View style={styles.emptyDate} />
             <View style={styles.emptyDate} />
             <View style={styles.emptyDate} />
@@ -431,6 +391,8 @@ const styles = StyleSheet.create({
   flameContainer: {
     alignItems: "center",
     justifyContent: "center",
+    width: 160,
+    height: 160,
   },
 
   iconOverlay: {
@@ -441,39 +403,46 @@ const styles = StyleSheet.create({
 
   shadowOverlay: {
     position: "absolute",
-    bottom: 15,
+    bottom: 20,
     alignItems: "center",
     justifyContent: "center",
   },
 
   rightSection: {
-    marginLeft: 18,
-    justifyContent: "center",
-    alignItems: "flex-start",
-    paddingTop: 20,
+    marginLeft: -1,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "flex-start",
+    paddingBottom: -20,
   },
 
-    textShadowContainer: {
-      marginTop: -5,
-      alignItems: "center",
-      justifyContent: "center",
-      alignSelf: "center",
-      zIndex: 1,
-    },
+  daysTextSvg: {
+    marginLeft: 4,
+    marginBottom: 6,
+  },
 
-    blurImage: {
-        width: 80,
-        height: 25,
-        right: 25,
-    },
+  textShadowContainer: {
+    position: "absolute",
+    bottom: -20,
+    width: 250,
+    height: 35,
+    left: 0,
+    zIndex: -1,
+  },
 
-    reflectionWrapper: {
-        height: 100,
-        overflow: "hidden",
-        marginTop: -40,
-        width: "100%",
-        alignItems: "center",
-    },
+  blurImage: {
+    width: 200,
+    height: 25,
+  },
+
+  reflectionWrapper: {
+    height: 100,
+    overflow: "hidden",
+    marginTop: -60,
+    width: "100%",
+    alignItems: "center",
+    zIndex: -1,
+  },
 
 
   reflectionMask: {
@@ -555,11 +524,18 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     paddingVertical: 10,
     borderWidth: 1.5,
-    borderColor: "#ccc4c4ff",
+    borderColor: "#c4cbccff",
     paddingHorizontal: 8,
     marginHorizontal: 14,
     marginTop: 12,
     height: 40,
+  },
+
+  activeDateRect: {
+    width: 38,
+    height: 38,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   activeDate: {
@@ -609,7 +585,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#2E2E2E",
     borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: "#4A4A4A",
+    borderColor: "#4a4a4aff",
     paddingHorizontal: 16,
     paddingVertical: 18,
     marginTop: 8,
@@ -660,6 +636,13 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
+  },
+
+  daysStreakText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "500",
+    marginTop: 4,
   },
 
   activeTrack: {
