@@ -191,7 +191,7 @@ const HomeScreen = ({ navigation }) => {
       surahNumber: selectedSurah.number,
       ayahNumber: ayahNum
     };
-    
+
     // 1. Optimistic Update
     setReadingProgress(updatePayload);
     setModalVisible(false);
@@ -251,368 +251,368 @@ const HomeScreen = ({ navigation }) => {
           <>
             <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
             {/* ── Pinned Top Section ── */}
-      <View style={styles.fixedTopContainer}>
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <TouchableOpacity style={[styles.avatarBubble, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : '#cffafe' }]} activeOpacity={0.8} onPress={() => navigation.navigate('Profile')}>
+            <View style={styles.fixedTopContainer}>
+              {/* ── Header ── */}
+              <View style={styles.header}>
+                <View style={styles.headerLeft}>
+                  {/* <TouchableOpacity style={[styles.avatarBubble, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : '#cffafe' }]} activeOpacity={0.8} onPress={() => navigation.navigate('Profile')}>
               <Text style={[styles.avatarInitial, { color: '#06b6d4' }]}>{initial}</Text>
-            </TouchableOpacity>
-            <View style={styles.headerTextCol}>
-              <Text style={[styles.welcomeText, { color: isDark ? colors.textMuted : '#475569' }]}>
-                Hello {user?.name || 'Wahid'},
-              </Text>
-              <Text style={[styles.userName, { color: isDark ? colors.text : '#0f172a' }]}>
-                {greeting}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.headerRight}>
-            <TouchableOpacity 
-              style={styles.streakBadge} 
-              activeOpacity={0.8}
-              onPress={() => navigation.navigate('Streak')}
-            >
+            </TouchableOpacity> */}
+                  <View style={styles.headerTextCol}>
+                    <Text style={[styles.welcomeText, { color: isDark ? colors.textMuted : '#475569' }]}>
+                      Hello {user?.name || 'Wahid'},
+                    </Text>
+                    <Text style={[styles.userName, { color: isDark ? colors.text : '#0f172a' }]}>
+                      {greeting}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.headerRight}>
+                  <TouchableOpacity
+                    style={styles.streakBadge}
+                    activeOpacity={0.8}
+                    onPress={() => navigation.navigate('Streak')}
+                  >
+                    <View style={[
+                      styles.streakContainer,
+                      {
+                        backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'
+                      }
+                    ]}>
+                      <Image
+                        source={require('../../assets/home/streak.png')}
+                        style={styles.streakIconImage}
+                        resizeMode="contain"
+                      />
+                      <Text style={styles.streakText}>{String(streak || 1).padStart(2, '0')}</Text>
+                    </View>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.bellButton,
+                      {
+                        backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'
+                      }
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.bellIconWrapper}>
+                      <Ionicons name="notifications" size={21} color="#06b6d4" />
+                      <View style={styles.notificationDot} />
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* ── Progress Card ── */}
               <View style={[
-                styles.streakContainer,
+                styles.progressContainer,
                 {
                   backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'
                 }
               ]}>
-                <Image
-                  source={require('../../assets/home/streak.png')}
-                  style={styles.streakIconImage}
-                  resizeMode="contain"
+                <View style={styles.progressHeader}>
+                  <Text style={styles.progressTitle}>Your Progress</Text>
+                  <Text style={[styles.progressPercentText, { color: colors.text }]}>
+                    {Math.round(stats.progress)}% Completed
+                  </Text>
+                </View>
+
+                <View style={[
+                  styles.progressBarBg,
+                  { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }
+                ]}>
+                  <LinearGradient
+                    colors={['#06b6d4', '#22d3ee']}
+                    style={[styles.progressBarFill, { width: `${stats.progress}%` }]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  />
+                </View>
+
+                <View style={styles.metricsRow}>
+                  {/* Learned Metric Card */}
+                  <TouchableOpacity
+                    style={styles.metricCardWrap}
+                    activeOpacity={0.75}
+                    onPress={() => navigation.navigate('Names', { statusFilter: 'learned', filter: null })}
+                  >
+                    <ImageBackground
+                      source={require('../../assets/home/sml_card.png')}
+                      style={styles.metricCardBackground}
+                      imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
+                    >
+                      <View style={styles.metricCardInner}>
+                        <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.learned}</Text>
+                        <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Learned</Text>
+
+                        {/* Icon Bubble */}
+                        <View style={styles.iconBubble}>
+                          <Image
+                            source={require('../../assets/home/learn_icon.png')}
+                            style={styles.metricCardIconImage}
+                            resizeMode="contain"
+                          />
+                        </View>
+                      </View>
+                    </ImageBackground>
+                  </TouchableOpacity>
+
+                  {/* Mastered Metric Card */}
+                  <TouchableOpacity
+                    style={styles.metricCardWrap}
+                    activeOpacity={0.75}
+                    onPress={() => navigation.navigate('Names', { statusFilter: 'mastered', filter: null })}
+                  >
+                    <ImageBackground
+                      source={require('../../assets/home/sml_card.png')}
+                      style={styles.metricCardBackground}
+                      imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
+                    >
+                      <View style={styles.metricCardInner}>
+                        <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.mastered}</Text>
+                        <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Mastered</Text>
+
+                        {/* Icon Bubble */}
+                        <View style={styles.iconBubble}>
+                          <Image
+                            source={require('../../assets/home/master_icon.png')}
+                            style={styles.metricCardIconImage}
+                            resizeMode="contain"
+                          />
+                        </View>
+                      </View>
+                    </ImageBackground>
+                  </TouchableOpacity>
+
+                  {/* Remaining Metric Card */}
+                  <TouchableOpacity
+                    style={styles.metricCardWrap}
+                    activeOpacity={0.75}
+                    onPress={() => navigation.navigate('Names', { statusFilter: 'remaining', filter: null })}
+                  >
+                    <ImageBackground
+                      source={require('../../assets/home/sml_card.png')}
+                      style={styles.metricCardBackground}
+                      imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
+                    >
+                      <View style={styles.metricCardInner}>
+                        <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.remaining}</Text>
+                        <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Remaining</Text>
+
+                        {/* Icon Bubble */}
+                        <View style={styles.iconBubble}>
+                          <Image
+                            source={require('../../assets/home/remain_icon.png')}
+                            style={styles.metricCardIconImage}
+                            resizeMode="contain"
+                          />
+                        </View>
+                      </View>
+                    </ImageBackground>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* ── Categories Section Title ── */}
+              <View style={styles.categoriesHeaderRow}>
+                <Text style={[styles.categoriesTitle, { color: colors.text }]}>Categories</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Names')} activeOpacity={0.7}>
+                  <Ionicons name="list" size={22} color="#06b6d4" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* ── Scrollable Categories Feed ── */}
+            <ScrollView
+              style={styles.scrollList}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  tintColor={colors.primary}
+                  colors={[colors.primary]}
                 />
-                <Text style={styles.streakText}>{String(streak || 1).padStart(2, '0')}</Text>
+              }
+            >
+
+              <View style={styles.catVerticalList}>
+                {Object.values(CATEGORIES).map((cat) => {
+                  const cs = categoryStats[cat.id] || { total: 0, learned: 0 };
+                  const pct = cs.total > 0 ? Math.round((cs.learned / cs.total) * 100) : 0;
+                  const isCompleted = pct === 100;
+
+                  const cardBgColors = isDark
+                    ? (isCompleted ? ['#062f1d', '#022c22'] : ['#0f172a', '#020617'])
+                    : (isCompleted ? ['#f0fdf4', '#dcfce7'] : ['#ecfeff', '#cffafe']);
+
+                  const cardBorderColor = isDark
+                    ? (isCompleted ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255,255,255,0.05)')
+                    : (isCompleted ? '#bbf7d0' : '#cffafe');
+
+                  const progressColor = isCompleted ? '#22c55e' : '#06b6d4';
+
+                  return (
+                    <TouchableOpacity
+                      key={cat.id}
+                      style={[
+                        styles.verticalCatCard,
+                        {
+                          borderColor: cardBorderColor,
+                        }
+                      ]}
+                      activeOpacity={0.85}
+                      onPress={() => navigation.navigate('Names', { filter: cat.id, statusFilter: null })}
+                    >
+                      <LinearGradient
+                        colors={cardBgColors}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.catCardInner}
+                      >
+                        <View style={styles.catLeftSection}>
+                          <Text style={[styles.verticalCatName, { color: colors.text }]}>{cat.name}</Text>
+                          <Text style={[styles.verticalCatSubtitle, { color: colors.textMuted }]}>{cs.total} Names</Text>
+
+                          <View style={styles.catProgressWrapper}>
+                            <View style={styles.catProgressHeaderRow}>
+                              <Text style={[styles.catProgressDetails, { color: colors.textMuted }]}>
+                                {cs.learned}/{cs.total} - {pct}% Completed
+                              </Text>
+                            </View>
+                            <View style={[styles.catProgressBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }]}>
+                              <LinearGradient
+                                colors={isCompleted ? ['#22c55e', '#4ade80'] : ['#06b6d4', '#22d3ee']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={[styles.catProgressBarFill, { width: `${pct}%` }]}
+                              />
+                            </View>
+                          </View>
+                        </View>
+
+                        <View style={styles.catRightSection}>
+                          <Text
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                            style={[styles.giantPercentage, { color: progressColor, opacity: isDark ? 0.12 : 0.22 }]}
+                          >
+                            {pct}%
+                          </Text>
+                        </View>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
-            </TouchableOpacity>
+              <View style={{ height: 40 }} />
+            </ScrollView>
 
-            <TouchableOpacity
-              style={[
-                styles.bellButton,
-                {
-                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'
-                }
-              ]}
-              activeOpacity={0.8}
+            {/* ── Update Reading Progress Modal ── */}
+            <Modal
+              animationType="slide"
+              transparent={true}
+              visible={modalVisible}
+              onRequestClose={() => setModalVisible(false)}
             >
-              <View style={styles.bellIconWrapper}>
-                <Ionicons name="notifications" size={21} color="#06b6d4" />
-                <View style={styles.notificationDot} />
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* ── Progress Card ── */}
-        <View style={[
-          styles.progressContainer,
-          {
-            backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'
-          }
-        ]}>
-          <View style={styles.progressHeader}>
-            <Text style={styles.progressTitle}>Your Progress</Text>
-            <Text style={[styles.progressPercentText, { color: colors.text }]}>
-              {Math.round(stats.progress)}% Completed
-            </Text>
-          </View>
-
-          <View style={[
-            styles.progressBarBg,
-            { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }
-          ]}>
-            <LinearGradient
-              colors={['#06b6d4', '#22d3ee']}
-              style={[styles.progressBarFill, { width: `${stats.progress}%` }]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            />
-          </View>
-
-          <View style={styles.metricsRow}>
-            {/* Learned Metric Card */}
-            <TouchableOpacity
-              style={styles.metricCardWrap}
-              activeOpacity={0.75}
-              onPress={() => navigation.navigate('Names', { statusFilter: 'learned', filter: null })}
-            >
-              <ImageBackground
-                source={require('../../assets/home/sml_card.png')}
-                style={styles.metricCardBackground}
-                imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
-              >
-                <View style={styles.metricCardInner}>
-                  <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.learned}</Text>
-                  <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Learned</Text>
-
-                  {/* Icon Bubble */}
-                  <View style={styles.iconBubble}>
-                    <Image
-                      source={require('../../assets/home/learn_icon.png')}
-                      style={styles.metricCardIconImage}
-                      resizeMode="contain"
-                    />
-                  </View>
-                </View>
-              </ImageBackground>
-            </TouchableOpacity>
-
-            {/* Mastered Metric Card */}
-            <TouchableOpacity
-              style={styles.metricCardWrap}
-              activeOpacity={0.75}
-              onPress={() => navigation.navigate('Names', { statusFilter: 'mastered', filter: null })}
-            >
-              <ImageBackground
-                source={require('../../assets/home/sml_card.png')}
-                style={styles.metricCardBackground}
-                imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
-              >
-                <View style={styles.metricCardInner}>
-                  <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.mastered}</Text>
-                  <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Mastered</Text>
-
-                  {/* Icon Bubble */}
-                  <View style={styles.iconBubble}>
-                    <Image
-                      source={require('../../assets/home/master_icon.png')}
-                      style={styles.metricCardIconImage}
-                      resizeMode="contain"
-                    />
-                  </View>
-                </View>
-              </ImageBackground>
-            </TouchableOpacity>
-
-            {/* Remaining Metric Card */}
-            <TouchableOpacity
-              style={styles.metricCardWrap}
-              activeOpacity={0.75}
-              onPress={() => navigation.navigate('Names', { statusFilter: 'remaining', filter: null })}
-            >
-              <ImageBackground
-                source={require('../../assets/home/sml_card.png')}
-                style={styles.metricCardBackground}
-                imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
-              >
-                <View style={styles.metricCardInner}>
-                  <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.remaining}</Text>
-                  <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Remaining</Text>
-
-                  {/* Icon Bubble */}
-                  <View style={styles.iconBubble}>
-                    <Image
-                      source={require('../../assets/home/remain_icon.png')}
-                      style={styles.metricCardIconImage}
-                      resizeMode="contain"
-                    />
-                  </View>
-                </View>
-              </ImageBackground>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* ── Categories Section Title ── */}
-        <View style={styles.categoriesHeaderRow}>
-          <Text style={[styles.categoriesTitle, { color: colors.text }]}>Categories</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Names')} activeOpacity={0.7}>
-            <Ionicons name="list" size={22} color="#06b6d4" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* ── Scrollable Categories Feed ── */}
-      <ScrollView
-        style={styles.scrollList}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
-          />
-        }
-      >
-
-        <View style={styles.catVerticalList}>
-          {Object.values(CATEGORIES).map((cat) => {
-            const cs = categoryStats[cat.id] || { total: 0, learned: 0 };
-            const pct = cs.total > 0 ? Math.round((cs.learned / cs.total) * 100) : 0;
-            const isCompleted = pct === 100;
-
-            const cardBgColors = isDark
-              ? (isCompleted ? ['#062f1d', '#022c22'] : ['#0f172a', '#020617'])
-              : (isCompleted ? ['#f0fdf4', '#dcfce7'] : ['#ecfeff', '#cffafe']);
-
-            const cardBorderColor = isDark
-              ? (isCompleted ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255,255,255,0.05)')
-              : (isCompleted ? '#bbf7d0' : '#cffafe');
-
-            const progressColor = isCompleted ? '#22c55e' : '#06b6d4';
-
-            return (
               <TouchableOpacity
-                key={cat.id}
-                style={[
-                  styles.verticalCatCard,
-                  {
-                    borderColor: cardBorderColor,
-                  }
-                ]}
-                activeOpacity={0.85}
-                onPress={() => navigation.navigate('Names', { filter: cat.id, statusFilter: null })}
+                style={styles.modalOverlay}
+                activeOpacity={1}
+                onPress={() => setModalVisible(false)}
               >
-                <LinearGradient
-                  colors={cardBgColors}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.catCardInner}
+                <TouchableOpacity
+                  style={[styles.modalContent, { backgroundColor: isDark ? '#1e293b' : '#ffffff' }]}
+                  activeOpacity={1}
                 >
-                  <View style={styles.catLeftSection}>
-                    <Text style={[styles.verticalCatName, { color: colors.text }]}>{cat.name}</Text>
-                    <Text style={[styles.verticalCatSubtitle, { color: colors.textMuted }]}>{cs.total} Names</Text>
+                  <View style={styles.modalHandle} />
+                  <Text style={[styles.modalTitle, { color: colors.text }]}>Update Reading Progress</Text>
 
-                    <View style={styles.catProgressWrapper}>
-                      <View style={styles.catProgressHeaderRow}>
-                        <Text style={[styles.catProgressDetails, { color: colors.textMuted }]}>
-                          {cs.learned}/{cs.total} - {pct}% Completed
-                        </Text>
-                      </View>
-                      <View style={[styles.catProgressBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }]}>
-                        <LinearGradient
-                          colors={isCompleted ? ['#22c55e', '#4ade80'] : ['#06b6d4', '#22d3ee']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 0 }}
-                          style={[styles.catProgressBarFill, { width: `${pct}%` }]}
-                        />
-                      </View>
+                  {/* Search Surah */}
+                  <View style={[styles.modalSearchRow, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9' }]}>
+                    <Ionicons name="search" size={18} color={isDark ? 'rgba(255,255,255,0.4)' : '#64748b'} />
+                    <TextInput
+                      style={[styles.modalSearchInput, { color: colors.text }]}
+                      placeholder="Search Surah..."
+                      placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : '#64748b'}
+                      value={searchText}
+                      onChangeText={setSearchText}
+                    />
+                  </View>
+
+                  {/* Selected Surah Label */}
+                  <Text style={[styles.selectedLabel, { color: colors.textMuted }]}>
+                    Selected: <Text style={{ fontWeight: 'bold', color: '#06b6d4' }}>{selectedSurah.name} (Surah {selectedSurah.number})</Text>
+                  </Text>
+
+                  {/* Surah List */}
+                  <View style={[styles.surahListContainer, { borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }]}>
+                    <ScrollView nestedScrollEnabled={true} style={{ maxHeight: 150 }}>
+                      {filteredSurahs.map((s) => (
+                        <TouchableOpacity
+                          key={s.number}
+                          style={[
+                            styles.surahRow,
+                            selectedSurah.number === s.number && { backgroundColor: 'rgba(6, 182, 212, 0.15)' }
+                          ]}
+                          onPress={() => setSelectedSurah(s)}
+                        >
+                          <Text style={[styles.surahRowText, { color: colors.text }, selectedSurah.number === s.number && { fontWeight: '700', color: '#06b6d4' }]}>
+                            {s.number}. {s.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+
+                  {/* Ayah Input */}
+                  <View style={styles.ayahInputSection}>
+                    <Text style={[styles.ayahInputLabel, { color: colors.text }]}>Ayah Number:</Text>
+                    <View style={styles.ayahInputRow}>
+                      <TouchableOpacity
+                        style={[styles.counterBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#e2e8f0' }]}
+                        onPress={() => {
+                          const val = Math.max(1, (parseInt(ayahInput) || 1) - 1);
+                          setAyahInput(String(val));
+                        }}
+                      >
+                        <Ionicons name="remove" size={20} color={colors.text} />
+                      </TouchableOpacity>
+
+                      <TextInput
+                        style={[styles.ayahInputText, { color: colors.text, borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#cbd5e1' }]}
+                        keyboardType="number-pad"
+                        value={ayahInput}
+                        onChangeText={(val) => setAyahInput(val.replace(/[^0-9]/g, ''))}
+                      />
+
+                      <TouchableOpacity
+                        style={[styles.counterBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#e2e8f0' }]}
+                        onPress={() => {
+                          const val = (parseInt(ayahInput) || 1) + 1;
+                          setAyahInput(String(val));
+                        }}
+                      >
+                        <Ionicons name="add" size={20} color={colors.text} />
+                      </TouchableOpacity>
                     </View>
                   </View>
 
-                  <View style={styles.catRightSection}>
-                    <Text
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
-                      style={[styles.giantPercentage, { color: progressColor, opacity: isDark ? 0.12 : 0.22 }]}
-                    >
-                      {pct}%
-                    </Text>
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-        <View style={{ height: 40 }} />
-      </ScrollView>
-
-      {/* ── Update Reading Progress Modal ── */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setModalVisible(false)}
-        >
-          <TouchableOpacity
-            style={[styles.modalContent, { backgroundColor: isDark ? '#1e293b' : '#ffffff' }]}
-            activeOpacity={1}
-          >
-            <View style={styles.modalHandle} />
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Update Reading Progress</Text>
-            
-            {/* Search Surah */}
-            <View style={[styles.modalSearchRow, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9' }]}>
-              <Ionicons name="search" size={18} color={isDark ? 'rgba(255,255,255,0.4)' : '#64748b'} />
-              <TextInput
-                style={[styles.modalSearchInput, { color: colors.text }]}
-                placeholder="Search Surah..."
-                placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : '#64748b'}
-                value={searchText}
-                onChangeText={setSearchText}
-              />
-            </View>
-
-            {/* Selected Surah Label */}
-            <Text style={[styles.selectedLabel, { color: colors.textMuted }]}>
-              Selected: <Text style={{ fontWeight: 'bold', color: '#06b6d4' }}>{selectedSurah.name} (Surah {selectedSurah.number})</Text>
-            </Text>
-
-            {/* Surah List */}
-            <View style={[styles.surahListContainer, { borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }]}>
-              <ScrollView nestedScrollEnabled={true} style={{ maxHeight: 150 }}>
-                {filteredSurahs.map((s) => (
+                  {/* Save Button */}
                   <TouchableOpacity
-                    key={s.number}
-                    style={[
-                      styles.surahRow,
-                      selectedSurah.number === s.number && { backgroundColor: 'rgba(6, 182, 212, 0.15)' }
-                    ]}
-                    onPress={() => setSelectedSurah(s)}
+                    style={styles.saveBtn}
+                    onPress={handleSaveProgress}
                   >
-                    <Text style={[styles.surahRowText, { color: colors.text }, selectedSurah.number === s.number && { fontWeight: '700', color: '#06b6d4' }]}>
-                      {s.number}. {s.name}
-                    </Text>
+                    <Text style={styles.saveBtnText}>Save Progress</Text>
                   </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-
-            {/* Ayah Input */}
-            <View style={styles.ayahInputSection}>
-              <Text style={[styles.ayahInputLabel, { color: colors.text }]}>Ayah Number:</Text>
-              <View style={styles.ayahInputRow}>
-                <TouchableOpacity
-                  style={[styles.counterBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#e2e8f0' }]}
-                  onPress={() => {
-                    const val = Math.max(1, (parseInt(ayahInput) || 1) - 1);
-                    setAyahInput(String(val));
-                  }}
-                >
-                  <Ionicons name="remove" size={20} color={colors.text} />
                 </TouchableOpacity>
-
-                <TextInput
-                  style={[styles.ayahInputText, { color: colors.text, borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#cbd5e1' }]}
-                  keyboardType="number-pad"
-                  value={ayahInput}
-                  onChangeText={(val) => setAyahInput(val.replace(/[^0-9]/g, ''))}
-                />
-
-                <TouchableOpacity
-                  style={[styles.counterBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#e2e8f0' }]}
-                  onPress={() => {
-                    const val = (parseInt(ayahInput) || 1) + 1;
-                    setAyahInput(String(val));
-                  }}
-                >
-                  <Ionicons name="add" size={20} color={colors.text} />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Save Button */}
-            <TouchableOpacity
-              style={styles.saveBtn}
-              onPress={handleSaveProgress}
-            >
-              <Text style={styles.saveBtnText}>Save Progress</Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+              </TouchableOpacity>
+            </Modal>
           </>
         )}
       </TimeBasedBackground>
