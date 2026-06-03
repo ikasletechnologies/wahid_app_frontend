@@ -126,7 +126,7 @@ export default function ProfileScreen({ navigation }) {
                                 <Text style={[styles.headerTitle, { color: t.headerText }]}>Profile</Text>
                             </View>
 
-                            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
+                            <View>
 
                                 {/* PROFILE SECTION */}
                                 <View style={styles.profileSection}>
@@ -154,7 +154,7 @@ export default function ProfileScreen({ navigation }) {
                                         <View style={styles.leftSection}>
                                             <View style={[styles.iconCircle, { backgroundColor: t.iconCircleBg }]}>
                                                 <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
-                                                    <HugeiconsIcon icon={CircleIcon} size={40} color={t.iconRing} />
+                                                    <HugeiconsIcon icon={CircleIcon} size={45} color={t.iconRing} />
                                                 </View>
                                                 <MaskedGradient width={24} height={24}>
                                                     <HugeiconsIcon icon={UserIcon} size={20} color="white" />
@@ -162,12 +162,12 @@ export default function ProfileScreen({ navigation }) {
                                             </View>
                                             <Text style={[styles.cardTitle, { color: t.cardText }]}>Personal Details</Text>
                                         </View>
-                                        <View style={{ width: 34, height: 34, justifyContent: 'center', alignItems: 'center' }}>
+                                        <View style={{ width: 34, height: 34, justifyContent: 'center', alignItems: 'center', marginTop: -10, marginRight: 5 }}>
                                             <View style={StyleSheet.absoluteFill}>
                                                 <HugeiconsIcon icon={CircleIcon} size={45} color={t.iconRing} />
                                             </View>
                                             <MaskedGradient width={24} height={24}>
-                                                <Ionicons name="arrow-forward" size={20} style={{marginLeft: 7, marginTop: 7}} color="white" />
+                                                <Ionicons name="arrow-forward" size={20} style={{ marginLeft: 7, marginTop: 7 }} color="white" />
                                             </MaskedGradient>
                                         </View>
                                     </LinearGradient>
@@ -288,76 +288,70 @@ export default function ProfileScreen({ navigation }) {
                                     </LinearGradient>
                                 </TouchableOpacity>
 
-                            </ScrollView>
-
-                            {/* LOGOUT */}
-                            <TouchableOpacity
-                                activeOpacity={0.8}
-                                style={{ marginBottom: 20 }}
-                                onPress={() => setIsLogoutVisible(true)}
-                            >
-                                <LinearGradient
-                                    colors={t.cardBg}
-                                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                                    style={[styles.card, { borderColor: t.cardBorder, borderWidth: 1, shadowColor: t.cardShadow }]}
-                                >
-                                    <View style={styles.leftSection}>
-                                        <View style={[styles.iconCircle, { backgroundColor: t.iconCircleBg }]}>
-                                            <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
-                                                <HugeiconsIcon icon={CircleIcon} size={45} color={t.iconRing} />
-                                            </View>
-                                            <HugeiconsIcon icon={Logout01Icon} size={20} color="red" />
-                                        </View>
-                                        <Text style={[styles.cardTitle, { color: 'red' }]}>Logout</Text>
-                                    </View>
-                                </LinearGradient>
-                            </TouchableOpacity>
-
-                            {/* LOGOUT MODAL */}
-                            <Modal
-                                transparent={true}
-                                visible={isLogoutVisible}
-                                animationType="fade"
-                                onRequestClose={() => setIsLogoutVisible(false)}
-                            >
-                                <View style={styles.overlay}>
-                                    <View style={styles.modalContainer}>
-                                        <View style={styles.iconWrapper}>
-                                            <View style={StyleSheet.absoluteFill}>
-                                                <HugeiconsIcon icon={CircleIcon} size={70} color="#EBECF0" />
-                                            </View>
-                                            <HugeiconsIcon icon={Logout01Icon} size={30} color="#FF5252" />
-                                        </View>
-                                        <Text style={styles.modalTitle}>LOG OUT</Text>
-                                        <Text style={styles.modalMessage}>
-                                            Are you sure you want to log out of your account?
-                                        </Text>
-                                        <View style={styles.buttonRow}>
-                                            <TouchableOpacity
-                                                style={styles.cancelButton}
-                                                onPress={() => setIsLogoutVisible(false)}
-                                            >
-                                                <Text style={styles.cancelButtonText}>Cancel</Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                style={styles.logoutButtonModal}
-                                                onPress={() => { setIsLogoutVisible(false); logout(); }}
-                                            >
-                                                <View style={styles.logoutButtonContent}>
-                                                    <View style={styles.smallIconCircle}>
-                                                        <HugeiconsIcon icon={Logout01Icon} size={18} color="#FF5252" />
+                                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
+                                    <TouchableOpacity activeOpacity={0.8} style={{ marginTop: 15 }} onPress={() => setIsLogoutVisible(true)}>
+                                        <LinearGradient
+                                            colors={t.cardBg}
+                                            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                                            style={[styles.card, { borderColor: t.cardBorder, borderWidth: 1, shadowColor: t.cardShadow }]}
+                                        >
+                                            <View style={styles.leftSection}>
+                                                <View style={[styles.iconCircle, { backgroundColor: t.iconCircleBg }]}>
+                                                    <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                                        <HugeiconsIcon icon={CircleIcon} size={45} color={t.iconRing} />
                                                     </View>
-                                                    <Text style={styles.logoutButtonText}>Log Out</Text>
+                                                    <HugeiconsIcon icon={Logout01Icon} size={20} color="red" />
                                                 </View>
-                                            </TouchableOpacity>
+                                                <Text style={[styles.cardTitle, { color: 'red' }]}>Logout</Text>
+                                            </View>
+                                        </LinearGradient>
+                                    </TouchableOpacity>
+                                </ScrollView>
+
+                                {/* LOGOUT MODAL */}
+                                <Modal
+                                    transparent={true}
+                                    visible={isLogoutVisible}
+                                    animationType="fade"
+                                    onRequestClose={() => setIsLogoutVisible(false)}
+                                >
+                                    <View style={styles.overlay}>
+                                        <View style={styles.modalContainer}>
+                                            <View style={styles.iconWrapper}>
+                                                <View style={StyleSheet.absoluteFill}>
+                                                    <HugeiconsIcon icon={CircleIcon} size={70} color="#EBECF0" />
+                                                </View>
+                                                <HugeiconsIcon icon={Logout01Icon} size={30} color="#FF5252" />
+                                            </View>
+                                            <Text style={styles.modalTitle}>LOG OUT</Text>
+                                            <Text style={styles.modalMessage}>
+                                                Are you sure you want to log out of your account?
+                                            </Text>
+                                            <View style={styles.buttonRow}>
+                                                <TouchableOpacity
+                                                    style={styles.cancelButton}
+                                                    onPress={() => setIsLogoutVisible(false)}>
+                                                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    style={styles.logoutButtonModal}
+                                                    onPress={() => { setIsLogoutVisible(false); logout(); }}>
+                                                    <View style={styles.logoutButtonContent}>
+                                                        <View style={styles.smallIconCircle}>
+                                                            <HugeiconsIcon icon={Logout01Icon} size={18} color="#FF5252" />
+                                                        </View>
+                                                        <Text style={styles.logoutButtonText}>Log Out</Text>
+                                                    </View>
+                                                </TouchableOpacity>
+                                            </View>
                                         </View>
                                     </View>
-                                </View>
-                            </Modal>
+                                </Modal>
+                            </View>
                         </>
                     );
                 }}
-            </TimeBasedBackground>
+            </TimeBasedBackground >
         </SafeAreaView>
     );
 }
@@ -367,6 +361,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'transparent',
         paddingHorizontal: 15,
+        marginTop: -3,
     },
 
     headerContainer: {
@@ -385,12 +380,12 @@ const styles = StyleSheet.create({
 
     profileSection: {
         alignItems: 'center',
-        marginTop: 30,
+        marginTop: 20,
         marginBottom: 30,
     },
     avatarBubble: {
-        width: 100,
-        height: 100,
+        width: 90,
+        height: 90,
         borderRadius: 50,
         justifyContent: 'center',
         alignItems: 'center',
@@ -402,12 +397,12 @@ const styles = StyleSheet.create({
         color: '#06b6d4',
     },
     profileName: {
-        marginTop: 15,
+        marginTop: 0,
         fontSize: 24,
         fontWeight: 'bold',
     },
     profileEmail: {
-        marginTop: 5,
+        marginTop: 0,
         fontSize: 14,
     },
 
