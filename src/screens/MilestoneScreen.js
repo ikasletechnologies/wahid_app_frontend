@@ -21,14 +21,14 @@ const W_BOTTOM = ROAD_W;
 
 const getRoadWidthAtY = y => W_TOP + (W_BOTTOM - W_TOP) * (y / ROAD_H);
 
-const Y_TOP    = ROAD_H - 340;
+const Y_TOP = ROAD_H - 340;
 const Y_BOTTOM = ROAD_H - 65;
-const wTop     = getRoadWidthAtY(Y_TOP);
-const wBottom  = getRoadWidthAtY(Y_BOTTOM);
-const xLeftTop    = (ROAD_W - wTop)    / 1.65;
-const xRightTop   = (ROAD_W + wTop)    / 2.05;
+const wTop = getRoadWidthAtY(Y_TOP);
+const wBottom = getRoadWidthAtY(Y_BOTTOM);
+const xLeftTop = (ROAD_W - wTop) / 1.65;
+const xRightTop = (ROAD_W + wTop) / 2.05;
 const xLeftBottom = (ROAD_W - wBottom) / 2;
-const xRightBottom= (ROAD_W + wBottom) / 2;
+const xRightBottom = (ROAD_W + wBottom) / 2;
 
 // Stone images — one per milestone (index 0 = milestone 1)
 const STONE_IMAGES = [
@@ -47,11 +47,11 @@ const ACTIVE_STONE = require('../../assets/milestone/Stone/mileStone.png');
 const SLOTS = [
   { size: 240, bottomRatio: 0.08 },
   { size: 108, bottomRatio: 0.32 },
-  { size: 76,  bottomRatio: 0.49 },
-  { size: 56,  bottomRatio: 0.62 },
-  { size: 42,  bottomRatio: 0.72 },
-  { size: 31,  bottomRatio: 0.80 },
-  { size: 23,  bottomRatio: 0.87 },
+  { size: 76, bottomRatio: 0.49 },
+  { size: 56, bottomRatio: 0.62 },
+  { size: 42, bottomRatio: 0.72 },
+  { size: 31, bottomRatio: 0.80 },
+  { size: 23, bottomRatio: 0.87 },
 ];
 const N_NODES = SLOTS.length;
 
@@ -59,25 +59,25 @@ const interpolateSlot = (virtualIndex) => {
   if (virtualIndex <= 0) {
     const s = SLOTS[0];
     return {
-      bottom:  SH * (s.bottomRatio + virtualIndex * 0.28),
-      size:    s.size * (1 + virtualIndex * 0.15),
+      bottom: SH * (s.bottomRatio + virtualIndex * 0.28),
+      size: s.size * (1 + virtualIndex * 0.15),
       opacity: Math.max(0, 1 + virtualIndex),
     };
   }
   if (virtualIndex >= N_NODES - 1) {
     const s = SLOTS[N_NODES - 1];
     return {
-      bottom:  SH * (s.bottomRatio + (virtualIndex - (N_NODES - 1)) * 0.05),
-      size:    Math.max(4, s.size * Math.max(0.1, 1 - (virtualIndex - (N_NODES - 1)) * 0.2)),
+      bottom: SH * (s.bottomRatio + (virtualIndex - (N_NODES - 1)) * 0.05),
+      size: Math.max(4, s.size * Math.max(0.1, 1 - (virtualIndex - (N_NODES - 1)) * 0.2)),
       opacity: Math.max(0, 1 - (virtualIndex - (N_NODES - 1))),
     };
   }
   const lo = Math.floor(virtualIndex);
   const hi = Math.ceil(virtualIndex);
-  const t  = virtualIndex - lo;
+  const t = virtualIndex - lo;
   return {
-    bottom:  SH  * (SLOTS[lo].bottomRatio + (SLOTS[hi].bottomRatio - SLOTS[lo].bottomRatio) * t),
-    size:    SLOTS[lo].size + (SLOTS[hi].size - SLOTS[lo].size) * t,
+    bottom: SH * (SLOTS[lo].bottomRatio + (SLOTS[hi].bottomRatio - SLOTS[lo].bottomRatio) * t),
+    size: SLOTS[lo].size + (SLOTS[hi].size - SLOTS[lo].size) * t,
     opacity: 1,
   };
 };
@@ -85,7 +85,7 @@ const interpolateSlot = (virtualIndex) => {
 // Hexagon SVG shape
 const SvgHex = ({ size, color = '#FFFFFF' }) => {
   const w = size, h = size * 0.9;
-  const pts = `${w*.25},0 ${w*.75},0 ${w},${h*.5} ${w*.75},${h} ${w*.25},${h} 0,${h*.5}`;
+  const pts = `${w * .25},0 ${w * .75},0 ${w},${h * .5} ${w * .75},${h} ${w * .25},${h} 0,${h * .5}`;
   return (
     <Svg width={w} height={h}>
       <Polygon points={pts} fill={color} stroke={color} strokeWidth={1} strokeLinejoin="round" />
@@ -101,9 +101,11 @@ const LockedNode = ({ milestoneId }) => {
   const hexColor = tier === 2 ? '#FFFDF0' : '#FFFFFF';
   const lockColor = tier === 2 ? '#FF9800' : '#00BCD4';
   return (
-    <View style={{ width: w, height: h, justifyContent: 'center', alignItems: 'center',
+    <View style={{
+      width: w, height: h, justifyContent: 'center', alignItems: 'center',
       shadowColor: lockColor, shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.35, shadowRadius: 6, elevation: 4 }}>
+      shadowOpacity: 0.35, shadowRadius: 6, elevation: 4
+    }}>
       <View style={{ position: 'absolute', top: 0, left: 0, width: w, height: h }}>
         <SvgHex size={baseSize} color={hexColor} />
       </View>
@@ -117,9 +119,9 @@ const LockedNode = ({ milestoneId }) => {
 
 // Progress ring overlaid on the active milestone stone
 const ProgressRing = ({ progress, size }) => {
-  const r   = size * 0.46;
-  const cx  = size / 2;
-  const cy  = size / 2;
+  const r = size * 0.46;
+  const cx = size / 2;
+  const cy = size / 2;
   const circ = 2 * Math.PI * r;
   const dash = circ * Math.min(1, Math.max(0, progress));
   return (
@@ -145,9 +147,9 @@ const MilestoneScreen = ({ navigation }) => {
       <TimeBasedBackground>
         {({ isNight }) => (
           <>
-            <Image source={require('../../assets/milestone/ring.png')}    style={s.ringLeft}    resizeMode="contain" />
-            <Image source={require('../../assets/milestone/ring.png')}    style={s.ringRight}   resizeMode="contain" />
-            <Image source={require('../../assets/milestone/Pattern.png')} style={s.patternLeft}  resizeMode="contain" />
+            <Image source={require('../../assets/milestone/ring.png')} style={s.ringLeft} resizeMode="contain" />
+            <Image source={require('../../assets/milestone/ring.png')} style={s.ringRight} resizeMode="contain" />
+            <Image source={require('../../assets/milestone/Pattern.png')} style={s.patternLeft} resizeMode="contain" />
             <Image source={require('../../assets/milestone/Pattern.png')} style={s.patternRight} resizeMode="contain" />
 
             {/* Header */}
@@ -174,9 +176,9 @@ const MilestoneScreen = ({ navigation }) => {
             <Svg width={ROAD_W} height={ROAD_H} style={[s.road, { zIndex: 2 }]}>
               <Defs>
                 <SvgLinearGradient id="lightGrad" x1="0" y1="0" x2="0" y2="1">
-                  <Stop offset="0%"   stopColor="#3DF3FF" stopOpacity="0" />
-                  <Stop offset="25%"  stopColor="#3DF3FF" stopOpacity="0.75" />
-                  <Stop offset="75%"  stopColor="#3DF3FF" stopOpacity="0.75" />
+                  <Stop offset="0%" stopColor="#3DF3FF" stopOpacity="0" />
+                  <Stop offset="25%" stopColor="#3DF3FF" stopOpacity="0.75" />
+                  <Stop offset="75%" stopColor="#3DF3FF" stopOpacity="0.75" />
                   <Stop offset="100%" stopColor="#3DF3FF" stopOpacity="0" />
                 </SvgLinearGradient>
               </Defs>
@@ -188,10 +190,10 @@ const MilestoneScreen = ({ navigation }) => {
 
             {/* Milestone nodes */}
             {milestones.map((milestone, i) => {
-              const inputRange  = [];
-              const outBottom   = [];
-              const outSize     = [];
-              const outOpacity  = [];
+              const inputRange = [];
+              const outBottom = [];
+              const outSize = [];
+              const outOpacity = [];
 
               for (let v = N_NODES; v >= -2; v--) {
                 const scrollVal = (i - v) * 120;
@@ -205,11 +207,11 @@ const MilestoneScreen = ({ navigation }) => {
                 outOpacity.push(interp.opacity);
               }
 
-              const bottom  = scrollY.interpolate({ inputRange, outputRange: outBottom,  extrapolate: 'clamp' });
-              const size    = scrollY.interpolate({ inputRange, outputRange: outSize,    extrapolate: 'clamp' });
+              const bottom = scrollY.interpolate({ inputRange, outputRange: outBottom, extrapolate: 'clamp' });
+              const size = scrollY.interpolate({ inputRange, outputRange: outSize, extrapolate: 'clamp' });
               const opacity = scrollY.interpolate({ inputRange, outputRange: outOpacity, extrapolate: 'clamp' });
-              const left    = scrollY.interpolate({ inputRange, outputRange: outSize.map(sz => (SW - sz) / 2), extrapolate: 'clamp' });
-              const scale   = scrollY.interpolate({ inputRange, outputRange: outSize.map(sz => sz / 100), extrapolate: 'clamp' });
+              const left = scrollY.interpolate({ inputRange, outputRange: outSize.map(sz => (SW - sz) / 2), extrapolate: 'clamp' });
+              const scale = scrollY.interpolate({ inputRange, outputRange: outSize.map(sz => sz / 100), extrapolate: 'clamp' });
 
               const { status } = milestone;
 
@@ -281,7 +283,7 @@ const MilestoneScreen = ({ navigation }) => {
                   key={m.id}
                   style={[
                     s.progressDot,
-                    m.status === 'completed'  && s.progressDotDone,
+                    m.status === 'completed' && s.progressDotDone,
                     m.status === 'in_progress' && s.progressDotActive,
                   ]}
                 />
@@ -321,10 +323,10 @@ const s = StyleSheet.create({
     backgroundColor: '#D9D9D9', borderRadius: 0, opacity: 1,
   },
 
-  ringLeft:    { position: 'absolute', width: 160, height: 160, left: -70,  top: SH * 0.10 },
-  ringRight:   { position: 'absolute', width: 150, height: 150, right: -65, top: SH * 0.37 },
-  patternLeft: { position: 'absolute', width: 72,  height: 58,  left: SW * 0.04,  top: SH * 0.35 },
-  patternRight:{ position: 'absolute', width: 72,  height: 58,  right: SW * 0.04, top: SH * 0.65 },
+  ringLeft: { position: 'absolute', width: 160, height: 160, left: -70, top: SH * 0.10 },
+  ringRight: { position: 'absolute', width: 150, height: 150, right: -65, top: SH * 0.37 },
+  patternLeft: { position: 'absolute', width: 72, height: 58, left: SW * 0.04, top: SH * 0.35 },
+  patternRight: { position: 'absolute', width: 72, height: 58, right: SW * 0.04, top: SH * 0.65 },
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',

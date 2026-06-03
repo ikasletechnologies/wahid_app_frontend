@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
     View,
     Text,
@@ -60,383 +60,385 @@ export default function ProfileScreen({ navigation }) {
                             translucent
                         />
 
-            {/* HEADER */}
-            <View style={styles.headerContainer}>
+                        {/* HEADER */}
+                        <View style={styles.headerContainer}>
 
-                <TouchableOpacity
-                    style={styles.backButton}
-                    activeOpacity={0.7}
-                    onPress={() => navigation.navigate('Home')}
-                >
-                    <Ionicons
-                        name="chevron-back"
-                        size={24}
-                        color="#000000ff"
-                    />
-                </TouchableOpacity>
-
-                <Text style={styles.headerTitle}>
-                    Profile
-                </Text>
-
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
-
-                {/* PROFILE SECTION */}
-                <View style={styles.profileSection}>
-
-                    {/* EMPTY ROUND PROFILE */}
-                    <View style={styles.profileCircle} />
-
-                    {/* NAME */}
-                    <Text style={styles.profileName}>
-                        {user?.name || 'Wahid'}
-                    </Text>
-
-                    {/* EMAIL */}
-                    <Text style={styles.profileEmail}>
-                        {user?.email || 'Wahid123@gmail.com'}
-                    </Text>
-
-                </View>
-
-                {/* PERSONAL DETAILS CARD */}
-                <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={() => navigation.navigate('PersonalDetails')}
-                >
-
-                    <LinearGradient
-                        colors={['#FFFFFF', '#FFFFFF']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.card}
-                    >
-
-                        {/* LEFT SIDE */}
-                        <View style={styles.leftSection}>
-
-                            {/* PROFILE ICON */}
-                            <View style={styles.iconCircle}>
-                                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
-                                    <HugeiconsIcon icon={CircleIcon} size={40} color="#EBECF0" />
-                                </View>
-                                <MaskedGradient width={24} height={24}>
-                                    <HugeiconsIcon icon={UserIcon} size={20} color="white" />
-                                </MaskedGradient>
-                            </View>
-
-                            {/* TEXT */}
-                            <Text style={styles.cardTitle}>
-                                Personal Details
-                            </Text>
-
-                        </View>
-
-                        {/* RIGHT ARROW */}
-                        <View style={{ width: 34, height: 34, justifyContent: 'center', alignItems: 'center' }}>
-                            <View style={StyleSheet.absoluteFill}>
-                                <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
-                            </View>
-                            <MaskedGradient width={24} height={24}>
-                                <Ionicons
-                                    name="arrow-forward"
-                                    size={20}
-                                    marginLeft={7}
-                                    marginTop={7}
-                                    color="white"
-                                />
-                            </MaskedGradient>
-                        </View>
-
-                    </LinearGradient>
-
-                </TouchableOpacity>
-
-                {/* PRIVACY & SECURITY CARD */}
-                <TouchableOpacity activeOpacity={0.8} style={{ marginTop: 15 }}>
-
-                    <LinearGradient
-                        colors={['#FFFFFF', '#FFFFFF']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.card}
-                    >
-
-                        {/* LEFT SIDE */}
-                        <View style={styles.leftSection}>
-
-                            {/* ICON */}
-                            <View style={styles.iconCircle}>
-                                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
-                                    <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
-                                </View>
-                                <MaskedGradient width={24} height={24}>
-                                    <HugeiconsIcon icon={SecurityIcon} size={20} color="white" />
-                                </MaskedGradient>
-                            </View>
-
-                            {/* TEXT */}
-                            <Text style={styles.cardTitle}>
-                                Privacy & Security
-                            </Text>
-
-                        </View>
-
-                        {/* RIGHT ARROW */}
-                        <View style={{ width: 34, height: 34, justifyContent: 'center', alignItems: 'center' }}>
-                            <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
-                                <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
-                            </View>
-                            <MaskedGradient width={18} height={18}>
-                                <Ionicons
-                                    name="arrow-forward"
-                                    size={18}
-                                    color="black"
-                                />
-                            </MaskedGradient>
-                        </View>
-
-                    </LinearGradient>
-
-                </TouchableOpacity>
-
-                {/* NOTIFICATIONS CARD */}
-                <TouchableOpacity activeOpacity={0.8} style={{ marginTop: 15 }}>
-
-                    <LinearGradient
-                        colors={['#FFFFFF', '#FFFFFF']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.card}
-                    >
-
-                        {/* LEFT SIDE */}
-                        <View style={styles.leftSection}>
-
-                            {/* ICON */}
-                            <View style={styles.iconCircle}>
-                                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
-                                    <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
-                                </View>
-                                <MaskedGradient width={24} height={24}>
-                                    <Ionicons
-                                        name="notifications-outline"
-                                        size={20}
-                                        color="white"
-                                    />
-                                </MaskedGradient>
-                            </View>
-
-                            {/* TEXT */}
-                            <Text style={styles.cardTitle}>
-                                Notifications
-                            </Text>
-
-                        </View>
-
-                        {/* RIGHT ARROW */}
-                        <View style={{ width: 34, height: 34, justifyContent: 'center', alignItems: 'center' }}>
-                            <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
-                                <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
-                            </View>
-                            <MaskedGradient width={18} height={18}>
-                                <Ionicons
-                                    name="arrow-forward"
-                                    size={18}
-                                    color="black"
-                                />
-                            </MaskedGradient>
-                        </View>
-
-                    </LinearGradient>
-
-                </TouchableOpacity>
-
-                {/* SETTINGS CARD */}
-                <TouchableOpacity
-                    activeOpacity={0.8}
-                    style={{ marginTop: 15 }}
-                    onPress={() => navigation.navigate('Settings')}
-                >
-
-                    <LinearGradient
-                        colors={['#FFFFFF', '#FFFFFF']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.card}
-                    >
-
-                        {/* LEFT SIDE */}
-                        <View style={styles.leftSection}>
-
-                            {/* ICON */}
-                            <View style={styles.iconCircle}>
-                                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
-                                    <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
-                                </View>
-                                <MaskedGradient width={24} height={24}>
-                                    <HugeiconsIcon icon={Settings02Icon} size={20} color="white" />
-                                </MaskedGradient>
-                            </View>
-
-                            {/* TEXT */}
-                            <Text style={styles.cardTitle}>
-                                Settings
-                            </Text>
-
-                        </View>
-
-                        {/* RIGHT ARROW */}
-                        <View style={{ width: 34, height: 34, justifyContent: 'center', alignItems: 'center' }}>
-                            <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
-                                <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
-                            </View>
-                            <MaskedGradient width={18} height={18}>
-                                <Ionicons
-                                    name="arrow-forward"
-                                    size={18}
-                                    color="black"
-                                />
-                            </MaskedGradient>
-                        </View>
-
-                    </LinearGradient>
-
-                </TouchableOpacity>
-
-                {/* ABOUT WAHID CARD */}
-                <TouchableOpacity activeOpacity={0.8} style={{ marginTop: 15 }}>
-
-                    <LinearGradient
-                        colors={['#FFFFFF', '#FFFFFF']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.card}
-                    >
-
-                        {/* LEFT SIDE */}
-                        <View style={styles.leftSection}>
-
-                            {/* ICON */}
-                            <View style={styles.iconCircle}>
-                                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
-                                    <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
-                                </View>
-                                <MaskedGradient width={24} height={24}>
-                                    <HugeiconsIcon icon={InformationCircleIcon} size={20} color="white" />
-                                </MaskedGradient>
-                            </View>
-
-                            {/* TEXT */}
-                            <Text style={styles.cardTitle}>
-                                About Wahid
-                            </Text>
-
-                        </View>
-
-                        {/* VERSION TEXT */}
-                        <MaskedGradient width={60} height={25}>
-                            <Text style={{ fontSize: 18, color: 'black', fontWeight: '500' }}>
-                                v1.0.0
-                            </Text>
-                        </MaskedGradient>
-
-                    </LinearGradient>
-
-                </TouchableOpacity>
-
-            </ScrollView>
-
-            {/* LOGOUT CARD */}
-            <TouchableOpacity
-                activeOpacity={0.8}
-                style={{ marginBottom: 20 }}
-                onPress={() => setIsLogoutVisible(true)}
-            >
-
-                <LinearGradient
-                    colors={['#FFFFFF', '#FFFFFF']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.card}
-                >
-
-                    {/* LEFT SIDE */}
-                    <View style={styles.leftSection}>
-
-                        {/* ICON */}
-                        <View style={styles.iconCircle}>
-                            <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
-                                <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
-                            </View>
-                            <HugeiconsIcon icon={Logout01Icon} size={20} color="red" />
-                        </View>
-
-                        {/* TEXT */}
-                        <Text style={[styles.cardTitle, { color: 'red' }]}>
-                            Logout
-                        </Text>
-
-                    </View>
-
-                </LinearGradient>
-
-            </TouchableOpacity>
-
-            {/* LOGOUT MODAL */}
-            <Modal
-                transparent={true}
-                visible={isLogoutVisible}
-                animationType="fade"
-                onRequestClose={() => setIsLogoutVisible(false)}
-            >
-                <View style={styles.overlay}>
-                    <View style={styles.modalContainer}>
-
-                        {/* TOP ICON */}
-                        <View style={styles.iconWrapper}>
-                            <View style={StyleSheet.absoluteFill}>
-                                <HugeiconsIcon icon={CircleIcon} size={70} color="#EBECF0" />
-                            </View>
-                            <HugeiconsIcon icon={Logout01Icon} size={30} color="#FF5252" />
-                        </View>
-
-                        {/* TEXT CONTENT */}
-                        <Text style={styles.modalTitle}>LOG OUT</Text>
-                        <Text style={styles.modalMessage}>
-                            Are you sure you want to log out of your account?
-                        </Text>
-
-                        {/* BUTTONS */}
-                        <View style={styles.buttonRow}>
                             <TouchableOpacity
-                                style={styles.cancelButton}
-                                onPress={() => setIsLogoutVisible(false)}
+                                style={styles.backButton}
+                                activeOpacity={0.7}
+                                onPress={() => navigation.navigate('Home')}
                             >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                                <Ionicons
+                                    name="chevron-back"
+                                    size={24}
+                                    color="#000000ff"
+                                />
                             </TouchableOpacity>
 
+                            <Text style={styles.headerTitle}>
+                                Profile
+                            </Text>
+
+                        </View>
+
+                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
+
+                            {/* PROFILE SECTION */}
+                            <View style={styles.profileSection}>
+
+                                {/* CIRCULAR INITIALS AVATAR */}
+                                <TouchableOpacity style={[styles.avatarBubble]} activeOpacity={0.8} onPress={() => navigation.navigate('Profile')}>
+                                  <Text style={styles.avatarInitial}>{(user?.name ? user.name.split(' ')[0][0] : 'W').toUpperCase()}</Text>
+                                </TouchableOpacity>
+
+                                {/* NAME */}
+                                <Text style={styles.profileName}>
+                                    {user?.name || 'Wahid'}
+                                </Text>
+
+                                {/* EMAIL */}
+                                <Text style={styles.profileEmail}>
+                                    {user?.email || 'Wahid123@gmail.com'}
+                                </Text>
+
+                            </View>
+
+                            {/* PERSONAL DETAILS CARD */}
                             <TouchableOpacity
-                                style={styles.logoutButtonModal}
-                                onPress={() => {
-                                    setIsLogoutVisible(false);
-                                    logout();
-                                }}
+                                activeOpacity={0.8}
+                                onPress={() => navigation.navigate('PersonalDetails')}
                             >
-                                <View style={styles.logoutButtonContent}>
-                                    <View style={styles.smallIconCircle}>
-                                        <HugeiconsIcon icon={Logout01Icon} size={18} color="#FF5252" />
+
+                                <LinearGradient
+                                    colors={['#FFFFFF', '#FFFFFF']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.card}
+                                >
+
+                                    {/* LEFT SIDE */}
+                                    <View style={styles.leftSection}>
+
+                                        {/* PROFILE ICON */}
+                                        <View style={styles.iconCircle}>
+                                            <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                                <HugeiconsIcon icon={CircleIcon} size={40} color="#EBECF0" />
+                                            </View>
+                                            <MaskedGradient width={24} height={24}>
+                                                <HugeiconsIcon icon={UserIcon} size={20} color="white" />
+                                            </MaskedGradient>
+                                        </View>
+
+                                        {/* TEXT */}
+                                        <Text style={styles.cardTitle}>
+                                            Personal Details
+                                        </Text>
+
                                     </View>
-                                    <Text style={styles.logoutButtonText}>Log Out</Text>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
 
-                    </View>
-                </View>
-            </Modal>
+                                    {/* RIGHT ARROW */}
+                                    <View style={{ width: 34, height: 34, justifyContent: 'center', alignItems: 'center' }}>
+                                        <View style={StyleSheet.absoluteFill}>
+                                            <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                                        </View>
+                                        <MaskedGradient width={24} height={24}>
+                                            <Ionicons
+                                                name="arrow-forward"
+                                                size={20}
+                                                marginLeft={7}
+                                                marginTop={7}
+                                                color="white"
+                                            />
+                                        </MaskedGradient>
+                                    </View>
+
+                                </LinearGradient>
+
+                            </TouchableOpacity>
+
+                            {/* PRIVACY & SECURITY CARD */}
+                            <TouchableOpacity activeOpacity={0.8} style={{ marginTop: 15 }}>
+
+                                <LinearGradient
+                                    colors={['#FFFFFF', '#FFFFFF']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.card}
+                                >
+
+                                    {/* LEFT SIDE */}
+                                    <View style={styles.leftSection}>
+
+                                        {/* ICON */}
+                                        <View style={styles.iconCircle}>
+                                            <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                                <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                                            </View>
+                                            <MaskedGradient width={24} height={24}>
+                                                <HugeiconsIcon icon={SecurityIcon} size={20} color="white" />
+                                            </MaskedGradient>
+                                        </View>
+
+                                        {/* TEXT */}
+                                        <Text style={styles.cardTitle}>
+                                            Privacy & Security
+                                        </Text>
+
+                                    </View>
+
+                                    {/* RIGHT ARROW */}
+                                    <View style={{ width: 34, height: 34, justifyContent: 'center', alignItems: 'center' }}>
+                                        <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                            <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                                        </View>
+                                        <MaskedGradient width={18} height={18}>
+                                            <Ionicons
+                                                name="arrow-forward"
+                                                size={18}
+                                                color="black"
+                                            />
+                                        </MaskedGradient>
+                                    </View>
+
+                                </LinearGradient>
+
+                            </TouchableOpacity>
+
+                            {/* NOTIFICATIONS CARD */}
+                            <TouchableOpacity activeOpacity={0.8} style={{ marginTop: 15 }}>
+
+                                <LinearGradient
+                                    colors={['#FFFFFF', '#FFFFFF']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.card}
+                                >
+
+                                    {/* LEFT SIDE */}
+                                    <View style={styles.leftSection}>
+
+                                        {/* ICON */}
+                                        <View style={styles.iconCircle}>
+                                            <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                                <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                                            </View>
+                                            <MaskedGradient width={24} height={24}>
+                                                <Ionicons
+                                                    name="notifications-outline"
+                                                    size={20}
+                                                    color="white"
+                                                />
+                                            </MaskedGradient>
+                                        </View>
+
+                                        {/* TEXT */}
+                                        <Text style={styles.cardTitle}>
+                                            Notifications
+                                        </Text>
+
+                                    </View>
+
+                                    {/* RIGHT ARROW */}
+                                    <View style={{ width: 34, height: 34, justifyContent: 'center', alignItems: 'center' }}>
+                                        <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                            <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                                        </View>
+                                        <MaskedGradient width={18} height={18}>
+                                            <Ionicons
+                                                name="arrow-forward"
+                                                size={18}
+                                                color="black"
+                                            />
+                                        </MaskedGradient>
+                                    </View>
+
+                                </LinearGradient>
+
+                            </TouchableOpacity>
+
+                            {/* SETTINGS CARD */}
+                            <TouchableOpacity
+                                activeOpacity={0.8}
+                                style={{ marginTop: 15 }}
+                                onPress={() => navigation.navigate('Settings')}
+                            >
+
+                                <LinearGradient
+                                    colors={['#FFFFFF', '#FFFFFF']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.card}
+                                >
+
+                                    {/* LEFT SIDE */}
+                                    <View style={styles.leftSection}>
+
+                                        {/* ICON */}
+                                        <View style={styles.iconCircle}>
+                                            <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                                <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                                            </View>
+                                            <MaskedGradient width={24} height={24}>
+                                                <HugeiconsIcon icon={Settings02Icon} size={20} color="white" />
+                                            </MaskedGradient>
+                                        </View>
+
+                                        {/* TEXT */}
+                                        <Text style={styles.cardTitle}>
+                                            Settings
+                                        </Text>
+
+                                    </View>
+
+                                    {/* RIGHT ARROW */}
+                                    <View style={{ width: 34, height: 34, justifyContent: 'center', alignItems: 'center' }}>
+                                        <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                            <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                                        </View>
+                                        <MaskedGradient width={18} height={18}>
+                                            <Ionicons
+                                                name="arrow-forward"
+                                                size={18}
+                                                color="black"
+                                            />
+                                        </MaskedGradient>
+                                    </View>
+
+                                </LinearGradient>
+
+                            </TouchableOpacity>
+
+                            {/* ABOUT WAHID CARD */}
+                            <TouchableOpacity activeOpacity={0.8} style={{ marginTop: 15 }}>
+
+                                <LinearGradient
+                                    colors={['#FFFFFF', '#FFFFFF']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.card}
+                                >
+
+                                    {/* LEFT SIDE */}
+                                    <View style={styles.leftSection}>
+
+                                        {/* ICON */}
+                                        <View style={styles.iconCircle}>
+                                            <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                                <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                                            </View>
+                                            <MaskedGradient width={24} height={24}>
+                                                <HugeiconsIcon icon={InformationCircleIcon} size={20} color="white" />
+                                            </MaskedGradient>
+                                        </View>
+
+                                        {/* TEXT */}
+                                        <Text style={styles.cardTitle}>
+                                            About Wahid
+                                        </Text>
+
+                                    </View>
+
+                                    {/* VERSION TEXT */}
+                                    <MaskedGradient width={60} height={25}>
+                                        <Text style={{ fontSize: 18, color: 'black', fontWeight: '500' }}>
+                                            v1.0.0
+                                        </Text>
+                                    </MaskedGradient>
+
+                                </LinearGradient>
+
+                            </TouchableOpacity>
+
+                        </ScrollView>
+
+                        {/* LOGOUT CARD */}
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            style={{ marginBottom: 20 }}
+                            onPress={() => setIsLogoutVisible(true)}
+                        >
+
+                            <LinearGradient
+                                colors={['#FFFFFF', '#FFFFFF']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.card}
+                            >
+
+                                {/* LEFT SIDE */}
+                                <View style={styles.leftSection}>
+
+                                    {/* ICON */}
+                                    <View style={styles.iconCircle}>
+                                        <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                                            <HugeiconsIcon icon={CircleIcon} size={45} color="#EBECF0" />
+                                        </View>
+                                        <HugeiconsIcon icon={Logout01Icon} size={20} color="red" />
+                                    </View>
+
+                                    {/* TEXT */}
+                                    <Text style={[styles.cardTitle, { color: 'red' }]}>
+                                        Logout
+                                    </Text>
+
+                                </View>
+
+                            </LinearGradient>
+
+                        </TouchableOpacity>
+
+                        {/* LOGOUT MODAL */}
+                        <Modal
+                            transparent={true}
+                            visible={isLogoutVisible}
+                            animationType="fade"
+                            onRequestClose={() => setIsLogoutVisible(false)}
+                        >
+                            <View style={styles.overlay}>
+                                <View style={styles.modalContainer}>
+
+                                    {/* TOP ICON */}
+                                    <View style={styles.iconWrapper}>
+                                        <View style={StyleSheet.absoluteFill}>
+                                            <HugeiconsIcon icon={CircleIcon} size={70} color="#EBECF0" />
+                                        </View>
+                                        <HugeiconsIcon icon={Logout01Icon} size={30} color="#FF5252" />
+                                    </View>
+
+                                    {/* TEXT CONTENT */}
+                                    <Text style={styles.modalTitle}>LOG OUT</Text>
+                                    <Text style={styles.modalMessage}>
+                                        Are you sure you want to log out of your account?
+                                    </Text>
+
+                                    {/* BUTTONS */}
+                                    <View style={styles.buttonRow}>
+                                        <TouchableOpacity
+                                            style={styles.cancelButton}
+                                            onPress={() => setIsLogoutVisible(false)}
+                                        >
+                                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity
+                                            style={styles.logoutButtonModal}
+                                            onPress={() => {
+                                                setIsLogoutVisible(false);
+                                                logout();
+                                            }}
+                                        >
+                                            <View style={styles.logoutButtonContent}>
+                                                <View style={styles.smallIconCircle}>
+                                                    <HugeiconsIcon icon={Logout01Icon} size={18} color="#FF5252" />
+                                                </View>
+                                                <Text style={styles.logoutButtonText}>Log Out</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    </View>
+
+                                </View>
+                            </View>
+                        </Modal>
                     </>
                 )}
             </TimeBasedBackground>
@@ -479,28 +481,28 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
 
-    profileCircle: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: '#FFFFFF',
-
-        borderWidth: 2,
-        borderColor: '#FFFFFF',
-
+    avatarBubble: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#cffafe',
         shadowColor: '#63F3FF',
 
-        shadowOffset: {
-            width: 0,
-            height: 0,
-        },
-
+        shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.5,
         shadowRadius: 10,
 
         elevation: 8,
     },
 
+    avatarInitial: {
+        color: '#06b6d4',
+        fontSize: 50,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
     profileName: {
         marginTop: 15,
         fontSize: 24,
