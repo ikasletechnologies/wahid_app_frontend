@@ -194,7 +194,7 @@ export const NamesProvider = ({ children }) => {
 
       await syncWithBackend();
     } catch (error) {
-      console.error('[NamesContext] Load Error:', error);
+      console.warn('[NamesContext] Load Error:', error.message);
     } finally {
       setLoading(false);
     }
@@ -238,7 +238,7 @@ export const NamesProvider = ({ children }) => {
         AsyncStorage.setItem('streak_details_cache', JSON.stringify(details));
       }
     } catch (error) {
-      console.error('[NamesContext] Sync Error:', error.message);
+      console.warn('[NamesContext] Sync Error:', error.message);
     }
   };
 
@@ -266,7 +266,7 @@ export const NamesProvider = ({ children }) => {
         await syncWithBackend();
       }
     } catch (error) {
-      console.error('[NamesContext] Mark Learned Error:', error.message);
+      console.warn('[NamesContext] Mark Learned Error:', error.message);
     }
   };
 
@@ -289,7 +289,7 @@ export const NamesProvider = ({ children }) => {
         }
       }
     } catch (err) {
-      console.error('[NamesContext] Local State Error:', err.message);
+      console.warn('[NamesContext] Local State Error:', err.message);
     }
   };
 
