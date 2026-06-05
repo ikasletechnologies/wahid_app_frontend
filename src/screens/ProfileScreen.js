@@ -486,11 +486,15 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         marginRight: 10,
         alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 4,
     },
     cancelButtonText: {
         color: '#333',
         fontWeight: 'bold',
         fontSize: 16,
+        // slight downward shift via lineHeight
+        lineHeight: 20,
     },
     logoutButtonModal: {
         flex: 1,

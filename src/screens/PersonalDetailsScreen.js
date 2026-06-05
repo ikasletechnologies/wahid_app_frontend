@@ -53,24 +53,7 @@ const PersonalDetailsScreen = () => {
           />
         </View>
 
-        <View style={styles.passwordContainerWrapper}>
-          <View style={[styles.inputContainer, styles.passwordContainer, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.05, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
-            <TextInput
-              style={[styles.passwordInput, { color: colors.text }]}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Password"
-              placeholderTextColor={colors.textDimmed}
-              secureTextEntry={!showPassword}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-              <Ionicons name={showPassword ? "eye-off-outline" : "eye-outline"} size={16} color="#06b6d4" />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity style={styles.changePasswordBtn}>
-            <Text style={[styles.changePasswordText, { color: colors.textMuted }]}>Change Password</Text>
-          </TouchableOpacity>
-        </View>
+          {/* Password section removed */}
       </View>
 
       <View style={styles.bottomContainer}>

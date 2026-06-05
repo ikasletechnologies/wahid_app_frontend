@@ -102,7 +102,7 @@ const NamesScreen = ({ navigation }) => {
         const nameObj = names.find(n => n.number === parseInt(saved, 10));
         if (nameObj) setLastReadName(nameObj);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [names]);
 
   // Ref that signals the filteredNames effect to skip card-preservation and
@@ -478,98 +478,98 @@ const NamesScreen = ({ navigation }) => {
             <View style={styles.stackEngine} {...panResponder.panHandlers}>
 
               <>
-                  <View style={styles.bottomArea}>
-                    {STACK_CONFIG.map((config, idx) => {
-                      const nextConfig = idx === 2
-                        ? { width: CARD_W, height: CARD_H, opacity: 1, bottom: hs(35) }
-                        : STACK_CONFIG[idx + 1];
+                <View style={styles.bottomArea}>
+                  {STACK_CONFIG.map((config, idx) => {
+                    const nextConfig = idx === 2
+                      ? { width: CARD_W, height: CARD_H, opacity: 1, bottom: hs(35) }
+                      : STACK_CONFIG[idx + 1];
 
-                      const tY = -(nextConfig.bottom - config.bottom);
+                    const tY = -(nextConfig.bottom - config.bottom);
 
-                      const floatOffset = floatAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0, idx === 0 ? -6 : idx === 1 ? -10 : -14]
-                      });
+                    const floatOffset = floatAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, idx === 0 ? -6 : idx === 1 ? -10 : -14]
+                    });
 
-                      return (
-                        <Animated.View key={idx} style={[styles.peekFrame, {
-                          width: config.width,
-                          height: config.height,
-                          bottom: hs(80) + config.bottom,
-                          zIndex: idx + 1,
-                          opacity: scrollAnim.interpolate({
-                            inputRange: [-1, 0, 1],
-                            outputRange: [nextConfig.opacity, config.opacity, config.opacity],
-                            extrapolate: 'clamp',
-                          }),
-                          transform: [
-                            {
-                              translateY: Animated.add(
-                                scrollAnim.interpolate({
-                                  inputRange: [-1, 0, 1],
-                                  outputRange: [tY, 0, 0],
-                                  extrapolate: 'clamp',
-                                }),
-                                floatOffset
-                              ),
-                            },
-                          ],
-                        }]}>
-                          <NameCardBackground width={config.width} height={config.height} style={StyleSheet.absoluteFillObject} />
-                        </Animated.View>
-                      );
-                    })}
-
-                  </View>
-
-                  {cardSlots.map(({ dataIdx, offset }) => (
-                    <Animated.View
-                      key={`slot${offset}`}
-                      style={[styles.baseCardWrapper, {
-                        zIndex: offset === 0 ? 10 : 30,
+                    return (
+                      <Animated.View key={idx} style={[styles.peekFrame, {
+                        width: config.width,
+                        height: config.height,
+                        bottom: hs(80) + config.bottom,
+                        zIndex: idx + 1,
                         opacity: scrollAnim.interpolate({
                           inputRange: [-1, 0, 1],
-                          outputRange: offset === -1 ? [0, 0, 1]
-                            : offset === 0 ? [1, 1, 1]
-                              : [1, 0, 0],
+                          outputRange: [nextConfig.opacity, config.opacity, config.opacity],
                           extrapolate: 'clamp',
                         }),
                         transform: [
                           {
-                            translateY: scrollAnim.interpolate({
-                              inputRange: [-1, 0, 1],
-                              outputRange: offset === -1 ? [-CARD_SLOT, -CARD_SLOT, 0]
-                                : offset === 0 ? [0, 0, 0]
-                                  : [0, CARD_SLOT, CARD_SLOT],
-                              extrapolate: 'clamp',
-                            }),
-                          }
+                            translateY: Animated.add(
+                              scrollAnim.interpolate({
+                                inputRange: [-1, 0, 1],
+                                outputRange: [tY, 0, 0],
+                                extrapolate: 'clamp',
+                              }),
+                              floatOffset
+                            ),
+                          },
                         ],
-                      }]}
-                    >
-                      {offset === 0 ? (
-                        <TouchableOpacity
-                          style={styles.mainCard}
-                          activeOpacity={0.92}
-                          onPress={() => {
-                            if (isAnimating.current) return;
-                            const item = filteredNames[dataIdx];
-                            if (!item) return;
-                            setLastReadName(item);
-                            AsyncStorage.setItem('last_viewed_name', String(item.number)).catch(() => {});
-                            markAsViewed(item.number);
-                            navigation.navigate('NameDetail', { name: item });
-                          }}
-                        >
-                          {renderCardContent(dataIdx)}
-                        </TouchableOpacity>
-                      ) : (
-                        <View style={styles.mainCard}>
-                          {renderCardContent(dataIdx)}
-                        </View>
-                      )}
-                    </Animated.View>
-                  ))}
+                      }]}>
+                        <NameCardBackground width={config.width} height={config.height} style={StyleSheet.absoluteFillObject} />
+                      </Animated.View>
+                    );
+                  })}
+
+                </View>
+
+                {cardSlots.map(({ dataIdx, offset }) => (
+                  <Animated.View
+                    key={`slot${offset}`}
+                    style={[styles.baseCardWrapper, {
+                      zIndex: offset === 0 ? 10 : 30,
+                      opacity: scrollAnim.interpolate({
+                        inputRange: [-1, 0, 1],
+                        outputRange: offset === -1 ? [0, 0, 1]
+                          : offset === 0 ? [1, 1, 1]
+                            : [1, 0, 0],
+                        extrapolate: 'clamp',
+                      }),
+                      transform: [
+                        {
+                          translateY: scrollAnim.interpolate({
+                            inputRange: [-1, 0, 1],
+                            outputRange: offset === -1 ? [-CARD_SLOT, -CARD_SLOT, 0]
+                              : offset === 0 ? [0, 0, 0]
+                                : [0, CARD_SLOT, CARD_SLOT],
+                            extrapolate: 'clamp',
+                          }),
+                        }
+                      ],
+                    }]}
+                  >
+                    {offset === 0 ? (
+                      <TouchableOpacity
+                        style={styles.mainCard}
+                        activeOpacity={0.92}
+                        onPress={() => {
+                          if (isAnimating.current) return;
+                          const item = filteredNames[dataIdx];
+                          if (!item) return;
+                          setLastReadName(item);
+                          AsyncStorage.setItem('last_viewed_name', String(item.number)).catch(() => { });
+                          markAsViewed(item.number);
+                          navigation.navigate('NameDetail', { name: item });
+                        }}
+                      >
+                        {renderCardContent(dataIdx)}
+                      </TouchableOpacity>
+                    ) : (
+                      <View style={styles.mainCard}>
+                        {renderCardContent(dataIdx)}
+                      </View>
+                    )}
+                  </Animated.View>
+                ))}
               </>
 
             </View>
