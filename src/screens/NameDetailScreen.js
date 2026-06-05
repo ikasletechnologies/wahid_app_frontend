@@ -188,9 +188,11 @@ const NameDetailScreen = ({ route, navigation }) => {
       revealSections(4);
       setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 150);
     } else if (contentStage === 4) {
-      goJourney();
+      if (quizDone && quizAnswer === mcq.ans) {
+        goJourney();
+      }
     }
-  }, [contentStage, revealSections, goJourney]);
+  }, [contentStage, revealSections, goJourney, quizDone, quizAnswer, mcq.ans]);
 
   // ── Physical Swiping Logic ──
   const slidePanX = useRef(new Animated.Value(0)).current;
@@ -212,23 +214,35 @@ const NameDetailScreen = ({ route, navigation }) => {
       },
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dx > MAX_SLIDE * 0.7) {
-          Animated.timing(slidePanX, {
-            toValue: MAX_SLIDE,
-            duration: 150,
-            useNativeDriver: true,
-          }).start(() => {
-            handleSlideTap();
-            if (contentStage < 4) {
-              Animated.timing(slidePanX, {
-                toValue: 0,
-                duration: 400,
-                easing: Easing.out(Easing.ease),
-                useNativeDriver: true,
-              }).start(() => {
-                handLoopRef.current?.start();
-              });
-            }
-          });
+          const canProceed = contentStage < 4 || (quizDone && quizAnswer === mcq.ans);
+          if (canProceed) {
+            Animated.timing(slidePanX, {
+              toValue: MAX_SLIDE,
+              duration: 150,
+              useNativeDriver: true,
+            }).start(() => {
+              handleSlideTap();
+              if (contentStage < 4) {
+                Animated.timing(slidePanX, {
+                  toValue: 0,
+                  duration: 400,
+                  easing: Easing.out(Easing.ease),
+                  useNativeDriver: true,
+                }).start(() => {
+                  handLoopRef.current?.start();
+                });
+              }
+            });
+          } else {
+            Animated.timing(slidePanX, {
+              toValue: 0,
+              duration: 400,
+              easing: Easing.out(Easing.ease),
+              useNativeDriver: true,
+            }).start(() => {
+              handLoopRef.current?.start();
+            });
+          }
         } else {
           Animated.timing(slidePanX, {
             toValue: 0,
@@ -241,14 +255,21 @@ const NameDetailScreen = ({ route, navigation }) => {
         }
       }
     });
-  }, [contentStage, handleSlideTap, handAnim, slidePanX]);
+  }, [contentStage, handleSlideTap, handAnim, slidePanX, quizDone, quizAnswer, mcq.ans]);
 
   const handleQuizOption = useCallback((idx) => {
     if (quizDone) return;
     setQuizAnswer(idx);
     setQuizDone(true);
-    if (idx === mcq.ans) markAsLearned(name.number);
+    if (idx === mcq.ans) {
+      markAsLearned(name.number);
+    }
   }, [quizDone, mcq.ans, name.number, markAsLearned]);
+
+  const handleTryAgain = useCallback(() => {
+    setQuizAnswer(null);
+    setQuizDone(false);
+  }, []);
 
 
 
@@ -396,7 +417,7 @@ const NameDetailScreen = ({ route, navigation }) => {
               <View style={styles.smallDividerWrap}>
                 <Image source={require('../../assets/name_detail/line_gold.png')} style={styles.smallDivider} resizeMode="contain" />
               </View>
-              <Text style={styles.sectionCardTitleLeft}>Ponder & Reflect</Text>
+              <Text style={[styles.sectionCardTitleLeft, isNight && { color: '#FFFFFF' }]}>Ponder & Reflect</Text>
 
               <ImageBackground
                 source={require('../../assets/name_detail/bg_card_2.png')}
@@ -417,14 +438,14 @@ const NameDetailScreen = ({ route, navigation }) => {
           {/* ── Section 4: Learning Insight ── */}
           <AnimSection anim={sectionAnims[4]} hidden={contentStage < 3}>
             <View style={styles.sectionCardTransparent}>
-              <Text style={styles.sectionCardTitleLeft}>Learning Insight</Text>
+              <Text style={[styles.sectionCardTitleLeft, isNight && { color: '#FFFFFF' }]}>Learning Insight</Text>
 
               <ImageBackground
                 source={require('../../assets/name_detail/quest.png')}
                 style={styles.questBgBox}
                 resizeMode="contain"
               >
-                <Text style={styles.questInsightText}>
+                <Text style={[styles.questInsightText, isNight && { color: '#FFFFFF' }]}>
                   {insight || `Ar-Rahman teaches that mercy precedes all worthiness. When you accept that grace finds you before you deserve it, you begin to live without shame and extend unconditional mercy to others.`}
                 </Text>
               </ImageBackground>
@@ -440,15 +461,15 @@ const NameDetailScreen = ({ route, navigation }) => {
 
               <View style={styles.quizHeader}>
                 <View style={{ alignSelf: 'flex-start' }}>
-                  <Text style={styles.quizTitle}>Match the Quality</Text>
+                  <Text style={[styles.quizTitle, isNight && { color: '#FFFFFF' }]}>Match the Quality</Text>
                   <View style={styles.quizTitleUnderline} />
                 </View>
-                <Text style={styles.quizSubtitle}>
+                <Text style={[styles.quizSubtitle, isNight && { color: '#B0B0B0' }]}>
                   Test your understanding of <Text style={{ fontWeight: '800' }}>{name.transliteration}</Text>
                 </Text>
               </View>
 
-              <Text style={styles.quizQuestion}>{mcq.q}</Text>
+              <Text style={[styles.quizQuestion, isNight && { color: '#FFFFFF' }]}>{mcq.q}</Text>
 
               <View style={styles.quizOptions}>
                 {mcq.opts.map((opt, idx) => {
@@ -492,6 +513,17 @@ const NameDetailScreen = ({ route, navigation }) => {
                   );
                 })}
               </View>
+
+              {quizDone && quizAnswer !== mcq.ans && (
+                <TouchableOpacity
+                  style={styles.tryAgainBtn}
+                  onPress={handleTryAgain}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="refresh" size={rs(18)} color="#FFFFFF" style={{ marginRight: rs(6) }} />
+                  <Text style={styles.tryAgainText}>Try Again</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </AnimSection>
 
@@ -499,10 +531,16 @@ const NameDetailScreen = ({ route, navigation }) => {
         </Animated.ScrollView>
 
         {/* ── Fixed bottom: Slide to Continue ── */}
-        <Animated.View style={[styles.slideBar, { transform: [{ scale: slideBtnScale }] }]}>
+        <Animated.View
+          style={[
+            styles.slideBar,
+            { transform: [{ scale: slideBtnScale }] },
+            contentStage === 4 && (!quizDone || quizAnswer !== mcq.ans) && { opacity: 0.6 }
+          ]}
+        >
           <View style={styles.slideGrad}>
             <Animated.View
-              {...slidePanResponder.panHandlers}
+              {...((contentStage < 4 || (quizDone && quizAnswer === mcq.ans)) ? slidePanResponder.panHandlers : {})}
               style={[
                 styles.slideThumb,
                 { position: 'absolute', left: 0, zIndex: 10 },
@@ -516,7 +554,9 @@ const NameDetailScreen = ({ route, navigation }) => {
               />
             </Animated.View>
             <Text style={[styles.slideText, { marginLeft: rs(80) }]}>
-              {contentStage === 4 ? 'Continue to Journey' : 'Slide to Continue'}
+              {contentStage === 4
+                ? (quizDone && quizAnswer === mcq.ans ? 'Continue to Journey' : (!quizDone ? 'Solve Quiz to Continue' : 'Incorrect! Try Again'))
+                : 'Slide to Continue'}
             </Text>
           </View>
         </Animated.View>
@@ -702,6 +742,20 @@ const styles = StyleSheet.create({
   },
   quizRadioInner: { width: rs(10), height: rs(10), borderRadius: rs(5) },
   quizOptionText: { fontSize: rs(14) },
+  tryAgainBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#00ADC1',
+    borderRadius: rs(8),
+    paddingVertical: hs(12),
+    marginTop: hs(16),
+  },
+  tryAgainText: {
+    color: '#FFFFFF',
+    fontSize: rs(15),
+    fontWeight: '700',
+  },
 
   // ── Slide to Continue ──
   slideBar: {

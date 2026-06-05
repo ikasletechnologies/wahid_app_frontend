@@ -170,6 +170,7 @@ const HomeScreen = ({ navigation }) => {
 
   React.useEffect(() => {
     fetchReadingProgress();
+    refresh(); // Sync latest streak and progress from backend database
   }, []);
 
   const handleRefresh = async () => {
@@ -285,7 +286,7 @@ const HomeScreen = ({ navigation }) => {
                         style={styles.streakIconImage}
                         resizeMode="contain"
                       />
-                      <Text style={styles.streakText}>{String(streak || 1).padStart(2, '0')}</Text>
+                      <Text style={styles.streakText}>{String(streak || 0).padStart(2, '0')}</Text>
                     </View>
                   </TouchableOpacity>
 

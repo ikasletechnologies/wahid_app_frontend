@@ -200,7 +200,7 @@ const MilestoneScreen = ({ navigation }) => {
                 inputRange.push(scrollVal);
                 const interp = interpolateSlot(v);
                 const adjBottom = i === 0
-                  ? interp.bottom
+                  ? interp.bottom + 40
                   : interp.bottom - 45 + 0.45 * interp.size;
                 outBottom.push(adjBottom);
                 outSize.push(interp.size);
@@ -234,7 +234,7 @@ const MilestoneScreen = ({ navigation }) => {
                   >
                     <Animated.Image
                       source={ACTIVE_STONE}
-                      style={{ width: '75%', height: '75%', alignSelf: 'center', top: '17.5%' }}
+                      style={{ width: '90%', height: '90%', alignSelf: 'center', top: '5%' }}
                       resizeMode="contain"
                     />
 

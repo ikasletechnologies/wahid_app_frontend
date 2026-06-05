@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,8 +24,75 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 
+import { useNames } from "../context/NamesContext";
+
+const getCalendarData = (activeDates) => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0 = Jan, 1 = Feb, ..., 11 = Dec
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  const currentMonthName = monthNames[month];
+
+  // First day of the month
+  const firstDay = new Date(year, month, 1);
+  const startDayOfWeek = firstDay.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+
+  // Number of days in the month
+  const totalDays = new Date(year, month + 1, 0).getDate();
+
+  // Create grid arrays
+  const daysArray = [];
+
+  // Add empty slots for the days before the 1st of the month
+  for (let i = 0; i < startDayOfWeek; i++) {
+    daysArray.push({ type: 'empty', day: null, key: `empty-${i}` });
+  }
+
+  // Add all days of the month
+  for (let d = 1; d <= totalDays; d++) {
+    // Format date as YYYY-MM-DD
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const isActive = activeDates && activeDates.includes(dateStr);
+    daysArray.push({
+      type: isActive ? 'active' : 'normal',
+      day: d,
+      key: `day-${d}`,
+      dateStr
+    });
+  }
+
+  // Pad the end of the array with empty slots to complete the last week
+  while (daysArray.length % 7 !== 0) {
+    daysArray.push({ type: 'empty', day: null, key: `empty-end-${daysArray.length}` });
+  }
+
+  // Chunk daysArray into weeks of 7 days
+  const weeks = [];
+  for (let i = 0; i < daysArray.length; i += 7) {
+    weeks.push(daysArray.slice(i, i + 7));
+  }
+
+  return {
+    monthName: currentMonthName,
+    year,
+    weeks
+  };
+};
+
 export default function StreakScreen({ navigation }) {
-  const streakCount = 10;
+  const { streak, streakDetails, refreshing, refresh } = useNames();
+  const streakCount = streak || 0;
+
+  const calendarData = getCalendarData(streakDetails?.activeDates || []);
+
+  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const todayIndex = new Date().getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  const activeTrackWidth = `${(todayIndex / 6) * 100}%`;
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
@@ -43,7 +111,19 @@ export default function StreakScreen({ navigation }) {
       </View>
 
       {/* BODY */}
-      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={styles.bodyContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refresh}
+            tintColor="#3EDCF0"
+            colors={["#3EDCF0"]}
+          />
+        }
+      >
 
         {/* HERO SECTION */}
         <View style={styles.heroRow}>
@@ -62,8 +142,8 @@ export default function StreakScreen({ navigation }) {
 
           {/* RIGHT */}
           <View style={styles.rightSection}>
-            {/* 10 */}
-            <Svg width={100} height={90}>
+            {/* STREAK NUMBER */}
+            <Svg width={120} height={90}>
               <Defs>
                 <SvgGradient id="numGrad" x1="1" y1="1" x2="1" y2="0">
                   <Stop offset="0" stopColor="#FFFFFF" />
@@ -71,7 +151,7 @@ export default function StreakScreen({ navigation }) {
                 </SvgGradient>
               </Defs>
               <SvgText fill="url(#numGrad)" fontSize="84" fontWeight="bold" x="0" y="80">
-                10
+                {streakCount}
               </SvgText>
             </Svg>
 
@@ -122,7 +202,7 @@ export default function StreakScreen({ navigation }) {
 
             {/* RIGHT REFLECTION */}
             <View style={styles.rightSection}>
-              <Svg width={100} height={80} style={{ paddingRight: 105 }}>
+              <Svg width={120} height={80} style={{ paddingRight: 105 }}>
                 <Defs>
                   <SvgGradient id="numGradRef" x1="0" y1="0" x2="0" y2="1">
                     <Stop offset="1" stopColor="#FFFFFF" />
@@ -130,11 +210,11 @@ export default function StreakScreen({ navigation }) {
                   </SvgGradient>
                 </Defs>
                 <SvgText fill="url(#numGradRef)" fontSize="84" fontWeight="bold" x="0" y="80">
-                  10
+                  {streakCount}
                 </SvgText>
               </Svg>
 
-              <Svg width={100} height={40} style={styles.daysTextSvg} style={{ paddingRight: 105 }}>
+              <Svg width={100} height={40} style={{ paddingRight: 105 }}>
                 <Defs>
                   <SvgGradient id="daysGradRef" x1="0" y1="0" x2="1" y2="0">
                     <Stop offset="0" stopColor="#FFFFFF" />
@@ -168,113 +248,99 @@ export default function StreakScreen({ navigation }) {
 
           {/* HEADER */}
           <View style={styles.calendarHeader}>
-            <Text style={styles.yearLeft}>May</Text>
-            <Text style={styles.yearRight}>2026</Text>
+            <Text style={styles.yearLeft}>{calendarData.monthName}</Text>
+            <Text style={styles.yearRight}>{calendarData.year}</Text>
           </View>
 
           {/* WEEK DAYS */}
           <View style={styles.weekDaysRow}>
-            <Text style={styles.dayText}>Sun</Text>
-            <Text style={styles.dayText}>Mon</Text>
-            <Text style={styles.dayText}>Tue</Text>
-
-            <Text style={styles.activeDayText}>Wed</Text>
-
-            <Text style={styles.dayText}>Thu</Text>
-            <Text style={styles.dayText}>Fri</Text>
-            <Text style={styles.dayText}>Sat</Text>
-          </View>
-
-          {/* WEEK 1 */}
-          <LinearGradient colors={["#FFFFFF", "#3EDCF0"]} start={{ x: 0, y: 0 }} end={{ x: 1.2, y: 0 }} style={[styles.weekContainer, { borderColor: "#3EDCF0" }]}>
-            <View style={styles.emptyDate} />
-            <View style={styles.emptyDate} />
-            <View style={styles.emptyDate} />
-            <View style={styles.emptyDate} />
-            <View style={styles.emptyDate} />
-
-            <View style={styles.activeDateRect}>
-              <Text style={styles.activeDateText}>1</Text>
-            </View>
-
-            <View style={styles.activeDateRect}>
-              <Text style={styles.activeDateText}>2</Text>
-            </View>
-          </LinearGradient>
-
-          {/* WEEK 2 */}
-          <View style={styles.weekContainer}>
-            {[3, 4, 5, 6, 7].map((d) => (
-              <View key={d} style={styles.activeDate}>
-                <Text style={styles.activeDateText}>{d}</Text>
-              </View>
-            ))}
-
-            {[8, 9].map((d) => (
-              <View key={d} style={styles.normalDate}>
-                <Text style={styles.normalDateText}>{d}</Text>
-              </View>
+            {weekDays.map((day, idx) => (
+              <Text
+                key={day}
+                style={idx === todayIndex ? styles.activeDayText : styles.dayText}
+              >
+                {day}
+              </Text>
             ))}
           </View>
 
-          {/* WEEK 3 */}
-          <View style={styles.weekContainer}>
-            {[10, 11, 12, 13, 14, 15, 16].map((d) => (
-              <View key={d} style={styles.normalDate}>
-                <Text style={styles.normalDateText}>{d}</Text>
-              </View>
-            ))}
-          </View>
+          {/* WEEKS */}
+          {calendarData.weeks.map((week, weekIdx) => {
+            const hasActiveDay = week.some(day => day.type === 'active');
 
-          {/* WEEK 4 */}
-          <View style={styles.weekContainer}>
-            {[17, 18, 19, 20, 21, 22, 23].map((d) => (
-              <View key={d} style={styles.normalDate}>
-                <Text style={styles.normalDateText}>{d}</Text>
-              </View>
-            ))}
-          </View>
+            if (hasActiveDay) {
+              return (
+                <LinearGradient
+                  key={`week-${weekIdx}`}
+                  colors={["#FFFFFF", "#3EDCF0"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1.2, y: 0 }}
+                  style={[styles.weekContainer, { borderColor: "#3EDCF0" }]}
+                >
+                  {week.map((dayObj) => {
+                    if (dayObj.type === 'empty') {
+                      return <View key={dayObj.key} style={styles.emptyDate} />;
+                    }
+                    if (dayObj.type === 'active') {
+                      return (
+                        <View key={dayObj.key} style={styles.activeDate}>
+                          <Text style={styles.activeDateText}>{dayObj.day}</Text>
+                        </View>
+                      );
+                    }
+                    return (
+                      <View key={dayObj.key} style={styles.normalDate}>
+                        <Text style={styles.normalDateText}>{dayObj.day}</Text>
+                      </View>
+                    );
+                  })}
+                </LinearGradient>
+              );
+            }
 
-          {/* WEEK 5 */}
-          <View style={styles.weekContainer}>
-            {[24, 25, 26, 27, 28, 29, 30].map((d) => (
-              <View key={d} style={styles.normalDate}>
-                <Text style={styles.normalDateText}>{d}</Text>
+            return (
+              <View key={`week-${weekIdx}`} style={styles.weekContainer}>
+                {week.map((dayObj) => {
+                  if (dayObj.type === 'empty') {
+                    return <View key={dayObj.key} style={styles.emptyDate} />;
+                  }
+                  if (dayObj.type === 'active') {
+                    return (
+                      <View key={dayObj.key} style={styles.activeDate}>
+                        <Text style={styles.activeDateText}>{dayObj.day}</Text>
+                      </View>
+                    );
+                  }
+                  return (
+                    <View key={dayObj.key} style={styles.normalDate}>
+                      <Text style={styles.normalDateText}>{dayObj.day}</Text>
+                    </View>
+                  );
+                })}
               </View>
-            ))}
-          </View>
-
-          {/* WEEK 6 */}
-          <View style={styles.weekContainer}>
-            <View style={styles.normalDate}>
-              <Text style={styles.normalDateText}>31</Text>
-            </View>
-          </View>
+            );
+          })}
         </View>
+
         {/* WEEK DAYS CONTAINER */}
         <View style={styles.weekDaysContainer}>
           {/* Day Names Row */}
           <View style={styles.daysTextRow}>
-            {[
-              { label: "Sun", active: false },
-              { label: "Mon", active: false },
-              { label: "Tue", active: false },
-              { label: "Wed", active: true },
-              { label: "Thu", active: false },
-              { label: "Fri", active: false },
-              { label: "Sat", active: false },
-            ].map((item, index) => (
-              <View key={index} style={styles.dayTextWrapper}>
-                <Text
-                  style={[
-                    styles.dayRectText,
-                    item.active && styles.dayRectTextActive,
-                  ]}
-                >
-                  {item.label}
-                </Text>
-              </View>
-            ))}
+            {weekDays.map((dayName, index) => {
+              const isActive = index === todayIndex;
+              return (
+                <View key={index} style={styles.dayTextWrapper}>
+                  <Text
+                    style={[
+                      styles.dayRectText,
+                      isActive && styles.dayRectTextActive,
+                    ]}
+                  >
+                    {dayName}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
 
           {/* Progress Track Row */}
@@ -282,55 +348,57 @@ export default function StreakScreen({ navigation }) {
             {/* Background Grey Track */}
             <View style={styles.bgTrack} />
 
-            {/* Active Gradient Track (Sun to Wed) */}
+            {/* Active Gradient Track (Sun to today) */}
             <LinearGradient
               colors={["#E0F7FA", "#3EDCF0"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={styles.activeTrack}
+              style={[styles.activeTrack, { width: activeTrackWidth }]}
             />
 
             {/* Icons Row */}
             <View style={styles.iconsRow}>
-              {[
-                { status: "completed" }, // Sun
-                { status: "completed" }, // Mon
-                { status: "completed" }, // Tue
-                { status: "active" },    // Wed
-                { status: "future" },    // Thu
-                { status: "future" },    // Fri
-                { status: "future" },    // Sat
-              ].map((item, index) => (
-                <View key={index} style={styles.iconWrapper}>
-                  {item.status === "completed" && (
-                    <LinearGradient
-                      colors={["#FFFFFF", "#3EDCF0"]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
-                      style={styles.completedCircleGradient}
-                    >
-                      <Ionicons name="checkmark" size={14} color="#00838F" style={{ fontWeight: "900" }} />
-                    </LinearGradient>
-                  )}
-                  {item.status === "active" && (
-                    <View style={styles.activeOuterCircle}>
+              {weekDays.map((dayName, index) => {
+                const isCompleted = streakDetails?.weeklyProgress?.[dayName] === true;
+                let status = "future";
+                if (isCompleted) {
+                  status = "completed";
+                } else if (index === todayIndex) {
+                  status = "active";
+                }
+
+                return (
+                  <View key={index} style={styles.iconWrapper}>
+                    {status === "completed" && (
                       <LinearGradient
-                        colors={["#00E5FF", "#00838F"]}
+                        colors={["#FFFFFF", "#3EDCF0"]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
-                        style={styles.activeInnerGradient}
+                        style={styles.completedCircleGradient}
                       >
-                        <Ionicons name="checkmark" size={14} color="#FFF" style={{ fontWeight: "900" }} />
+                        <Ionicons name="checkmark" size={14} color="#00838F" style={{ fontWeight: "900" }} />
                       </LinearGradient>
-                    </View>
-                  )}
-                  {item.status === "future" && (
-                    <View style={styles.futureCircle}>
-                      <Ionicons name="checkmark" size={14} color="rgba(62, 220, 240, 0.25)" />
-                    </View>
-                  )}
-                </View>
-              ))}
+                    )}
+                    {status === "active" && (
+                      <View style={styles.activeOuterCircle}>
+                        <LinearGradient
+                          colors={["#00E5FF", "#00838F"]}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={styles.activeInnerGradient}
+                        >
+                          <Ionicons name="checkmark" size={14} color="#FFF" style={{ fontWeight: "900" }} />
+                        </LinearGradient>
+                      </View>
+                    )}
+                    {status === "future" && (
+                      <View style={styles.futureCircle}>
+                        <Ionicons name="checkmark" size={14} color="rgba(62, 220, 240, 0.25)" />
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
             </View>
           </View>
         </View>
