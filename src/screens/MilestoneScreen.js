@@ -119,9 +119,9 @@ const LockedNode = ({ milestoneId }) => {
 
 // Progress ring overlaid on the active milestone stone
 const ProgressRing = ({ progress, size }) => {
-  const r = size * 0.46;
+  const r = size * 0.35;
   const cx = size / 2;
-  const cy = size / 2;
+  const cy = (size / 2) + (size * 0.05); // shifted downward by 5%
   const circ = 2 * Math.PI * r;
   const dash = circ * Math.min(1, Math.max(0, progress));
   return (
@@ -234,13 +234,10 @@ const MilestoneScreen = ({ navigation }) => {
                   >
                     <Animated.Image
                       source={ACTIVE_STONE}
-                      style={{ width: '100%', height: '100%' }}
+                      style={{ width: '75%', height: '75%', alignSelf: 'center', top: '17.5%' }}
                       resizeMode="contain"
                     />
-                    {/* Progress ring — only visible when node is large enough */}
-                    {i === 0 && (
-                      <ProgressRing progress={milestone.progress} size={SLOTS[0].size} />
-                    )}
+
                   </Animated.View>
                 );
               }
@@ -276,19 +273,7 @@ const MilestoneScreen = ({ navigation }) => {
               );
             })}
 
-            {/* Progress summary strip */}
-            <View style={s.progressStrip}>
-              {milestones.map((m) => (
-                <View
-                  key={m.id}
-                  style={[
-                    s.progressDot,
-                    m.status === 'completed' && s.progressDotDone,
-                    m.status === 'in_progress' && s.progressDotActive,
-                  ]}
-                />
-              ))}
-            </View>
+
 
             {/* Scroll track overlay */}
             <Animated.ScrollView
