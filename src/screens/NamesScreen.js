@@ -477,14 +477,7 @@ const NamesScreen = ({ navigation }) => {
             {/* ── CARD STACK ENGINE ── */}
             <View style={styles.stackEngine} {...panResponder.panHandlers}>
 
-              {filteredNames.length === 0 ? (
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                  <Ionicons name="document-text-outline" size={rs(48)} color="#ADC1D2" style={{ marginBottom: rs(16) }} />
-                  <Text style={{ fontSize: rs(16), color: '#1A1A1A', fontWeight: '600' }}>No names match your filter.</Text>
-                  <Text style={{ fontSize: rs(14), color: '#7A7A7A', marginTop: rs(8) }}>Try adjusting your search criteria.</Text>
-                </View>
-              ) : (
-                <>
+              <>
                   <View style={styles.bottomArea}>
                     {STACK_CONFIG.map((config, idx) => {
                       const nextConfig = idx === 2
@@ -577,8 +570,7 @@ const NamesScreen = ({ navigation }) => {
                       )}
                     </Animated.View>
                   ))}
-                </>
-              )}
+              </>
 
             </View>
 
