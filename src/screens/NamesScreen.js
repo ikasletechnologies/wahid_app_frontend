@@ -523,7 +523,13 @@ const NamesScreen = ({ navigation }) => {
                           },
                         ],
                       }]}>
-                        <NameCardBackground width={config.width} height={config.height} style={StyleSheet.absoluteFillObject} />
+                        <NameCardBackground 
+                          width={config.width} 
+                          height={config.height} 
+                          style={StyleSheet.absoluteFillObject} 
+                          gradEnd={isDark ? '#1A2332' : '#BCECF7'} 
+                          strokeColor={isDark ? '#2A3A50' : '#A0DCE9'} 
+                        />
                       </Animated.View>
                     );
                   })}
