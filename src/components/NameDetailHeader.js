@@ -25,8 +25,6 @@ const styles = StyleSheet.create({
   headerContainer: {
     paddingBottom: 20,
     zIndex: 10,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
     overflow: 'hidden',
   },
   header: {

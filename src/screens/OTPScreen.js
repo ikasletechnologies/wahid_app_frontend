@@ -33,11 +33,11 @@ const OTPScreen = ({ navigation, route }) => {
       return;
     }
     if (result.isNewUser) {
-      navigation.navigate('Register', { verificationToken: result.verificationToken, phone });
+      navigation.replace('Register', { verificationToken: result.verificationToken, phone });
       Toast.show({ type: 'success', text1: 'Phone Verified!', text2: 'Please set your account details.' });
     } else {
-      navigation.navigate('Login', { identifier: phone });
-      Toast.show({ type: 'info', text1: 'Welcome Back!', text2: 'Please enter your password to login.' });
+      navigation.replace('Home', { identifier: phone });
+      Toast.show({ type: 'info', text1: 'Welcome Back!', text2: 'Logged in successfully.' });
     }
   };
 
@@ -134,6 +134,7 @@ const OTPScreen = ({ navigation, route }) => {
                 keyboardType="number-pad"
                 textContentType="oneTimeCode"
                 autoComplete="sms-otp"
+                autoFocus={true}
                 caretHidden
               />
             </TouchableOpacity>
@@ -245,8 +246,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    opacity: 0,
+    opacity: 1,
     color: 'transparent',
+    backgroundColor: 'transparent',
   },
 
   footerWrap: {

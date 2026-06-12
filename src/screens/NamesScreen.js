@@ -87,7 +87,7 @@ const NameCardBackground = ({ width, height, style, gradEnd = '#BCECF7', strokeC
 };
 
 const NamesScreen = ({ navigation }) => {
-  const { names, loading, learnedIds, masteredIds, categories, markAsViewed } = useNames();
+  const { names, loading, learnedIds, masteredIds, revisitCounts, categories, markAsViewed } = useNames();
   const [activeIndex, setActiveIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [lastReadName, setLastReadName] = useState(null);
@@ -109,29 +109,19 @@ const NamesScreen = ({ navigation }) => {
   // honour an explicit navigation jump instead.
   const isNavigatingRef = useRef(false);
 
-  const handleBackToReading = () => {
+  const handleBackToReading = async () => {
     if (!lastReadName) return;
 
-    const idx = names.findIndex(n => n.number === lastReadName.number);
-    if (idx === -1) return;
-
-    // Tell the filteredNames effect not to override this jump
-    isNavigatingRef.current = true;
-
-    // Snap animation state clean before the re-render
-    scrollAnim.setValue(0);
-    isAnimating.current = false;
-    dragProgress.current = 0;
-
-    // Update the ref immediately so the effect sees the right target
-    activeIndexRef.current = idx;
-
-    // All state updates batched in one commit
-    setSearchQuery('');
-    setAppliedCat('All');
-    setAppliedStatus('All');
-    setAppliedNumber('');
-    setActiveIndex(idx);
+    const nameNumber = lastReadName.number || lastReadName.id;
+    try {
+      const saved = await AsyncStorage.getItem('last_reading_progress');
+      const progress = saved ? JSON.parse(saved) : null;
+      const initialStepIndex =
+        progress?.nameNumber === nameNumber ? (progress.stepIndex ?? 0) : 0;
+      navigation.navigate('NameDetail', { name: lastReadName, initialStepIndex });
+    } catch {
+      navigation.navigate('NameDetail', { name: lastReadName, initialStepIndex: 0 });
+    }
   };
 
   const [filterVisible, setFilterVisible] = useState(false);
@@ -298,7 +288,8 @@ const NamesScreen = ({ navigation }) => {
     if (!item) return null;
 
     const isMastered = masteredIds.includes(item.number);
-    const isLearned = learnedIds.includes(item.number) && !isMastered;
+    const isLearned  = learnedIds.includes(item.number) && !isMastered;
+    const revisits   = revisitCounts?.[item.number] || 0;
 
     let gradEnd = '#BCECF7';
     let strokeColor = '#A0DCE9';
@@ -371,6 +362,21 @@ const NamesScreen = ({ navigation }) => {
         <View style={styles.bookholderWrapper}>
           <Image source={bookholderSource} style={styles.bookholderImage} resizeMode="contain" />
         </View>
+
+        {/* Read count indicator — only shown after at least one completion */}
+        {revisits > 0 && (
+          <View style={styles.readCountRow}>
+            {[0, 1, 2].map(i => (
+              <View
+                key={i}
+                style={[styles.readDot, i < revisits ? styles.readDotFilled : styles.readDotEmpty]}
+              />
+            ))}
+            <Text style={styles.readCountLabel}>
+              {revisits === 1 ? '2nd read' : revisits === 2 ? 'Final read' : 'Mastered'}
+            </Text>
+          </View>
+        )}
 
         {/* Get Started button */}
         <View style={styles.getStartedRow}>
@@ -816,6 +822,12 @@ const styles = StyleSheet.create({
 
   bookholderWrapper: { position: 'absolute', bottom: hs(50), left: 0, right: 0, alignItems: 'center' },
   bookholderImage: { width: rs(170), height: hs(155) },
+
+  readCountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(6), position: 'absolute', bottom: hs(-14), alignSelf: 'center' },
+  readDot: { width: rs(8), height: rs(8), borderRadius: rs(4) },
+  readDotFilled: { backgroundColor: '#03B7CE' },
+  readDotEmpty: { backgroundColor: 'rgba(3,183,206,0.2)', borderWidth: 1, borderColor: 'rgba(3,183,206,0.4)' },
+  readCountLabel: { fontSize: rs(11), fontWeight: '700', color: '#03B7CE', letterSpacing: 0.4 },
 
   getStartedRow: { position: 'absolute', bottom: hs(-40), alignSelf: 'center', flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: rs(10), paddingVertical: hs(10), paddingLeft: rs(24), paddingRight: rs(8), gap: rs(14), shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: rs(8), shadowOffset: { width: 0, height: 3 }, elevation: 4 },
   getStartedText: { fontSize: rs(14), fontWeight: '600', color: '#1A1A1A' },
