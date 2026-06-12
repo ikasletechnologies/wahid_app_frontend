@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Switch, SafeAreaView, TouchableOpacity } from 'react-native';
-
-import TimeBasedBackground from '../components/TimeBasedBackground';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Switch } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useAppTheme } from '../context/ThemeContext';
+import TimeBasedBackground from '../components/TimeBasedBackground';
 
-export default function NotificationSettingsScreen({ navigation }) {
-  const { colors, isDark } = useAppTheme();
-
+const NotificationSettingsScreen = () => {
+  const navigation = useNavigation();
+  const { isDark, colors } = useAppTheme();
 
   const [isNotificationEnabled, setNotificationEnabled] = useState(false);
   const [isSoundEnabled, setSoundEnabled] = useState(false);
@@ -15,71 +17,114 @@ export default function NotificationSettingsScreen({ navigation }) {
   const toggleSound = () => setSoundEnabled(prev => !prev);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.root, { backgroundColor: 'transparent' }]} edges={['top']}>
       <TimeBasedBackground showElements={false}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={{ fontSize: 32, color: colors.text }}>{'<'}</Text>
-          </TouchableOpacity>
-          <Text style={[styles.title, { color: colors.text }]}>Notification Settings</Text>
-        </View>
-        <View style={styles.toggleContainer}>
-          <Text style={styles.label}>Enable Notifications</Text>
-          <Switch
-            trackColor={{ false: '#767577', true: '#81b0ff' }}
-            thumbColor={isNotificationEnabled ? '#f5dd4b' : '#f4f3f4'}
-            onValueChange={toggleNotification}
-            value={isNotificationEnabled}
-          />
-        </View>
-        <View style={styles.toggleContainer}>
-          <Text style={styles.label}>Notifications Sound</Text>
-          <Switch
-            trackColor={{ false: '#767577', true: '#81b0ff' }}
-            thumbColor={isSoundEnabled ? '#f5dd4b' : '#f4f3f4'}
-            onValueChange={toggleSound}
-            value={isSoundEnabled}
-          />
-        </View>
+        {({ isNight }) => (
+          <>
+            <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
+            <View style={styles.header}>
+              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <Ionicons name="chevron-back" size={24} color={colors.text} />
+                <Text style={[styles.headerTitle, { color: colors.text }]}>Notifications</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.settingsList}>
+              <View style={[styles.settingItem, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.05, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
+                <View style={styles.settingLeft}>
+                  <View style={[styles.iconCircle, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.15, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#EBECF0', borderWidth: isDark ? 1 : 6 }]}>
+                    <Ionicons name="notifications-outline" size={14} color="#06b6d4" />
+                  </View>
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>Enable Notifications</Text>
+                </View>
+                <Switch
+                  trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#06b6d4' }}
+                  thumbColor={isNotificationEnabled ? '#ffffff' : isDark ? '#94A3B8' : '#f4f3f4'}
+                  ios_backgroundColor={isDark ? '#334155' : '#E2E8F0'}
+                  onValueChange={toggleNotification}
+                  value={isNotificationEnabled}
+                />
+              </View>
+
+              <View style={[styles.settingItem, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.05, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
+                <View style={styles.settingLeft}>
+                  <View style={[styles.iconCircle, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.15, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#EBECF0', borderWidth: isDark ? 1 : 6 }]}>
+                    <Ionicons name="volume-high-outline" size={14} color="#06b6d4" />
+                  </View>
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>Notification Sound</Text>
+                </View>
+                <Switch
+                  trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#06b6d4' }}
+                  thumbColor={isSoundEnabled ? '#ffffff' : isDark ? '#94A3B8' : '#f4f3f4'}
+                  ios_backgroundColor={isDark ? '#334155' : '#E2E8F0'}
+                  onValueChange={toggleSound}
+                  value={isSoundEnabled}
+                  disabled={!isNotificationEnabled}
+                />
+              </View>
+            </View>
+          </>
+        )}
       </TimeBasedBackground>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: 'transparent',
-  },
-  gradient: {
-    flex: 1,
-    padding: 50,
-    paddingLeft: 10,
-
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 40,
-    marginBottom: 10,
-    paddingLeft: 10,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
   },
   backButton: {
-    marginRight: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  title: {
+  headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    marginLeft: 4,
   },
-  toggleContainer: {
+  settingsList: {
+    paddingHorizontal: 20,
+    gap: 16,
+    marginTop: 10,
+  },
+  settingItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 5,
+    justifyContent: 'space-between',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 3,
+    elevation: 2,
   },
-  label: {
-    fontSize: 18,
-    paddingLeft: 10,
-    color: '#333',
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  iconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  settingLabel: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
+
+export default NotificationSettingsScreen;
