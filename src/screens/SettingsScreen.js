@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch, StatusBar } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import MaskedView from '@react-native-masked-view/masked-view';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -26,34 +29,27 @@ const SettingsScreen = () => {
             </View>
 
             <View style={styles.settingsList}>
-              {/* Arabic Script */}
               <View style={[styles.settingItem, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.05, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
                 <View style={styles.settingLeft}>
                   <View style={[styles.iconCircle, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.15, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#EBECF0', borderWidth: isDark ? 1 : 6 }]}>
-                    <Ionicons name="sync-outline" size={14} color="#06b6d4" />
+                    <Ionicons name="information-circle-outline" size={14} color="#06b6d4" />
                   </View>
-                  <Text style={[styles.settingLabel, { color: colors.text }]}>Arabic Script</Text>
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>About Wahid</Text>
+                  <View style={{ marginLeft: 'auto' }}>
+                    <MaskedView maskElement={<Text style={styles.versionText}>v1.0.0</Text>}>
+                      <LinearGradient colors={['#06b6d4', '#22d3ee']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                        <Text style={[styles.versionText, { opacity: 0 }]}>v1.0.0</Text>
+                      </LinearGradient>
+                    </MaskedView>
+                  </View>
                 </View>
-                <Switch
-                  trackColor={{ false: colors.border, true: '#06b6d480' }}
-                  thumbColor={arabicScript ? '#06b6d4' : '#f4f3f4'}
-                  ios_backgroundColor={colors.border}
-                  onValueChange={setArabicScript}
-                  value={arabicScript}
-                  style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
-                />
-              </View>
-            </View>
 
-            <View style={styles.bottomContainer}>
-              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: '#06b6d4' }]} onPress={() => navigation.goBack()}>
-                <Text style={[styles.saveBtnText, { color: isDark ? colors.background : '#FFFFFF' }]}>Save Changes</Text>
-              </TouchableOpacity>
             </View>
-          </>
+          </View>
+      </>
         )}
-      </TimeBasedBackground>
-    </SafeAreaView>
+    </TimeBasedBackground>
+    </SafeAreaView >
   );
 };
 
@@ -111,6 +107,13 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  versionText: {
+    fontSize: 18,
+    fontWeight: '600',
+    paddingLeft: 110,
+    // gradient will be applied via MaskedView, keep transparent color
+    color: 'transparent',
   },
   bottomContainer: {
     position: 'absolute',
