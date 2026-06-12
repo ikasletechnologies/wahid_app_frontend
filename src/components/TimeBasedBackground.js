@@ -16,24 +16,24 @@ const SKY = {
   night:     ['#0F172A', '#1E293B'],
 };
 
-// Sun arc: 6am (left) → noon (top-right) → 6pm (right lower)
+// Sun arc: 6am (left edge) → noon (top-center) → 6pm (right edge)
 const getSunPos = (h, m) => {
   const t = h * 60 + m;
   if (t < 360 || t >= 1080) return null;
   const p = (t - 360) / 720;
   return {
-    x: SW * 0.52 + p * (SW * 0.26),
-    y: 55 - Math.sin(p * Math.PI) * 35,
+    x: -65 + p * (SW + 65),
+    y: 100 - Math.sin(p * Math.PI) * 60,
   };
 };
 
-// Moon arc: 6pm (right) → midnight (upper-right) → 6am (upper-left)
+// Moon arc: 6pm (left edge) → midnight (top-center) → 6am (right edge)
 const getMoonPos = (h, m) => {
   const t = h * 60 + m;
   const p = t >= 1080 ? (t - 1080) / 720 : (t + 360) / 720;
   return {
-    x: SW * 0.72 - p * (SW * 0.52),
-    y: 60 - Math.sin(p * Math.PI) * 40,
+    x: -65 + p * (SW + 65),
+    y: 100 - Math.sin(p * Math.PI) * 60,
   };
 };
 
@@ -67,6 +67,7 @@ const STARS = [
 const TimeBasedBackground = ({ children, showElements = true }) => {
   const [now, setNow] = useState(new Date());
   const starAnims = useRef(STARS.map(() => new Animated.Value(0.8))).current;
+  const cloudAnim = useRef(new Animated.Value(0)).current;
 
   // Refresh every minute
   useEffect(() => {
@@ -99,6 +100,30 @@ const TimeBasedBackground = ({ children, showElements = true }) => {
 
     return () => loops.forEach(l => l.stop());
   }, [isNight, showElements]);
+
+  // Cloud floating animation
+  useEffect(() => {
+    if (!showElements) return;
+    
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(cloudAnim, { toValue: 1, duration: 4000, useNativeDriver: true }),
+        Animated.timing(cloudAnim, { toValue: 0, duration: 4000, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [showElements]);
+
+  const cloudLightTx = cloudAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 10]
+  });
+  
+  const cloudDarkTx = cloudAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -8]
+  });
 
   return (
     <>
@@ -135,18 +160,34 @@ const TimeBasedBackground = ({ children, showElements = true }) => {
       {/* Moon + clouds — night only */}
       {isNight && showElements && (
         <View style={[s.moonWrap, { left: moonPos.x, top: moonPos.y }]}>
-          <Image source={require('../../assets/milestone/Cloudlight.png')} style={s.moonCloudLight} resizeMode="contain" />
+          <Animated.Image 
+            source={require('../../assets/milestone/Cloudlight.png')} 
+            style={[s.moonCloudLight, { transform: [{ translateX: cloudLightTx }] }]} 
+            resizeMode="contain" 
+          />
           <Image source={require('../../assets/milestone/Moon.png')} style={s.moon} resizeMode="contain" />
-          <Image source={require('../../assets/milestone/Clouddark.png')} style={s.moonCloudDark} resizeMode="contain" />
+          <Animated.Image 
+            source={require('../../assets/milestone/Clouddark.png')} 
+            style={[s.moonCloudDark, { transform: [{ translateX: cloudDarkTx }] }]} 
+            resizeMode="contain" 
+          />
         </View>
       )}
 
       {/* Sun + clouds — day periods */}
       {!isNight && showElements && sunPos && (
         <View style={[s.sunWrap, { left: sunPos.x, top: sunPos.y }]}>
-          <Image source={require('../../assets/milestone/Cloudlight.png')} style={s.cloudLight} resizeMode="contain" />
+          <Animated.Image 
+            source={require('../../assets/milestone/Cloudlight.png')} 
+            style={[s.cloudLight, { transform: [{ translateX: cloudLightTx }] }]} 
+            resizeMode="contain" 
+          />
           <Image source={require('../../assets/milestone/Sun.png')} style={s.sun} resizeMode="contain" />
-          <Image source={require('../../assets/milestone/Clouddark.png')} style={s.cloudDark} resizeMode="contain" />
+          <Animated.Image 
+            source={require('../../assets/milestone/Clouddark.png')} 
+            style={[s.cloudDark, { transform: [{ translateX: cloudDarkTx }] }]} 
+            resizeMode="contain" 
+          />
         </View>
       )}
 

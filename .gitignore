@@ -40,3 +40,11 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# data pipeline & scratch files
+data_files/
+scratch/
+buildData.js
+extract_pdf.js
+extract_text.js
+merged_debug.json

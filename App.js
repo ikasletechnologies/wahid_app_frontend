@@ -11,7 +11,6 @@ import { MilestoneProvider } from './src/context/MilestoneContext';
 import * as SplashScreen from 'expo-splash-screen';
 import AppNavigator from './src/navigation/AppNavigator';
 import ThemedToast from './src/components/ThemedToast';
-import NetworkStatusBanner from './src/components/NetworkStatusBanner';
 import NetworkScreen from './src/screens/NetworkScreen';
 import NetInfo from '@react-native-community/netinfo';
 
@@ -58,7 +57,6 @@ export default function App() {
                     <PlaylistProvider>
                       <AppNavigator />
                       <ThemedToast />
-                      <NetworkStatusBanner />
                     </PlaylistProvider>
                   </ContentProvider>
                 </MilestoneProvider>

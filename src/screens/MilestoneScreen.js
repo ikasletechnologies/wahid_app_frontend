@@ -94,12 +94,12 @@ const SvgHex = ({ size, color = '#FFFFFF' }) => {
 };
 
 // Locked milestone node
-const LockedNode = ({ milestoneId }) => {
+const LockedNode = ({ milestoneId, isNight }) => {
   const baseSize = 100;
   const w = baseSize, h = baseSize * 0.9;
   const tier = milestoneId > 4 ? 2 : 1;
-  const hexColor = tier === 2 ? '#FFFDF0' : '#FFFFFF';
-  const lockColor = tier === 2 ? '#FF9800' : '#00BCD4';
+  const hexColor = isNight ? '#1E293B' : (tier === 2 ? '#FFFDF0' : '#FFFFFF');
+  const lockColor = isNight ? (tier === 2 ? '#FFA726' : '#00ADC1') : (tier === 2 ? '#FF9800' : '#00BCD4');
   return (
     <View style={{
       width: w, height: h, justifyContent: 'center', alignItems: 'center',
@@ -142,15 +142,25 @@ const MilestoneScreen = ({ navigation }) => {
   const scrollY = React.useRef(new Animated.Value(0)).current;
   const { milestones, allCompleted } = useMilestones();
 
+  const extendedMilestones = React.useMemo(() => {
+    const arr = [...milestones];
+    // Add extra locked milestones to make the road appear endless
+    const targetLength = Math.max(milestones.length + 15, 25);
+    for (let i = milestones.length; i < targetLength; i++) {
+      arr.push({ id: i + 1, status: 'locked' });
+    }
+    return arr;
+  }, [milestones]);
+
   return (
     <SafeAreaView style={s.root} edges={['top']}>
       <TimeBasedBackground>
         {({ isNight }) => (
           <>
-            <Image source={require('../../assets/milestone/ring.png')} style={s.ringLeft} resizeMode="contain" />
-            <Image source={require('../../assets/milestone/ring.png')} style={s.ringRight} resizeMode="contain" />
-            <Image source={require('../../assets/milestone/Pattern.png')} style={s.patternLeft} resizeMode="contain" />
-            <Image source={require('../../assets/milestone/Pattern.png')} style={s.patternRight} resizeMode="contain" />
+            <Image source={require('../../assets/milestone/ring.png')} style={[s.ringLeft, isNight && { opacity: 0.15 }]} resizeMode="contain" />
+            <Image source={require('../../assets/milestone/ring.png')} style={[s.ringRight, isNight && { opacity: 0.15 }]} resizeMode="contain" />
+            <Image source={require('../../assets/milestone/Pattern.png')} style={[s.patternLeft, isNight && { opacity: 0.15 }]} resizeMode="contain" />
+            <Image source={require('../../assets/milestone/Pattern.png')} style={[s.patternRight, isNight && { opacity: 0.15 }]} resizeMode="contain" />
 
             {/* Header */}
             <View style={s.header}>
@@ -170,7 +180,7 @@ const MilestoneScreen = ({ navigation }) => {
             </View>
 
             {/* Road */}
-            <Image source={require('../../assets/milestone/road.png')} style={s.road} resizeMode="stretch" />
+            <Image source={require('../../assets/milestone/road.png')} style={[s.road, isNight && { opacity: 0.4 }]} resizeMode="stretch" />
 
             {/* Tapered glow band */}
             <Svg width={ROAD_W} height={ROAD_H} style={[s.road, { zIndex: 2 }]}>
@@ -189,7 +199,7 @@ const MilestoneScreen = ({ navigation }) => {
             </Svg>
 
             {/* Milestone nodes */}
-            {milestones.map((milestone, i) => {
+            {extendedMilestones.map((milestone, i) => {
               const inputRange = [];
               const outBottom = [];
               const outSize = [];
@@ -199,9 +209,7 @@ const MilestoneScreen = ({ navigation }) => {
                 const scrollVal = (i - v) * 120;
                 inputRange.push(scrollVal);
                 const interp = interpolateSlot(v);
-                const adjBottom = i === 0
-                  ? interp.bottom + 40
-                  : interp.bottom - 45 + 0.45 * interp.size;
+                const adjBottom = interp.bottom - 35 + 0.18 * interp.size;
                 outBottom.push(adjBottom);
                 outSize.push(interp.size);
                 outOpacity.push(interp.opacity);
@@ -253,7 +261,7 @@ const MilestoneScreen = ({ navigation }) => {
                     opacity, zIndex: 30 - i,
                   }}
                 >
-                  <LockedNode milestoneId={milestone.id} />
+                  <LockedNode milestoneId={milestone.id} isNight={isNight} />
                 </Animated.View>
               );
             })}
@@ -268,7 +276,7 @@ const MilestoneScreen = ({ navigation }) => {
               return (
                 <Animated.View
                   key={`dash-${i}`}
-                  style={[s.dash, { position: 'absolute', bottom: dashBottom, zIndex: 3 }]}
+                  style={[s.dash, { position: 'absolute', bottom: dashBottom, zIndex: 3, backgroundColor: isNight ? '#334155' : '#D9D9D9' }]}
                 />
               );
             })}

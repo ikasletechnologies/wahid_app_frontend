@@ -12,8 +12,8 @@ const PersonalDetailsScreen = () => {
   const navigation = useNavigation();
   const { colors, isDark } = useAppTheme();
   
-  const [name, setName] = useState(user?.name || 'Wahid');
-  const [email, setEmail] = useState(user?.email || 'Wahid123@gmail.com');
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
   const [password, setPassword] = useState('password123'); // Just for UI
   const [showPassword, setShowPassword] = useState(false);
 

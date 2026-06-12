@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import http from '../config/http';
 import { ENDPOINTS } from '../config/api';
 import { useAuth } from './AuthContext';
+import { ENHANCED_NAMES } from '../data/namesData';
 
 const NamesContext = createContext();
 
@@ -49,11 +50,16 @@ export const NUMBER_TO_CATEGORY = {
   96:'exalted', 97:'exalted',
 };
 
-// Helper: inject category into a name object from the API
-const withCategory = (name) => ({
-  ...name,
-  category: name.category || NUMBER_TO_CATEGORY[name.number] || 'mercy',
-});
+// Helper: inject category into a name object from the API and merge local extended data
+const withCategory = (name) => {
+  const nameId = name.number || name.id;
+  const localData = ENHANCED_NAMES.find(n => n.id === nameId) || {};
+  return {
+    ...localData, // Contains gifts, practicalWays, scholarlyViews, mcq
+    ...name,      // Overwrite with API data (quran, ar, tr, etc.)
+    category: name.category || NUMBER_TO_CATEGORY[nameId] || 'mercy',
+  };
+};
 
 export const MOODS = [
   "anxious", "sad", "seeking peace", "lonely", "seeking forgiveness", "overwhelmed", "powerless",
@@ -129,6 +135,7 @@ export const NamesProvider = ({ children }) => {
     weeklyProgress: { Sun: false, Mon: false, Tue: false, Wed: false, Thu: false, Fri: false, Sat: false },
   });
   const [revisitCounts, setRevisitCounts] = useState({});
+  const [userReflections, setUserReflections] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -182,11 +189,12 @@ export const NamesProvider = ({ children }) => {
         }
       }
       if (cachedProgress) {
-        const { learned, mastered, streak: s, revisits } = JSON.parse(cachedProgress);
+        const { learned, mastered, streak: s, revisits, reflections } = JSON.parse(cachedProgress);
         setLearnedIds(learned || []);
         setMasteredIds(mastered || []);
         setStreak(s || 0);
         if (revisits) setRevisitCounts(revisits);
+        if (reflections) setUserReflections(reflections);
       }
       if (cachedStreak) {
         setStreakDetails(JSON.parse(cachedStreak));
@@ -217,16 +225,18 @@ export const NamesProvider = ({ children }) => {
       }
 
       if (progressRes.data?.success && progressRes.data?.data) {
-        const { learned, mastered, streak: s, revisits } = progressRes.data.data;
+        const { learned, mastered, streak: s, revisits, reflections } = progressRes.data.data;
         setLearnedIds(learned || []);
         setMasteredIds(mastered || []);
         setStreak(s || 0);
         if (revisits) setRevisitCounts(revisits);
+        if (reflections) setUserReflections(reflections);
         AsyncStorage.setItem('progress_cache', JSON.stringify({
           learned: learned || [],
           mastered: mastered || [],
           streak: s || 0,
           revisits: revisits || {},
+          reflections: reflections || {},
         }));
       }
 
@@ -251,13 +261,18 @@ export const NamesProvider = ({ children }) => {
     }
   };
 
-  const markAsLearned = async (nameNumber) => {
+  const markAsLearned = async (nameNumber, reflectionData = null) => {
     try {
       if (!learnedIds.includes(nameNumber)) {
         setLearnedIds(prev => [...prev, nameNumber]);
       }
       const todayStr = new Date().toISOString().slice(0, 10);
-      const res = await http.post(ENDPOINTS.learn, { nameNumber, localDate: todayStr });
+      const payload = { nameNumber, localDate: todayStr };
+      if (reflectionData) {
+        payload.reflectionData = reflectionData;
+        setUserReflections(prev => ({ ...prev, [nameNumber]: reflectionData }));
+      }
+      const res = await http.post(ENDPOINTS.learn, payload);
       if (res.data?.success) {
         if (res.data.data?.streak !== undefined) setStreak(res.data.data.streak);
         if (res.data.data?.mastered && !masteredIds.includes(nameNumber)) {
@@ -396,6 +411,7 @@ export const NamesProvider = ({ children }) => {
       streak,
       streakDetails,
       revisitCounts,
+      userReflections,
       loading,
       refreshing,
       syncWithBackend,
