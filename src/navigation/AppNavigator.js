@@ -1,6 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
+import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 import SplashScreen    from '../screens/SplashScreen';
 import PhoneScreen     from '../screens/PhoneScreen';
 import OTPScreen       from '../screens/OTPScreen';
@@ -53,12 +54,17 @@ const AppNavigator = () => {
             component={PersonalDetailsScreen}
             options={{ animation: 'slide_from_right' }}
           />
-          <Stack.Screen
-            name="Settings"
-            component={SettingsScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-        </>
+            <Stack.Screen
+              name="Settings"
+              component={SettingsScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+              name="NotificationSettings"
+              component={NotificationSettingsScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
+            </>
       ) : (
         // ── Unauthenticated — OTP + Login + Register flow ────────────────
         <>

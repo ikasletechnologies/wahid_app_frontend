@@ -20,7 +20,7 @@ import { HugeiconsIcon } from '@hugeicons/react-native';
 import UserIcon from '@hugeicons/core-free-icons/dist/esm/UserIcon.js';
 import SecurityIcon from '@hugeicons/core-free-icons/dist/esm/SecurityIcon.js';
 import Settings02Icon from '@hugeicons/core-free-icons/dist/esm/Settings02Icon.js';
-import InformationCircleIcon from '@hugeicons/core-free-icons/dist/esm/InformationCircleIcon.js';
+
 import Logout01Icon from '@hugeicons/core-free-icons/dist/esm/Logout01Icon.js';
 import { useAuth } from '../context/AuthContext';
 import TimeBasedBackground from '../components/TimeBasedBackground';
@@ -203,7 +203,7 @@ export default function ProfileScreen({ navigation }) {
                                 </TouchableOpacity>
 
                                 {/* NOTIFICATIONS */}
-                                <TouchableOpacity activeOpacity={0.8} style={{ marginTop: 15 }}>
+                                <TouchableOpacity activeOpacity={0.8} style={{ marginTop: 15 }} onPress={() => navigation.navigate('NotificationSettings')}>
                                     <LinearGradient
                                         colors={t.cardBg}
                                         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
@@ -261,30 +261,6 @@ export default function ProfileScreen({ navigation }) {
                                                 <Ionicons name="arrow-forward" size={18} color="black" />
                                             </MaskedGradient>
                                         </View>
-                                    </LinearGradient>
-                                </TouchableOpacity>
-
-                                {/* ABOUT WAHID */}
-                                <TouchableOpacity activeOpacity={0.8} style={{ marginTop: 15 }}>
-                                    <LinearGradient
-                                        colors={t.cardBg}
-                                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                                        style={[styles.card, { borderColor: t.cardBorder, borderWidth: 1, shadowColor: t.cardShadow }]}
-                                    >
-                                        <View style={styles.leftSection}>
-                                            <View style={[styles.iconCircle, { backgroundColor: t.iconCircleBg }]}>
-                                                <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
-                                                    <HugeiconsIcon icon={CircleIcon} size={45} color={t.iconRing} />
-                                                </View>
-                                                <MaskedGradient width={24} height={24}>
-                                                    <HugeiconsIcon icon={InformationCircleIcon} size={20} color="white" />
-                                                </MaskedGradient>
-                                            </View>
-                                            <Text style={[styles.cardTitle, { color: t.cardText }]}>About Wahid</Text>
-                                        </View>
-                                        <MaskedGradient width={60} height={25}>
-                                            <Text style={{ fontSize: 18, color: 'black', fontWeight: '500' }}>v1.0.0</Text>
-                                        </MaskedGradient>
                                     </LinearGradient>
                                 </TouchableOpacity>
 
