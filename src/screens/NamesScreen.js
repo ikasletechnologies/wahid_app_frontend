@@ -13,6 +13,7 @@ import { FONTS } from '../theme';
 import TimeBasedBackground from '../components/TimeBasedBackground';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import http from '../config/http';
+import { useAppTheme } from '../context/ThemeContext';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 
@@ -71,7 +72,7 @@ const NameCardBackground = ({ width, height, style, gradEnd = '#BCECF7', strokeC
       <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         <Defs>
           <SvgLinearGradient id="cardGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#FFFFFF" />
+            <Stop offset="0" stopColor={gradEnd === '#1A2332' || gradEnd === '#062f1d' || gradEnd === '#332700' ? '#0F172A' : '#FFFFFF'} />
             <Stop offset="1" stopColor={gradEnd} />
           </SvgLinearGradient>
         </Defs>
@@ -88,6 +89,7 @@ const NameCardBackground = ({ width, height, style, gradEnd = '#BCECF7', strokeC
 
 const NamesScreen = ({ navigation }) => {
   const { names, loading, learnedIds, masteredIds, revisitCounts, categories, markAsViewed } = useNames();
+  const { isDark, colors } = useAppTheme();
   const [activeIndex, setActiveIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [lastReadName, setLastReadName] = useState(null);
@@ -291,10 +293,10 @@ const NamesScreen = ({ navigation }) => {
     const isLearned  = learnedIds.includes(item.number) && !isMastered;
     const revisits   = revisitCounts?.[item.number] || 0;
 
-    let gradEnd = '#BCECF7';
-    let strokeColor = '#A0DCE9';
+    let gradEnd = isDark ? '#1A2332' : '#BCECF7';
+    let strokeColor = isDark ? '#2A3A50' : '#A0DCE9';
     let accentColor = '#03B7CE';
-    let badgeBg = '#0B0C0C';
+    let badgeBg = isDark ? '#000000' : '#0B0C0C';
     let badgeIcon = 'checkmark-circle';
     let badgeTextColor = '#4BD5E8';
     let flagSource = require('../../assets/names/flag/normal.png');
@@ -302,20 +304,20 @@ const NamesScreen = ({ navigation }) => {
     let bookholderSource = require('../../assets/names/bookHolder/normalHolder.png');
 
     if (isMastered) {
-      gradEnd = '#FFF3C0';
-      strokeColor = '#FFD700';
+      gradEnd = isDark ? '#332700' : '#FFF3C0';
+      strokeColor = isDark ? '#664D03' : '#FFD700';
       accentColor = '#FFC107';
-      badgeBg = '#0B0C0C';
+      badgeBg = isDark ? '#000000' : '#0B0C0C';
       badgeIcon = 'trophy';
       badgeTextColor = '#FFB300';
       flagSource = require('../../assets/names/flag/master.png');
       textureSource = require('../../assets/names/texture/master.png');
       bookholderSource = require('../../assets/names/bookHolder/masterHolder.png');
     } else if (isLearned) {
-      gradEnd = '#C8F5D0';
-      strokeColor = '#4CAF50';
+      gradEnd = isDark ? '#062f1d' : '#C8F5D0';
+      strokeColor = isDark ? '#0F5132' : '#4CAF50';
       accentColor = '#4CAF50';
-      badgeBg = '#0B0C0C';
+      badgeBg = isDark ? '#000000' : '#0B0C0C';
       badgeIcon = 'shield-checkmark';
       badgeTextColor = '#00C853';
       flagSource = require('../../assets/names/flag/learn.png');
@@ -353,9 +355,9 @@ const NamesScreen = ({ navigation }) => {
 
         {/* Centered text */}
         <View style={styles.cardTextArea}>
-          <Text style={styles.arabic}>{item.arabic}</Text>
-          <Text style={styles.trans}>{item.transliteration}</Text>
-          <Text style={styles.meaning}>{item.meaning}</Text>
+          <Text style={[styles.arabic, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>{item.arabic}</Text>
+          <Text style={[styles.trans, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>{item.transliteration}</Text>
+          <Text style={[styles.meaning, { color: isDark ? '#B0BEC5' : '#555555' }]}>{item.meaning}</Text>
         </View>
 
         {/* Book holder */}
@@ -379,8 +381,8 @@ const NamesScreen = ({ navigation }) => {
         )}
 
         {/* Get Started button */}
-        <View style={styles.getStartedRow}>
-          <Text style={styles.getStartedText}>Get Started</Text>
+        <View style={[styles.getStartedRow, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF' }]}>
+          <Text style={[styles.getStartedText, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>Get Started</Text>
           <View style={[styles.getStartedArrow, { backgroundColor: accentColor }]}>
             <Ionicons name="arrow-forward" size={rs(14)} color="#FFFFFF" />
           </View>
@@ -411,47 +413,47 @@ const NamesScreen = ({ navigation }) => {
             <View style={styles.topSection}>
               <View style={styles.headerContainer}>
                 <View style={styles.headerDividerRow}>
-                  <View style={styles.headerLine} />
-                  <Text style={styles.headerDiamond}>✦</Text>
-                  <View style={styles.headerLine} />
+                  <View style={[styles.headerLine, { backgroundColor: isDark ? '#334155' : '#D1D5DB' }]} />
+                  <Text style={[styles.headerDiamond, { color: isDark ? '#00ADC1' : '#A0DCE9' }]}>✦</Text>
+                  <View style={[styles.headerLine, { backgroundColor: isDark ? '#334155' : '#D1D5DB' }]} />
                 </View>
-                <Text style={styles.headerTitleText}>Beautiful Names of Allah</Text>
+                <Text style={[styles.headerTitleText, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>Beautiful Names of Allah</Text>
                 <View style={styles.headerDividerRow}>
-                  <View style={styles.headerLine} />
-                  <Text style={styles.headerDiamond}>✦</Text>
-                  <View style={styles.headerLine} />
+                  <View style={[styles.headerLine, { backgroundColor: isDark ? '#334155' : '#D1D5DB' }]} />
+                  <Text style={[styles.headerDiamond, { color: isDark ? '#00ADC1' : '#A0DCE9' }]}>✦</Text>
+                  <View style={[styles.headerLine, { backgroundColor: isDark ? '#334155' : '#D1D5DB' }]} />
                 </View>
               </View>
 
               <View style={styles.lastReadCardWrapper}>
                 <LinearGradient
-                  colors={['#4BD5E8', '#FDFEFE']}
+                  colors={isDark ? ['#1A2332', '#0F172A'] : ['#4BD5E8', '#FDFEFE']}
                   start={{ x: 0.5, y: 0 }}
                   end={{ x: 0.5, y: 0.9 }}
-                  style={styles.lastReadCard}
+                  style={[styles.lastReadCard, isDark && { borderWidth: 1, borderColor: '#334155' }]}
                 >
                   <View style={styles.lastReadLeft}>
                     <View style={styles.lastReadBadge}>
                       <Image
                         source={require('../../assets/navigation/names.png')}
-                        style={styles.lastReadBadgeIcon}
+                        style={[styles.lastReadBadgeIcon, { tintColor: isDark ? '#E8EDF2' : '#000000' }]}
                         resizeMode="contain"
                       />
-                      <Text style={styles.lastReadBadgeText}>Last Read</Text>
+                      <Text style={[styles.lastReadBadgeText, { color: isDark ? '#E8EDF2' : '#000000' }]}>Last Read</Text>
                     </View>
 
                     <View style={styles.lastReadTextGroup}>
-                      <Text style={styles.lastReadArabic}>{lastReadName?.arabic || 'الرحمن'}</Text>
-                      <Text style={styles.lastReadTrans}>{lastReadName?.transliteration || 'Ar-rahman'}</Text>
-                      <Text style={styles.lastReadMeaning}>{lastReadName?.meaning || 'The Most Gracious'}</Text>
+                      <Text style={[styles.lastReadArabic, { color: isDark ? '#E8EDF2' : '#000000ff' }]}>{lastReadName?.arabic || 'الرحمن'}</Text>
+                      <Text style={[styles.lastReadTrans, { color: isDark ? '#E8EDF2' : '#000000' }]}>{lastReadName?.transliteration || 'Ar-rahman'}</Text>
+                      <Text style={[styles.lastReadMeaning, { color: isDark ? '#9EAAB8' : '#374151' }]}>{lastReadName?.meaning || 'The Most Gracious'}</Text>
                     </View>
 
                     <TouchableOpacity
-                      style={styles.backToReadingBtn}
+                      style={[styles.backToReadingBtn, { backgroundColor: isDark ? '#00ADC1' : '#000000' }]}
                       activeOpacity={0.8}
                       onPress={handleBackToReading}
                     >
-                      <Text style={styles.backToReadingText}>Back to reading</Text>
+                      <Text style={[styles.backToReadingText, { color: '#ffffff' }]}>Back to reading</Text>
                       <Ionicons name="chevron-forward" size={15} color="#ffffff" style={{ marginLeft: 20, marginTop: 4 }} />
                     </TouchableOpacity>
                   </View>

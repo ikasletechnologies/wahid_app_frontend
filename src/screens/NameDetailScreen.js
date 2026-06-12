@@ -2,13 +2,14 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   View, Text, StyleSheet, Dimensions, Animated, Easing,
   Image, TouchableOpacity, StatusBar, PanResponder, ScrollView, TextInput,
-  LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform
+  LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform, Keyboard
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNames } from '../context/NamesContext';
+import { useAppTheme } from '../context/ThemeContext';
 import NameDetailHeader from '../components/NameDetailHeader';
 import TimeBasedBackground from '../components/TimeBasedBackground';
 
@@ -23,9 +24,51 @@ const hs = (n) => Math.round(n * hScale);
 const NameDetailScreen = ({ route, navigation }) => {
   const { name, initialStepIndex = 0 } = route.params;
   const { markAsLearned, masteredIds, revisitCounts, userReflections } = useNames();
+  const { isDark } = useAppTheme();
   const isMastered = masteredIds ? masteredIds.includes(name.id) : false;
   const revisits = revisitCounts[name.id] || 0;
   const isSaturated = isMastered || revisits >= 3;
+
+  // Night-mode themed colors
+  const t = useMemo(() => isDark ? {
+    cardBg: '#1A2332',
+    cardBorder: 'rgba(0,173,193,0.20)',
+    text: '#E8EDF2',
+    subText: '#9EAAB8',
+    dimText: '#6B7A8D',
+    inputBg: '#0F1923',
+    inputBorder: 'rgba(0,173,193,0.30)',
+    safeBg: '#0F172A',
+    progressTrack: '#1E293B',
+    pillText: '#C5F2F7',
+    optionBg: '#1A2332',
+    notebookLeft: '#142030',
+    notebookBorder: 'rgba(0,173,193,0.25)',
+    ringHole: '#0F1923',
+    pastBg: 'rgba(0,173,193,0.12)',
+    journeyCardBg: '#1A2332',
+    journeyGrad: ['#0F172A', '#1A2332'],
+    statusBg: '#1A2332',
+  } : {
+    cardBg: '#FFFFFF',
+    cardBorder: '#DFF6F8',
+    text: '#1A1A1A',
+    subText: '#3A3A3A',
+    dimText: '#7A7A7A',
+    inputBg: '#FFFFFF',
+    inputBorder: 'rgba(0,173,193,0.25)',
+    safeBg: '#C5F2F7',
+    progressTrack: '#FFFFFF',
+    pillText: '#1A1A1A',
+    optionBg: '#FFFFFF',
+    notebookLeft: '#F0FAFC',
+    notebookBorder: '#A0E4EC',
+    ringHole: '#FFFFFF',
+    pastBg: 'rgba(0,173,193,0.07)',
+    journeyCardBg: '#FFFFFF',
+    journeyGrad: ['#E8F7FB', '#FFFFFF'],
+    statusBg: '#FFFFFF',
+  }, [isDark]);
 
   // Determine if this is a Qur'anic name or Sunnah name
   // The first 81 are Qur'anic, the last 18 are Sunnah. We can also check if quranic array exists and has items.
@@ -41,15 +84,15 @@ const NameDetailScreen = ({ route, navigation }) => {
     // Prefer the new Prisma 'quran' array format which has rich data
     if (name.quran && name.quran.length > 0) {
       name.quran.forEach((ref, index) => {
-        s.push({ 
-          type: 'reference', 
-          data: { 
-            arabic: ref.ar, 
-            simpleMeaning: ref.tr, 
-            reference: ref.ref, 
-            significance: ref.significance 
-          }, 
-          index 
+        s.push({
+          type: 'reference',
+          data: {
+            arabic: ref.ar,
+            simpleMeaning: ref.tr,
+            reference: ref.ref,
+            significance: ref.significance
+          },
+          index
         });
       });
     } else {
@@ -73,13 +116,13 @@ const NameDetailScreen = ({ route, navigation }) => {
     if (name.scholarlyViews && name.scholarlyViews.length > 0) {
       s.push({ type: 'scholarly' });
     }
-    
+
     if (revisits < 2 && !isSaturated) {
       s.push({ type: 'reflection' });
     } else {
       s.push({ type: 'mastery' });
     }
-    
+
     return s;
   }, [name, isSunnah, revisits, isSaturated]);
 
@@ -99,6 +142,7 @@ const NameDetailScreen = ({ route, navigation }) => {
   const [reflection2, setReflection2] = useState('');
   const [reflection3, setReflection3] = useState('');
   const [reflectionSubStep, setReflectionSubStep] = useState(0);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const scrollViewRef = useRef(null);
 
@@ -107,7 +151,7 @@ const NameDetailScreen = ({ route, navigation }) => {
     AsyncStorage.setItem('last_reading_progress', JSON.stringify({
       nameNumber: name.number || name.id,
       stepIndex: currentStepIndex,
-    })).catch(() => {});
+    })).catch(() => { });
   }, [currentStepIndex, name]);
 
   const currentStep = steps[currentStepIndex];
@@ -150,6 +194,30 @@ const NameDetailScreen = ({ route, navigation }) => {
     return () => { handLoopRef.current?.stop(); handAnim.setValue(0); };
   }, [handAnim]);
 
+  // Smoothly scroll to active reflection input when keyboard opens
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const subShow = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+      if (currentStep?.type === 'reflection') {
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 50);
+      }
+    });
+
+    const subHide = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      subShow.remove();
+      subHide.remove();
+    };
+  }, [currentStep]);
+
   const goToStep = useCallback((index) => {
     if (index < 0 || index >= steps.length) return;
     Animated.parallel([
@@ -186,7 +254,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   const goJourney = useCallback((reflectionData = null) => {
     markAsLearned(name.id, reflectionData);
-    AsyncStorage.removeItem('last_reading_progress').catch(() => {});
+    AsyncStorage.removeItem('last_reading_progress').catch(() => { });
     setPhase('journey');
     Animated.parallel([
       Animated.timing(journeyOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
@@ -201,7 +269,7 @@ const NameDetailScreen = ({ route, navigation }) => {
     ]).start(() => {
       let ans = 0;
       if (name.mcq && name.mcq.length > 0) ans = name.mcq[0].ans;
-      
+
       if (currentStep.type === 'mastery') {
         if (masteryDone && masteryAnswer === ans) {
           goJourney();
@@ -216,7 +284,7 @@ const NameDetailScreen = ({ route, navigation }) => {
         let maxSubSteps = 0;
         if (currentStep.data.simpleMeaning) maxSubSteps++;
         if (currentStep.data.significance) maxSubSteps++;
-        
+
         if (refSubStep < maxSubSteps) {
           LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
           setRefSubStep(prev => prev + 1);
@@ -318,16 +386,16 @@ const NameDetailScreen = ({ route, navigation }) => {
     // In the new schema, name.meaning is usually the short translation (e.g. "The One"),
     // and name.description contains the long text.
     let displayMeaning = name.description || name.meaning || '';
-    
+
     if (typeof displayMeaning === 'string' && displayMeaning.includes('—')) {
       displayMeaning = displayMeaning.split('—')[1].trim();
     }
-    
+
     return (
       <View style={styles.tabContentContainer}>
         <View style={styles.meaningCardWrap}>
-          <View style={styles.meaningCard}>
-            <Text style={styles.meaningText}>{displayMeaning}</Text>
+          <View style={[styles.meaningCard, { backgroundColor: t.cardBg, borderColor: t.cardBorder }]}>
+            <Text style={[styles.meaningText, { color: t.text }]}>{displayMeaning}</Text>
           </View>
           <View style={styles.meaningBadge}>
             <LinearGradient colors={['#00ADC1', '#0090A8']} style={styles.meaningBadgeGrad}>
@@ -342,26 +410,25 @@ const NameDetailScreen = ({ route, navigation }) => {
   const renderReference = (refData) => {
     const hasSimple = !!refData.simpleMeaning;
     const hasSig = !!refData.significance;
-    
+
     const showSimple = hasSimple && refSubStep >= 1;
     const showSig = hasSig && (hasSimple ? refSubStep >= 2 : refSubStep >= 1);
 
     return (
       <View style={styles.tabContentContainer}>
-        <View style={styles.refCard}>
-          <Text style={styles.refArabic}>{refData.arabic}</Text>
-          {refData.reference && <Text style={styles.refLabel}>{refData.reference}</Text>}
-          <Image source={require('../../assets/name_detail/bg_card_2.png')} style={styles.refSplatter} resizeMode="cover" />
+        <View style={[styles.refCard, { backgroundColor: t.cardBg }]}>
+          <Text style={[styles.refArabic, { color: t.text }]}>{refData.arabic}</Text>
+          {refData.reference && <Text style={[styles.refLabel, { color: t.subText }]}>{refData.reference}</Text>}
         </View>
-        
+
         {showSimple && (
           <View style={styles.fadeInBlock}>
             <View style={styles.refDividerWrap}>
               <Image source={require('../../assets/name_detail/line_gold.png')} style={styles.goldDivider} resizeMode="contain" />
             </View>
 
-            <Text style={styles.sectionTitle}>Simple Meaning</Text>
-            <Text style={styles.refSimpleMeaning}>{refData.simpleMeaning}</Text>
+            <Text style={[styles.sectionTitle, { color: t.text }]}>Simple Meaning</Text>
+            <Text style={[styles.refSimpleMeaning, { color: t.subText }]}>{refData.simpleMeaning}</Text>
           </View>
         )}
 
@@ -370,8 +437,8 @@ const NameDetailScreen = ({ route, navigation }) => {
             <View style={[styles.refDividerWrap, { marginVertical: hs(24) }]}>
               <Image source={require('../../assets/name_detail/line_gold.png')} style={styles.goldDivider} resizeMode="contain" />
             </View>
-            <Text style={styles.sectionTitle}>Significance of the Name</Text>
-            <Text style={styles.refSignificance}>{refData.significance}</Text>
+            <Text style={[styles.sectionTitle, { color: t.text }]}>Significance of the Name</Text>
+            <Text style={[styles.refSignificance, { color: t.subText }]}>{refData.significance}</Text>
           </View>
         )}
       </View>
@@ -382,10 +449,10 @@ const NameDetailScreen = ({ route, navigation }) => {
     <View style={styles.tabContentContainer}>
       {name.gifts?.slice(0, giftSubStep + 1).map((gift, i) => (
         <View key={i}>
-          <View style={styles.giftCardContainer}>
+          <View style={[styles.giftCardContainer, { backgroundColor: t.cardBg }]}>
             <View style={styles.giftCardInner}>
               <View style={styles.giftLeft}>
-                <Text style={styles.giftLeftLabel}>Spiritual{'\n'}benefit</Text>
+                <Text style={[styles.giftLeftLabel, { color: t.text }]}>Spiritual{'\n'}benefit</Text>
                 <View style={styles.giftArch}>
                   <View style={styles.giftNumCircle}>
                     <Text style={styles.giftNumText}>{String(i + 1).padStart(2, '0')}</Text>
@@ -394,7 +461,7 @@ const NameDetailScreen = ({ route, navigation }) => {
               </View>
               <View style={styles.giftDivider} />
               <View style={styles.giftRight}>
-                <Text style={styles.giftText}>{gift}</Text>
+                <Text style={[styles.giftText, { color: t.subText }]}>{gift}</Text>
               </View>
             </View>
           </View>
@@ -428,23 +495,23 @@ const NameDetailScreen = ({ route, navigation }) => {
 
         return (
           <View key={i}>
-            <View style={styles.practicalCardContainer}>
-              <View style={styles.practicalCardInner}>
-                <View style={styles.practicalLeftCol}>
+            <View style={[styles.practicalCardContainer, { backgroundColor: t.cardBg }]}>
+              <View style={[styles.practicalCardInner, { borderColor: t.notebookBorder }]}>
+                <View style={[styles.practicalLeftCol, { backgroundColor: t.notebookLeft, borderRightColor: t.notebookBorder }]}>
                   <Ionicons name={getPracticalIcon(title)} size={rs(28)} color="#00ADC1" />
                 </View>
                 <View style={styles.notebookRings}>
                   {[...Array(6)].map((_, j) => (
                     <View key={j} style={styles.ringWrap}>
-                      <View style={styles.ringHoleLeft} />
-                      <View style={styles.ringHoleRight} />
+                      <View style={[styles.ringHoleLeft, { backgroundColor: t.ringHole }]} />
+                      <View style={[styles.ringHoleRight, { backgroundColor: t.ringHole }]} />
                       <View style={styles.ringMetal} />
                     </View>
                   ))}
                 </View>
-                <View style={styles.practicalContent}>
-                  <Text style={styles.practicalTitle}>{title}</Text>
-                  <Text style={styles.practicalText}>{text}</Text>
+                <View style={[styles.practicalContent, { backgroundColor: t.cardBg }]}>
+                  <Text style={[styles.practicalTitle, { color: t.text }]}>{title}</Text>
+                  <Text style={[styles.practicalText, { color: t.subText }]}>{text}</Text>
                 </View>
               </View>
             </View>
@@ -463,11 +530,20 @@ const NameDetailScreen = ({ route, navigation }) => {
     <View style={styles.tabContentContainer}>
       {name.scholarlyViews?.slice(0, scholarSubStep + 1).map((view, i) => (
         <View key={i}>
-          <ImageBackground source={require('../../assets/name_detail/bg_card.png')} style={styles.scholarCard} imageStyle={{ borderRadius: rs(12) }} resizeMode="cover">
-            <Text style={styles.scholarName}>{view.scholar}</Text>
-            <Text style={styles.scholarWork}>{view.work?.replace(/\*/g, '')}</Text>
-            <Text style={styles.scholarQuote}>"{view.view}"</Text>
-          </ImageBackground>
+          {isDark ? (
+            <View style={[styles.scholarCard, { backgroundColor: '#1A2332', borderWidth: 1, borderColor: 'rgba(0,173,193,0.20)', borderRadius: rs(12) }]}>
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, borderTopLeftRadius: rs(12), borderTopRightRadius: rs(12), backgroundColor: '#00ADC1' }} />
+              <Text style={[styles.scholarName, { color: '#E8EDF2' }]}>{view.scholar}</Text>
+              <Text style={[styles.scholarWork, { color: '#00ADC1' }]}>{view.work?.replace(/\*/g, '')}</Text>
+              <Text style={[styles.scholarQuote, { color: '#B0BEC5' }]}>"{view.view}"</Text>
+            </View>
+          ) : (
+            <ImageBackground source={require('../../assets/name_detail/bg_card.png')} style={styles.scholarCard} imageStyle={{ borderRadius: rs(12) }} resizeMode="cover">
+              <Text style={[styles.scholarName, { color: '#1A1A1A' }]}>{view.scholar}</Text>
+              <Text style={[styles.scholarWork, { color: '#1A1A1A' }]}>{view.work?.replace(/\*/g, '')}</Text>
+              <Text style={[styles.scholarQuote, { color: '#3A3A3A' }]}>"{view.view}"</Text>
+            </ImageBackground>
+          )}
           {i < scholarSubStep && (
             <View style={styles.refDividerWrap}>
               <Image source={require('../../assets/name_detail/line_gold.png')} style={styles.goldDivider} resizeMode="contain" />
@@ -483,9 +559,9 @@ const NameDetailScreen = ({ route, navigation }) => {
     const countWords = (t) => t.trim().split(/\s+/).filter(w => w.length > 0).length;
 
     const questions = [
-      { key: 'q1', label: 'What does this Name teach me about Allah?',   value: reflection1, setter: setReflection1, past: pastReflections?.q1 },
-      { key: 'q2', label: 'How should this Name change my worship?',      value: reflection2, setter: setReflection2, past: pastReflections?.q2 },
-      { key: 'q3', label: 'Where do I need this Name in my life today?',  value: reflection3, setter: setReflection3, past: pastReflections?.q3 },
+      { key: 'q1', label: 'What does this Name teach me about Allah?', value: reflection1, setter: setReflection1, past: pastReflections?.q1 },
+      { key: 'q2', label: 'How should this Name change my worship?', value: reflection2, setter: setReflection2, past: pastReflections?.q2 },
+      { key: 'q3', label: 'Where do I need this Name in my life today?', value: reflection3, setter: setReflection3, past: pastReflections?.q3 },
     ];
 
     const visible = questions.slice(0, reflectionSubStep + 1);
@@ -499,17 +575,17 @@ const NameDetailScreen = ({ route, navigation }) => {
 
           return (
             <View key={q.key}>
-              <View style={styles.reflectionCard}>
+              <View style={[styles.reflectionCard, { backgroundColor: t.cardBg, borderColor: t.cardBorder }]}>
                 <View style={styles.reflectionCardHeader}>
                   <LinearGradient colors={['#00ADC1', '#0090A8']} style={styles.reflectionNumBadge}>
                     <Text style={styles.reflectionNum}>{String(i + 1).padStart(2, '0')}</Text>
                   </LinearGradient>
-                  <Text style={styles.reflectionQuestion}>{q.label}</Text>
+                  <Text style={[styles.reflectionQuestion, { color: t.text }]}>{q.label}</Text>
                 </View>
 
-                <View style={styles.reflectionInputWrap}>
+                <View style={[styles.reflectionInputWrap, { borderBottomColor: t.inputBorder }]}>
                   <TextInput
-                    style={styles.reflectionInputPremium}
+                    style={[styles.reflectionInputPremium, { color: t.text }]}
                     multiline
                     placeholder="Minimum 4 words..."
                     placeholderTextColor="rgba(0,173,193,0.45)"
@@ -519,9 +595,9 @@ const NameDetailScreen = ({ route, navigation }) => {
                 </View>
 
                 {q.past ? (
-                  <View style={styles.pastReflectionWrap}>
+                  <View style={[styles.pastReflectionWrap, { backgroundColor: t.pastBg }]}>
                     <Text style={styles.pastReflectionLabel}>Previous reflection</Text>
-                    <Text style={styles.pastReflectionText}>{q.past}</Text>
+                    <Text style={[styles.pastReflectionText, { color: t.subText }]}>{q.past}</Text>
                   </View>
                 ) : null}
 
@@ -532,9 +608,16 @@ const NameDetailScreen = ({ route, navigation }) => {
                     activeOpacity={hasEnough ? 0.8 : 1}
                     onPress={() => {
                       if (!hasEnough) return;
+                      Keyboard.dismiss();
                       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                       setReflectionSubStep(prev => prev + 1);
-                      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 80);
+                      setTimeout(() => {
+                        scrollViewRef.current?.scrollToEnd({ animated: true });
+                        // Re-focus after scroll settles
+                        setTimeout(() => {
+                          scrollViewRef.current?.scrollToEnd({ animated: true });
+                        }, 300);
+                      }, 150);
                     }}
                   >
                     <Text style={[styles.reflectionNextBtnText, !hasEnough && { color: '#AAAAAA' }]}>
@@ -569,7 +652,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
     return (
       <View style={styles.tabContentContainer}>
-        <Text style={styles.quizQuestion}>{mcq.q}</Text>
+        <Text style={[styles.quizQuestion, { color: t.text }]}>{mcq.q}</Text>
 
         <View style={styles.quizOptions}>
           {mcq.opts.map((opt, idx) => {
@@ -578,7 +661,7 @@ const NameDetailScreen = ({ route, navigation }) => {
             const showStatus = masteryDone;
 
             let borderColor = 'transparent';
-            let bgColor = '#FFFFFF';
+            let bgColor = t.optionBg;
             let iconColor = '#00ADC1';
 
             if (showStatus) {
@@ -598,7 +681,7 @@ const NameDetailScreen = ({ route, navigation }) => {
             return (
               <TouchableOpacity
                 key={idx}
-                style={[styles.quizOptionRow, { borderColor, borderWidth: (showStatus && (isSelected || isCorrect)) || isSelected ? 1 : 0 }]}
+                style={[styles.quizOptionRow, { borderColor, backgroundColor: bgColor, borderWidth: (showStatus && (isSelected || isCorrect)) || isSelected ? 1 : 0 }]}
                 onPress={() => {
                   if (masteryDone) return;
                   setMasteryAnswer(idx);
@@ -611,7 +694,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                     <View style={[styles.quizRadioInner, { backgroundColor: iconColor }]} />
                   )}
                 </View>
-                <Text style={styles.quizOptionText}>{opt}</Text>
+                <Text style={[styles.quizOptionText, { color: t.text }]}>{opt}</Text>
               </TouchableOpacity>
             );
           })}
@@ -620,14 +703,14 @@ const NameDetailScreen = ({ route, navigation }) => {
         {masteryDone && (
           <View style={{ marginTop: hs(24), width: '100%', gap: hs(12) }}>
             {masteryAnswer !== mcq.ans && (
-              <View style={[styles.statusBanner, { borderColor: '#F44336' }]}>
+              <View style={[styles.statusBanner, { borderColor: '#F44336', backgroundColor: t.statusBg }]}>
                 <View style={[styles.statusIconWrap, { backgroundColor: '#F44336' }]}>
                   <Ionicons name="close" size={rs(16)} color="#FFF" />
                 </View>
                 <Text style={[styles.statusText, { color: '#F44336' }]}>Wrong Answer</Text>
               </View>
             )}
-            <View style={[styles.statusBanner, { borderColor: '#4CAF50' }]}>
+            <View style={[styles.statusBanner, { borderColor: '#4CAF50', backgroundColor: t.statusBg }]}>
               <View style={[styles.statusIconWrap, { backgroundColor: '#4CAF50' }]}>
                 <Ionicons name="checkmark" size={rs(16)} color="#FFF" />
               </View>
@@ -667,15 +750,15 @@ const NameDetailScreen = ({ route, navigation }) => {
             <>
               <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
               <SafeAreaView style={styles.journeyRoot} edges={['top']}>
-                <Animated.View style={[styles.journeyCard, { opacity: journeyOpacity, transform: [{ translateY: journeyTranslate }] }]}>
-                  <LinearGradient colors={['#E8F7FB', '#FFFFFF']} style={StyleSheet.absoluteFillObject} />
+                <Animated.View style={[styles.journeyCard, { opacity: journeyOpacity, transform: [{ translateY: journeyTranslate }], backgroundColor: t.journeyCardBg }]}>
+                  <LinearGradient colors={t.journeyGrad} style={StyleSheet.absoluteFillObject} />
                   <Text style={styles.journeyTitle}>Your Journey</Text>
-                  <Text style={styles.journeySub}>Track your mastery of {name.tr}</Text>
+                  <Text style={[styles.journeySub, { color: t.dimText }]}>Track your mastery of {name.tr}</Text>
 
                   <View style={styles.journeyRow}>
-                    <View style={styles.journeyStepCard}>
+                    <View style={[styles.journeyStepCard, { backgroundColor: t.cardBg }]}>
                       <Image source={require('../../assets/name_detail/mdi_learn_outline.png')} style={[styles.journeyImg, { tintColor: '#4CAF50' }]} resizeMode="contain" />
-                      <Text style={styles.journeyStepLabel}>Learned</Text>
+                      <Text style={[styles.journeyStepLabel, { color: t.text }]}>Learned</Text>
                     </View>
 
                     <View style={styles.journeyLineWrap}>
@@ -683,12 +766,12 @@ const NameDetailScreen = ({ route, navigation }) => {
                       <View style={styles.journeyLineRight} />
                     </View>
 
-                    <View style={[styles.journeyStepCard, { opacity: isMastered ? 1 : 0.6 }]}>
+                    <View style={[styles.journeyStepCard, { opacity: isMastered ? 1 : 0.6, backgroundColor: t.cardBg }]}>
                       <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center', marginBottom: rs(8), height: rs(44), width: rs(44) }}>
                         <Image source={isMastered ? require('../../assets/name_detail/master_open.png') : require('../../assets/name_detail/master_lock.png')} style={{ width: rs(44), height: rs(44) }} resizeMode="contain" />
                         {!isMastered && <Ionicons name="lock-closed" size={rs(20)} color="#00ADC1" style={{ position: 'absolute', top: rs(12) }} />}
                       </View>
-                      <Text style={styles.journeyStepLabel}>Mastered</Text>
+                      <Text style={[styles.journeyStepLabel, { color: t.text }]}>Mastered</Text>
                     </View>
                   </View>
 
@@ -710,7 +793,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                     </View>
                   )}
 
-                  <Text style={styles.journeyNote}>{journeyNote}</Text>
+                  <Text style={[styles.journeyNote, { color: t.dimText }]}>{journeyNote}</Text>
 
                   <TouchableOpacity style={styles.doneBtn} onPress={() => navigation.goBack()} activeOpacity={0.85}>
                     <LinearGradient colors={['#00ADC1', '#0090A8']} style={styles.doneBtnGrad}>
@@ -734,80 +817,80 @@ const NameDetailScreen = ({ route, navigation }) => {
         {({ isNight }) => (
           <>
             <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
-            <SafeAreaView style={{ flex: 1, backgroundColor: '#C5F2F7' }} edges={['top']}>
-              <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <SafeAreaView style={{ flex: 1, backgroundColor: t.safeBg }} edges={['top']}>
+              <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
                 <NameDetailHeader name={name} onClose={() => navigation.goBack()} />
 
-              {/* ── Progress Bar & Navigation ── */}
-              <View style={styles.navSection}>
-                <View style={styles.progressWrap}>
-                  <View style={styles.progressTrack}>
-                    <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+                {/* ── Progress Bar & Navigation ── */}
+                <View style={styles.navSection}>
+                  <View style={styles.progressWrap}>
+                    <View style={[styles.progressTrack, { backgroundColor: t.progressTrack }]}>
+                      <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+                    </View>
+                  </View>
+
+                  <View style={styles.navRow}>
+                    <LinearGradient
+                      colors={['rgba(0,173,193,0)', 'rgba(0,173,193,0.5)', 'rgba(0,173,193,0)']}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                      style={styles.categoryPill}
+                    >
+                      <Text style={[styles.categoryPillText, { color: t.pillText }]}>{categoryPillText}</Text>
+                    </LinearGradient>
                   </View>
                 </View>
-                
-                <View style={styles.navRow}>
-                  <LinearGradient 
-                    colors={['rgba(0,173,193,0)', 'rgba(0,173,193,0.5)', 'rgba(0,173,193,0)']} 
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} 
-                    style={styles.categoryPill}
-                  >
-                    <Text style={styles.categoryPillText}>{categoryPillText}</Text>
-                  </LinearGradient>
-                </View>
-              </View>
 
-              {/* ── Fixed Main Title ── */}
-              {(() => {
-                let stepTitle = null;
-                if (currentStep.type === 'gifts') stepTitle = 'The Gift of This Name';
-                else if (currentStep.type === 'practical') stepTitle = 'Practical ways to live with this Name';
-                else if (currentStep.type === 'scholarly') stepTitle = 'Scholarly Views';
-                else if (currentStep.type === 'reflection') stepTitle = 'Reflection';
-                else if (currentStep.type === 'mastery') stepTitle = 'Mastery Test';
-                
-                if (!stepTitle) return null;
-                return (
-                  <Animated.View style={{ opacity: contentOpacity, paddingHorizontal: rs(20), marginBottom: hs(12) }}>
-                    <Text style={[styles.mainTitle, { marginBottom: 0 }]}>{stepTitle}</Text>
+                {/* ── Fixed Main Title ── */}
+                {(() => {
+                  let stepTitle = null;
+                  if (currentStep.type === 'gifts') stepTitle = 'The Gift of This Name';
+                  else if (currentStep.type === 'practical') stepTitle = 'Practical ways to live with this Name';
+                  else if (currentStep.type === 'scholarly') stepTitle = 'Scholarly Views';
+                  else if (currentStep.type === 'reflection') stepTitle = 'Reflection';
+                  else if (currentStep.type === 'mastery') stepTitle = 'Mastery Test';
+
+                  if (!stepTitle) return null;
+                  return (
+                    <Animated.View style={{ opacity: contentOpacity, paddingHorizontal: rs(20), marginBottom: hs(12) }}>
+                      <Text style={[styles.mainTitle, { marginBottom: 0, color: t.text }]}>{stepTitle}</Text>
+                    </Animated.View>
+                  );
+                })()}
+
+                <ScrollView ref={scrollViewRef} style={styles.scrollArea} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                  <Animated.View style={{ opacity: contentOpacity, transform: [{ translateY: contentTranslateY }] }}>
+                    {currentStep.type === 'meaning' && renderMeaning()}
+                    {currentStep.type === 'reference' && renderReference(currentStep.data)}
+                    {currentStep.type === 'gifts' && renderGifts()}
+                    {currentStep.type === 'practical' && renderPractical()}
+                    {currentStep.type === 'scholarly' && renderScholarly()}
+                    {currentStep.type === 'reflection' && renderReflection()}
+                    {currentStep.type === 'mastery' && renderMastery()}
                   </Animated.View>
-                );
-              })()}
+                  <View style={{ height: (currentStep.type === 'reflection' ? hs(220) : hs(120)) + (keyboardHeight > 0 ? keyboardHeight * 0.5 : 0) }} />
+                </ScrollView>
 
-              <ScrollView ref={scrollViewRef} style={styles.scrollArea} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                <Animated.View style={{ opacity: contentOpacity, transform: [{ translateY: contentTranslateY }] }}>
-                  {currentStep.type === 'meaning' && renderMeaning()}
-                  {currentStep.type === 'reference' && renderReference(currentStep.data)}
-                  {currentStep.type === 'gifts' && renderGifts()}
-                  {currentStep.type === 'practical' && renderPractical()}
-                  {currentStep.type === 'scholarly' && renderScholarly()}
-                  {currentStep.type === 'reflection' && renderReflection()}
-                  {currentStep.type === 'mastery' && renderMastery()}
-                </Animated.View>
-                <View style={{ height: hs(120) }} />
-              </ScrollView>
+                {/* ── Previous step button ── */}
+                {currentStepIndex > 0 &&
+                  currentStep.type !== 'reflection' &&
+                  currentStep.type !== 'mastery' && (
+                    <TouchableOpacity
+                      style={styles.prevBtn}
+                      onPress={goPrev}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="chevron-back" size={rs(15)} color="#00ADC1" />
+                      <Text style={styles.prevBtnText}>Previous</Text>
+                    </TouchableOpacity>
+                  )}
 
-              {/* ── Previous step button ── */}
-              {currentStepIndex > 0 &&
-                currentStep.type !== 'reflection' &&
-                currentStep.type !== 'mastery' && (
-                <TouchableOpacity
-                  style={styles.prevBtn}
-                  onPress={goPrev}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="chevron-back" size={rs(15)} color="#00ADC1" />
-                  <Text style={styles.prevBtnText}>Previous</Text>
-                </TouchableOpacity>
-              )}
-
-              {/* ── Fixed bottom: Slide to Continue ── */}
-              {!isSaturated && (
+                {/* ── Fixed bottom: Slide to Continue ── */}
                 <Animated.View
                   style={[
                     styles.slideBar,
                     { transform: [{ scale: slideBtnScale }] },
-                    isSlideDisabled && { opacity: 0.6 }
+                    isSlideDisabled && { opacity: 0.6 },
+                    isDark && { backgroundColor: '#1E293B', shadowColor: '#0F172A' }
                   ]}
                 >
                   <View style={styles.slideGrad}>
@@ -816,7 +899,8 @@ const NameDetailScreen = ({ route, navigation }) => {
                       style={[
                         styles.slideThumb,
                         { position: 'absolute', left: 0, zIndex: 10 },
-                        { transform: [{ translateX: slidePanX }] }
+                        { transform: [{ translateX: slidePanX }] },
+                        isDark && { backgroundColor: '#0F172A', borderRightColor: '#334155' }
                       ]}
                     >
                       <Animated.Image
@@ -830,7 +914,6 @@ const NameDetailScreen = ({ route, navigation }) => {
                     </Text>
                   </View>
                 </Animated.View>
-              )}
               </KeyboardAvoidingView>
             </SafeAreaView>
           </>
