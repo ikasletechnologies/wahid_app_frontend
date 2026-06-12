@@ -7,40 +7,32 @@ const ThemeContext = createContext();
 export const useAppTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider = ({ children }) => {
-  const [isDark, setIsDark] = useState(true);
-  const [isReady, setIsReady] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    const hour = new Date().getHours();
+    return hour >= 18 || hour < 6;
+  });
 
-  // Load saved theme on mount
+  // Update theme based on time every hour
   useEffect(() => {
-    const loadTheme = async () => {
-      try {
-        const savedTheme = await AsyncStorage.getItem('app_theme');
-        if (savedTheme !== null) {
-          setIsDark(savedTheme === 'dark');
-        }
-      } catch (error) {
-        console.error('Failed to load theme:', error);
-      } finally {
-        setIsReady(true);
-      }
-    };
-    loadTheme();
+    const interval = setInterval(() => {
+      const hour = new Date().getHours();
+      const shouldBeDark = hour >= 18 || hour < 6;
+      setIsDark(shouldBeDark);
+    }, 60 * 60 * 1000); // every hour
+    return () => clearInterval(interval);
   }, []);
 
-  // Toggle theme and save to storage
+  const colors = isDark ? PALETTE.dark : PALETTE.light;
   const toggleTheme = async () => {
+    // Simple manual toggle, overrides automatic time-based mode
+    const newMode = !isDark;
+    setIsDark(newMode);
     try {
-      const newTheme = !isDark;
-      setIsDark(newTheme);
-      await AsyncStorage.setItem('app_theme', newTheme ? 'dark' : 'light');
-    } catch (error) {
-      console.error('Failed to save theme:', error);
+      await AsyncStorage.setItem('userThemeOverride', JSON.stringify(newMode));
+    } catch (e) {
+      console.warn('Failed to persist theme', e);
     }
   };
-
-  const colors = isDark ? PALETTE.dark : PALETTE.light;
-
-  if (!isReady) return null; // Prevent flicker before storage loads
 
   return (
     <ThemeContext.Provider value={{ isDark, toggleTheme, colors }}>

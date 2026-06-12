@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNames } from '../context/NamesContext';
 import NameDetailHeader from '../components/NameDetailHeader';
+import TimeBasedBackground from '../components/TimeBasedBackground';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 
@@ -66,9 +67,8 @@ const NameDetailScreen = ({ route, navigation }) => {
   const insight = getField(name, 'learning_insight', 'learningInsight', 'reflection', 'description');
   const mcq = useMemo(() => parseMcq(name), [name]);
 
-  const [phase, setPhase] = useState('gift');
-  const [contentStage, setContentStage] = useState(0);
-  const [giftOpened, setGiftOpened] = useState(false);
+  const [phase, setPhase] = useState('content');
+  const [contentStage, setContentStage] = useState(1);
   const [quizAnswer, setQuizAnswer] = useState(null);
   const [quizDone, setQuizDone] = useState(false);
 
@@ -120,29 +120,11 @@ const NameDetailScreen = ({ route, navigation }) => {
     return () => { handLoopRef.current?.stop(); handAnim.setValue(0); };
   }, [phase]);
 
-  const handleGiftTap = useCallback(() => {
-    const now = Date.now();
-    if (now - lastTapRef.current < 350) {
-      floatLoopRef.current?.stop();
-      setGiftOpened(true);
-
-      Animated.sequence([
-        Animated.delay(350),
-        Animated.timing(giftOpacity, {
-          toValue: 0, duration: 1550,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setPhase('content');
-        setContentStage(1);
-        Animated.timing(contentOpacity, {
-          toValue: 1, duration: 350, useNativeDriver: true,
-        }).start(() => revealSections(1));
-      });
-    }
-    lastTapRef.current = now;
-  }, []);
+  useEffect(() => {
+    Animated.timing(contentOpacity, {
+      toValue: 1, duration: 350, useNativeDriver: true,
+    }).start(() => revealSections(1));
+  }, [contentOpacity, revealSections]);
 
   const revealSections = useCallback((stage) => {
     handLoopRef.current?.stop();
@@ -206,9 +188,11 @@ const NameDetailScreen = ({ route, navigation }) => {
       revealSections(4);
       setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 150);
     } else if (contentStage === 4) {
-      goJourney();
+      if (quizDone && quizAnswer === mcq.ans) {
+        goJourney();
+      }
     }
-  }, [contentStage, revealSections, goJourney]);
+  }, [contentStage, revealSections, goJourney, quizDone, quizAnswer, mcq.ans]);
 
   // ── Physical Swiping Logic ──
   const slidePanX = useRef(new Animated.Value(0)).current;
@@ -230,28 +214,40 @@ const NameDetailScreen = ({ route, navigation }) => {
       },
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dx > MAX_SLIDE * 0.7) {
-          Animated.timing(slidePanX, {
-            toValue: MAX_SLIDE,
-            duration: 150,
-            useNativeDriver: true,
-          }).start(() => {
-            handleSlideTap();
-            if (contentStage < 4) {
-              Animated.spring(slidePanX, {
-                toValue: 0,
-                tension: 40,
-                friction: 4,
-                useNativeDriver: true,
-              }).start(() => {
-                handLoopRef.current?.start();
-              });
-            }
-          });
+          const canProceed = contentStage < 4 || (quizDone && quizAnswer === mcq.ans);
+          if (canProceed) {
+            Animated.timing(slidePanX, {
+              toValue: MAX_SLIDE,
+              duration: 150,
+              useNativeDriver: true,
+            }).start(() => {
+              handleSlideTap();
+              if (contentStage < 4) {
+                Animated.timing(slidePanX, {
+                  toValue: 0,
+                  duration: 400,
+                  easing: Easing.out(Easing.ease),
+                  useNativeDriver: true,
+                }).start(() => {
+                  handLoopRef.current?.start();
+                });
+              }
+            });
+          } else {
+            Animated.timing(slidePanX, {
+              toValue: 0,
+              duration: 400,
+              easing: Easing.out(Easing.ease),
+              useNativeDriver: true,
+            }).start(() => {
+              handLoopRef.current?.start();
+            });
+          }
         } else {
-          Animated.spring(slidePanX, {
+          Animated.timing(slidePanX, {
             toValue: 0,
-            tension: 60,
-            friction: 10,
+            duration: 400,
+            easing: Easing.out(Easing.ease),
             useNativeDriver: true,
           }).start(() => {
             handLoopRef.current?.start();
@@ -259,61 +255,23 @@ const NameDetailScreen = ({ route, navigation }) => {
         }
       }
     });
-  }, [contentStage, handleSlideTap, handAnim, slidePanX]);
+  }, [contentStage, handleSlideTap, handAnim, slidePanX, quizDone, quizAnswer, mcq.ans]);
 
   const handleQuizOption = useCallback((idx) => {
     if (quizDone) return;
     setQuizAnswer(idx);
     setQuizDone(true);
-    if (idx === mcq.ans) markAsLearned(name.number);
+    if (idx === mcq.ans) {
+      markAsLearned(name.number);
+    }
   }, [quizDone, mcq.ans, name.number, markAsLearned]);
 
+  const handleTryAgain = useCallback(() => {
+    setQuizAnswer(null);
+    setQuizDone(false);
+  }, []);
 
-  if (phase === 'gift') {
-    return (
-      <View style={styles.root}>
-        <StatusBar barStyle="dark-content" />
 
-        <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
-          <NameDetailHeader name={name} onClose={() => navigation.goBack()} />
-
-          <View style={styles.progressTrack} />
-
-          <Animated.View style={[styles.giftBody, { opacity: giftOpacity }]}>
-            <View style={styles.giftTopInfo}>
-              <Text style={styles.giftTitle}>Gifts of this Name</Text>
-              <View style={styles.giftSubtitleContainer}>
-                <Text style={styles.giftSubtitle}>
-                  What learning {name.transliteration} brings to your life
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.giftBoxWrap}>
-              <Pressable onPress={handleGiftTap}>
-                <Animated.View style={{ transform: [{ translateY: floatAnim }] }}>
-                  <Image
-                    source={giftOpened
-                      ? require('../../assets/name_detail/open_gift_box.png')
-                      : require('../../assets/name_detail/gift_box.png')}
-                    style={styles.giftBoxImg}
-                    resizeMode="contain"
-                  />
-                </Animated.View>
-              </Pressable>
-              <Image source={require('../../assets/name_detail/ellipse_5.png')} style={styles.giftShadow} resizeMode="contain" />
-            </View>
-
-            <View style={styles.doubleTapRow}>
-              <Image source={require('../../assets/name_detail/sign_hand.png')} style={styles.handHint} resizeMode="contain" />
-              <Text style={styles.doubleTapText}>Double Tap to Open</Text>
-              <Image source={require('../../assets/name_detail/sign_hand.png')} style={[styles.handHint, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
-            </View>
-          </Animated.View>
-        </SafeAreaView>
-      </View>
-    );
-  }
 
   // ─────────────────────────────────────────────────────────────────────────
   //  JOURNEY PHASE
@@ -321,56 +279,62 @@ const NameDetailScreen = ({ route, navigation }) => {
   if (phase === 'journey') {
     return (
       <View style={styles.root}>
-        <StatusBar barStyle="dark-content" />
-        <SafeAreaView style={styles.journeyRoot} edges={['top']}>
-          <Animated.View style={[styles.journeyCard, {
-            opacity: journeyOpacity,
-            transform: [{ translateY: journeyTranslate }],
-          }]}>
-            <LinearGradient
-              colors={['#E8F7FB', '#FFFFFF']}
-              style={StyleSheet.absoluteFillObject}
-            />
-            <Text style={styles.journeyTitle}>Your Journey</Text>
-            <Text style={styles.journeySub}>Track your mastery of {name.transliteration}</Text>
+        <TimeBasedBackground showElements={false}>
+          {({ isNight }) => (
+            <>
+              <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
+              <SafeAreaView style={styles.journeyRoot} edges={['top']}>
+                <Animated.View style={[styles.journeyCard, {
+                  opacity: journeyOpacity,
+                  transform: [{ translateY: journeyTranslate }],
+                }]}>
+                  <LinearGradient
+                    colors={['#E8F7FB', '#FFFFFF']}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <Text style={styles.journeyTitle}>Your Journey</Text>
+                  <Text style={styles.journeySub}>Track your mastery of {name.transliteration}</Text>
 
-            <View style={styles.journeyRow}>
-              <View style={styles.journeyStepCard}>
-                <Image source={require('../../assets/name_detail/mdi_learn_outline.png')} style={[styles.journeyImg, { tintColor: '#4CAF50' }]} resizeMode="contain" />
-                <Text style={styles.journeyStepLabel}>Learned</Text>
-              </View>
+                  <View style={styles.journeyRow}>
+                    <View style={styles.journeyStepCard}>
+                      <Image source={require('../../assets/name_detail/mdi_learn_outline.png')} style={[styles.journeyImg, { tintColor: '#4CAF50' }]} resizeMode="contain" />
+                      <Text style={styles.journeyStepLabel}>Learned</Text>
+                    </View>
 
-              <View style={styles.journeyLineWrap}>
-                <View style={styles.journeyLineLeft} />
-                <View style={styles.journeyLineRight} />
-              </View>
+                    <View style={styles.journeyLineWrap}>
+                      <View style={styles.journeyLineLeft} />
+                      <View style={styles.journeyLineRight} />
+                    </View>
 
-              <View style={[styles.journeyStepCard, { opacity: isMastered ? 1 : 0.6 }]}>
-                <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center', marginBottom: rs(8), height: rs(44), width: rs(44) }}>
-                  <Image source={isMastered ? require('../../assets/name_detail/master_open.png') : require('../../assets/name_detail/master_lock.png')} style={{ width: rs(44), height: rs(44) }} resizeMode="contain" />
-                  {!isMastered && <Ionicons name="lock-closed" size={rs(20)} color="#00ADC1" style={{ position: 'absolute', top: rs(12) }} />}
-                </View>
-                <Text style={styles.journeyStepLabel}>Mastered</Text>
-              </View>
-            </View>
+                    <View style={[styles.journeyStepCard, { opacity: isMastered ? 1 : 0.6 }]}>
+                      <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center', marginBottom: rs(8), height: rs(44), width: rs(44) }}>
+                        <Image source={isMastered ? require('../../assets/name_detail/master_open.png') : require('../../assets/name_detail/master_lock.png')} style={{ width: rs(44), height: rs(44) }} resizeMode="contain" />
+                        {!isMastered && <Ionicons name="lock-closed" size={rs(20)} color="#00ADC1" style={{ position: 'absolute', top: rs(12) }} />}
+                      </View>
+                      <Text style={styles.journeyStepLabel}>Mastered</Text>
+                    </View>
+                  </View>
 
-            <Text style={styles.journeyNote}>
-              {isMastered
-                ? `You are the master of this journey!`
-                : `If you read more than 3 times you will be master on this course`}
-            </Text>
+                  <Text style={styles.journeyNote}>
+                    {isMastered
+                      ? `You are the master of this journey!`
+                      : `If you read more than 3 times you will be master on this course`}
+                  </Text>
 
-            <TouchableOpacity
-              style={styles.doneBtn}
-              onPress={() => navigation.goBack()}
-              activeOpacity={0.85}
-            >
-              <LinearGradient colors={['#00ADC1', '#0090A8']} style={styles.doneBtnGrad}>
-                <Text style={styles.doneBtnText}>Done</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </Animated.View>
-        </SafeAreaView>
+                  <TouchableOpacity
+                    style={styles.doneBtn}
+                    onPress={() => navigation.goBack()}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient colors={['#00ADC1', '#0090A8']} style={styles.doneBtnGrad}>
+                      <Text style={styles.doneBtnText}>Done</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </Animated.View>
+              </SafeAreaView>
+            </>
+          )}
+        </TimeBasedBackground>
       </View>
     );
   }
@@ -382,9 +346,11 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" />
-
-      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
+      <TimeBasedBackground showElements={false}>
+        {({ isNight }) => (
+          <>
+            <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
+            <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top']}>
         <NameDetailHeader name={name} onClose={() => navigation.goBack()} />
 
         <View style={styles.progressTrack}>
@@ -399,10 +365,6 @@ const NameDetailScreen = ({ route, navigation }) => {
           contentContainerStyle={styles.contentScroll}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.giftTitleScroll}>Gifts of this Name</Text>
-          <Text style={styles.giftSubtitleSmall}>
-            What learning {name.transliteration} brings to your life
-          </Text>
 
           {/* ── Section 0: Benefits ── */}
           <AnimSection anim={sectionAnims[0]}>
@@ -455,7 +417,7 @@ const NameDetailScreen = ({ route, navigation }) => {
               <View style={styles.smallDividerWrap}>
                 <Image source={require('../../assets/name_detail/line_gold.png')} style={styles.smallDivider} resizeMode="contain" />
               </View>
-              <Text style={styles.sectionCardTitleLeft}>Ponder & Reflect</Text>
+              <Text style={[styles.sectionCardTitleLeft, isNight && { color: '#FFFFFF' }]}>Ponder & Reflect</Text>
 
               <ImageBackground
                 source={require('../../assets/name_detail/bg_card_2.png')}
@@ -476,14 +438,14 @@ const NameDetailScreen = ({ route, navigation }) => {
           {/* ── Section 4: Learning Insight ── */}
           <AnimSection anim={sectionAnims[4]} hidden={contentStage < 3}>
             <View style={styles.sectionCardTransparent}>
-              <Text style={styles.sectionCardTitleLeft}>Learning Insight</Text>
+              <Text style={[styles.sectionCardTitleLeft, isNight && { color: '#FFFFFF' }]}>Learning Insight</Text>
 
               <ImageBackground
                 source={require('../../assets/name_detail/quest.png')}
                 style={styles.questBgBox}
                 resizeMode="contain"
               >
-                <Text style={styles.questInsightText}>
+                <Text style={[styles.questInsightText, isNight && { color: '#FFFFFF' }]}>
                   {insight || `Ar-Rahman teaches that mercy precedes all worthiness. When you accept that grace finds you before you deserve it, you begin to live without shame and extend unconditional mercy to others.`}
                 </Text>
               </ImageBackground>
@@ -499,15 +461,15 @@ const NameDetailScreen = ({ route, navigation }) => {
 
               <View style={styles.quizHeader}>
                 <View style={{ alignSelf: 'flex-start' }}>
-                  <Text style={styles.quizTitle}>Match the Quality</Text>
+                  <Text style={[styles.quizTitle, isNight && { color: '#FFFFFF' }]}>Match the Quality</Text>
                   <View style={styles.quizTitleUnderline} />
                 </View>
-                <Text style={styles.quizSubtitle}>
+                <Text style={[styles.quizSubtitle, isNight && { color: '#B0B0B0' }]}>
                   Test your understanding of <Text style={{ fontWeight: '800' }}>{name.transliteration}</Text>
                 </Text>
               </View>
 
-              <Text style={styles.quizQuestion}>{mcq.q}</Text>
+              <Text style={[styles.quizQuestion, isNight && { color: '#FFFFFF' }]}>{mcq.q}</Text>
 
               <View style={styles.quizOptions}>
                 {mcq.opts.map((opt, idx) => {
@@ -551,6 +513,17 @@ const NameDetailScreen = ({ route, navigation }) => {
                   );
                 })}
               </View>
+
+              {quizDone && quizAnswer !== mcq.ans && (
+                <TouchableOpacity
+                  style={styles.tryAgainBtn}
+                  onPress={handleTryAgain}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="refresh" size={rs(18)} color="#FFFFFF" style={{ marginRight: rs(6) }} />
+                  <Text style={styles.tryAgainText}>Try Again</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </AnimSection>
 
@@ -558,10 +531,16 @@ const NameDetailScreen = ({ route, navigation }) => {
         </Animated.ScrollView>
 
         {/* ── Fixed bottom: Slide to Continue ── */}
-        <Animated.View style={[styles.slideBar, { transform: [{ scale: slideBtnScale }] }]}>
+        <Animated.View
+          style={[
+            styles.slideBar,
+            { transform: [{ scale: slideBtnScale }] },
+            contentStage === 4 && (!quizDone || quizAnswer !== mcq.ans) && { opacity: 0.6 }
+          ]}
+        >
           <View style={styles.slideGrad}>
             <Animated.View
-              {...slidePanResponder.panHandlers}
+              {...((contentStage < 4 || (quizDone && quizAnswer === mcq.ans)) ? slidePanResponder.panHandlers : {})}
               style={[
                 styles.slideThumb,
                 { position: 'absolute', left: 0, zIndex: 10 },
@@ -575,11 +554,16 @@ const NameDetailScreen = ({ route, navigation }) => {
               />
             </Animated.View>
             <Text style={[styles.slideText, { marginLeft: rs(80) }]}>
-              {contentStage === 4 ? 'Continue to Journey' : 'Slide to Continue'}
+              {contentStage === 4
+                ? (quizDone && quizAnswer === mcq.ans ? 'Continue to Journey' : (!quizDone ? 'Solve Quiz to Continue' : 'Incorrect! Try Again'))
+                : 'Slide to Continue'}
             </Text>
           </View>
         </Animated.View>
       </SafeAreaView>
+          </>
+        )}
+      </TimeBasedBackground>
     </View>
   );
 };
@@ -598,7 +582,7 @@ const AnimSection = ({ anim, hidden, children }) => (
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F0F2FB', borderTopLeftRadius: rs(36), borderTopRightRadius: rs(36), overflow: 'hidden' },
+  root: { flex: 1, backgroundColor: 'transparent', borderTopLeftRadius: rs(36), borderTopRightRadius: rs(36), overflow: 'hidden' },
 
   // ── Gift phase ──
   giftBody: { flex: 1, alignItems: 'center', justifyContent: 'space-between', paddingBottom: hs(50), paddingHorizontal: rs(24), zIndex: 1 },
@@ -758,6 +742,20 @@ const styles = StyleSheet.create({
   },
   quizRadioInner: { width: rs(10), height: rs(10), borderRadius: rs(5) },
   quizOptionText: { fontSize: rs(14) },
+  tryAgainBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#00ADC1',
+    borderRadius: rs(8),
+    paddingVertical: hs(12),
+    marginTop: hs(16),
+  },
+  tryAgainText: {
+    color: '#FFFFFF',
+    fontSize: rs(15),
+    fontWeight: '700',
+  },
 
   // ── Slide to Continue ──
   slideBar: {

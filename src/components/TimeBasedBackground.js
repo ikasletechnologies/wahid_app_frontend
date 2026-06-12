@@ -5,21 +5,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 const { width: SW } = Dimensions.get('window');
 
 const getPeriod = (h) => {
-  if (h >= 6 && h < 8) return 'sunrise';
-  if (h >= 8 && h < 12) return 'morning';
-  if (h >= 12 && h < 15) return 'noon';
-  if (h >= 15 && h < 18) return 'evening';
-  if (h >= 18 && h < 20) return 'sunset';
+  if (h >= 6 && h < 12) return 'morning';
+  if (h >= 12 && h < 18) return 'afternoon';
   return 'night';
 };
 
 const SKY = {
-  sunrise: ['#FF9A6C', '#FFBD90', '#FFD8B5', '#EEF6FF', '#F8FCFF'],
-  morning: ['#2EC8DC', '#4CD6EA', '#7DE4F4', '#B2EFF9', '#DCF8FD', '#F3FCFF'],
-  noon:    ['#1AB8D0', '#35C8E0', '#65DAEE', '#A5EBF8', '#D5F6FC', '#F0FBFF'],
-  evening: ['#3AB5CC', '#58C8DC', '#85DCED', '#B8EFF8', '#DDF7FC'],
-  sunset:  ['#D9522B', '#F07840', '#F8A870', '#D5EAF5', '#EEF8FC'],
-  night:   ['#0B0C0C', '#1A1E1E', '#2E3232', '#8C9292', '#FDFEFE'],
+  morning:   ['#F0F0FF', '#F0F0FF'],
+  afternoon: ['#F0F0FF', '#F0F0FF'],
+  night:     ['#0F172A', '#1E293B'],
 };
 
 // Sun arc: 6am (left) → noon (top-right) → 6pm (right lower)
@@ -70,7 +64,7 @@ const STARS = [
  * Renders the time-based sky: gradient, sun/moon, twinkling stars.
  * children(({ isNight, period })) — render prop exposes sky state to the screen.
  */
-const TimeBasedBackground = ({ children }) => {
+const TimeBasedBackground = ({ children, showElements = true }) => {
   const [now, setNow] = useState(new Date());
   const starAnims = useRef(STARS.map(() => new Animated.Value(0.8))).current;
 
@@ -87,9 +81,9 @@ const TimeBasedBackground = ({ children }) => {
   const sunPos = getSunPos(h, m);
   const moonPos = getMoonPos(h, m);
 
-  // Twinkling star animations — only active at night
+  // Twinkling star animations — only active at night and when elements are shown
   useEffect(() => {
-    if (!isNight) return;
+    if (!isNight || !showElements) return;
 
     const loops = STARS.map((star, idx) => {
       const loop = Animated.loop(
@@ -104,7 +98,7 @@ const TimeBasedBackground = ({ children }) => {
     });
 
     return () => loops.forEach(l => l.stop());
-  }, [isNight]);
+  }, [isNight, showElements]);
 
   return (
     <>
@@ -117,7 +111,7 @@ const TimeBasedBackground = ({ children }) => {
       />
 
       {/* Twinkling stars — night only */}
-      {isNight && STARS.map((star, idx) => (
+      {isNight && showElements && STARS.map((star, idx) => (
         <Animated.View
           key={star.id}
           style={{
@@ -139,7 +133,7 @@ const TimeBasedBackground = ({ children }) => {
       ))}
 
       {/* Moon + clouds — night only */}
-      {isNight && (
+      {isNight && showElements && (
         <View style={[s.moonWrap, { left: moonPos.x, top: moonPos.y }]}>
           <Image source={require('../../assets/milestone/Cloudlight.png')} style={s.moonCloudLight} resizeMode="contain" />
           <Image source={require('../../assets/milestone/Moon.png')} style={s.moon} resizeMode="contain" />
@@ -148,7 +142,7 @@ const TimeBasedBackground = ({ children }) => {
       )}
 
       {/* Sun + clouds — day periods */}
-      {!isNight && sunPos && (
+      {!isNight && showElements && sunPos && (
         <View style={[s.sunWrap, { left: sunPos.x, top: sunPos.y }]}>
           <Image source={require('../../assets/milestone/Cloudlight.png')} style={s.cloudLight} resizeMode="contain" />
           <Image source={require('../../assets/milestone/Sun.png')} style={s.sun} resizeMode="contain" />

@@ -7,6 +7,7 @@ import { NamesProvider } from './src/context/NamesContext';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { ContentProvider } from './src/context/ContentContext';
 import { PlaylistProvider } from './src/context/PlaylistContext';
+import { MilestoneProvider } from './src/context/MilestoneContext';
 import * as SplashScreen from 'expo-splash-screen';
 import AppNavigator from './src/navigation/AppNavigator';
 import ThemedToast from './src/components/ThemedToast';
@@ -52,13 +53,15 @@ export default function App() {
           <AuthProvider>
             <LanguageProvider>
               <NamesProvider>
-                <ContentProvider>
-                  <PlaylistProvider>
-                    <AppNavigator />
-                    <ThemedToast />
-                    <NetworkStatusBanner />
-                  </PlaylistProvider>
-                </ContentProvider>
+                <MilestoneProvider>
+                  <ContentProvider>
+                    <PlaylistProvider>
+                      <AppNavigator />
+                      <ThemedToast />
+                      <NetworkStatusBanner />
+                    </PlaylistProvider>
+                  </ContentProvider>
+                </MilestoneProvider>
               </NamesProvider>
             </LanguageProvider>
           </AuthProvider>

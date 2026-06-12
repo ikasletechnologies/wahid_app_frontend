@@ -10,6 +10,8 @@ import {
   RefreshControl,
   Image,
   ImageBackground,
+  TextInput,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,13 +20,193 @@ import { useNames, CATEGORIES } from '../context/NamesContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS } from '../theme';
+import TimeBasedBackground from '../components/TimeBasedBackground';
+import http from '../config/http';
 
 const { width } = Dimensions.get('window');
+
+const SURAHS = [
+  { number: 1, name: "Al-Fatihah" },
+  { number: 2, name: "Al-Baqarah" },
+  { number: 3, name: "Aal-e-Imran" },
+  { number: 4, name: "An-Nisa" },
+  { number: 5, name: "Al-Ma'idah" },
+  { number: 6, name: "Al-An'am" },
+  { number: 7, name: "Al-A'raf" },
+  { number: 8, name: "Al-Anfal" },
+  { number: 9, name: "At-Tawbah" },
+  { number: 10, name: "Yunus" },
+  { number: 11, name: "Hud" },
+  { number: 12, name: "Yusuf" },
+  { number: 13, name: "Ar-Ra'd" },
+  { number: 14, name: "Ibrahim" },
+  { number: 15, name: "Al-Hijr" },
+  { number: 16, name: "An-Nahl" },
+  { number: 17, name: "Al-Isra" },
+  { number: 18, name: "Al-Kahf" },
+  { number: 19, name: "Maryam" },
+  { number: 20, name: "Ta-Ha" },
+  { number: 21, name: "Al-Anbiya" },
+  { number: 22, name: "Al-Hajj" },
+  { number: 23, name: "Al-Mu'minun" },
+  { number: 24, name: "An-Nur" },
+  { number: 25, name: "Al-Furqan" },
+  { number: 26, name: "Ash-Shu'ara" },
+  { number: 27, name: "An-Naml" },
+  { number: 28, name: "Al-Qasas" },
+  { number: 29, name: "Al-Ankabut" },
+  { number: 30, name: "Ar-Rum" },
+  { number: 31, name: "Luqman" },
+  { number: 32, name: "As-Sajdah" },
+  { number: 33, name: "Al-Ahzab" },
+  { number: 34, name: "Saba" },
+  { number: 35, name: "Fatir" },
+  { number: 36, name: "Ya-Sin" },
+  { number: 37, name: "As-Saffat" },
+  { number: 38, name: "Sad" },
+  { number: 39, name: "Az-Zumar" },
+  { number: 40, name: "Ghafir" },
+  { number: 41, name: "Fussilat" },
+  { number: 42, name: "Ash-Shura" },
+  { number: 43, name: "Az-Zukhruf" },
+  { number: 44, name: "Ad-Dukhan" },
+  { number: 45, name: "Al-Jathiyah" },
+  { number: 46, name: "Al-Ahqaf" },
+  { number: 47, name: "Muhammad" },
+  { number: 48, name: "Al-Fath" },
+  { number: 49, name: "Al-Hujurat" },
+  { number: 50, name: "Qaf" },
+  { number: 51, name: "Adh-Dhariyat" },
+  { number: 52, name: "At-Tur" },
+  { number: 53, name: "An-Najm" },
+  { number: 54, name: "Al-Qamar" },
+  { number: 55, name: "Ar-Rahman" },
+  { number: 56, name: "Al-Waqi'ah" },
+  { number: 57, name: "Al-Hadid" },
+  { number: 58, name: "Al-Mujadilah" },
+  { number: 59, name: "Al-Hashr" },
+  { number: 60, name: "Al-Mumtahanah" },
+  { number: 61, name: "As-Saff" },
+  { number: 62, name: "Al-Jumu'ah" },
+  { number: 63, name: "Al-Munafiqun" },
+  { number: 64, name: "At-Taghabun" },
+  { number: 65, name: "At-Talaq" },
+  { number: 66, name: "At-Tahrim" },
+  { number: 67, name: "Al-Mulk" },
+  { number: 68, name: "Al-Qalam" },
+  { number: 69, name: "Al-Haqqah" },
+  { number: 70, name: "Al-Ma'arij" },
+  { number: 71, name: "Nuh" },
+  { number: 72, name: "Al-Jinn" },
+  { number: 73, name: "Al-Muzzammil" },
+  { number: 74, name: "Al-Muddaththir" },
+  { number: 75, name: "Al-Qiyamah" },
+  { number: 76, name: "Al-Insan" },
+  { number: 77, name: "Al-Mursalat" },
+  { number: 78, name: "An-Naba" },
+  { number: 79, name: "An-Nazi'at" },
+  { number: 80, name: "'Abasa" },
+  { number: 81, name: "At-Takwir" },
+  { number: 82, name: "Al-Infitar" },
+  { number: 83, name: "Al-Mutaffifin" },
+  { number: 84, name: "Al-Inshiqaq" },
+  { number: 85, name: "Al-Buruj" },
+  { number: 86, name: "At-Tariq" },
+  { number: 87, name: "Al-A'la" },
+  { number: 88, name: "Al-Ghashiyah" },
+  { number: 89, name: "Al-Fajr" },
+  { number: 90, name: "Al-Balad" },
+  { number: 91, name: "Ash-Shams" },
+  { number: 92, name: "Al-Layl" },
+  { number: 93, name: "Ad-Duha" },
+  { number: 94, name: "Ash-Sharh" },
+  { number: 95, name: "At-Tin" },
+  { number: 96, name: "Al-'Alaq" },
+  { number: 97, name: "Al-Qadr" },
+  { number: 98, name: "Al-Bayyinah" },
+  { number: 99, name: "Az-Zalzalah" },
+  { number: 100, name: "Al-'Adiyat" },
+  { number: 101, name: "Al-Qari'ah" },
+  { number: 102, name: "At-Takathur" },
+  { number: 103, name: "Al-'Asr" },
+  { number: 104, name: "Al-Humazah" },
+  { number: 105, name: "Al-Fil" },
+  { number: 106, name: "Quraysh" },
+  { number: 107, name: "Al-Ma'un" },
+  { number: 108, name: "Al-Kauthar" },
+  { number: 109, name: "Al-Kafirun" },
+  { number: 110, name: "An-Nasr" },
+  { number: 111, name: "Al-Masad" },
+  { number: 112, name: "Al-Ikhlas" },
+  { number: 113, name: "Al-Falaq" },
+  { number: 114, name: "An-Nas" }
+];
 
 const HomeScreen = ({ navigation }) => {
   const { user } = useAuth();
   const { colors, isDark } = useAppTheme();
   const { names, learnedIds, masteredIds, streak, refresh, refreshing } = useNames();
+
+  const [readingProgress, setReadingProgress] = React.useState({
+    surahName: 'Al-Fatihah',
+    surahNumber: 1,
+    ayahNumber: 1,
+  });
+  const [modalVisible, setModalVisible] = React.useState(false);
+  const [searchText, setSearchText] = React.useState('');
+  const [selectedSurah, setSelectedSurah] = React.useState(SURAHS[0]);
+  const [ayahInput, setAyahInput] = React.useState('1');
+
+  const fetchReadingProgress = async () => {
+    try {
+      const res = await http.get('/api/reading');
+      if (res.data?.success && res.data?.data) {
+        setReadingProgress(res.data.data);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch reading progress', err.message);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchReadingProgress();
+    refresh(); // Sync latest streak and progress from backend database
+  }, []);
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      refresh(),
+      fetchReadingProgress()
+    ]);
+  };
+
+  const filteredSurahs = useMemo(() => {
+    if (!searchText) return SURAHS;
+    return SURAHS.filter(s => s.name.toLowerCase().includes(searchText.toLowerCase()));
+  }, [searchText]);
+
+  const handleSaveProgress = async () => {
+    const ayahNum = parseInt(ayahInput) || 1;
+    const updatePayload = {
+      surahName: selectedSurah.name,
+      surahNumber: selectedSurah.number,
+      ayahNumber: ayahNum
+    };
+
+    // 1. Optimistic Update
+    setReadingProgress(updatePayload);
+    setModalVisible(false);
+
+    // 2. POST request to backend
+    try {
+      const res = await http.post('/api/reading', updatePayload);
+      if (res.data?.success && res.data?.data) {
+        setReadingProgress(res.data.data);
+      }
+    } catch (err) {
+      console.warn("Failed to save reading progress", err.message);
+    }
+  };
 
   const greeting = useMemo(() => {
     const hours = new Date().getHours();
@@ -64,271 +246,377 @@ const HomeScreen = ({ navigation }) => {
   }, [names, learnedIds]);
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top']}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-
-      {/* ── Pinned Top Section ── */}
-      <View style={styles.fixedTopContainer}>
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={[styles.avatarBubble, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : '#cffafe' }]}>
+    <SafeAreaView style={[styles.root, { backgroundColor: 'transparent' }]} edges={['top']}>
+      <TimeBasedBackground showElements={false}>
+        {({ isNight }) => (
+          <>
+            <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
+            {/* ── Pinned Top Section ── */}
+            <View style={styles.fixedTopContainer}>
+              {/* ── Header ── */}
+              <View style={styles.header}>
+                <View style={styles.headerLeft}>
+                  {/* <TouchableOpacity style={[styles.avatarBubble, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : '#cffafe' }]} activeOpacity={0.8} onPress={() => navigation.navigate('Profile')}>
               <Text style={[styles.avatarInitial, { color: '#06b6d4' }]}>{initial}</Text>
-            </View>
-            <View style={styles.headerTextCol}>
-              <Text style={[styles.welcomeText, { color: isDark ? colors.textMuted : '#475569' }]}>
-                Hello {user?.name || 'Wahid'},
-              </Text>
-              <Text style={[styles.userName, { color: isDark ? colors.text : '#0f172a' }]}>
-                {greeting}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.headerRight}>
-            <TouchableOpacity 
-              style={styles.streakBadge} 
-              activeOpacity={0.8}
-              onPress={() => navigation.navigate('Streak')}
-            >
+            </TouchableOpacity> */}
+                  <View style={styles.headerTextCol}>
+                    <Text style={[styles.welcomeText, { color: isDark ? colors.textMuted : '#475569' }]}>
+                      Hello {user?.name || 'Wahid'},
+                    </Text>
+                    <Text style={[styles.userName, { color: isDark ? colors.text : '#0f172a' }]}>
+                      {greeting}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.headerRight}>
+                  <TouchableOpacity
+                    style={styles.streakBadge}
+                    activeOpacity={0.8}
+                    onPress={() => navigation.navigate('Streak')}
+                  >
+                    <View style={[
+                      styles.streakContainer,
+                      {
+                        backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'
+                      }
+                    ]}>
+                      <Image
+                        source={require('../../assets/home/streak.png')}
+                        style={styles.streakIconImage}
+                        resizeMode="contain"
+                      />
+                      <Text style={styles.streakText}>{String(streak || 0).padStart(2, '0')}</Text>
+                    </View>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.bellButton,
+                      {
+                        backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
+                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'
+                      }
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.bellIconWrapper}>
+                      <Ionicons name="notifications" size={21} color="#06b6d4" />
+                      <View style={styles.notificationDot} />
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* ── Progress Card ── */}
               <View style={[
-                styles.streakContainer,
+                styles.progressContainer,
                 {
                   backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'
                 }
               ]}>
-                <Image
-                  source={require('../../assets/home/streak.png')}
-                  style={styles.streakIconImage}
-                  resizeMode="contain"
+                <View style={styles.progressHeader}>
+                  <Text style={styles.progressTitle}>Your Progress</Text>
+                  <Text style={[styles.progressPercentText, { color: colors.text }]}>
+                    {Math.round(stats.progress)}% Completed
+                  </Text>
+                </View>
+
+                <View style={[
+                  styles.progressBarBg,
+                  { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }
+                ]}>
+                  <LinearGradient
+                    colors={['#06b6d4', '#22d3ee']}
+                    style={[styles.progressBarFill, { width: `${stats.progress}%` }]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  />
+                </View>
+
+                <View style={styles.metricsRow}>
+                  {/* Learned Metric Card */}
+                  <TouchableOpacity
+                    style={styles.metricCardWrap}
+                    activeOpacity={0.75}
+                    onPress={() => navigation.navigate('Names', { statusFilter: 'learned', filter: null })}
+                  >
+                    <ImageBackground
+                      source={require('../../assets/home/sml_card.png')}
+                      style={styles.metricCardBackground}
+                      imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
+                    >
+                      <View style={styles.metricCardInner}>
+                        <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.learned}</Text>
+                        <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Learned</Text>
+
+                        {/* Icon Bubble */}
+                        <View style={styles.iconBubble}>
+                          <Image
+                            source={require('../../assets/home/learn_icon.png')}
+                            style={styles.metricCardIconImage}
+                            resizeMode="contain"
+                          />
+                        </View>
+                      </View>
+                    </ImageBackground>
+                  </TouchableOpacity>
+
+                  {/* Mastered Metric Card */}
+                  <TouchableOpacity
+                    style={styles.metricCardWrap}
+                    activeOpacity={0.75}
+                    onPress={() => navigation.navigate('Names', { statusFilter: 'mastered', filter: null })}
+                  >
+                    <ImageBackground
+                      source={require('../../assets/home/sml_card.png')}
+                      style={styles.metricCardBackground}
+                      imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
+                    >
+                      <View style={styles.metricCardInner}>
+                        <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.mastered}</Text>
+                        <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Mastered</Text>
+
+                        {/* Icon Bubble */}
+                        <View style={styles.iconBubble}>
+                          <Image
+                            source={require('../../assets/home/master_icon.png')}
+                            style={styles.metricCardIconImage}
+                            resizeMode="contain"
+                          />
+                        </View>
+                      </View>
+                    </ImageBackground>
+                  </TouchableOpacity>
+
+                  {/* Remaining Metric Card */}
+                  <TouchableOpacity
+                    style={styles.metricCardWrap}
+                    activeOpacity={0.75}
+                    onPress={() => navigation.navigate('Names', { statusFilter: 'remaining', filter: null })}
+                  >
+                    <ImageBackground
+                      source={require('../../assets/home/sml_card.png')}
+                      style={styles.metricCardBackground}
+                      imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
+                    >
+                      <View style={styles.metricCardInner}>
+                        <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.remaining}</Text>
+                        <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Remaining</Text>
+
+                        {/* Icon Bubble */}
+                        <View style={styles.iconBubble}>
+                          <Image
+                            source={require('../../assets/home/remain_icon.png')}
+                            style={styles.metricCardIconImage}
+                            resizeMode="contain"
+                          />
+                        </View>
+                      </View>
+                    </ImageBackground>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* ── Categories Section Title ── */}
+              <View style={styles.categoriesHeaderRow}>
+                <Text style={[styles.categoriesTitle, { color: colors.text }]}>Categories</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Names')} activeOpacity={0.7}>
+                  <Ionicons name="list" size={22} color="#06b6d4" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* ── Scrollable Categories Feed ── */}
+            <ScrollView
+              style={styles.scrollList}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  tintColor={colors.primary}
+                  colors={[colors.primary]}
                 />
-                <Text style={styles.streakText}>{String(streak || 1).padStart(2, '0')}</Text>
+              }
+            >
+
+              <View style={styles.catVerticalList}>
+                {Object.values(CATEGORIES).map((cat) => {
+                  const cs = categoryStats[cat.id] || { total: 0, learned: 0 };
+                  const pct = cs.total > 0 ? Math.round((cs.learned / cs.total) * 100) : 0;
+                  const isCompleted = pct === 100;
+
+                  const cardBgColors = isDark
+                    ? (isCompleted ? ['#062f1d', '#022c22'] : ['#0f172a', '#020617'])
+                    : (isCompleted ? ['#f0fdf4', '#dcfce7'] : ['#ecfeff', '#cffafe']);
+
+                  const cardBorderColor = isDark
+                    ? (isCompleted ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255,255,255,0.05)')
+                    : (isCompleted ? '#bbf7d0' : '#cffafe');
+
+                  const progressColor = isCompleted ? '#22c55e' : '#06b6d4';
+
+                  return (
+                    <TouchableOpacity
+                      key={cat.id}
+                      style={[
+                        styles.verticalCatCard,
+                        {
+                          borderColor: cardBorderColor,
+                        }
+                      ]}
+                      activeOpacity={0.85}
+                      onPress={() => navigation.navigate('Names', { filter: cat.id, statusFilter: null })}
+                    >
+                      <LinearGradient
+                        colors={cardBgColors}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.catCardInner}
+                      >
+                        <View style={styles.catLeftSection}>
+                          <Text style={[styles.verticalCatName, { color: colors.text }]}>{cat.name}</Text>
+                          <Text style={[styles.verticalCatSubtitle, { color: colors.textMuted }]}>{cs.total} Names</Text>
+
+                          <View style={styles.catProgressWrapper}>
+                            <View style={styles.catProgressHeaderRow}>
+                              <Text style={[styles.catProgressDetails, { color: colors.textMuted }]}>
+                                {cs.learned}/{cs.total} - {pct}% Completed
+                              </Text>
+                            </View>
+                            <View style={[styles.catProgressBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }]}>
+                              <LinearGradient
+                                colors={isCompleted ? ['#22c55e', '#4ade80'] : ['#06b6d4', '#22d3ee']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={[styles.catProgressBarFill, { width: `${pct}%` }]}
+                              />
+                            </View>
+                          </View>
+                        </View>
+
+                        <View style={styles.catRightSection}>
+                          <Text
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                            style={[styles.giantPercentage, { color: progressColor, opacity: isDark ? 0.12 : 0.22 }]}
+                          >
+                            {pct}%
+                          </Text>
+                        </View>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
-            </TouchableOpacity>
+              <View style={{ height: 40 }} />
+            </ScrollView>
 
-            <TouchableOpacity
-              style={[
-                styles.bellButton,
-                {
-                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'
-                }
-              ]}
-              activeOpacity={0.8}
+            {/* ── Update Reading Progress Modal ── */}
+            <Modal
+              animationType="slide"
+              transparent={true}
+              visible={modalVisible}
+              onRequestClose={() => setModalVisible(false)}
             >
-              <View style={styles.bellIconWrapper}>
-                <Ionicons name="notifications" size={21} color="#06b6d4" />
-                <View style={styles.notificationDot} />
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* ── Progress Card ── */}
-        <View style={[
-          styles.progressContainer,
-          {
-            backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'
-          }
-        ]}>
-          <View style={styles.progressHeader}>
-            <Text style={styles.progressTitle}>Your Progress</Text>
-            <Text style={[styles.progressPercentText, { color: colors.text }]}>
-              {Math.round(stats.progress)}% Completed
-            </Text>
-          </View>
-
-          <View style={[
-            styles.progressBarBg,
-            { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }
-          ]}>
-            <LinearGradient
-              colors={['#06b6d4', '#22d3ee']}
-              style={[styles.progressBarFill, { width: `${stats.progress}%` }]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            />
-          </View>
-
-          <View style={styles.metricsRow}>
-            {/* Learned Metric Card */}
-            <TouchableOpacity
-              style={styles.metricCardWrap}
-              activeOpacity={0.75}
-              onPress={() => navigation.navigate('Names', { statusFilter: 'learned', filter: null })}
-            >
-              <ImageBackground
-                source={require('../../assets/home/sml_card.png')}
-                style={styles.metricCardBackground}
-                imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
-              >
-                <View style={styles.metricCardInner}>
-                  <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.learned}</Text>
-                  <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Learned</Text>
-
-                  {/* Icon Bubble */}
-                  <View style={styles.iconBubble}>
-                    <Image
-                      source={require('../../assets/home/learn_icon.png')}
-                      style={styles.metricCardIconImage}
-                      resizeMode="contain"
-                    />
-                  </View>
-                </View>
-              </ImageBackground>
-            </TouchableOpacity>
-
-            {/* Mastered Metric Card */}
-            <TouchableOpacity
-              style={styles.metricCardWrap}
-              activeOpacity={0.75}
-              onPress={() => navigation.navigate('Names', { statusFilter: 'mastered', filter: null })}
-            >
-              <ImageBackground
-                source={require('../../assets/home/sml_card.png')}
-                style={styles.metricCardBackground}
-                imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
-              >
-                <View style={styles.metricCardInner}>
-                  <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.mastered}</Text>
-                  <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Mastered</Text>
-
-                  {/* Icon Bubble */}
-                  <View style={styles.iconBubble}>
-                    <Image
-                      source={require('../../assets/home/master_icon.png')}
-                      style={styles.metricCardIconImage}
-                      resizeMode="contain"
-                    />
-                  </View>
-                </View>
-              </ImageBackground>
-            </TouchableOpacity>
-
-            {/* Remaining Metric Card */}
-            <TouchableOpacity
-              style={styles.metricCardWrap}
-              activeOpacity={0.75}
-              onPress={() => navigation.navigate('Names', { statusFilter: 'remaining', filter: null })}
-            >
-              <ImageBackground
-                source={require('../../assets/home/sml_card.png')}
-                style={styles.metricCardBackground}
-                imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
-              >
-                <View style={styles.metricCardInner}>
-                  <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.remaining}</Text>
-                  <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Remaining</Text>
-
-                  {/* Icon Bubble */}
-                  <View style={styles.iconBubble}>
-                    <Image
-                      source={require('../../assets/home/remain_icon.png')}
-                      style={styles.metricCardIconImage}
-                      resizeMode="contain"
-                    />
-                  </View>
-                </View>
-              </ImageBackground>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* ── Categories Section Title ── */}
-        <View style={styles.categoriesHeaderRow}>
-          <Text style={[styles.categoriesTitle, { color: colors.text }]}>Categories</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Names')} activeOpacity={0.7}>
-            <Ionicons name="list" size={22} color="#06b6d4" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* ── Scrollable Categories Feed ── */}
-      <ScrollView
-        style={styles.scrollList}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={refresh}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
-          />
-        }
-      >
-        <View style={styles.catVerticalList}>
-          {Object.values(CATEGORIES).map((cat) => {
-            const cs = categoryStats[cat.id] || { total: 0, learned: 0 };
-            const pct = cs.total > 0 ? Math.round((cs.learned / cs.total) * 100) : 0;
-            const isCompleted = pct === 100;
-
-            const cardBgColors = isDark
-              ? (isCompleted ? ['#062f1d', '#022c22'] : ['#0f172a', '#020617'])
-              : (isCompleted ? ['#f0fdf4', '#dcfce7'] : ['#ecfeff', '#cffafe']);
-
-            const cardBorderColor = isDark
-              ? (isCompleted ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255,255,255,0.05)')
-              : (isCompleted ? '#bbf7d0' : '#cffafe');
-
-            const progressColor = isCompleted ? '#22c55e' : '#06b6d4';
-
-            return (
               <TouchableOpacity
-                key={cat.id}
-                style={[
-                  styles.verticalCatCard,
-                  {
-                    borderColor: cardBorderColor,
-                  }
-                ]}
-                activeOpacity={0.85}
-                onPress={() => navigation.navigate('Names', { filter: cat.id, statusFilter: null })}
+                style={styles.modalOverlay}
+                activeOpacity={1}
+                onPress={() => setModalVisible(false)}
               >
-                <LinearGradient
-                  colors={cardBgColors}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.catCardInner}
+                <TouchableOpacity
+                  style={[styles.modalContent, { backgroundColor: isDark ? '#1e293b' : '#ffffff' }]}
+                  activeOpacity={1}
                 >
-                  <View style={styles.catLeftSection}>
-                    <Text style={[styles.verticalCatName, { color: colors.text }]}>{cat.name}</Text>
-                    <Text style={[styles.verticalCatSubtitle, { color: colors.textMuted }]}>{cs.total} Names</Text>
+                  <View style={styles.modalHandle} />
+                  <Text style={[styles.modalTitle, { color: colors.text }]}>Update Reading Progress</Text>
 
-                    <View style={styles.catProgressWrapper}>
-                      <View style={styles.catProgressHeaderRow}>
-                        <Text style={[styles.catProgressDetails, { color: colors.textMuted }]}>
-                          {cs.learned}/{cs.total} - {pct}% Completed
-                        </Text>
-                      </View>
-                      <View style={[styles.catProgressBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }]}>
-                        <LinearGradient
-                          colors={isCompleted ? ['#22c55e', '#4ade80'] : ['#06b6d4', '#22d3ee']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 0 }}
-                          style={[styles.catProgressBarFill, { width: `${pct}%` }]}
-                        />
-                      </View>
+                  {/* Search Surah */}
+                  <View style={[styles.modalSearchRow, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9' }]}>
+                    <Ionicons name="search" size={18} color={isDark ? 'rgba(255,255,255,0.4)' : '#64748b'} />
+                    <TextInput
+                      style={[styles.modalSearchInput, { color: colors.text }]}
+                      placeholder="Search Surah..."
+                      placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : '#64748b'}
+                      value={searchText}
+                      onChangeText={setSearchText}
+                    />
+                  </View>
+
+                  {/* Selected Surah Label */}
+                  <Text style={[styles.selectedLabel, { color: colors.textMuted }]}>
+                    Selected: <Text style={{ fontWeight: 'bold', color: '#06b6d4' }}>{selectedSurah.name} (Surah {selectedSurah.number})</Text>
+                  </Text>
+
+                  {/* Surah List */}
+                  <View style={[styles.surahListContainer, { borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }]}>
+                    <ScrollView nestedScrollEnabled={true} style={{ maxHeight: 150 }}>
+                      {filteredSurahs.map((s) => (
+                        <TouchableOpacity
+                          key={s.number}
+                          style={[
+                            styles.surahRow,
+                            selectedSurah.number === s.number && { backgroundColor: 'rgba(6, 182, 212, 0.15)' }
+                          ]}
+                          onPress={() => setSelectedSurah(s)}
+                        >
+                          <Text style={[styles.surahRowText, { color: colors.text }, selectedSurah.number === s.number && { fontWeight: '700', color: '#06b6d4' }]}>
+                            {s.number}. {s.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+
+                  {/* Ayah Input */}
+                  <View style={styles.ayahInputSection}>
+                    <Text style={[styles.ayahInputLabel, { color: colors.text }]}>Ayah Number:</Text>
+                    <View style={styles.ayahInputRow}>
+                      <TouchableOpacity
+                        style={[styles.counterBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#e2e8f0' }]}
+                        onPress={() => {
+                          const val = Math.max(1, (parseInt(ayahInput) || 1) - 1);
+                          setAyahInput(String(val));
+                        }}
+                      >
+                        <Ionicons name="remove" size={20} color={colors.text} />
+                      </TouchableOpacity>
+
+                      <TextInput
+                        style={[styles.ayahInputText, { color: colors.text, borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#cbd5e1' }]}
+                        keyboardType="number-pad"
+                        value={ayahInput}
+                        onChangeText={(val) => setAyahInput(val.replace(/[^0-9]/g, ''))}
+                      />
+
+                      <TouchableOpacity
+                        style={[styles.counterBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#e2e8f0' }]}
+                        onPress={() => {
+                          const val = (parseInt(ayahInput) || 1) + 1;
+                          setAyahInput(String(val));
+                        }}
+                      >
+                        <Ionicons name="add" size={20} color={colors.text} />
+                      </TouchableOpacity>
                     </View>
                   </View>
 
-                  <View style={styles.catRightSection}>
-                    <Text
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
-                      style={[styles.giantPercentage, { color: progressColor, opacity: isDark ? 0.12 : 0.22 }]}
-                    >
-                      {pct}%
-                    </Text>
-                  </View>
-                </LinearGradient>
+                  {/* Save Button */}
+                  <TouchableOpacity
+                    style={styles.saveBtn}
+                    onPress={handleSaveProgress}
+                  >
+                    <Text style={styles.saveBtnText}>Save Progress</Text>
+                  </TouchableOpacity>
+                </TouchableOpacity>
               </TouchableOpacity>
-            );
-          })}
-        </View>
-        <View style={{ height: 40 }} />
-      </ScrollView>
+            </Modal>
+          </>
+        )}
+      </TimeBasedBackground>
     </SafeAreaView>
   );
 };
@@ -636,6 +924,166 @@ const styles = StyleSheet.create({
     fontSize: 44,
     textAlign: 'right',
     lineHeight: 48,
+  },
+
+  // ── Qur'an Card Styles ──
+  quranCard: {
+    flexDirection: 'row',
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    padding: SPACE.md,
+    marginBottom: SPACE.md,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  quranCardLeft: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  quranCardTitle: {
+    fontSize: 12,
+    fontFamily: FONTS.bold,
+    color: '#06b6d4',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  quranCardSub: {
+    fontSize: 10,
+    fontFamily: FONTS.semibold,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  quranCardSurah: {
+    fontSize: 18,
+    fontFamily: FONTS.bold,
+    marginBottom: 2,
+  },
+  quranCardAyah: {
+    fontSize: 13,
+    fontFamily: FONTS.medium,
+    marginBottom: 12,
+  },
+  quranCardAction: {
+    fontSize: 13,
+    fontFamily: FONTS.semibold,
+    color: '#06b6d4',
+  },
+  quranCardRight: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingLeft: SPACE.sm,
+  },
+  quranCardBookImage: {
+    width: 80,
+    height: 80,
+  },
+
+  // ── Modal Styles ──
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: RADIUS.lg,
+    borderTopRightRadius: RADIUS.lg,
+    padding: SPACE.lg,
+    minHeight: 400,
+    paddingBottom: 40,
+  },
+  modalHandle: {
+    width: 40,
+    height: 5,
+    backgroundColor: '#cbd5e1',
+    borderRadius: 2.5,
+    alignSelf: 'center',
+    marginBottom: SPACE.md,
+  },
+  modalTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: SIZES.lg,
+    marginBottom: SPACE.md,
+    textAlign: 'center',
+  },
+  modalSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: SPACE.sm,
+    height: 44,
+    marginBottom: SPACE.sm,
+  },
+  modalSearchInput: {
+    flex: 1,
+    marginLeft: SPACE.xs,
+    fontFamily: FONTS.regular,
+    fontSize: 14,
+    paddingVertical: 0,
+  },
+  selectedLabel: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    marginBottom: SPACE.xs,
+  },
+  surahListContainer: {
+    borderWidth: 1,
+    borderRadius: RADIUS.sm,
+    overflow: 'hidden',
+    marginBottom: SPACE.md,
+  },
+  surahRow: {
+    paddingVertical: SPACE.sm,
+    paddingHorizontal: SPACE.md,
+  },
+  surahRowText: {
+    fontFamily: FONTS.medium,
+    fontSize: 14,
+  },
+  ayahInputSection: {
+    marginBottom: SPACE.lg,
+  },
+  ayahInputLabel: {
+    fontFamily: FONTS.semibold,
+    fontSize: 14,
+    marginBottom: SPACE.sm,
+  },
+  ayahInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  counterBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ayahInputText: {
+    width: 80,
+    height: 40,
+    borderWidth: 1,
+    borderRadius: RADIUS.sm,
+    textAlign: 'center',
+    marginHorizontal: SPACE.md,
+    fontFamily: FONTS.bold,
+    fontSize: 16,
+  },
+  saveBtn: {
+    backgroundColor: '#06b6d4',
+    borderRadius: RADIUS.sm,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: SPACE.xs,
+  },
+  saveBtnText: {
+    fontFamily: FONTS.bold,
+    color: '#ffffff',
+    fontSize: 16,
   },
 });
 
