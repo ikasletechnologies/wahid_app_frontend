@@ -12,19 +12,29 @@ import {
   ImageBackground,
   TextInput,
   Modal,
+  Animated,
+  Easing,
+  FlatList,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNames, CATEGORIES } from '../context/NamesContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
+import { useFocusEffect } from '@react-navigation/native';
+import http from '../config/http';
+import LiquidText from '../components/LiquidText';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS } from '../theme';
 import TimeBasedBackground from '../components/TimeBasedBackground';
-import http from '../config/http';
-
-const { width } = Dimensions.get('window');
-
+const { width: SW, height: SH } = Dimensions.get('window');
+const BASE_W = 393;
+const BASE_H = 900;
+const wScale = SW / BASE_W;
+const hScale = SH / BASE_H;
+const rs = (n) => Math.round(n * wScale);
+const hs = (n) => Math.round(n * hScale);
 const SURAHS = [
   { number: 1, name: "Al-Fatihah" },
   { number: 2, name: "Al-Baqarah" },
@@ -145,7 +155,7 @@ const SURAHS = [
 const HomeScreen = ({ navigation }) => {
   const { user } = useAuth();
   const { colors, isDark } = useAppTheme();
-  const { names, learnedIds, masteredIds, streak, refresh, refreshing } = useNames();
+  const { names, learnedIds, masteredIds, streak, refresh, refreshing, categories } = useNames();
 
   const [readingProgress, setReadingProgress] = React.useState({
     surahName: 'Al-Fatihah',
@@ -156,6 +166,74 @@ const HomeScreen = ({ navigation }) => {
   const [searchText, setSearchText] = React.useState('');
   const [selectedSurah, setSelectedSurah] = React.useState(SURAHS[0]);
   const [ayahInput, setAyahInput] = React.useState('1');
+
+  const [lastReadName, setLastReadName] = React.useState(null);
+
+  const [catSortOrder, setCatSortOrder] = React.useState('default');
+  const [catSortModalVisible, setCatSortModalVisible] = React.useState(false);
+  const [unreadNotifications, setUnreadNotifications] = React.useState(0);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      http.get('/api/notifications')
+        .then(res => {
+          if (res.data?.success) {
+            setUnreadNotifications(res.data.data.unreadCount || 0);
+          }
+        })
+        .catch(() => {});
+    }, [])
+  );
+
+  React.useEffect(() => {
+    if (!names || names.length === 0) return;
+
+    AsyncStorage.getItem('last_viewed_name')
+      .then(saved => {
+        if (saved === null) return;
+        const nameObj = names.find(n => n.number === parseInt(saved, 10));
+        if (nameObj) setLastReadName(nameObj);
+      })
+      .catch(() => { });
+  }, [names]);
+
+  const floatAnim = React.useRef(new Animated.Value(0)).current;
+  const floatLoopRef = React.useRef(null);
+
+  React.useEffect(() => {
+    floatLoopRef.current = Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, { toValue: 1, duration: 2500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(floatAnim, { toValue: 0, duration: 2500, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    floatLoopRef.current.start();
+
+    return () => {
+      floatLoopRef.current?.stop();
+    };
+  }, []);
+
+  const handleBackToReading = async () => {
+    if (!lastReadName) {
+      const defaultName = names.find(n => n.number === 1) || names[0];
+      if (defaultName) {
+        navigation.navigate('NameDetail', { name: defaultName, initialStepIndex: 0 });
+      }
+      return;
+    }
+
+    const nameNumber = lastReadName.number || lastReadName.id;
+    try {
+      const saved = await AsyncStorage.getItem('last_reading_progress');
+      const progress = saved ? JSON.parse(saved) : null;
+      const initialStepIndex =
+        progress?.nameNumber === nameNumber ? (progress.stepIndex ?? 0) : 0;
+      navigation.navigate('NameDetail', { name: lastReadName, initialStepIndex });
+    } catch {
+      navigation.navigate('NameDetail', { name: lastReadName, initialStepIndex: 0 });
+    }
+  };
 
   const fetchReadingProgress = async () => {
     try {
@@ -230,7 +308,8 @@ const HomeScreen = ({ navigation }) => {
 
   const categoryStats = useMemo(() => {
     const result = {};
-    Object.keys(CATEGORIES).forEach(key => {
+    const catsObj = categories || CATEGORIES || {};
+    Object.keys(catsObj).forEach(key => {
       result[key] = { total: 0, learned: 0 };
     });
     names.forEach(name => {
@@ -243,7 +322,29 @@ const HomeScreen = ({ navigation }) => {
       }
     });
     return result;
-  }, [names, learnedIds]);
+  }, [names, learnedIds, categories]);
+
+  const sortedCategories = React.useMemo(() => {
+    let cats = Object.values(categories || CATEGORIES || {});
+    if (catSortOrder === 'high') {
+      cats.sort((a, b) => {
+        const csA = categoryStats[a.id] || { total: 0, learned: 0 };
+        const pctA = csA.total > 0 ? (csA.learned / csA.total) : 0;
+        const csB = categoryStats[b.id] || { total: 0, learned: 0 };
+        const pctB = csB.total > 0 ? (csB.learned / csB.total) : 0;
+        return pctB - pctA;
+      });
+    } else if (catSortOrder === 'low') {
+      cats.sort((a, b) => {
+        const csA = categoryStats[a.id] || { total: 0, learned: 0 };
+        const pctA = csA.total > 0 ? (csA.learned / csA.total) : 0;
+        const csB = categoryStats[b.id] || { total: 0, learned: 0 };
+        const pctB = csB.total > 0 ? (csB.learned / csB.total) : 0;
+        return pctA - pctB;
+      });
+    }
+    return cats;
+  }, [categoryStats, catSortOrder, categories]);
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: 'transparent' }]} edges={['top']}>
@@ -256,9 +357,9 @@ const HomeScreen = ({ navigation }) => {
               {/* ── Header ── */}
               <View style={styles.header}>
                 <View style={styles.headerLeft}>
-                  {/* <TouchableOpacity style={[styles.avatarBubble, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : '#cffafe' }]} activeOpacity={0.8} onPress={() => navigation.navigate('Profile')}>
-              <Text style={[styles.avatarInitial, { color: '#06b6d4' }]}>{initial}</Text>
-            </TouchableOpacity> */}
+                  <TouchableOpacity style={[styles.avatarBubble, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.15)' : '#cffafe' }]} activeOpacity={0.8} onPress={() => navigation.navigate('Profile')}>
+                    <Text style={[styles.avatarInitial, { color: '#06b6d4' }]}>{initial}</Text>
+                  </TouchableOpacity>
                   <View style={styles.headerTextCol}>
                     <Text style={[styles.welcomeText, { color: isDark ? colors.textMuted : '#475569' }]}>
                       Hello {user?.name || 'Wahid'},
@@ -269,26 +370,7 @@ const HomeScreen = ({ navigation }) => {
                   </View>
                 </View>
                 <View style={styles.headerRight}>
-                  <TouchableOpacity
-                    style={styles.streakBadge}
-                    activeOpacity={0.8}
-                    onPress={() => navigation.navigate('Streak')}
-                  >
-                    <View style={[
-                      styles.streakContainer,
-                      {
-                        backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'
-                      }
-                    ]}>
-                      <Image
-                        source={require('../../assets/home/streak.png')}
-                        style={styles.streakIconImage}
-                        resizeMode="contain"
-                      />
-                      <Text style={styles.streakText}>{String(streak || 0).padStart(2, '0')}</Text>
-                    </View>
-                  </TouchableOpacity>
+
 
                   <TouchableOpacity
                     style={[
@@ -299,13 +381,71 @@ const HomeScreen = ({ navigation }) => {
                       }
                     ]}
                     activeOpacity={0.8}
+                    onPress={() => navigation.navigate('Notifications')}
                   >
                     <View style={styles.bellIconWrapper}>
                       <Ionicons name="notifications" size={21} color="#06b6d4" />
-                      <View style={styles.notificationDot} />
+                      {unreadNotifications > 0 && <View style={styles.notificationDot} />}
                     </View>
                   </TouchableOpacity>
                 </View>
+              </View>
+
+              {/* ── Last Read Card ── */}
+              <View style={styles.lastReadCardWrapper}>
+                <LinearGradient
+                  colors={isDark ? ['#1A2332', '#0F172A'] : ['#4BD5E8', '#FDFEFE']}
+                  start={{ x: 0.5, y: 0 }}
+                  end={{ x: 0.5, y: 0.9 }}
+                  style={[styles.lastReadCard, isDark && { borderWidth: 1, borderColor: '#334155' }]}
+                >
+                  <View style={styles.lastReadLeft}>
+                    <View style={styles.lastReadBadge}>
+                      <Image
+                        source={require('../../assets/navigation/names.png')}
+                        style={[styles.lastReadBadgeIcon, { tintColor: isDark ? '#E8EDF2' : '#000000' }]}
+                        resizeMode="contain"
+                      />
+                      <Text style={[styles.lastReadBadgeText, { color: isDark ? '#E8EDF2' : '#000000' }]}>Last Read</Text>
+                    </View>
+
+                    <View style={styles.lastReadTextGroup}>
+                      <Text style={[styles.lastReadArabic, { color: isDark ? '#E8EDF2' : '#000000ff' }]}>{lastReadName?.arabic || 'الرحمن'}</Text>
+                      <Text style={[styles.lastReadTrans, { color: isDark ? '#E8EDF2' : '#000000' }]}>{lastReadName?.transliteration || 'Ar-rahman'}</Text>
+                      <Text style={[styles.lastReadMeaning, { color: isDark ? '#9EAAB8' : '#374151' }]}>{lastReadName?.meaning || 'The Most Gracious'}</Text>
+                    </View>
+
+                    <TouchableOpacity
+                      style={[styles.backToReadingBtn, { backgroundColor: isDark ? '#00ADC1' : '#000000' }]}
+                      activeOpacity={0.8}
+                      onPress={handleBackToReading}
+                    >
+                      <Text style={[styles.backToReadingText, { color: '#ffffff' }]}>Continue Reading</Text>
+                      <Ionicons name="chevron-forward" size={15} color="#ffffff" style={{ marginLeft: 20, marginTop: 4 }} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.lastReadRight}>
+                    <Animated.Image
+                      source={require('../../assets/names/book.png')}
+                      style={[
+                        styles.lastReadBookImage,
+                        {
+                          transform: [
+                            { rotate: '-6deg' },
+                            {
+                              translateY: floatAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [0, -10]
+                              })
+                            }
+                          ]
+                        }
+                      ]}
+                      resizeMode="contain"
+                    />
+                  </View>
+                </LinearGradient>
               </View>
 
               {/* ── Progress Card ── */}
@@ -340,7 +480,7 @@ const HomeScreen = ({ navigation }) => {
                   <TouchableOpacity
                     style={styles.metricCardWrap}
                     activeOpacity={0.75}
-                    onPress={() => navigation.navigate('Names', { statusFilter: 'learned', filter: null })}
+                    onPress={() => navigation.navigate('NamesList', { statusFilter: 'learned' })}
                   >
                     <ImageBackground
                       source={require('../../assets/home/sml_card.png')}
@@ -367,7 +507,7 @@ const HomeScreen = ({ navigation }) => {
                   <TouchableOpacity
                     style={styles.metricCardWrap}
                     activeOpacity={0.75}
-                    onPress={() => navigation.navigate('Names', { statusFilter: 'mastered', filter: null })}
+                    onPress={() => navigation.navigate('NamesList', { statusFilter: 'mastered' })}
                   >
                     <ImageBackground
                       source={require('../../assets/home/sml_card.png')}
@@ -394,7 +534,7 @@ const HomeScreen = ({ navigation }) => {
                   <TouchableOpacity
                     style={styles.metricCardWrap}
                     activeOpacity={0.75}
-                    onPress={() => navigation.navigate('Names', { statusFilter: 'remaining', filter: null })}
+                    onPress={() => navigation.navigate('NamesList', { statusFilter: 'remaining' })}
                   >
                     <ImageBackground
                       source={require('../../assets/home/sml_card.png')}
@@ -422,8 +562,8 @@ const HomeScreen = ({ navigation }) => {
               {/* ── Categories Section Title ── */}
               <View style={styles.categoriesHeaderRow}>
                 <Text style={[styles.categoriesTitle, { color: colors.text }]}>Categories</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Names')} activeOpacity={0.7}>
-                  <Ionicons name="list" size={22} color="#06b6d4" />
+                <TouchableOpacity onPress={() => setCatSortModalVisible(true)} activeOpacity={0.7}>
+                  <Ionicons name="filter" size={20} color="#06b6d4" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -444,7 +584,7 @@ const HomeScreen = ({ navigation }) => {
             >
 
               <View style={styles.catVerticalList}>
-                {Object.values(CATEGORIES).map((cat) => {
+                {sortedCategories.map((cat) => {
                   const cs = categoryStats[cat.id] || { total: 0, learned: 0 };
                   const pct = cs.total > 0 ? Math.round((cs.learned / cs.total) * 100) : 0;
                   const isCompleted = pct === 100;
@@ -479,33 +619,24 @@ const HomeScreen = ({ navigation }) => {
                       >
                         <View style={styles.catLeftSection}>
                           <Text style={[styles.verticalCatName, { color: colors.text }]}>{cat.name}</Text>
-                          <Text style={[styles.verticalCatSubtitle, { color: colors.textMuted }]}>{cs.total} Names</Text>
 
-                          <View style={styles.catProgressWrapper}>
-                            <View style={styles.catProgressHeaderRow}>
-                              <Text style={[styles.catProgressDetails, { color: colors.textMuted }]}>
-                                {cs.learned}/{cs.total} - {pct}% Completed
-                              </Text>
-                            </View>
-                            <View style={[styles.catProgressBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }]}>
-                              <LinearGradient
-                                colors={isCompleted ? ['#22c55e', '#4ade80'] : ['#06b6d4', '#22d3ee']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={[styles.catProgressBarFill, { width: `${pct}%` }]}
-                              />
-                            </View>
+                          <View style={styles.catCountRow}>
+                            <Text style={[styles.catCompletedCount, { color: progressColor }]}>{cs.learned}</Text>
+                            <Text style={[styles.catCountDivider, { color: colors.textMuted }]}> / </Text>
+                            <Text style={[styles.catCountTotal, { color: colors.textMuted }]}>{cs.total}</Text>
+                            <Text style={[styles.catCountLabel, { color: colors.textMuted }]}> completed</Text>
                           </View>
+
                         </View>
 
                         <View style={styles.catRightSection}>
-                          <Text
-                            numberOfLines={1}
-                            adjustsFontSizeToFit
-                            style={[styles.giantPercentage, { color: progressColor, opacity: isDark ? 0.12 : 0.22 }]}
-                          >
-                            {pct}%
-                          </Text>
+                          <LiquidText 
+                            text={`${pct}%`} 
+                            percentage={pct} 
+                            baseColor={isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.14)'} 
+                            fillColor={progressColor} 
+                            textStyle={styles.giantPercentage} 
+                          />
                         </View>
                       </LinearGradient>
                     </TouchableOpacity>
@@ -613,6 +744,60 @@ const HomeScreen = ({ navigation }) => {
                   </TouchableOpacity>
                 </TouchableOpacity>
               </TouchableOpacity>
+            </Modal>
+
+            {/* ── Category Sort Modal ── */}
+            <Modal
+              animationType="slide"
+              transparent={true}
+              visible={catSortModalVisible}
+              onRequestClose={() => setCatSortModalVisible(false)}
+            >
+              <View style={styles.modalOverlay}>
+                <TouchableOpacity
+                  style={{ flex: 1 }}
+                  activeOpacity={1}
+                  onPress={() => setCatSortModalVisible(false)}
+                />
+                <View style={[styles.modalContent, { backgroundColor: isDark ? '#1e293b' : '#ffffff', minHeight: 250 }]}>
+                  <View style={styles.modalHandle} />
+                  <Text style={[styles.modalTitle, { color: colors.text, marginBottom: 20 }]}>Sort Categories</Text>
+                  
+                  {[
+                    { id: 'default', label: 'Default Order', icon: 'list' },
+                    { id: 'high', label: 'Highest Completion', icon: 'arrow-up' },
+                    { id: 'low', label: 'Lowest Completion', icon: 'arrow-down' },
+                  ].map((option) => {
+                    const isSelected = catSortOrder === option.id;
+                    return (
+                      <TouchableOpacity
+                        key={option.id}
+                        style={[
+                          styles.sortOptionRow,
+                          {
+                            backgroundColor: isSelected 
+                              ? (isDark ? 'rgba(6,182,212,0.15)' : '#ecfeff')
+                              : 'transparent',
+                            borderColor: isSelected 
+                              ? '#06b6d4'
+                              : (isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9')
+                          }
+                        ]}
+                        onPress={() => {
+                          setCatSortOrder(option.id);
+                          setCatSortModalVisible(false);
+                        }}
+                      >
+                        <Ionicons name={option.icon} size={20} color={isSelected ? "#06b6d4" : colors.textMuted} />
+                        <Text style={[styles.sortOptionText, { color: isSelected ? "#06b6d4" : colors.text }]}>
+                          {option.label}
+                        </Text>
+                        {isSelected && <Ionicons name="checkmark-circle" size={20} color="#06b6d4" style={{ marginLeft: 'auto' }} />}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
             </Modal>
           </>
         )}
@@ -746,6 +931,96 @@ const styles = StyleSheet.create({
     backgroundColor: '#06b6d4',
     borderWidth: 1,
     borderColor: '#ffffff',
+  },
+
+  // ── Last Read Styles ──
+  lastReadCardWrapper: {
+    width: '100%',
+    shadowColor: '#0f172a',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+    elevation: 4,
+    marginBottom: SPACE.lg,
+  },
+  lastReadCard: {
+    flexDirection: 'row',
+    borderRadius: rs(10),
+    paddingVertical: hs(12),
+    paddingHorizontal: rs(16),
+    height: hs(180),
+    position: 'relative',
+    overflow: 'visible',
+  },
+  lastReadLeft: {
+    flex: 1.2,
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  lastReadBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  lastReadBadgeIcon: {
+    width: rs(14),
+    height: rs(14),
+    marginTop: hs(2),
+    tintColor: '#000000',
+  },
+  lastReadBadgeText: {
+    fontFamily: FONTS.medium,
+    fontSize: rs(12),
+    color: '#000000',
+    marginLeft: 2,
+  },
+  lastReadTextGroup: {
+    marginTop: hs(20),
+    marginBottom: hs(20),
+  },
+  lastReadArabic: {
+    fontSize: rs(10),
+    fontFamily: FONTS.arabic,
+    color: '#000000ff',
+  },
+  lastReadTrans: {
+    fontFamily: FONTS.bold,
+    fontSize: rs(18),
+    color: '#000000',
+    lineHeight: rs(22),
+  },
+  lastReadMeaning: {
+    fontFamily: FONTS.medium,
+    fontSize: rs(10),
+    color: '#374151',
+  },
+  backToReadingBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#000000',
+    borderRadius: rs(8),
+    paddingHorizontal: rs(14),
+    paddingVertical: hs(8),
+    alignSelf: 'flex-start',
+    marginTop: hs(2),
+  },
+  backToReadingText: {
+    fontFamily: FONTS.medium,
+    fontSize: rs(12),
+    color: '#ffffff',
+  },
+  lastReadRight: {
+    flex: 0.8,
+    position: 'relative',
+    overflow: 'visible',
+  },
+  lastReadBookImage: {
+    position: 'absolute',
+    right: rs(-20),
+    top: hs(10),
+    width: rs(140),
+    height: hs(140),
+    zIndex: 3,
   },
 
   // ── Progress Card Styles ──
@@ -919,6 +1194,38 @@ const styles = StyleSheet.create({
     fontSize: 10,
     textAlign: 'right',
   },
+  catCountRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  catCompletedCount: {
+    fontFamily: FONTS.bold,
+    fontSize: 15,
+  },
+  catCountDivider: {
+    fontFamily: FONTS.medium,
+    fontSize: 12,
+  },
+  catCountTotal: {
+    fontFamily: FONTS.medium,
+    fontSize: 12,
+  },
+  catCountLabel: {
+    fontFamily: FONTS.regular,
+    fontSize: 10,
+  },
+  catMiniProgressBg: {
+    width: '90%',
+    height: 5,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  catMiniProgressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
   giantPercentage: {
     fontFamily: FONTS.bold,
     fontSize: 44,
@@ -1084,6 +1391,56 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     color: '#ffffff',
     fontSize: 16,
+  },
+  nameListRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  nameListNumBubble: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  nameListNumText: {
+    fontFamily: FONTS.bold,
+    fontSize: 12,
+  },
+  nameListTextCol: {
+    flex: 1,
+  },
+  nameListTrans: {
+    fontFamily: FONTS.bold,
+    fontSize: 15,
+  },
+  nameListMeaning: {
+    fontFamily: FONTS.medium,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  nameListArabic: {
+    fontFamily: FONTS.arabic,
+    fontSize: 16,
+    marginLeft: 10,
+  },
+  sortOptionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  sortOptionText: {
+    fontFamily: FONTS.bold,
+    fontSize: 15,
+    marginLeft: 12,
   },
 });
 

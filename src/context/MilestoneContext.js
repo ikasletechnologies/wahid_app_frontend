@@ -40,10 +40,6 @@ export const MilestoneProvider = ({ children }) => {
       let status;
       if (totalLearned >= currThreshold) {
         status = 'completed';
-      } else if (totalLearned >= (idx === 0 ? 1 : prevThreshold)) {
-        // Stone 1: unlocks after at least 1 name learned
-        // Stone N: unlocks once stone N-1 is completed (totalLearned >= prevThreshold)
-        status = 'in_progress';
       } else {
         status = 'locked';
       }
@@ -58,7 +54,7 @@ export const MilestoneProvider = ({ children }) => {
     });
   }, [totalLearned]);
 
-  const currentIndex = milestones.findIndex(m => m.status === 'in_progress');
+  const currentIndex = milestones.findIndex(m => m.status === 'locked');
   const allCompleted  = totalLearned >= 99;
 
   return (

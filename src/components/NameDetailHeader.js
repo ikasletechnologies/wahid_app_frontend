@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { FONTS } from '../theme';
 import { useAppTheme } from '../context/ThemeContext';
 
-const NameDetailHeader = ({ name, onClose }) => {
+const NameDetailHeader = ({ name, onClose, isFavorite, onToggleFavorite }) => {
   const { isDark } = useAppTheme();
 
   return (
@@ -23,7 +23,9 @@ const NameDetailHeader = ({ name, onClose }) => {
           <Text style={[styles.headerName, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>{name.transliteration}</Text>
           <Text style={styles.headerMeaning}>{name.meaning}</Text>
         </View>
-        <View style={{ width: 36 }} />
+        <TouchableOpacity onPress={onToggleFavorite} style={styles.closeBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+          <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={28} color={isFavorite ? "#EF4444" : (isDark ? '#E8EDF2' : '#1A1A1A')} />
+        </TouchableOpacity>
       </View>
     </View>
   );

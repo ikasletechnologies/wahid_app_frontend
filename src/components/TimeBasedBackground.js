@@ -191,7 +191,7 @@ const TimeBasedBackground = ({ children, showElements = true }) => {
         </View>
       )}
 
-      {typeof children === 'function' ? children({ isNight, period }) : children}
+      {typeof children === 'function' ? children({ isNight, period, sunPos, moonPos }) : children}
     </>
   );
 };

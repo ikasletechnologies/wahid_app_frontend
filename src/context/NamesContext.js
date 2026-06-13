@@ -1,4 +1,5 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
+import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import http from '../config/http';
 import { ENDPOINTS } from '../config/api';
@@ -138,6 +139,78 @@ export const NamesProvider = ({ children }) => {
   const [userReflections, setUserReflections] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [readingTimeToday, setReadingTimeToday] = useState(0);
+  const [draftIds, setDraftIds] = useState([]);
+
+  // Load today's reading time and drafts
+  useEffect(() => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const key = `reading_time_${todayStr}`;
+    AsyncStorage.getItem(key).then(val => {
+      if (val) setReadingTimeToday(parseInt(val, 10) || 0);
+    }).catch(() => {});
+
+    AsyncStorage.getItem('draft_ids_v1').then(val => {
+      if (val) setDraftIds(JSON.parse(val));
+    }).catch(() => {});
+  }, []);
+
+  // Accumulated seconds not yet flushed to the backend
+  const pendingSecondsRef = useRef(0);
+  const flushTimerRef = useRef(null);
+
+  const flushReadingTime = useCallback((accumulated) => {
+    if (!token || accumulated <= 0) return;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    http.post('/api/progress/reading-time', { seconds: accumulated, localDate: todayStr }).catch(() => {});
+  }, [token]);
+
+  const incrementReadingTime = useCallback((seconds) => {
+    if (seconds <= 0) return;
+    setReadingTimeToday(prev => {
+      const next = prev + seconds;
+      const todayStr = new Date().toISOString().slice(0, 10);
+      AsyncStorage.setItem(`reading_time_${todayStr}`, String(next)).catch(() => {});
+      return next;
+    });
+
+    if (token) {
+      pendingSecondsRef.current += seconds;
+      // Flush to backend at most once every 30 seconds
+      if (!flushTimerRef.current) {
+        flushTimerRef.current = setTimeout(() => {
+          flushReadingTime(pendingSecondsRef.current);
+          pendingSecondsRef.current = 0;
+          flushTimerRef.current = null;
+        }, 30000);
+      }
+    }
+  }, [token, flushReadingTime]);
+
+  const markAsDraft = useCallback((nameNumber) => {
+    setDraftIds(prev => {
+      if (prev.includes(nameNumber)) return prev;
+      const next = [...prev, nameNumber];
+      AsyncStorage.setItem('draft_ids_v1', JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+    if (token) {
+      http.post('/api/progress/draft', { nameNumber }).catch(() => {});
+    }
+  }, [token]);
+
+  const removeDraft = useCallback((nameNumber) => {
+    setDraftIds(prev => {
+      if (!prev.includes(nameNumber)) return prev;
+      const next = prev.filter(id => id !== nameNumber);
+      AsyncStorage.setItem('draft_ids_v1', JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+    if (token) {
+      http.delete('/api/progress/draft', { data: { nameNumber } }).catch(() => {});
+    }
+  }, [token]);
+
 
   // Load persisted viewed IDs from AsyncStorage whenever the user logs in
   useEffect(() => {
@@ -165,6 +238,7 @@ export const NamesProvider = ({ children }) => {
       setLearnedIds([]);
       setMasteredIds([]);
       setViewedIds([]);
+      setDraftIds([]);
       setStreak(0);
       setStreakDetails({
         activeDates: [],
@@ -214,7 +288,7 @@ export const NamesProvider = ({ children }) => {
       const todayStr = new Date().toISOString().slice(0, 10);
       const [namesRes, progressRes, streakRes] = await Promise.all([
         http.get(`${ENDPOINTS.names}?limit=100`),
-        http.get(ENDPOINTS.progress),
+        http.get(`${ENDPOINTS.progress}?localDate=${todayStr}`),
         http.get(`${ENDPOINTS.streak}?localDate=${todayStr}`),
       ]);
 
@@ -225,12 +299,23 @@ export const NamesProvider = ({ children }) => {
       }
 
       if (progressRes.data?.success && progressRes.data?.data) {
-        const { learned, mastered, streak: s, revisits, reflections } = progressRes.data.data;
+        const { learned, mastered, streak: s, revisits, reflections, draftIds, lastReadName, lastReadStep, readingTimeToday } = progressRes.data.data;
         setLearnedIds(learned || []);
         setMasteredIds(mastered || []);
         setStreak(s || 0);
         if (revisits) setRevisitCounts(revisits);
         if (reflections) setUserReflections(reflections);
+        if (draftIds) {
+          setDraftIds(draftIds);
+          AsyncStorage.setItem('draft_ids_v1', JSON.stringify(draftIds)).catch(() => {});
+        }
+        if (readingTimeToday !== undefined) {
+          setReadingTimeToday(readingTimeToday);
+          AsyncStorage.setItem(`reading_time_${todayStr}`, String(readingTimeToday)).catch(() => {});
+        }
+        if (lastReadName !== undefined && lastReadStep !== undefined) {
+           AsyncStorage.setItem('last_reading_progress', JSON.stringify({ nameNumber: lastReadName, stepIndex: lastReadStep })).catch(() => {});
+        }
         AsyncStorage.setItem('progress_cache', JSON.stringify({
           learned: learned || [],
           mastered: mastered || [],
@@ -412,6 +497,11 @@ export const NamesProvider = ({ children }) => {
       streakDetails,
       revisitCounts,
       userReflections,
+      readingTimeToday,
+      incrementReadingTime,
+      draftIds,
+      markAsDraft,
+      removeDraft,
       loading,
       refreshing,
       syncWithBackend,

@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, ClipPath, G, Circle } from 'react-native-svg';
 import { useNames } from '../context/NamesContext';
+import { usePlaylist } from '../context/PlaylistContext';
 import { FONTS } from '../theme';
 import TimeBasedBackground from '../components/TimeBasedBackground';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -72,7 +73,7 @@ const NameCardBackground = ({ width, height, style, gradEnd = '#BCECF7', strokeC
       <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         <Defs>
           <SvgLinearGradient id="cardGrad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={gradEnd === '#1A2332' || gradEnd === '#062f1d' || gradEnd === '#332700' ? '#0F172A' : '#FFFFFF'} />
+            <Stop offset="0" stopColor={['#1A2332', '#062f1d', '#332700', '#665200'].includes(gradEnd) ? '#0F172A' : '#FFFFFF'} />
             <Stop offset="1" stopColor={gradEnd} />
           </SvgLinearGradient>
         </Defs>
@@ -87,49 +88,31 @@ const NameCardBackground = ({ width, height, style, gradEnd = '#BCECF7', strokeC
   );
 };
 
-const NamesScreen = ({ navigation }) => {
-  const { names, loading, learnedIds, masteredIds, revisitCounts, categories, markAsViewed } = useNames();
+const NamesScreen = ({ navigation, route }) => {
+  const { names, loading, learnedIds, masteredIds, revisitCounts, categories, markAsViewed, readingTimeToday, draftIds } = useNames();
+  const { favouriteIds } = usePlaylist();
   const { isDark, colors } = useAppTheme();
   const [activeIndex, setActiveIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [lastReadName, setLastReadName] = useState(null);
-
-  // Load the last-read card from AsyncStorage when names become available.
-  useEffect(() => {
-    if (names.length === 0) return;
-
-    AsyncStorage.getItem('last_viewed_name')
-      .then(saved => {
-        if (saved === null) return;
-        const nameObj = names.find(n => n.number === parseInt(saved, 10));
-        if (nameObj) setLastReadName(nameObj);
-      })
-      .catch(() => { });
-  }, [names]);
-
   // Ref that signals the filteredNames effect to skip card-preservation and
   // honour an explicit navigation jump instead.
   const isNavigatingRef = useRef(false);
-
-  const handleBackToReading = async () => {
-    if (!lastReadName) return;
-
-    const nameNumber = lastReadName.number || lastReadName.id;
-    try {
-      const saved = await AsyncStorage.getItem('last_reading_progress');
-      const progress = saved ? JSON.parse(saved) : null;
-      const initialStepIndex =
-        progress?.nameNumber === nameNumber ? (progress.stepIndex ?? 0) : 0;
-      navigation.navigate('NameDetail', { name: lastReadName, initialStepIndex });
-    } catch {
-      navigation.navigate('NameDetail', { name: lastReadName, initialStepIndex: 0 });
-    }
-  };
 
   const [filterVisible, setFilterVisible] = useState(false);
   const [tempCat, setTempCat] = useState('All');
   const [tempStatus, setTempStatus] = useState('All');
   const [tempNumber, setTempNumber] = useState('');
+
+  const formattedReadingTime = React.useMemo(() => {
+    if (!readingTimeToday) return '0m';
+    const h = Math.floor(readingTimeToday / 3600);
+    const m = Math.floor((readingTimeToday % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+  }, [readingTimeToday]);
+
+  const draftCount = draftIds ? draftIds.length : 0;
+  const favCount = favouriteIds ? favouriteIds.size : 0;
 
   const [appliedCat, setAppliedCat] = useState('All');
   const [appliedStatus, setAppliedStatus] = useState('All');
@@ -145,6 +128,8 @@ const NamesScreen = ({ navigation }) => {
       result = result.filter(n => learnedIds.includes(n.number) && !masteredIds.includes(n.number));
     } else if (appliedStatus === 'Mastered') {
       result = result.filter(n => masteredIds.includes(n.number));
+    } else if (appliedStatus === 'Remaining') {
+      result = result.filter(n => !learnedIds.includes(n.number) && !masteredIds.includes(n.number));
     }
     if (appliedNumber && appliedNumber.trim() !== '') {
       const numPattern = parseInt(appliedNumber, 10);
@@ -166,6 +151,45 @@ const NamesScreen = ({ navigation }) => {
   const isAnimating = useRef(false);
   const pendingReset = useRef(false);
   const dragProgress = useRef(0);
+
+  useEffect(() => {
+    if (route?.params) {
+      const p = route.params;
+      let changed = false;
+
+      let newCat = appliedCat;
+      if (p.filter !== undefined) {
+        newCat = p.filter 
+          ? p.filter.charAt(0).toUpperCase() + p.filter.slice(1) 
+          : 'All';
+        if (newCat !== appliedCat) {
+          setAppliedCat(newCat);
+          setTempCat(newCat);
+          changed = true;
+        }
+      }
+
+      let newStatus = appliedStatus;
+      if (p.statusFilter !== undefined) {
+        newStatus = p.statusFilter 
+          ? p.statusFilter.charAt(0).toUpperCase() + p.statusFilter.slice(1) 
+          : 'All';
+        if (newStatus !== appliedStatus) {
+          setAppliedStatus(newStatus);
+          setTempStatus(newStatus);
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        isNavigatingRef.current = true;
+        setActiveIndex(0);
+        activeIndexRef.current = 0;
+        pendingReset.current = true;
+      }
+    }
+  }, [route?.params]);
+
 
   useEffect(() => {
     namesRef.current = filteredNames;
@@ -304,8 +328,8 @@ const NamesScreen = ({ navigation }) => {
     let bookholderSource = require('../../assets/names/bookHolder/normalHolder.png');
 
     if (isMastered) {
-      gradEnd = isDark ? '#332700' : '#FFF3C0';
-      strokeColor = isDark ? '#664D03' : '#FFD700';
+      gradEnd = isDark ? '#665200' : '#FFF3C0';
+      strokeColor = isDark ? '#FFD700' : '#FFD700';
       accentColor = '#FFC107';
       badgeBg = isDark ? '#000000' : '#0B0C0C';
       badgeIcon = 'trophy';
@@ -425,61 +449,80 @@ const NamesScreen = ({ navigation }) => {
                 </View>
               </View>
 
-              <View style={styles.lastReadCardWrapper}>
-                <LinearGradient
-                  colors={isDark ? ['#1A2332', '#0F172A'] : ['#4BD5E8', '#FDFEFE']}
-                  start={{ x: 0.5, y: 0 }}
-                  end={{ x: 0.5, y: 0.9 }}
-                  style={[styles.lastReadCard, isDark && { borderWidth: 1, borderColor: '#334155' }]}
-                >
-                  <View style={styles.lastReadLeft}>
-                    <View style={styles.lastReadBadge}>
-                      <Image
-                        source={require('../../assets/navigation/names.png')}
-                        style={[styles.lastReadBadgeIcon, { tintColor: isDark ? '#E8EDF2' : '#000000' }]}
-                        resizeMode="contain"
-                      />
-                      <Text style={[styles.lastReadBadgeText, { color: isDark ? '#E8EDF2' : '#000000' }]}>Last Read</Text>
+              {/* ── FEATURE CARDS GRID ── */}
+              <View style={styles.featureCardsContainer}>
+                <View style={styles.featureCardsRow}>
+                  {/* Card 1: Favorites */}
+                  <TouchableOpacity 
+                    style={[styles.featureCard, { backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]} 
+                    activeOpacity={0.8}
+                    onPress={() => navigation.navigate('NamesList', { statusFilter: 'favorites' })}
+                  >
+                    <View style={[styles.featureIconBox, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F6F9' }]}>
+                      <Ionicons name="heart" size={rs(18)} color="#00ADC1" />
                     </View>
-
-                    <View style={styles.lastReadTextGroup}>
-                      <Text style={[styles.lastReadArabic, { color: isDark ? '#E8EDF2' : '#000000ff' }]}>{lastReadName?.arabic || 'الرحمن'}</Text>
-                      <Text style={[styles.lastReadTrans, { color: isDark ? '#E8EDF2' : '#000000' }]}>{lastReadName?.transliteration || 'Ar-rahman'}</Text>
-                      <Text style={[styles.lastReadMeaning, { color: isDark ? '#9EAAB8' : '#374151' }]}>{lastReadName?.meaning || 'The Most Gracious'}</Text>
+                    <View style={styles.featureTextCol}>
+                      <Text style={[styles.featureValue, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>{favCount}</Text>
+                      <Text style={[styles.featureLabel, { color: isDark ? '#94A3B8' : '#64748B' }]}>Favorites</Text>
                     </View>
+                  </TouchableOpacity>
 
-                    <TouchableOpacity
-                      style={[styles.backToReadingBtn, { backgroundColor: isDark ? '#00ADC1' : '#000000' }]}
-                      activeOpacity={0.8}
-                      onPress={handleBackToReading}
-                    >
-                      <Text style={[styles.backToReadingText, { color: '#ffffff' }]}>Back to reading</Text>
-                      <Ionicons name="chevron-forward" size={15} color="#ffffff" style={{ marginLeft: 20, marginTop: 4 }} />
-                    </TouchableOpacity>
-                  </View>
+                  {/* Card 2: Read Today */}
+                  <TouchableOpacity 
+                    style={[styles.featureCard, { backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]} 
+                    activeOpacity={0.8}
+                  >
+                    <View style={[styles.featureIconBox, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F6F9' }]}>
+                      <Ionicons name="book" size={rs(18)} color="#00ADC1" />
+                    </View>
+                    <View style={styles.featureTextCol}>
+                      <Text style={[styles.featureValue, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>{formattedReadingTime}</Text>
+                      <Text style={[styles.featureLabel, { color: isDark ? '#94A3B8' : '#64748B' }]}>Read Today</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
 
-                  <View style={styles.lastReadRight}>
-                    <Animated.Image
-                      source={require('../../assets/names/book.png')}
-                      style={[
-                        styles.lastReadBookImage,
-                        {
-                          transform: [
-                            { rotate: '-6deg' },
-                            {
-                              translateY: floatAnim.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [0, -10]
-                              })
-                            }
-                          ]
+                <View style={styles.featureCardsRow}>
+                  {/* Card 3: Draft */}
+                  <TouchableOpacity 
+                    style={[styles.featureCard, { backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]} 
+                    activeOpacity={0.8}
+                    onPress={() => navigation.navigate('NamesList', { statusFilter: 'drafts' })}
+                  >
+                    <View style={[styles.featureIconBox, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F6F9' }]}>
+                      <Ionicons name="document-text" size={rs(18)} color="#00ADC1" />
+                    </View>
+                    <View style={styles.featureTextCol}>
+                      <Text style={[styles.featureValue, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>{draftCount}</Text>
+                      <Text style={[styles.featureLabel, { color: isDark ? '#94A3B8' : '#64748B' }]}>Draft</Text>
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Card 4: Continue */}
+                  <TouchableOpacity 
+                    style={[styles.featureCard, { backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]} 
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      AsyncStorage.getItem('last_reading_progress').then(saved => {
+                        if (saved) {
+                          const parsed = JSON.parse(saved);
+                          const item = names.find(n => n.number === parsed.nameNumber || n.id === parsed.nameNumber);
+                          if (item) navigation.navigate('NameDetail', { name: item, initialStepIndex: parsed.stepIndex });
                         }
-                      ]}
-                      resizeMode="contain"
-                    />
-                  </View>
-                </LinearGradient>
+                      }).catch(() => {});
+                    }}
+                  >
+                    <View style={[styles.featureIconBox, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F6F9' }]}>
+                      <Ionicons name="play" size={rs(18)} color="#00ADC1" />
+                    </View>
+                    <View style={styles.featureTextCol}>
+                      <Text style={[styles.featureValue, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>Resume</Text>
+                      <Text style={[styles.featureLabel, { color: isDark ? '#94A3B8' : '#64748B' }]}>Continue</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
               </View>
+
             </View>
 
             {/* ── CARD STACK ENGINE ── */}
@@ -569,7 +612,6 @@ const NamesScreen = ({ navigation }) => {
                           if (isAnimating.current) return;
                           const item = filteredNames[dataIdx];
                           if (!item) return;
-                          setLastReadName(item);
                           AsyncStorage.setItem('last_viewed_name', String(item.number)).catch(() => { });
                           markAsViewed(item.number);
                           navigation.navigate('NameDetail', { name: item });
@@ -612,7 +654,7 @@ const NamesScreen = ({ navigation }) => {
 
                   <Text style={styles.filterSectionTitle}>STATUS</Text>
                   <View style={styles.filterRow}>
-                    {['All', 'Learned', 'Mastered'].map(status => {
+                    {['All', 'Learned', 'Mastered', 'Remaining'].map(status => {
                       const isActive = tempStatus === status;
                       return (
                         <TouchableOpacity
@@ -697,95 +739,6 @@ const styles = StyleSheet.create({
     marginVertical: hs(4),
     textAlign: 'center',
   },
-  lastReadCardWrapper: {
-    width: CARD_W,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 5,
-    elevation: 4,
-    marginBottom: hs(16),
-  },
-  lastReadCard: {
-    flexDirection: 'row',
-    borderRadius: rs(10),
-    paddingVertical: hs(12),
-    paddingHorizontal: rs(16),
-    height: hs(180),
-    position: 'relative',
-    overflow: 'visible',
-  },
-  lastReadLeft: {
-    flex: 1.2,
-    justifyContent: 'center',
-    zIndex: 2,
-  },
-  lastReadBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  lastReadBadgeIcon: {
-    width: rs(14),
-    height: rs(14),
-    marginTop: hs(2),
-    tintColor: '#000000',
-  },
-  lastReadBadgeText: {
-    fontFamily: FONTS.medium,
-    fontSize: rs(12),
-    color: '#000000',
-    marginLeft: 2,
-  },
-  lastReadTextGroup: {
-    marginTop: hs(20),
-    marginBottom: hs(20),
-  },
-  lastReadArabic: {
-    fontSize: rs(10),
-    fontFamily: FONTS.arabic,
-    color: '#000000ff',
-  },
-  lastReadTrans: {
-    fontFamily: FONTS.bold,
-    fontSize: rs(18),
-    color: '#000000',
-    lineHeight: rs(22),
-  },
-  lastReadMeaning: {
-    fontFamily: FONTS.medium,
-    fontSize: rs(10),
-    color: '#374151',
-  },
-  backToReadingBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#000000',
-    borderRadius: rs(8),
-    paddingHorizontal: rs(14),
-    paddingVertical: hs(8),
-    alignSelf: 'flex-start',
-    marginTop: hs(2),
-  },
-  backToReadingText: {
-    fontFamily: FONTS.medium,
-    fontSize: rs(12),
-    color: '#ffffff',
-  },
-  lastReadRight: {
-    flex: 0.8,
-    position: 'relative',
-    overflow: 'visible',
-  },
-  lastReadBookImage: {
-    position: 'absolute',
-    right: rs(-20),
-    top: hs(10),
-    width: rs(140),
-    height: hs(140),
-    zIndex: 3,
-  },
-
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: rs(10), marginBottom: hs(10), marginTop: hs(4) },
   searchPill: { flex: 1, height: rs(38), backgroundColor: '#FFFFFF', borderRadius: rs(19), flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(14), gap: rs(8), elevation: 2 },
   searchInput: { flex: 1, fontSize: rs(13), color: '#1A1A1A', paddingVertical: 0, height: rs(38) },
@@ -867,6 +820,15 @@ const styles = StyleSheet.create({
 
   applyFilterBtn: { width: '100%', backgroundColor: '#00ADC1', borderRadius: rs(12), paddingVertical: hs(16), alignItems: 'center' },
   applyFilterBtnText: { color: '#FFFFFF', fontSize: rs(16), fontWeight: '700' },
+
+  // ── FEATURE CARDS ──
+  featureCardsContainer: { paddingHorizontal: rs(20), width: '100%', marginTop: hs(4), marginBottom: hs(24), gap: hs(12) },
+  featureCardsRow: { flexDirection: 'row', gap: rs(12), width: '100%' },
+  featureCard: { flex: 1, flexDirection: 'row', alignItems: 'center', padding: rs(12), borderRadius: rs(16), borderWidth: 1 },
+  featureIconBox: { width: rs(40), height: rs(40), borderRadius: rs(12), justifyContent: 'center', alignItems: 'center', marginRight: rs(12) },
+  featureTextCol: { flex: 1, justifyContent: 'center' },
+  featureValue: { fontSize: rs(15), fontWeight: '700', marginBottom: hs(2) },
+  featureLabel: { fontSize: rs(11), fontWeight: '500' },
 
 });
 

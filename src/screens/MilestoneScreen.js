@@ -41,17 +41,16 @@ const STONE_IMAGES = [
   require('../../assets/milestone/Stone/Stone7.png'),
 ];
 
-const ACTIVE_STONE = require('../../assets/milestone/Stone/mileStone.png');
 
 // 7 perspective slots — bottom (large/close) → top (small/distant)
 const SLOTS = [
-  { size: 240, bottomRatio: 0.08 },
-  { size: 108, bottomRatio: 0.32 },
-  { size: 76, bottomRatio: 0.49 },
-  { size: 56, bottomRatio: 0.62 },
-  { size: 42, bottomRatio: 0.72 },
-  { size: 31, bottomRatio: 0.80 },
-  { size: 23, bottomRatio: 0.87 },
+  { size: 180, bottomRatio: 0.12 }, // Increased from 0.02 to give more bottom space
+  { size: 108, bottomRatio: 0.42 }, // Pushed second stone further up to keep a large gap
+  { size: 76, bottomRatio: 0.58 },
+  { size: 56, bottomRatio: 0.70 },
+  { size: 42, bottomRatio: 0.79 },
+  { size: 31, bottomRatio: 0.86 },
+  { size: 23, bottomRatio: 0.92 },
 ];
 const N_NODES = SLOTS.length;
 
@@ -140,7 +139,50 @@ const ProgressRing = ({ progress, size }) => {
 
 const MilestoneScreen = ({ navigation }) => {
   const scrollY = React.useRef(new Animated.Value(0)).current;
+  const beamAnim = React.useRef(new Animated.Value(0.4)).current;
   const { milestones, allCompleted } = useMilestones();
+
+  React.useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(beamAnim, { toValue: 0.9, duration: 2500, useNativeDriver: true }),
+        Animated.timing(beamAnim, { toValue: 0.4, duration: 2500, useNativeDriver: true }),
+      ])
+    ).start();
+  }, [beamAnim]);
+
+  const dustParticles = React.useMemo(() => {
+    return Array.from({ length: 30 }).map((_, i) => ({
+      id: i,
+      left: Math.random() * SW,
+      top: Math.random() * (SH * 0.8), // Scatter across upper 80%
+      size: 1.5 + Math.random() * 2.5,
+      dur: 2000 + Math.random() * 3000,
+      delay: Math.random() * 2500,
+      drift: -20 - Math.random() * 30, // Drift upwards
+      maxOp: 0.2 + Math.random() * 0.6,
+    }));
+  }, []);
+
+  const dustAnims = React.useRef(dustParticles.map(() => new Animated.Value(0))).current;
+  const dustDrift = React.useRef(dustParticles.map(() => new Animated.Value(0))).current;
+
+  React.useEffect(() => {
+    dustParticles.forEach((p, i) => {
+      Animated.loop(
+        Animated.parallel([
+          Animated.sequence([
+            Animated.timing(dustAnims[i], { toValue: p.maxOp, duration: p.dur, delay: p.delay, useNativeDriver: true }),
+            Animated.timing(dustAnims[i], { toValue: 0, duration: p.dur, useNativeDriver: true }),
+          ]),
+          Animated.sequence([
+            Animated.delay(p.delay),
+            Animated.timing(dustDrift[i], { toValue: p.drift, duration: p.dur * 2, useNativeDriver: true }),
+          ])
+        ])
+      ).start();
+    });
+  }, []);
 
   const extendedMilestones = React.useMemo(() => {
     const arr = [...milestones];
@@ -155,7 +197,9 @@ const MilestoneScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={s.root} edges={['top']}>
       <TimeBasedBackground>
-        {({ isNight }) => (
+        {({ isNight, sunPos, moonPos }) => {
+          const activePos = isNight ? moonPos : sunPos;
+          return (
           <>
             <Image source={require('../../assets/milestone/ring.png')} style={[s.ringLeft, isNight && { opacity: 0.15 }]} resizeMode="contain" />
             <Image source={require('../../assets/milestone/ring.png')} style={[s.ringRight, isNight && { opacity: 0.15 }]} resizeMode="contain" />
@@ -163,14 +207,7 @@ const MilestoneScreen = ({ navigation }) => {
             <Image source={require('../../assets/milestone/Pattern.png')} style={[s.patternRight, isNight && { opacity: 0.15 }]} resizeMode="contain" />
 
             {/* Header */}
-            <View style={s.header}>
-              <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtn} activeOpacity={0.7}>
-                <Ionicons name="chevron-back" size={22} color={isNight ? '#FFFFFF' : '#0A7080'} />
-                <Text style={[s.headerTitle, { color: isNight ? '#FFFFFF' : '#0A7080' }]}>
-                  Milestones
-                </Text>
-              </TouchableOpacity>
-
+            <View style={[s.header, { justifyContent: 'flex-end' }]}>
               {allCompleted && (
                 <View style={s.allDoneBadge}>
                   <Ionicons name="trophy" size={14} color="#FFD700" />
@@ -182,8 +219,49 @@ const MilestoneScreen = ({ navigation }) => {
             {/* Road */}
             <Image source={require('../../assets/milestone/road.png')} style={[s.road, isNight && { opacity: 0.4 }]} resizeMode="stretch" />
 
+            {/* Dynamic Light Beam from Sun/Moon to 1st Stone */}
+            {activePos && (
+              <Animated.View style={{ position: 'absolute', top: 0, left: 0, width: SW, height: SH, zIndex: 1, opacity: beamAnim }} pointerEvents="none">
+                <Svg width={SW} height={SH}>
+                  <Defs>
+                    <SvgLinearGradient id="beam" x1="0" y1="0" x2="0" y2="1">
+                      <Stop offset="0%" stopColor={isNight ? "#818CF8" : "#FDE047"} stopOpacity="0.8" />
+                      <Stop offset="100%" stopColor={isNight ? "#3DF3FF" : "#FDE047"} stopOpacity="0" />
+                    </SvgLinearGradient>
+                  </Defs>
+                  <Polygon
+                    points={`${activePos.x + 65},${activePos.y + 60} ${SW / 2 - 40},${SH * 0.85} ${SW / 2 + 40},${SH * 0.85}`}
+                    fill="url(#beam)"
+                  />
+                </Svg>
+
+                {/* Dust Particles */}
+                {dustParticles.map((p, i) => (
+                  <Animated.View
+                    key={`dust-${p.id}`}
+                    style={{
+                      position: 'absolute',
+                      left: p.left,
+                      top: p.top,
+                      width: p.size,
+                      height: p.size,
+                      borderRadius: p.size / 2,
+                      backgroundColor: isNight ? '#E0E7FF' : '#FEF08A',
+                      opacity: dustAnims[i],
+                      transform: [{ translateY: dustDrift[i] }],
+                      shadowColor: isNight ? '#E0E7FF' : '#FEF08A',
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.8,
+                      shadowRadius: 2,
+                      elevation: 2,
+                    }}
+                  />
+                ))}
+              </Animated.View>
+            )}
+
             {/* Tapered glow band */}
-            <Svg width={ROAD_W} height={ROAD_H} style={[s.road, { zIndex: 2 }]}>
+            {/* <Svg width={ROAD_W} height={ROAD_H} style={[s.road, { zIndex: 2 }]}>
               <Defs>
                 <SvgLinearGradient id="lightGrad" x1="0" y1="0" x2="0" y2="1">
                   <Stop offset="0%" stopColor="#3DF3FF" stopOpacity="0" />
@@ -196,12 +274,12 @@ const MilestoneScreen = ({ navigation }) => {
                 points={`${xLeftTop},${Y_TOP} ${xRightTop},${Y_TOP} ${xRightBottom},${Y_BOTTOM} ${xLeftBottom},${Y_BOTTOM}`}
                 fill="url(#lightGrad)"
               />
-            </Svg>
+            </Svg> */}
 
             {/* Milestone nodes */}
             {extendedMilestones.map((milestone, i) => {
               const inputRange = [];
-              const outBottom = [];
+              const outTranslateY = [];
               const outSize = [];
               const outOpacity = [];
 
@@ -210,16 +288,14 @@ const MilestoneScreen = ({ navigation }) => {
                 inputRange.push(scrollVal);
                 const interp = interpolateSlot(v);
                 const adjBottom = interp.bottom - 35 + 0.18 * interp.size;
-                outBottom.push(adjBottom);
                 outSize.push(interp.size);
                 outOpacity.push(interp.opacity);
+                outTranslateY.push(50 - adjBottom - interp.size / 2);
               }
 
-              const bottom = scrollY.interpolate({ inputRange, outputRange: outBottom, extrapolate: 'clamp' });
-              const size = scrollY.interpolate({ inputRange, outputRange: outSize, extrapolate: 'clamp' });
-              const opacity = scrollY.interpolate({ inputRange, outputRange: outOpacity, extrapolate: 'clamp' });
-              const left = scrollY.interpolate({ inputRange, outputRange: outSize.map(sz => (SW - sz) / 2), extrapolate: 'clamp' });
+              const translateY = scrollY.interpolate({ inputRange, outputRange: outTranslateY, extrapolate: 'clamp' });
               const scale = scrollY.interpolate({ inputRange, outputRange: outSize.map(sz => sz / 100), extrapolate: 'clamp' });
+              const opacity = scrollY.interpolate({ inputRange, outputRange: outOpacity, extrapolate: 'clamp' });
 
               const { status } = milestone;
 
@@ -228,36 +304,22 @@ const MilestoneScreen = ({ navigation }) => {
                   <Animated.Image
                     key={`stone-${i}`}
                     source={STONE_IMAGES[i]}
-                    style={{ position: 'absolute', bottom, left, width: size, height: size, opacity, zIndex: 30 - i }}
+                    style={{ position: 'absolute', bottom: 0, left: (SW - 100) / 2, width: 100, height: 100, transform: [{ translateY }, { scale }], opacity, zIndex: 30 - i }}
                     resizeMode="contain"
                   />
                 );
               }
 
-              if (status === 'in_progress') {
-                return (
-                  <Animated.View
-                    key={`active-${i}`}
-                    style={{ position: 'absolute', bottom, left, width: size, height: size, opacity, zIndex: 30 - i }}
-                  >
-                    <Animated.Image
-                      source={ACTIVE_STONE}
-                      style={{ width: '90%', height: '90%', alignSelf: 'center', top: '5%' }}
-                      resizeMode="contain"
-                    />
-
-                  </Animated.View>
-                );
-              }
 
               // locked
               return (
                 <Animated.View
                   key={`locked-${i}`}
                   style={{
-                    position: 'absolute', bottom, left: SW / 2 - 50,
-                    width: 100, height: 90,
-                    transform: [{ scale }],
+                    position: 'absolute', bottom: 0, left: (SW - 100) / 2,
+                    width: 100, height: 100,
+                    justifyContent: 'center', alignItems: 'center',
+                    transform: [{ translateY }, { scale }],
                     opacity, zIndex: 30 - i,
                   }}
                 >
@@ -266,36 +328,29 @@ const MilestoneScreen = ({ navigation }) => {
               );
             })}
 
-            {/* Dashed center line */}
-            {Array.from({ length: 20 }).map((_, i) => {
-              const dashBottom = scrollY.interpolate({
-                inputRange: [0, 5000],
-                outputRange: [35 + i * 120, 35 + i * 120 - 5000],
-                extrapolate: 'clamp',
-              });
-              return (
-                <Animated.View
-                  key={`dash-${i}`}
-                  style={[s.dash, { position: 'absolute', bottom: dashBottom, zIndex: 3, backgroundColor: isNight ? '#334155' : '#D9D9D9' }]}
-                />
-              );
-            })}
+            {/* Dashed center line — static */}
+            {Array.from({ length: 14 }).map((_, i) => (
+              <View
+                key={`dash-${i}`}
+                style={[s.dash, { position: 'absolute', bottom: 35 + i * 120, zIndex: 3, backgroundColor: isNight ? '#334155' : '#D9D9D9' }]}
+              />
+            ))}
 
 
 
             {/* Scroll track overlay */}
             <Animated.ScrollView
-              style={s.scrollOverlay}
+              style={[s.scrollOverlay, { transform: [{ scaleY: -1 }] }]}
               contentContainerStyle={{ height: SH + 900 }}
               showsVerticalScrollIndicator={false}
               onScroll={Animated.event(
                 [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                { useNativeDriver: false },
+                { useNativeDriver: true },
               )}
               scrollEventThrottle={16}
             />
           </>
-        )}
+        )}}
       </TimeBasedBackground>
     </SafeAreaView>
   );

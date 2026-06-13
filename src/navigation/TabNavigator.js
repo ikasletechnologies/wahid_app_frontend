@@ -4,7 +4,6 @@ import { View, Platform, Animated, TouchableOpacity, StyleSheet, Dimensions, Ima
 import HomeScreen from '../screens/HomeScreen';
 import NamesScreen from '../screens/NamesScreen';
 import MilestoneScreen from '../screens/MilestoneScreen';
-import ProfileScreen from '../screens/ProfileScreen';
 import { useAppTheme } from '../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import MiniPlayer from '../components/MiniPlayer';
@@ -20,7 +19,6 @@ const TAB_ICONS = {
   Home:       require('../../assets/navigation/home.png'),
   Names:      require('../../assets/navigation/names.png'),
   Milestones: require('../../assets/navigation/journey.png'),
-  Profile:    require('../../assets/navigation/profile.png'),
 };
 
 // ── Time-based night detection — mirrors TimeBasedBackground logic ─────────
@@ -222,13 +220,13 @@ const TabNavigator = () => {
   return (
     <>
       <Tab.Navigator
+        initialRouteName="Home"
         tabBar={props => <CustomTabBar {...props} colors={colors} isDark={isDark} isNight={isNight} />}
         screenOptions={{ headerShown: false }}
       >
-        <Tab.Screen name="Home"       component={HomeScreen} />
         <Tab.Screen name="Names"      component={NamesScreen} />
+        <Tab.Screen name="Home"       component={HomeScreen} />
         <Tab.Screen name="Milestones" component={MilestoneScreen} />
-        <Tab.Screen name="Profile"    component={ProfileScreen} />
       </Tab.Navigator>
       <MiniPlayer />
     </>

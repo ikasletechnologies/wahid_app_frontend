@@ -9,9 +9,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNames } from '../context/NamesContext';
+import { usePlaylist } from '../context/PlaylistContext';
 import { useAppTheme } from '../context/ThemeContext';
+import { useIsFocused } from '@react-navigation/native';
 import NameDetailHeader from '../components/NameDetailHeader';
 import TimeBasedBackground from '../components/TimeBasedBackground';
+import http from '../config/http';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 const BASE_W = 393;
@@ -23,9 +26,12 @@ const hs = (n) => Math.round(n * hScale);
 
 const NameDetailScreen = ({ route, navigation }) => {
   const { name, initialStepIndex = 0 } = route.params;
-  const { markAsLearned, masteredIds, revisitCounts, userReflections } = useNames();
+  const { markAsLearned, masteredIds, revisitCounts, userReflections, incrementReadingTime, markAsDraft, removeDraft } = useNames();
+  const { favouriteIds, toggleFavourite } = usePlaylist();
+  const isFocused = useIsFocused();
   const { isDark } = useAppTheme();
   const isMastered = masteredIds ? masteredIds.includes(name.id) : false;
+  const isFavorite = favouriteIds ? favouriteIds.has(name.number || name.id) : false;
   const revisits = revisitCounts[name.id] || 0;
   const isSaturated = isMastered || revisits >= 3;
 
@@ -146,13 +152,29 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   const scrollViewRef = useRef(null);
 
-  // Persist reading position so "Back to Reading" can resume here
+  // Persist reading position and mark as draft
   useEffect(() => {
+    const nameNumber = name.number || name.id;
     AsyncStorage.setItem('last_reading_progress', JSON.stringify({
-      nameNumber: name.number || name.id,
+      nameNumber,
       stepIndex: currentStepIndex,
     })).catch(() => { });
-  }, [currentStepIndex, name]);
+
+    http.post('/api/me/last-read', { nameNumber, stepIndex: currentStepIndex }).catch(() => {});
+
+    if (currentStepIndex > 0 && phase === 'content') {
+      markAsDraft(nameNumber);
+    }
+  }, [currentStepIndex, name, phase, markAsDraft]);
+
+  // Active reading timer
+  useEffect(() => {
+    if (!isFocused) return;
+    const interval = setInterval(() => {
+      incrementReadingTime(5);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isFocused, incrementReadingTime]);
 
   const currentStep = steps[currentStepIndex];
   const progress = (currentStepIndex + 1) / steps.length;
@@ -254,13 +276,14 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   const goJourney = useCallback((reflectionData = null) => {
     markAsLearned(name.id, reflectionData);
+    removeDraft(name.number || name.id);
     AsyncStorage.removeItem('last_reading_progress').catch(() => { });
     setPhase('journey');
     Animated.parallel([
       Animated.timing(journeyOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
       Animated.timing(journeyTranslate, { toValue: 0, duration: 400, easing: Easing.out(Easing.ease), useNativeDriver: true }),
     ]).start();
-  }, [markAsLearned, name.id, journeyOpacity, journeyTranslate]);
+  }, [markAsLearned, name.id, name.number, journeyOpacity, journeyTranslate, removeDraft]);
 
   const handleSlideTap = useCallback(() => {
     Animated.sequence([
@@ -819,7 +842,12 @@ const NameDetailScreen = ({ route, navigation }) => {
             <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
             <SafeAreaView style={{ flex: 1, backgroundColor: t.safeBg }} edges={['top']}>
               <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
-                <NameDetailHeader name={name} onClose={() => navigation.goBack()} />
+                <NameDetailHeader 
+                  name={name} 
+                  onClose={() => navigation.goBack()} 
+                  isFavorite={isFavorite}
+                  onToggleFavorite={() => toggleFavourite(name.number || name.id)}
+                />
 
                 {/* ── Progress Bar & Navigation ── */}
                 <View style={styles.navSection}>

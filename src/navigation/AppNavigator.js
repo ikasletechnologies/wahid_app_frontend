@@ -2,6 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
+import NotificationScreen from '../screens/NotificationScreen';
 import SplashScreen    from '../screens/SplashScreen';
 import PhoneScreen     from '../screens/PhoneScreen';
 import OTPScreen       from '../screens/OTPScreen';
@@ -15,6 +16,8 @@ import StreakScreen        from '../screens/StreakScreen';
 import MilestoneScreen    from '../screens/MilestoneScreen';
 import PersonalDetailsScreen from '../screens/PersonalDetailsScreen';
 import SettingsScreen     from '../screens/SettingsScreen';
+import NamesListScreen    from '../screens/NamesListScreen';
+import ProfileScreen      from '../screens/ProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -32,12 +35,12 @@ const AppNavigator = () => {
           <Stack.Screen
             name="NameDetail"
             component={NameDetailScreen}
-            options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+            options={{ animation: 'slide_from_bottom' }}
           />
           <Stack.Screen
             name="NowPlaying"
             component={NowPlayingScreen}
-            options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true }}
+            options={{ animation: 'slide_from_bottom', gestureEnabled: true }}
           />
           <Stack.Screen
             name="Streak"
@@ -60,8 +63,23 @@ const AppNavigator = () => {
               options={{ animation: 'slide_from_right' }}
             />
             <Stack.Screen
+              name="Notifications"
+              component={NotificationScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
               name="NotificationSettings"
               component={NotificationSettingsScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+              name="NamesList"
+              component={NamesListScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+              name="Profile"
+              component={ProfileScreen}
               options={{ animation: 'slide_from_right' }}
             />
             </>

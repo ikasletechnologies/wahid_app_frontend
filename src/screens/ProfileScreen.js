@@ -116,7 +116,13 @@ export default function ProfileScreen({ navigation }) {
                                 <TouchableOpacity
                                     style={styles.backButton}
                                     activeOpacity={0.7}
-                                    onPress={() => navigation.navigate('Home')}
+                                    onPress={() => {
+                                        if (navigation.canGoBack()) {
+                                            navigation.goBack();
+                                        } else {
+                                            navigation.navigate('Main');
+                                        }
+                                    }}
                                 >
                                     <Ionicons name="chevron-back" size={24} color={t.headerText} />
                                 </TouchableOpacity>
