@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle as SvgCircle } from 'react-native-svg';
+import Svg, { Circle as SvgCircle, Line, Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNames } from '../context/NamesContext';
@@ -816,13 +816,11 @@ const NameDetailScreen = ({ route, navigation }) => {
     const readLabel = readTimeSec < 60
       ? `~${readTimeSec} sec read`
       : `~${Math.ceil(readTimeSec / 60)} min read`;
-    const GS = rs(150); // geometric SVG size
-    const cx = GS / 2;
 
     return (
       <View style={styles.tabContentContainer}>
         <View style={[styles.introCard2, {
-          borderColor: t.cardBorder,
+          borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#F0F4F8',
           backgroundColor: isDark ? '#162331' : '#FFFFFF',
         }]}>
           {/* Section badge */}
@@ -832,76 +830,67 @@ const NameDetailScreen = ({ route, navigation }) => {
             </View>
           </View>
 
-          {/* Icon with geometric concentric ring background */}
-          <View style={[styles.introIconArea, { width: GS, height: GS }]}>
-            <Svg width={GS} height={GS} style={StyleSheet.absoluteFillObject}>
-              <SvgCircle cx={cx} cy={cx} r={cx - rs(2)}  stroke="#00ADC1" strokeWidth={0.6} fill="none" opacity={0.12} />
-              <SvgCircle cx={cx} cy={cx} r={cx * 0.78}   stroke="#00ADC1" strokeWidth={0.6} fill={isDark ? 'rgba(0,173,193,0.04)' : 'rgba(0,173,193,0.06)'} />
-              <SvgCircle cx={cx} cy={cx} r={cx * 0.56}   stroke="#00ADC1" strokeWidth={0.8} fill={isDark ? 'rgba(0,173,193,0.07)' : 'rgba(0,173,193,0.1)'} />
-              {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, j) => {
-                const rad = (deg * Math.PI) / 180;
-                return (
-                  <SvgCircle
-                    key={j}
-                    cx={cx + (cx - rs(5)) * Math.cos(rad)}
-                    cy={cx + (cx - rs(5)) * Math.sin(rad)}
-                    r={rs(2.5)} fill="#00ADC1" opacity={0.25}
-                  />
-                );
-              })}
-            </Svg>
-            <View style={[styles.introIconBubble2, { backgroundColor: isDark ? 'rgba(0,173,193,0.2)' : '#D4F7FA' }]}>
-              <Ionicons name={iconName} size={rs(46)} color="#00ADC1" />
+          {/* Icon area */}
+          <View style={styles.introIconArea}>
+            <View style={[styles.introIconCircle, { 
+              backgroundColor: isDark ? '#1E2D3D' : '#FFFFFF',
+              borderColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB'
+            }]}>
+              <Ionicons name={iconName} size={rs(52)} color="#00ADC1" />
             </View>
           </View>
 
           {/* Title */}
           <FadeContent contentKey={title}>
-            <Text style={[styles.introTitleText2, { color: t.text }]}>{title}</Text>
+            <Text style={[styles.introTitleText2, { color: isDark ? '#E8EDF2' : '#0A1128' }]}>{title}</Text>
           </FadeContent>
 
           {/* Ornament divider */}
           <View style={styles.introOrnamentRow}>
-            <View style={[styles.introOrnamentLine, { backgroundColor: isDark ? 'rgba(0,173,193,0.2)' : 'rgba(0,173,193,0.25)' }]} />
+            <View style={[styles.introOrnamentLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]} />
             <Text style={styles.introOrnamentStar}>✦</Text>
-            <View style={[styles.introOrnamentLine, { backgroundColor: isDark ? 'rgba(0,173,193,0.2)' : 'rgba(0,173,193,0.25)' }]} />
+            <View style={[styles.introOrnamentLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]} />
           </View>
 
           {/* Subtitle */}
-          <Text style={[styles.introSubtitleText2, { color: t.subText }]}>{subtitle || 'Tap continue to begin'}</Text>
+          <Text style={[styles.introSubtitleText2, { color: isDark ? '#94A3B8' : '#64748B' }]}>{subtitle || 'Tap continue to begin'}</Text>
 
           {/* Info pills */}
           <View style={styles.introInfoRow}>
             {insightsCount > 0 && (
-              <View style={[styles.introInfoPill, { backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#EBF9FB' }]}>
-                <Ionicons name="document-text-outline" size={rs(13)} color="#00ADC1" style={{ marginRight: rs(5) }} />
+              <View style={[styles.introInfoPill, { backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB' }]}>
+                <Ionicons name="document-text-outline" size={rs(14)} color="#0090A8" style={{ marginRight: rs(6) }} />
                 <Text style={styles.introInfoText}>{insightsCount} Insights</Text>
               </View>
             )}
-            <View style={[styles.introInfoPill, { backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#EBF9FB' }]}>
-              <Ionicons name="time-outline" size={rs(13)} color="#00ADC1" style={{ marginRight: rs(5) }} />
+            <View style={[styles.introInfoPill, { backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB' }]}>
+              <Ionicons name="time-outline" size={rs(14)} color="#0090A8" style={{ marginRight: rs(6) }} />
               <Text style={styles.introInfoText}>{readLabel}</Text>
             </View>
           </View>
 
           {/* Card Action Divider */}
-          <View style={[styles.cardActionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2F8FA', marginTop: hs(24), width: '100%' }]} />
+          <View style={[styles.cardActionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0F4F8', marginTop: hs(32), width: '100%' }]} />
 
           {/* Action Bar Row */}
-          <View style={[styles.cardActionBar, { width: '100%' }]}>
+          <View style={[styles.cardActionBar, { width: '100%', paddingVertical: hs(20) }]}>
             <TouchableOpacity style={styles.actionBtn} onPress={() => toggleFavourite(name.number || name.id)} activeOpacity={0.7}>
-              <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={rs(18)} color={isFavorite ? "#EF4444" : (isDark ? '#E8EDF2' : '#4A5568')} />
-              <Text style={[styles.actionText, { color: t.text }]}>Favorite</Text>
+              <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={rs(20)} color={isFavorite ? "#EF4444" : (isDark ? '#94A3B8' : '#475569')} />
+              <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Favorite</Text>
             </TouchableOpacity>
-            <View style={styles.actionDivider} />
+            
+            <View style={[styles.actionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0', height: rs(20) }]} />
+            
             <TouchableOpacity style={styles.actionBtn} onPress={() => toggleReviewLater(name.number || name.id)} activeOpacity={0.7}>
-              <Ionicons name={isReviewLater ? "bookmark" : "bookmark-outline"} size={rs(18)} color={isReviewLater ? "#00ADC1" : (isDark ? '#E8EDF2' : '#4A5568')} />
-              <Text style={[styles.actionText, { color: t.text }]}>Review Later</Text>
+              <Ionicons name={isReviewLater ? "bookmark" : "bookmark-outline"} size={rs(20)} color={isReviewLater ? "#00ADC1" : (isDark ? '#94A3B8' : '#475569')} />
+              <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Review Later</Text>
             </TouchableOpacity>
-            <View style={styles.actionDivider} />
+            
+            <View style={[styles.actionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0', height: rs(20) }]} />
+            
             <TouchableOpacity style={styles.actionBtn} onPress={handleShare} activeOpacity={0.7}>
-              <Ionicons name="share-social-outline" size={rs(18)} color={isDark ? '#E8EDF2' : '#4A5568'} />
-              <Text style={[styles.actionText, { color: t.text }]}>Share</Text>
+              <Ionicons name="share-social-outline" size={rs(20)} color={isDark ? '#94A3B8' : '#475569'} />
+              <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Share</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1375,54 +1364,97 @@ const NameDetailScreen = ({ route, navigation }) => {
 
 
                 {/* ── Bottom Navigation ── */}
-                <View style={styles.bottomNav}>
-                  {/* Previous */}
-                  <TouchableOpacity
-                    style={[styles.bottomNavPrev, isBackDisabled && { opacity: 0.3 }]}
-                    disabled={isBackDisabled}
-                    onPress={goPrev}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[styles.bottomNavPrevCircle, { backgroundColor: isDark ? '#1E293B' : '#EEF2F5' }]}>
-                      <Ionicons name="arrow-back" size={rs(16)} color={isDark ? '#94A3B8' : '#4A5568'} />
-                    </View>
-                    <View style={styles.bottomNavPrevTexts}>
-                      <Text style={[styles.bottomNavPrevTitle, { color: isDark ? '#E2E8F0' : '#1A1A1A' }]}>Previous</Text>
-                      <Text style={[styles.bottomNavPrevSub, { color: isDark ? '#64748B' : '#9EAAB8' }]}>Go back</Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Pause */}
-                  <View style={styles.bottomNavPauseWrap}>
+                <View style={styles.bottomNavWrapper}>
+                  <View style={[styles.bottomNavInner, { 
+                    backgroundColor: isDark ? '#141D2B' : '#FFFFFF',
+                    shadowColor: isDark ? '#000000' : '#00ADC1',
+                  }]}>
+                    {/* Previous */}
                     <TouchableOpacity
-                      style={[styles.bottomNavPauseCircle, {
-                        backgroundColor: isDark ? '#1A2332' : '#FFFFFF',
-                        borderColor: isDark ? 'rgba(0,173,193,0.25)' : '#D8F4F7',
+                      style={[styles.navBtn, { 
+                        backgroundColor: isDark ? '#1E2A3B' : '#F2F6F8',
+                        opacity: isBackDisabled ? 0.4 : 1
                       }]}
+                      disabled={isBackDisabled}
+                      onPress={goPrev}
                       activeOpacity={0.7}
-                      onPress={handleClose}
                     >
-                      <Ionicons name="pause" size={rs(18)} color="#00ADC1" />
+                      <Ionicons name="arrow-back" size={rs(18)} color={isDark ? '#FFFFFF' : '#00ADC1'} />
+                      <View style={[styles.navDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,173,193,0.15)' }]} />
+                      <Text style={[styles.navBtnText, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>Previous</Text>
                     </TouchableOpacity>
-                    <Text style={[styles.bottomNavPauseLabel, { color: isDark ? '#CBD5E1' : '#1A1A1A' }]}>Pause</Text>
-                    <Text style={[styles.bottomNavPauseSub, { color: isDark ? '#64748B' : '#9EAAB8' }]}>End session</Text>
-                  </View>
 
-                  {/* Continue */}
-                  <TouchableOpacity
-                    style={[styles.bottomNavContinue, isSlideDisabled && { opacity: 0.55 }]}
-                    disabled={isSlideDisabled}
-                    onPress={handleNext}
-                    activeOpacity={0.85}
-                  >
-                    <View>
-                      <Text style={styles.bottomNavContinueTitle}>Continue</Text>
-                      <Text style={styles.bottomNavContinueSub}>Keep learning</Text>
+                    {/* Pause */}
+                    <View style={styles.pauseWrap}>
+                      <TouchableOpacity onPress={handleClose} activeOpacity={0.8} style={styles.pauseBtn}>
+                        {isDark ? (
+                          <View style={{ width: rs(56), height: rs(56), justifyContent: 'center', alignItems: 'center' }}>
+                            <Svg width={rs(56)} height={rs(56)} style={StyleSheet.absoluteFillObject}>
+                              <SvgCircle cx={rs(28)} cy={rs(28)} r={rs(26)} fill="#162335" /> 
+                              {/* Stars */}
+                              <SvgCircle cx={rs(16)} cy={rs(16)} r={rs(1)} fill="#FFFFFF" opacity={0.8} />
+                              <SvgCircle cx={rs(40)} cy={rs(20)} r={rs(1.5)} fill="#FFFFFF" opacity={0.6} />
+                              <SvgCircle cx={rs(12)} cy={rs(32)} r={rs(1)} fill="#FFFFFF" opacity={0.5} />
+                              <SvgCircle cx={rs(44)} cy={rs(38)} r={rs(1.2)} fill="#FFFFFF" opacity={0.7} />
+                              <SvgCircle cx={rs(24)} cy={rs(44)} r={rs(1.5)} fill="#FFFFFF" opacity={0.9} />
+                              <Path d={`M${rs(34)},${rs(12)} Q${rs(36)},${rs(14)} ${rs(38)},${rs(12)} Q${rs(36)},${rs(10)} ${rs(34)},${rs(12)} Z`} fill="#FFFFFF" opacity={0.8} />
+                            </Svg>
+                            <View style={{ width: rs(34), height: rs(34), borderRadius: rs(17), backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: rs(6), elevation: 4 }}>
+                              <View style={{ flexDirection: 'row', gap: rs(4) }}>
+                                <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#0F172A', borderRadius: rs(2) }} />
+                                <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#0F172A', borderRadius: rs(2) }} />
+                              </View>
+                            </View>
+                          </View>
+                        ) : (
+                          <View style={{ width: rs(56), height: rs(56), justifyContent: 'center', alignItems: 'center' }}>
+                            <Svg width={rs(56)} height={rs(56)} style={StyleSheet.absoluteFillObject}>
+                              {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => {
+                                const rad = (deg * Math.PI) / 180;
+                                const r1 = rs(21);
+                                const r2 = rs(25);
+                                const center = rs(28);
+                                return (
+                                  <Line
+                                    key={i}
+                                    x1={center + r1 * Math.cos(rad)}
+                                    y1={center + r1 * Math.sin(rad)}
+                                    x2={center + r2 * Math.cos(rad)}
+                                    y2={center + r2 * Math.sin(rad)}
+                                    stroke="#FACC15"
+                                    strokeWidth={rs(2)}
+                                    strokeLinecap="round"
+                                  />
+                                );
+                              })}
+                            </Svg>
+                            <View style={{ width: rs(38), height: rs(38), borderRadius: rs(19), backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', shadowColor: '#00ADC1', shadowOpacity: 0.15, shadowRadius: rs(6), shadowOffset: { width: 0, height: 3 }, elevation: 3, borderWidth: 1, borderColor: '#F4F9FA' }}>
+                              <View style={{ flexDirection: 'row', gap: rs(4) }}>
+                                <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#FACC15', borderRadius: rs(2) }} />
+                                <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#FACC15', borderRadius: rs(2) }} />
+                              </View>
+                            </View>
+                          </View>
+                        )}
+                      </TouchableOpacity>
+                      <Text style={[styles.pauseText, { color: isDark ? '#FFFFFF' : '#112F33' }]}>Pause</Text>
                     </View>
-                    <View style={styles.bottomNavContinueArrow}>
-                      <Ionicons name="arrow-forward" size={rs(16)} color="#00ADC1" />
-                    </View>
-                  </TouchableOpacity>
+
+                    {/* Continue */}
+                    <TouchableOpacity
+                      style={[styles.navBtn, { 
+                        backgroundColor: isDark ? '#1E2A3B' : '#F2F6F8',
+                        opacity: isSlideDisabled ? 0.4 : 1
+                      }]}
+                      disabled={isSlideDisabled}
+                      onPress={handleNext}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.navBtnText, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>Continue</Text>
+                      <View style={[styles.navDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,173,193,0.15)' }]} />
+                      <Ionicons name="arrow-forward" size={rs(18)} color={isDark ? '#FFFFFF' : '#00ADC1'} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </KeyboardAvoidingView>
             </SafeAreaView>
@@ -1489,142 +1521,101 @@ const styles = StyleSheet.create({
   // ── Intro Cards (Section Covers) ──
   introCard2: {
     width: '100%', borderRadius: rs(24),
-    shadowColor: '#00ADC1', shadowOpacity: 0.08, shadowRadius: rs(20),
-    shadowOffset: { width: 0, height: 10 }, elevation: 5,
+    shadowColor: '#00ADC1', shadowOpacity: 0.04, shadowRadius: rs(20),
+    shadowOffset: { width: 0, height: 10 }, elevation: 4,
     borderWidth: 1, overflow: 'hidden',
     paddingBottom: 0,
   },
-  sectionBadgeWrap: { alignItems: 'center', paddingTop: hs(20), marginBottom: hs(16) },
+  sectionBadgeWrap: { alignItems: 'center', paddingTop: hs(28), marginBottom: hs(24) },
   sectionBadge: {
-    backgroundColor: '#00ADC1', borderRadius: rs(20),
-    paddingHorizontal: rs(16), paddingVertical: hs(5),
+    backgroundColor: '#0090A8', borderRadius: rs(20),
+    paddingHorizontal: rs(16), paddingVertical: hs(6),
   },
-  sectionBadgeText: { fontSize: rs(11), fontWeight: '700', color: '#FFFFFF', letterSpacing: 1 },
+  sectionBadgeText: { fontSize: rs(11), fontWeight: '800', color: '#FFFFFF', letterSpacing: 1.5, textTransform: 'uppercase' },
   introIconArea: {
     alignSelf: 'center',
     justifyContent: 'center', alignItems: 'center',
-    marginBottom: hs(20),
+    marginBottom: hs(24),
   },
-  introIconBubble2: {
-    width: rs(80), height: rs(80), borderRadius: rs(40),
+  introIconCircle: {
+    width: rs(120), height: rs(120), borderRadius: rs(60),
+    borderWidth: rs(8),
     justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#000000', shadowOpacity: 0.03, shadowRadius: rs(10), shadowOffset: { width: 0, height: 4 }, elevation: 2,
   },
   introTitleText2: {
-    fontSize: rs(26), fontWeight: '900',
+    fontSize: rs(28), fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif', fontWeight: 'bold',
     textAlign: 'center', paddingHorizontal: rs(20),
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
   introOrnamentRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: rs(40), marginVertical: hs(10),
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    marginVertical: hs(18),
   },
-  introOrnamentLine: { flex: 1, height: 1 },
-  introOrnamentStar: { fontSize: rs(11), color: '#00ADC1', marginHorizontal: rs(10), opacity: 0.6 },
+  introOrnamentLine: { width: rs(80), height: 1 },
+  introOrnamentStar: { fontSize: rs(14), color: '#00ADC1', marginHorizontal: rs(12) },
   introSubtitleText2: {
-    fontSize: rs(14), fontWeight: '400',
+    fontSize: rs(15), fontWeight: '400',
     textAlign: 'center', paddingHorizontal: rs(30),
-    lineHeight: rs(22),
   },
   introInfoRow: {
     flexDirection: 'row', justifyContent: 'center',
-    gap: rs(12), marginTop: hs(16),
+    gap: rs(12), marginTop: hs(20),
     paddingHorizontal: rs(20),
   },
   introInfoPill: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: rs(12), paddingVertical: hs(7),
+    paddingHorizontal: rs(16), paddingVertical: hs(10),
     borderRadius: rs(20),
   },
-  introInfoText: { fontSize: rs(12), fontWeight: '600', color: '#00ADC1' },
+  introInfoText: { fontSize: rs(13), fontWeight: '600', color: '#0090A8' },
 
   // ── Bottom Navigation ──
-  bottomNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  bottomNavWrapper: {
     paddingHorizontal: rs(20),
-    paddingVertical: hs(10),
+    paddingVertical: hs(12),
     marginBottom: Platform.OS === 'ios' ? hs(20) : hs(12),
   },
-  bottomNavPrev: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: rs(10),
-  },
-  bottomNavPrevCircle: {
-    width: rs(44),
-    height: rs(44),
-    borderRadius: rs(22),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bottomNavPrevTexts: {
-    justifyContent: 'center',
-  },
-  bottomNavPrevTitle: {
-    fontSize: rs(13),
-    fontWeight: '800',
-    lineHeight: rs(18),
-  },
-  bottomNavPrevSub: {
-    fontSize: rs(10),
-    lineHeight: rs(14),
-  },
-  bottomNavPauseWrap: {
-    alignItems: 'center',
-    marginHorizontal: rs(14),
-  },
-  bottomNavPauseCircle: {
-    width: rs(48),
-    height: rs(48),
-    borderRadius: rs(24),
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    shadowColor: '#00ADC1',
-    shadowOpacity: 0.08,
-    shadowRadius: rs(8),
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
-  },
-  bottomNavPauseLabel: {
-    fontSize: rs(11),
-    fontWeight: '800',
-    marginTop: hs(4),
-    letterSpacing: 0.2,
-  },
-  bottomNavPauseSub: {
-    fontSize: rs(9),
-    marginTop: hs(1),
-  },
-  bottomNavContinue: {
-    flex: 1,
+  bottomNavInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#00ADC1',
-    borderRadius: rs(36),
-    paddingVertical: hs(16),
-    paddingLeft: rs(22),
-    paddingRight: rs(10),
+    borderRadius: rs(30),
+    paddingHorizontal: rs(10),
+    paddingVertical: hs(10),
+    shadowOpacity: 0.06,
+    shadowRadius: rs(16),
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
-  bottomNavContinueTitle: {
-    fontSize: rs(15),
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 0.2,
+  navBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: rs(24),
+    paddingHorizontal: rs(16),
+    height: rs(46),
   },
-  bottomNavContinueSub: {
-    fontSize: rs(10),
-    color: 'rgba(255,255,255,0.75)',
-    marginTop: hs(2),
+  navDivider: {
+    width: 1,
+    height: rs(20),
+    marginHorizontal: rs(12),
   },
-  bottomNavContinueArrow: {
-    width: rs(36),
-    height: rs(36),
-    borderRadius: rs(18),
-    backgroundColor: '#FFFFFF',
+  navBtnText: {
+    fontSize: rs(14),
+    fontWeight: '600',
+  },
+  pauseWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pauseBtn: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  pauseText: {
+    fontSize: rs(12),
+    fontWeight: '600',
+    marginTop: hs(4),
   },
   navCardTexts: {
     flex: 1,
