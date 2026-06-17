@@ -24,7 +24,7 @@ const COUNTRIES = [
 const OTP_LENGTH = 6;
 
 const ForgotPasswordScreen = ({ navigation }) => {
-  const { checkPhone, sendOTP, verifyOTP, resetPassword } = useAuth();
+  const { checkPhone, sendOTP, verifyOTP, resetPassword, login } = useAuth();
 
   const [step, setStep] = useState('phone'); // 'phone' | 'otp' | 'newPassword'
 
@@ -139,13 +139,19 @@ const ForgotPasswordScreen = ({ navigation }) => {
     }
     setLoading(true);
     const result = await resetPassword(verificationToken, newPassword);
-    setLoading(false);
     if (!result.success) {
+      setLoading(false);
       Toast.show({ type: 'error', text1: 'Reset Failed', text2: result.message });
       return;
     }
-    Toast.show({ type: 'success', text1: 'Password Reset!', text2: 'You can now sign in with your new password.' });
-    navigation.navigate('Login', { identifier: fullPhone });
+    const loginResult = await login(fullPhone, newPassword);
+    setLoading(false);
+    if (!loginResult.success) {
+      Toast.show({ type: 'error', text1: 'Login Failed', text2: 'Password reset but could not sign in. Please log in manually.' });
+      navigation.navigate('Login', { identifier: fullPhone });
+      return;
+    }
+    Toast.show({ type: 'success', text1: 'Welcome back!', text2: 'Password reset and signed in successfully.' });
   };
 
   // ── Render helpers ────────────────────────────────────────────────────────

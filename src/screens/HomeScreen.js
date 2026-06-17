@@ -417,7 +417,23 @@ const HomeScreen = ({ navigation }) => {
                   </TouchableOpacity>
                 </View>
               </View>
+            </View>
 
+            {/* ── Scrollable Content ── */}
+            <ScrollView
+              style={styles.scrollList}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  tintColor={colors.primary}
+                  colors={[colors.primary]}
+                />
+              }
+            >
+              <View style={{ paddingBottom: 16 }}>
               {/* ── Last Read Card ── */}
               <View style={styles.lastReadCardWrapper}>
                 <LinearGradient
@@ -484,81 +500,71 @@ const HomeScreen = ({ navigation }) => {
                 styles.progressContainer,
                 {
                   backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9'
                 }
               ]}>
                 <View style={styles.progressHeader}>
-                  <Text style={styles.progressTitle}>Your Progress</Text>
-                  <Text style={[styles.progressPercentText, { color: colors.text }]}>
-                    {Math.round(stats.progress)}% Completed
+                  <Text style={[styles.progressTitle, { color: isDark ? '#E8EDF2' : '#0F172A' }]}>Learning Journey</Text>
+                  <Text style={[styles.progressPercentText, { color: '#00ADC1' }]}>
+                    {Math.round(stats.progress)}%
                   </Text>
                 </View>
 
                 <View style={[
                   styles.progressBarBg,
-                  { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }
+                  { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9' }
                 ]}>
-                  <LinearGradient
-                    colors={['#06b6d4', '#22d3ee']}
-                    style={[styles.progressBarFill, { width: `${stats.progress}%` }]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                  />
+                  <View style={[styles.progressBarFill, { width: `${stats.progress}%`, backgroundColor: '#00ADC1' }]} />
                 </View>
+
+                <Text style={styles.progressSubtitleText}>
+                  <Text style={{ color: '#00ADC1', fontFamily: FONTS.bold }}>{stats.learned}</Text>
+                  <Text style={{ color: isDark ? '#94A3B8' : '#64748B' }}> of 99 Names Completed</Text>
+                </Text>
+
+                <View style={[styles.progressDivider, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9' }]} />
 
                 <View style={styles.metricsRow}>
                   {/* Learned Metric Card */}
                   <TouchableOpacity
-                    style={styles.metricCardWrap}
+                    style={[
+                      styles.metricCardWrapNew,
+                      { backgroundColor: isDark ? 'rgba(76, 175, 80, 0.05)' : '#F8FAF9', borderColor: isDark ? 'rgba(76, 175, 80, 0.2)' : '#E8F5E9' }
+                    ]}
                     activeOpacity={0.75}
                     onPress={() => navigation.navigate('NamesList', { statusFilter: 'learned' })}
                   >
-                    <ImageBackground
-                      source={require('../../assets/home/sml_card.png')}
-                      style={styles.metricCardBackground}
-                      imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
-                    >
-                      <View style={styles.metricCardInner}>
-                        <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.learned}</Text>
-                        <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Learned</Text>
-
-                        {/* Icon Bubble */}
-                        <View style={styles.iconBubble}>
-                          <Image
-                            source={require('../../assets/home/learn_icon.png')}
-                            style={styles.metricCardIconImage}
-                            resizeMode="contain"
-                          />
-                        </View>
+                    <View style={styles.metricCardLeft}>
+                      <View style={[styles.metricIconWrap, { backgroundColor: isDark ? 'rgba(76, 175, 80, 0.1)' : '#E8F5E9' }]}>
+                        <Image source={require('../../assets/home/learn_icon.png')} style={{ width: 24, height: 24, tintColor: '#4CAF50' }} resizeMode="contain" />
                       </View>
-                    </ImageBackground>
+                    </View>
+                    <View style={styles.metricCardRight}>
+                      <Text style={[styles.metricLabelText, { color: '#4CAF50' }]}>Learned</Text>
+                      <Text style={[styles.metricValueText, { color: isDark ? '#E8EDF2' : '#0F172A' }]}>{stats.learned}</Text>
+                    </View>
                   </TouchableOpacity>
+
+                  <View style={[styles.metricDividerVertical, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9' }]} />
 
                   {/* Mastered Metric Card */}
                   <TouchableOpacity
-                    style={styles.metricCardWrap}
+                    style={[
+                      styles.metricCardWrapNew,
+                      { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.05)' : '#FFFBEB', borderColor: isDark ? 'rgba(245, 158, 11, 0.2)' : '#FEF3C7' }
+                    ]}
                     activeOpacity={0.75}
                     onPress={() => navigation.navigate('NamesList', { statusFilter: 'mastered' })}
                   >
-                    <ImageBackground
-                      source={require('../../assets/home/sml_card.png')}
-                      style={styles.metricCardBackground}
-                      imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
-                    >
-                      <View style={styles.metricCardInner}>
-                        <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.mastered}</Text>
-                        <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Mastered</Text>
-
-                        {/* Icon Bubble */}
-                        <View style={styles.iconBubble}>
-                          <Image
-                            source={require('../../assets/home/master_icon.png')}
-                            style={styles.metricCardIconImage}
-                            resizeMode="contain"
-                          />
-                        </View>
+                    <View style={styles.metricCardLeft}>
+                      <View style={[styles.metricIconWrap, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.1)' : '#FEF3C7' }]}>
+                        <Image source={require('../../assets/home/master_icon.png')} style={{ width: 24, height: 24, tintColor: '#F59E0B' }} resizeMode="contain" />
                       </View>
-                    </ImageBackground>
+                    </View>
+                    <View style={styles.metricCardRight}>
+                      <Text style={[styles.metricLabelText, { color: '#F59E0B' }]}>Mastered</Text>
+                      <Text style={[styles.metricValueText, { color: isDark ? '#E8EDF2' : '#0F172A' }]}>{stats.mastered}</Text>
+                    </View>
                   </TouchableOpacity>
 
                 </View>
@@ -610,22 +616,7 @@ const HomeScreen = ({ navigation }) => {
                   <Ionicons name="filter" size={20} color="#06b6d4" />
                 </TouchableOpacity>
               </View>
-            </View>
-
-            {/* ── Scrollable Categories Feed ── */}
-            <ScrollView
-              style={styles.scrollList}
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={handleRefresh}
-                  tintColor={colors.primary}
-                  colors={[colors.primary]}
-                />
-              }
-            >
+              </View>
 
               <View style={styles.catVerticalList}>
                 {sortedCategories.map((cat) => {
@@ -1070,8 +1061,8 @@ const styles = StyleSheet.create({
 
   // ── Progress Card Styles ──
   progressContainer: {
-    borderRadius: RADIUS.md,
-    padding: SPACE.md,
+    borderRadius: RADIUS.lg,
+    padding: SPACE.lg,
     marginBottom: SPACE.lg,
     borderWidth: 1,
     shadowColor: '#0f172a',
@@ -1087,77 +1078,74 @@ const styles = StyleSheet.create({
     marginBottom: SPACE.sm,
   },
   progressTitle: {
-    color: '#06b6d4',
     fontFamily: FONTS.bold,
-    fontSize: SIZES.base,
+    fontSize: SIZES.lg,
   },
   progressPercentText: {
-    fontFamily: FONTS.medium,
-    fontSize: 11,
+    fontFamily: FONTS.bold,
+    fontSize: SIZES.lg,
   },
   progressBarBg: {
-    height: 8,
-    borderRadius: 4,
+    height: 10,
+    borderRadius: 5,
     overflow: 'hidden',
-    marginBottom: SPACE.md,
+    marginBottom: SPACE.sm,
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 5,
+  },
+  progressSubtitleText: {
+    fontFamily: FONTS.medium,
+    fontSize: SIZES.sm,
+    marginTop: SPACE.xs,
+  },
+  progressDivider: {
+    borderBottomWidth: 1,
+    marginVertical: SPACE.md,
   },
   metricsRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
   },
-  metricCardWrap: {
+  metricCardWrapNew: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    paddingVertical: SPACE.sm,
+    paddingHorizontal: SPACE.md,
+    height: 76,
   },
-  metricCardBackground: {
-    width: '100%',
-    height: 72,
+  metricDividerVertical: {
+    width: 1,
+    height: '70%',
+    marginHorizontal: SPACE.sm,
   },
-  metricCardImageStyle: {
-    borderRadius: 14,
-    resizeMode: 'stretch',
+  metricCardLeft: {
+    marginRight: SPACE.sm,
   },
-  metricCardInner: {
-    flex: 1,
-    paddingVertical: SPACE.xs + 2,
-    paddingHorizontal: SPACE.sm,
-    justifyContent: 'space-between',
-    position: 'relative',
-  },
-  newMetricValue: {
-    fontFamily: FONTS.bold,
-    fontSize: 22,
-    lineHeight: 26,
-  },
-  newMetricLabel: {
-    fontFamily: FONTS.medium,
-    fontSize: 11,
-  },
-  iconBubble: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#ffffff',
+  metricIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#0f172a',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 4,
-    borderWidth: 1.5,
-    borderColor: '#e2e8f0',
   },
-  metricCardIconImage: {
-    width: 14,
-    height: 14,
+  metricCardRight: {
+    flex: 1,
+  },
+  metricLabelText: {
+    fontFamily: FONTS.medium,
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  metricValueText: {
+    fontFamily: FONTS.bold,
+    fontSize: 24,
+    lineHeight: 28,
   },
 
   // ── Categories Header Styles ──

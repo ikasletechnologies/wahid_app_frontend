@@ -109,13 +109,39 @@ const NamesScreen = ({ navigation, route }) => {
   const [tempStatus, setTempStatus] = useState('All');
   const [tempNumber, setTempNumber] = useState('');
 
+  const [totalReadingSeconds, setTotalReadingSeconds] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      const calculateTotalLearning = async () => {
+        try {
+          const keys = await AsyncStorage.getAllKeys();
+          const nameKeys = keys.filter(k => k.startsWith('reading_time_name_'));
+          if (nameKeys.length > 0) {
+            const values = await AsyncStorage.multiGet(nameKeys);
+            let total = 0;
+            values.forEach(([key, val]) => {
+              if (val) total += parseInt(val, 10) || 0;
+            });
+            setTotalReadingSeconds(total);
+          } else {
+            setTotalReadingSeconds(0);
+          }
+        } catch (e) {
+          console.warn('Error calculating total learning:', e);
+        }
+      };
+      calculateTotalLearning();
+    }, [])
+  );
+
   const formattedReadingTime = React.useMemo(() => {
-    if (!readingTimeToday) return '0m';
-    const h = Math.floor(readingTimeToday / 3600);
-    const m = Math.floor((readingTimeToday % 3600) / 60);
+    if (!totalReadingSeconds) return '0m';
+    const h = Math.floor(totalReadingSeconds / 3600);
+    const m = Math.floor((totalReadingSeconds % 3600) / 60);
     if (h > 0) return `${h}h ${m}m`;
     return `${m}m`;
-  }, [readingTimeToday]);
+  }, [totalReadingSeconds]);
 
   const draftCount = draftIds ? draftIds.length : 0;
   const favCount = favouriteIds ? favouriteIds.size : 0;
