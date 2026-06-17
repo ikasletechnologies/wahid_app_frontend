@@ -141,8 +141,9 @@ export const NamesProvider = ({ children }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [readingTimeToday, setReadingTimeToday] = useState(0);
   const [draftIds, setDraftIds] = useState([]);
+  const [reviewLaterIds, setReviewLaterIds] = useState([]);
 
-  // Load today's reading time and drafts
+  // Load today's reading time, drafts, and review later IDs
   useEffect(() => {
     const todayStr = new Date().toISOString().slice(0, 10);
     const key = `reading_time_${todayStr}`;
@@ -153,6 +154,20 @@ export const NamesProvider = ({ children }) => {
     AsyncStorage.getItem('draft_ids_v1').then(val => {
       if (val) setDraftIds(JSON.parse(val));
     }).catch(() => {});
+
+    AsyncStorage.getItem('review_later_ids_v1').then(val => {
+      if (val) setReviewLaterIds(JSON.parse(val));
+    }).catch(() => {});
+  }, []);
+
+  const toggleReviewLater = useCallback(async (nameNumber) => {
+    const num = Number(nameNumber);
+    setReviewLaterIds(prev => {
+      const isReview = prev.includes(num);
+      const next = isReview ? prev.filter(id => id !== num) : [...prev, num];
+      AsyncStorage.setItem('review_later_ids_v1', JSON.stringify(next)).catch(() => {});
+      return next;
+    });
   }, []);
 
   // Accumulated seconds not yet flushed to the backend
@@ -212,6 +227,7 @@ export const NamesProvider = ({ children }) => {
   }, [token]);
 
 
+
   // Load persisted viewed IDs from AsyncStorage whenever the user logs in
   useEffect(() => {
     if (!token) { setViewedIds([]); return; }
@@ -256,10 +272,12 @@ export const NamesProvider = ({ children }) => {
         AsyncStorage.getItem('streak_details_cache'),
       ]);
 
+      let hasCache = false;
       if (cachedNames) {
         const parsed = JSON.parse(cachedNames);
         if (parsed.length > 0) {
           setNames(parsed.map(withCategory));
+          hasCache = true;
         }
       }
       if (cachedProgress) {
@@ -274,10 +292,15 @@ export const NamesProvider = ({ children }) => {
         setStreakDetails(JSON.parse(cachedStreak));
       }
 
-      await syncWithBackend();
+      if (hasCache) {
+        setLoading(false);
+        syncWithBackend().catch(() => {});
+      } else {
+        await syncWithBackend();
+        setLoading(false);
+      }
     } catch (error) {
       console.warn('[NamesContext] Load Error:', error.message);
-    } finally {
       setLoading(false);
     }
   };
@@ -502,6 +525,8 @@ export const NamesProvider = ({ children }) => {
       draftIds,
       markAsDraft,
       removeDraft,
+      reviewLaterIds,
+      toggleReviewLater,
       loading,
       refreshing,
       syncWithBackend,

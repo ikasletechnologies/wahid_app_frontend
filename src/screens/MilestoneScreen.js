@@ -139,50 +139,7 @@ const ProgressRing = ({ progress, size }) => {
 
 const MilestoneScreen = ({ navigation }) => {
   const scrollY = React.useRef(new Animated.Value(0)).current;
-  const beamAnim = React.useRef(new Animated.Value(0.4)).current;
   const { milestones, allCompleted } = useMilestones();
-
-  React.useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(beamAnim, { toValue: 0.9, duration: 2500, useNativeDriver: true }),
-        Animated.timing(beamAnim, { toValue: 0.4, duration: 2500, useNativeDriver: true }),
-      ])
-    ).start();
-  }, [beamAnim]);
-
-  const dustParticles = React.useMemo(() => {
-    return Array.from({ length: 30 }).map((_, i) => ({
-      id: i,
-      left: Math.random() * SW,
-      top: Math.random() * (SH * 0.8), // Scatter across upper 80%
-      size: 1.5 + Math.random() * 2.5,
-      dur: 2000 + Math.random() * 3000,
-      delay: Math.random() * 2500,
-      drift: -20 - Math.random() * 30, // Drift upwards
-      maxOp: 0.2 + Math.random() * 0.6,
-    }));
-  }, []);
-
-  const dustAnims = React.useRef(dustParticles.map(() => new Animated.Value(0))).current;
-  const dustDrift = React.useRef(dustParticles.map(() => new Animated.Value(0))).current;
-
-  React.useEffect(() => {
-    dustParticles.forEach((p, i) => {
-      Animated.loop(
-        Animated.parallel([
-          Animated.sequence([
-            Animated.timing(dustAnims[i], { toValue: p.maxOp, duration: p.dur, delay: p.delay, useNativeDriver: true }),
-            Animated.timing(dustAnims[i], { toValue: 0, duration: p.dur, useNativeDriver: true }),
-          ]),
-          Animated.sequence([
-            Animated.delay(p.delay),
-            Animated.timing(dustDrift[i], { toValue: p.drift, duration: p.dur * 2, useNativeDriver: true }),
-          ])
-        ])
-      ).start();
-    });
-  }, []);
 
   const extendedMilestones = React.useMemo(() => {
     const arr = [...milestones];
@@ -197,9 +154,7 @@ const MilestoneScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={s.root} edges={['top']}>
       <TimeBasedBackground>
-        {({ isNight, sunPos, moonPos }) => {
-          const activePos = isNight ? moonPos : sunPos;
-          return (
+        {({ isNight }) => (
           <>
             <Image source={require('../../assets/milestone/ring.png')} style={[s.ringLeft, isNight && { opacity: 0.15 }]} resizeMode="contain" />
             <Image source={require('../../assets/milestone/ring.png')} style={[s.ringRight, isNight && { opacity: 0.15 }]} resizeMode="contain" />
@@ -218,47 +173,6 @@ const MilestoneScreen = ({ navigation }) => {
 
             {/* Road */}
             <Image source={require('../../assets/milestone/road.png')} style={[s.road, isNight && { opacity: 0.4 }]} resizeMode="stretch" />
-
-            {/* Dynamic Light Beam from Sun/Moon to 1st Stone */}
-            {activePos && (
-              <Animated.View style={{ position: 'absolute', top: 0, left: 0, width: SW, height: SH, zIndex: 1, opacity: beamAnim }} pointerEvents="none">
-                <Svg width={SW} height={SH}>
-                  <Defs>
-                    <SvgLinearGradient id="beam" x1="0" y1="0" x2="0" y2="1">
-                      <Stop offset="0%" stopColor={isNight ? "#818CF8" : "#FDE047"} stopOpacity="0.8" />
-                      <Stop offset="100%" stopColor={isNight ? "#3DF3FF" : "#FDE047"} stopOpacity="0" />
-                    </SvgLinearGradient>
-                  </Defs>
-                  <Polygon
-                    points={`${activePos.x + 65},${activePos.y + 60} ${SW / 2 - 40},${SH * 0.85} ${SW / 2 + 40},${SH * 0.85}`}
-                    fill="url(#beam)"
-                  />
-                </Svg>
-
-                {/* Dust Particles */}
-                {dustParticles.map((p, i) => (
-                  <Animated.View
-                    key={`dust-${p.id}`}
-                    style={{
-                      position: 'absolute',
-                      left: p.left,
-                      top: p.top,
-                      width: p.size,
-                      height: p.size,
-                      borderRadius: p.size / 2,
-                      backgroundColor: isNight ? '#E0E7FF' : '#FEF08A',
-                      opacity: dustAnims[i],
-                      transform: [{ translateY: dustDrift[i] }],
-                      shadowColor: isNight ? '#E0E7FF' : '#FEF08A',
-                      shadowOffset: { width: 0, height: 0 },
-                      shadowOpacity: 0.8,
-                      shadowRadius: 2,
-                      elevation: 2,
-                    }}
-                  />
-                ))}
-              </Animated.View>
-            )}
 
             {/* Tapered glow band */}
             {/* <Svg width={ROAD_W} height={ROAD_H} style={[s.road, { zIndex: 2 }]}>
@@ -350,7 +264,7 @@ const MilestoneScreen = ({ navigation }) => {
               scrollEventThrottle={16}
             />
           </>
-        )}}
+        )}
       </TimeBasedBackground>
     </SafeAreaView>
   );

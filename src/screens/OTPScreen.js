@@ -36,7 +36,7 @@ const OTPScreen = ({ navigation, route }) => {
       navigation.replace('Register', { verificationToken: result.verificationToken, phone });
       Toast.show({ type: 'success', text1: 'Phone Verified!', text2: 'Please set your account details.' });
     } else {
-      navigation.replace('Home', { identifier: phone });
+      navigation.replace('Login', { identifier: phone });
       Toast.show({ type: 'info', text1: 'Welcome Back!', text2: 'Logged in successfully.' });
     }
   };

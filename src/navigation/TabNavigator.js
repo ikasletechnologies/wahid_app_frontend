@@ -1,24 +1,31 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Platform, Animated, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
+import { View, Text, Platform, Animated, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
 import NamesScreen from '../screens/NamesScreen';
 import MilestoneScreen from '../screens/MilestoneScreen';
 import { useAppTheme } from '../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import MiniPlayer from '../components/MiniPlayer';
+import { FONTS } from '../theme';
 
 const { width } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
 
-const BAR_HEIGHT        = 65;
+const BAR_HEIGHT        = 72;
 const BAR_MARGIN        = 10;
-const ICON_ACTIVE_SCALE = 1.2;
+const ICON_ACTIVE_SCALE = 1.15;
 
 const TAB_ICONS = {
   Home:       require('../../assets/navigation/home.png'),
   Names:      require('../../assets/navigation/names.png'),
   Milestones: require('../../assets/navigation/journey.png'),
+};
+
+const TAB_LABELS = {
+  Names: 'Names',
+  Home: 'Home',
+  Milestones: 'Milestone',
 };
 
 // ── Time-based night detection — mirrors TimeBasedBackground logic ─────────
@@ -143,6 +150,17 @@ const CustomTabBar = ({ state, descriptors, navigation, isNight }) => {
                   ]}
                   resizeMode="contain"
                 />
+                <Text
+                  style={[
+                    styles.tabLabel,
+                    {
+                      color: isFocused ? theme.iconActive : theme.iconInactive,
+                      opacity:   isFocused ? 1 : theme.iconOpacity,
+                    },
+                  ]}
+                >
+                  {TAB_LABELS[route.name]}
+                </Text>
               </Animated.View>
             </TouchableOpacity>
           );
@@ -202,14 +220,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconContainer: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   tabIcon: {
     width: 20,
     height: 20,
+    marginBottom: 3,
+  },
+  tabLabel: {
+    fontSize: 10,
+    fontFamily: FONTS.medium,
   },
 });
 

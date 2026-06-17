@@ -15,6 +15,7 @@ import {
   Animated,
   Easing,
   FlatList,
+  Share,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -168,13 +169,19 @@ const HomeScreen = ({ navigation }) => {
   const [ayahInput, setAyahInput] = React.useState('1');
 
   const [lastReadName, setLastReadName] = React.useState(null);
+  const [isNewName, setIsNewName] = React.useState(false);
 
   const [catSortOrder, setCatSortOrder] = React.useState('default');
   const [catSortModalVisible, setCatSortModalVisible] = React.useState(false);
   const [unreadNotifications, setUnreadNotifications] = React.useState(0);
+  const lastNotifFetchRef = React.useRef(0);
 
   useFocusEffect(
     React.useCallback(() => {
+      const now = Date.now();
+      // Throttle: skip if fetched within the last 30 seconds
+      if (now - lastNotifFetchRef.current < 30_000) return;
+      lastNotifFetchRef.current = now;
       http.get('/api/notifications')
         .then(res => {
           if (res.data?.success) {
@@ -185,17 +192,37 @@ const HomeScreen = ({ navigation }) => {
     }, [])
   );
 
-  React.useEffect(() => {
-    if (!names || names.length === 0) return;
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!names || names.length === 0) return;
 
-    AsyncStorage.getItem('last_viewed_name')
-      .then(saved => {
-        if (saved === null) return;
-        const nameObj = names.find(n => n.number === parseInt(saved, 10));
-        if (nameObj) setLastReadName(nameObj);
-      })
-      .catch(() => { });
-  }, [names]);
+      const pickRemaining = () => {
+        const remaining = names.filter(n => !learnedIds.includes(n.number) && !masteredIds.includes(n.number));
+        if (remaining.length > 0) {
+          setLastReadName(remaining[0]);
+          setIsNewName(true);
+        } else {
+          setLastReadName(names[0] || null);
+          setIsNewName(false);
+        }
+      };
+
+      AsyncStorage.getItem('last_reading_progress')
+        .then(saved => {
+          if (saved) {
+            const progress = JSON.parse(saved);
+            const nameObj = names.find(n => n.number === progress.nameNumber);
+            if (nameObj) {
+              setLastReadName(nameObj);
+              setIsNewName(false);
+              return;
+            }
+          }
+          pickRemaining();
+        })
+        .catch(() => pickRemaining());
+    }, [names, learnedIds, masteredIds])
+  );
 
   const floatAnim = React.useRef(new Animated.Value(0)).current;
   const floatLoopRef = React.useRef(null);
@@ -406,7 +433,9 @@ const HomeScreen = ({ navigation }) => {
                         style={[styles.lastReadBadgeIcon, { tintColor: isDark ? '#E8EDF2' : '#000000' }]}
                         resizeMode="contain"
                       />
-                      <Text style={[styles.lastReadBadgeText, { color: isDark ? '#E8EDF2' : '#000000' }]}>Last Read</Text>
+                      <Text style={[styles.lastReadBadgeText, { color: isDark ? '#E8EDF2' : '#000000' }]}>
+                        {isNewName ? 'New Name' : 'Last Read'}
+                      </Text>
                     </View>
 
                     <View style={styles.lastReadTextGroup}>
@@ -420,7 +449,9 @@ const HomeScreen = ({ navigation }) => {
                       activeOpacity={0.8}
                       onPress={handleBackToReading}
                     >
-                      <Text style={[styles.backToReadingText, { color: '#ffffff' }]}>Continue Reading</Text>
+                      <Text style={[styles.backToReadingText, { color: '#ffffff' }]}>
+                        {isNewName ? 'Start New Name' : 'Continue Reading'}
+                      </Text>
                       <Ionicons name="chevron-forward" size={15} color="#ffffff" style={{ marginLeft: 20, marginTop: 4 }} />
                     </TouchableOpacity>
                   </View>
@@ -530,34 +561,47 @@ const HomeScreen = ({ navigation }) => {
                     </ImageBackground>
                   </TouchableOpacity>
 
-                  {/* Remaining Metric Card */}
-                  <TouchableOpacity
-                    style={styles.metricCardWrap}
-                    activeOpacity={0.75}
-                    onPress={() => navigation.navigate('NamesList', { statusFilter: 'remaining' })}
-                  >
-                    <ImageBackground
-                      source={require('../../assets/home/sml_card.png')}
-                      style={styles.metricCardBackground}
-                      imageStyle={[styles.metricCardImageStyle, { opacity: isDark ? 0.65 : 1 }]}
-                    >
-                      <View style={styles.metricCardInner}>
-                        <Text style={[styles.newMetricValue, { color: isDark ? '#ffffff' : '#000000' }]}>{stats.remaining}</Text>
-                        <Text style={[styles.newMetricLabel, { color: isDark ? 'rgba(255,255,255,0.7)' : '#334155' }]}>Remaining</Text>
-
-                        {/* Icon Bubble */}
-                        <View style={styles.iconBubble}>
-                          <Image
-                            source={require('../../assets/home/remain_icon.png')}
-                            style={styles.metricCardIconImage}
-                            resizeMode="contain"
-                          />
-                        </View>
-                      </View>
-                    </ImageBackground>
-                  </TouchableOpacity>
                 </View>
               </View>
+
+              {/* ── Invite Card ── */}
+              <TouchableOpacity 
+                style={[
+                  styles.inviteCard, 
+                  { 
+                    backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#e2e8f0', 
+                    marginBottom: 16,
+                    marginTop: 0
+                  }
+                ]}
+                activeOpacity={0.8}
+                onPress={() => {
+                  Share.share({
+                    message: 'Join me in learning the 99 Names of Allah on the Wahid App! Download now: https://wahidapp.com',
+                  });
+                }}
+              >
+                <LinearGradient
+                  colors={isDark ? ['rgba(6, 182, 212, 0.1)', 'transparent'] : ['#ecfeff', '#ffffff']}
+                  style={styles.inviteCardGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  <View style={styles.inviteLeft}>
+                    <View style={[styles.inviteIconWrap, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.2)' : '#cffafe' }]}>
+                      <Ionicons name="people" size={24} color="#06b6d4" />
+                    </View>
+                    <View style={styles.inviteTextCol}>
+                      <Text style={[styles.inviteTitle, { color: colors.text }]}>Invite Friends</Text>
+                      <Text style={[styles.inviteSub, { color: colors.textMuted }]}>Share the blessing of learning</Text>
+                    </View>
+                  </View>
+                  <View style={styles.inviteShareBtn}>
+                    <Ionicons name="share-social" size={18} color="#ffffff" />
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
 
               {/* ── Categories Section Title ── */}
               <View style={styles.categoriesHeaderRow}>
@@ -642,6 +686,7 @@ const HomeScreen = ({ navigation }) => {
                     </TouchableOpacity>
                   );
                 })}
+
               </View>
               <View style={{ height: 40 }} />
             </ScrollView>
@@ -1441,6 +1486,57 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     fontSize: 15,
     marginLeft: 12,
+  },
+  inviteCard: {
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginTop: SPACE.md,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  inviteCardGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: SPACE.md,
+  },
+  inviteLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  inviteIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACE.sm,
+  },
+  inviteTextCol: {
+    flex: 1,
+  },
+  inviteTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 16,
+    marginBottom: 2,
+  },
+  inviteSub: {
+    fontFamily: FONTS.medium,
+    fontSize: 13,
+  },
+  inviteShareBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#06b6d4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: SPACE.sm,
   },
 });
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Dimensions, Animated, PanResponder,
   Image, ActivityIndicator, TouchableOpacity, Easing, ImageBackground,
@@ -15,8 +15,10 @@ import TimeBasedBackground from '../components/TimeBasedBackground';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import http from '../config/http';
 import { useAppTheme } from '../context/ThemeContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width: SW, height: SH } = Dimensions.get('window');
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 // Scale helpers — reference device: Redmi Note 13 Pro+ (≈393 × 900 dp)
 const BASE_W = 393;
@@ -37,6 +39,12 @@ const STACK_CONFIG = [
   { width: SW - rs(160), height: hs(100), opacity: 0.5, bottom: hs(-50) },
   { width: SW - rs(220), height: hs(50), opacity: 0.8, bottom: hs(-20) },
 ];
+
+// Bottom-sheet snap points — these are the 'top' Y values of the sheet panel.
+// The sheet has bottom:0 (anchored to screen bottom) so its height = SH - top.
+const BS_HIDDEN   = SH;          // top == screen bottom → sheet fully hidden
+const BS_PEEK     = SH * 0.44;   // sheet occupies bottom 56 % of screen
+const BS_EXPANDED = SH * 0.10;   // sheet occupies bottom 90 % of screen
 
 const NameCardBackground = ({ width, height, style, gradEnd = '#BCECF7', strokeColor = '#A0DCE9' }) => {
   const r = Math.min(rs(16), height * 0.16);
@@ -80,8 +88,6 @@ const NameCardBackground = ({ width, height, style, gradEnd = '#BCECF7', strokeC
         <Path
           d={d}
           fill="url(#cardGrad)"
-          stroke={strokeColor}
-          strokeWidth={1.5}
         />
       </Svg>
     </View>
@@ -159,8 +165,8 @@ const NamesScreen = ({ navigation, route }) => {
 
       let newCat = appliedCat;
       if (p.filter !== undefined) {
-        newCat = p.filter 
-          ? p.filter.charAt(0).toUpperCase() + p.filter.slice(1) 
+        newCat = p.filter
+          ? p.filter.charAt(0).toUpperCase() + p.filter.slice(1)
           : 'All';
         if (newCat !== appliedCat) {
           setAppliedCat(newCat);
@@ -171,8 +177,8 @@ const NamesScreen = ({ navigation, route }) => {
 
       let newStatus = appliedStatus;
       if (p.statusFilter !== undefined) {
-        newStatus = p.statusFilter 
-          ? p.statusFilter.charAt(0).toUpperCase() + p.statusFilter.slice(1) 
+        newStatus = p.statusFilter
+          ? p.statusFilter.charAt(0).toUpperCase() + p.statusFilter.slice(1)
           : 'All';
         if (newStatus !== appliedStatus) {
           setAppliedStatus(newStatus);
@@ -235,6 +241,19 @@ const NamesScreen = ({ navigation, route }) => {
     };
   }, []);
 
+  const isFilteredRef = useRef(false);
+  useEffect(() => {
+    isFilteredRef.current = appliedCat !== 'All' || appliedStatus !== 'All' || (appliedNumber && appliedNumber.trim() !== '') || (searchQuery && searchQuery.trim() !== '');
+  }, [appliedCat, appliedStatus, appliedNumber, searchQuery]);
+
+  useEffect(() => {
+    if (!filterVisible) return;
+    sheetAnim.setValue(BS_HIDDEN);
+    sheetStateRef.current = 'peek';
+    // useNativeDriver:false because we animate the 'top' layout property
+    Animated.spring(sheetAnim, { toValue: BS_PEEK, bounciness: 5, speed: 12, useNativeDriver: false }).start();
+  }, [filterVisible]);
+
   // ── PAN RESPONDER ────────────────────────────────────────────────────────
   const panResponder = useRef(
     PanResponder.create({
@@ -243,7 +262,14 @@ const NamesScreen = ({ navigation, route }) => {
 
       onPanResponderMove: (_, gs) => {
         if (isAnimating.current) return;
-        const v = gs.dy / CARD_SLOT;
+        let v = gs.dy / CARD_SLOT;
+
+        if (activeIndexRef.current === 0 && gs.dy > 0) {
+          v = Math.max(0, (gs.dy / CARD_SLOT) * 0.2); // Rubber band
+        } else if (isFilteredRef.current && activeIndexRef.current === namesRef.current.length && gs.dy < 0) {
+          v = Math.min(0, (gs.dy / CARD_SLOT) * 0.2); // Rubber band
+        }
+
         dragProgress.current = v;
         scrollAnim.setValue(v);
       },
@@ -251,8 +277,11 @@ const NamesScreen = ({ navigation, route }) => {
       onPanResponderRelease: (_, gs) => {
         if (isAnimating.current) return;
 
-        const enoughDrag = Math.abs(gs.dy) > 80 || Math.abs(gs.vy) > 0.5;
-        const dir = gs.dy < 0 ? -1 : gs.dy > 0 ? 1 : 0;
+        let enoughDrag = Math.abs(gs.dy) > 80 || Math.abs(gs.vy) > 0.5;
+        let dir = gs.dy < 0 ? -1 : gs.dy > 0 ? 1 : 0;
+
+        if (activeIndexRef.current === 0 && dir === 1) { enoughDrag = false; dir = 0; }
+        if (isFilteredRef.current && activeIndexRef.current === namesRef.current.length && dir === -1) { enoughDrag = false; dir = 0; }
 
         if (!enoughDrag || dir === 0) {
           dragProgress.current = 0;
@@ -264,10 +293,8 @@ const NamesScreen = ({ navigation, route }) => {
 
         isAnimating.current = true;
 
-        // Snapshot the list length NOW — syncWithBackend can update namesRef
-        // mid-animation, which would give the wrong count in the callback and
-        // skip or repeat a card.
         const count = namesRef.current.length || 1;
+        const totalSlots = isFilteredRef.current ? count + 1 : count;
 
         const done = Math.min(1, Math.abs(dragProgress.current));
         const duration = Math.max(100, Math.round(250 * (1 - done)));
@@ -278,19 +305,12 @@ const NamesScreen = ({ navigation, route }) => {
           easing: Easing.out(Easing.ease),
           useNativeDriver: true,
         }).start(({ finished }) => {
-          // If animation was interrupted (e.g. terminate fired), bail out —
-          // terminate already reset isAnimating and scrollAnim.
           if (!finished) return;
 
-          // Use the snapshotted count (closure), not namesRef.current
           const nextIdx = dir === -1
-            ? (activeIndexRef.current + 1) % count
-            : (activeIndexRef.current - 1 + count) % count;
+            ? (isFilteredRef.current ? activeIndexRef.current + 1 : (activeIndexRef.current + 1) % count)
+            : (isFilteredRef.current ? activeIndexRef.current - 1 : (activeIndexRef.current - 1 + count) % count);
 
-          // Reset before setState so the next render sees a clean scrollAnim=0.
-          // This also handles the edge case where nextIdx === activeIndexRef.current
-          // (single-card wrap) where setActiveIndex won't trigger a re-render and
-          // useLayoutEffect would never fire to do this cleanup.
           scrollAnim.setValue(0);
           isAnimating.current = false;
           dragProgress.current = 0;
@@ -309,13 +329,149 @@ const NamesScreen = ({ navigation, route }) => {
   ).current;
   // ──────────────────────────────────────────────────────────────────────────
 
+  // ── BOTTOM SHEET ────────────────────────────────────────────────────────────
+  // sheetAnim drives the CSS 'top' of the sheet (not translateY).
+  // bottom:0 is fixed, so sheet height = SH - sheetAnim.
+  // This keeps the Apply button always anchored to the screen edge.
+  const sheetAnim     = useRef(new Animated.Value(BS_HIDDEN)).current;
+  const sheetValRef   = useRef(BS_HIDDEN);
+
+  useEffect(() => {
+    const id = sheetAnim.addListener(({ value }) => {
+      sheetValRef.current = value;
+    });
+    return () => {
+      sheetAnim.removeListener(id);
+    };
+  }, [sheetAnim]);
+
+  const sheetStateRef = useRef('hidden'); // 'hidden' | 'peek' | 'expanded'
+  const bsDragStart   = useRef(0);
+
+  const sheetPanResponder = useRef(PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (_, gs) => {
+      // Only claim clearly-vertical gestures so horizontal chip scrolls aren't blocked
+      return Math.abs(gs.dy) >= 10 && Math.abs(gs.dy) >= Math.abs(gs.dx) * 1.8;
+    },
+    onMoveShouldSetPanResponderCapture: (_, gs) => {
+      return Math.abs(gs.dy) >= 10 && Math.abs(gs.dy) >= Math.abs(gs.dx) * 1.8;
+    },
+    onPanResponderGrant: () => { bsDragStart.current = sheetValRef.current; },
+    onPanResponderMove: (_, gs) => {
+      // Dragging down increases 'top' (shrinks sheet); clamp to [BS_EXPANDED, BS_HIDDEN]
+      sheetAnim.setValue(Math.min(BS_HIDDEN, Math.max(BS_EXPANDED, bsDragStart.current + gs.dy)));
+    },
+    onPanResponderRelease: (_, gs) => {
+      const curTop = sheetValRef.current;
+      const vel    = gs.vy;
+
+      let target;
+      // Fast downward swipe OR dragged past 45 % of the peek→hidden range → dismiss
+      if (vel > 0.6 || curTop > BS_PEEK + (BS_HIDDEN - BS_PEEK) * 0.45) {
+        target = BS_HIDDEN;
+      // Fast upward swipe OR dragged past midpoint between expanded and peek → expand
+      } else if (vel < -0.4 || curTop < (BS_EXPANDED + BS_PEEK) / 2) {
+        target = BS_EXPANDED;
+      } else {
+        target = BS_PEEK;
+      }
+
+      if (target === BS_HIDDEN) {
+        Animated.timing(sheetAnim, {
+          toValue: BS_HIDDEN, duration: 280,
+          easing: Easing.out(Easing.ease), useNativeDriver: false,
+        }).start(() => {
+          setFilterVisible(false);
+          sheetStateRef.current = 'hidden';
+        });
+      } else {
+        sheetStateRef.current = target === BS_EXPANDED ? 'expanded' : 'peek';
+        Animated.spring(sheetAnim, { toValue: target, bounciness: 5, speed: 14, useNativeDriver: false }).start();
+      }
+    },
+    onPanResponderTerminate: () => {},
+  })).current;
+
+
   const renderCardContent = (index) => {
+    if (isFilteredRef.current && index === filteredNames.length) {
+      const gradEnd = isDark ? '#1A2332' : '#BCECF7';
+      const strokeColor = isDark ? '#2A3A50' : '#A0DCE9';
+      const badgeBg = isDark ? '#000000' : '#0B0C0C';
+      const badgeTextColor = '#4BD5E8';
+      const badgeIcon = 'checkmark-circle';
+      const displayCat = appliedCat !== 'All' ? appliedCat.toUpperCase() : 'GENERAL';
+
+      return (
+        <View style={styles.cardContent}>
+          <NameCardBackground width={CARD_W} height={CARD_H} style={StyleSheet.absoluteFillObject} gradEnd={gradEnd} strokeColor={strokeColor} />
+
+          {/* Category badge */}
+          <View style={[styles.categoryPill, { backgroundColor: badgeBg }]}>
+            <Ionicons name={badgeIcon} size={rs(13)} color={badgeTextColor} style={{ marginRight: rs(4) }} />
+            <Text style={[styles.categoryPillText, { color: badgeTextColor }]}>{displayCat}</Text>
+          </View>
+
+          <View style={[styles.cardTextArea, { justifyContent: 'center', height: CARD_H - hs(80) }]}>
+            <Ionicons name="checkmark-done-circle" size={rs(50)} color="#00ADC1" style={{ marginBottom: hs(12) }} />
+            <Text style={[styles.trans, { color: isDark ? '#E8EDF2' : '#1A1A1A', fontSize: rs(20) }]}>All Caught Up!</Text>
+            <Text style={[styles.meaning, { color: isDark ? '#B0BEC5' : '#555555', marginTop: hs(4), paddingHorizontal: rs(20), lineHeight: hs(18), marginBottom: hs(16) }]}>
+              You have viewed all {filteredNames.length} names in this list.
+            </Text>
+
+            <View style={{ flexDirection: 'row', gap: rs(14), width: '100%', justifyContent: 'center', marginTop: hs(4) }}>
+              <TouchableOpacity 
+                style={[
+                  styles.caughtUpSquareBtn, 
+                  { 
+                    backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : '#F8FAFC', 
+                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0' 
+                  }
+                ]}
+                onPress={() => setFilterVisible(true)}
+              >
+                <Ionicons name="options-outline" size={rs(22)} color={isDark ? '#E8EDF2' : '#1A1A1A'} style={{ marginBottom: hs(4) }} />
+                <Text style={[styles.caughtUpSquareBtnTitle, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>Category</Text>
+                <Text style={[styles.caughtUpSquareBtnSub, { color: isDark ? '#A0AEC0' : '#666666' }]}>Change Filter</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[
+                  styles.caughtUpSquareBtn, 
+                  { 
+                    backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : '#F8FAFC', 
+                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0' 
+                  }
+                ]}
+                onPress={() => {
+                  setAppliedCat('All');
+                  setAppliedStatus('All');
+                  setAppliedNumber('');
+                  setTempCat('All');
+                  setTempStatus('All');
+                  setTempNumber('');
+                  setActiveIndex(0);
+                  activeIndexRef.current = 0;
+                  pendingReset.current = true;
+                }}
+              >
+                <Ionicons name="list-outline" size={rs(22)} color={isDark ? '#E8EDF2' : '#1A1A1A'} style={{ marginBottom: hs(4) }} />
+                <Text style={[styles.caughtUpSquareBtnTitle, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>99 Names</Text>
+                <Text style={[styles.caughtUpSquareBtnSub, { color: isDark ? '#A0AEC0' : '#666666' }]}>View All</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      );
+    }
+
     const item = filteredNames[index];
     if (!item) return null;
 
     const isMastered = masteredIds.includes(item.number);
-    const isLearned  = learnedIds.includes(item.number) && !isMastered;
-    const revisits   = revisitCounts?.[item.number] || 0;
+    const isLearned = learnedIds.includes(item.number) && !isMastered;
+    const revisits = revisitCounts?.[item.number] || 0;
 
     let gradEnd = isDark ? '#1A2332' : '#BCECF7';
     let strokeColor = isDark ? '#2A3A50' : '#A0DCE9';
@@ -418,8 +574,15 @@ const NamesScreen = ({ navigation, route }) => {
   if (loading) return <ActivityIndicator style={{ flex: 1 }} />;
 
   const count = filteredNames.length || 1;
-  const prevIdx = (activeIndex - 1 + count) % count;
-  const nextIdx = (activeIndex + 1) % count;
+  const totalSlots = isFilteredRef.current ? count + 1 : count;
+
+  const prevIdx = (isFilteredRef.current || activeIndex === 0)
+    ? (activeIndex - 1 >= 0 ? activeIndex - 1 : -1)
+    : (activeIndex - 1 + count) % count;
+
+  const nextIdx = isFilteredRef.current
+    ? (activeIndex + 1 < totalSlots ? activeIndex + 1 : -1)
+    : (activeIndex + 1) % count;
 
   const cardSlots = [
     { dataIdx: prevIdx, offset: -1 },
@@ -436,93 +599,95 @@ const NamesScreen = ({ navigation, route }) => {
             {/* ── TOP SECTION ── */}
             <View style={styles.topSection}>
               <View style={styles.headerContainer}>
-                <View style={styles.headerDividerRow}>
-                  <View style={[styles.headerLine, { backgroundColor: isDark ? '#334155' : '#D1D5DB' }]} />
-                  <Text style={[styles.headerDiamond, { color: isDark ? '#00ADC1' : '#A0DCE9' }]}>✦</Text>
-                  <View style={[styles.headerLine, { backgroundColor: isDark ? '#334155' : '#D1D5DB' }]} />
-                </View>
                 <Text style={[styles.headerTitleText, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>Beautiful Names of Allah</Text>
+                <Text style={[styles.headerSubtitleText, { color: isDark ? '#9EAAB8' : '#64748B' }]}>Learn. Reflect. Live.</Text>
                 <View style={styles.headerDividerRow}>
-                  <View style={[styles.headerLine, { backgroundColor: isDark ? '#334155' : '#D1D5DB' }]} />
                   <Text style={[styles.headerDiamond, { color: isDark ? '#00ADC1' : '#A0DCE9' }]}>✦</Text>
-                  <View style={[styles.headerLine, { backgroundColor: isDark ? '#334155' : '#D1D5DB' }]} />
                 </View>
               </View>
 
-              {/* ── FEATURE CARDS GRID ── */}
-              <View style={styles.featureCardsContainer}>
-                <View style={styles.featureCardsRow}>
-                  {/* Card 1: Favorites */}
-                  <TouchableOpacity 
-                    style={[styles.featureCard, { backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]} 
-                    activeOpacity={0.8}
-                    onPress={() => navigation.navigate('NamesList', { statusFilter: 'favorites' })}
-                  >
-                    <View style={[styles.featureIconBox, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F6F9' }]}>
-                      <Ionicons name="heart" size={rs(18)} color="#00ADC1" />
+              {/* ── DASHBOARD CARD ── */}
+              <View style={[styles.dashboardCard, { backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+                <View style={styles.dashboardStatsRow}>
+                  <View style={styles.dashboardStatCol}>
+                    <View style={[styles.statIconWrap, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F6F9' }]}>
+                      <Ionicons name="book-outline" size={rs(18)} color="#00ADC1" />
                     </View>
-                    <View style={styles.featureTextCol}>
-                      <Text style={[styles.featureValue, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>{favCount}</Text>
-                      <Text style={[styles.featureLabel, { color: isDark ? '#94A3B8' : '#64748B' }]}>Favorites</Text>
+                    <View style={styles.statTextWrap}>
+                      <Text style={[styles.statValue, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>{learnedIds.length}</Text>
+                      <Text style={[styles.statLabel, { color: isDark ? '#94A3B8' : '#64748B' }]}>Names Learned</Text>
                     </View>
-                  </TouchableOpacity>
-
-                  {/* Card 2: Read Today */}
-                  <TouchableOpacity 
-                    style={[styles.featureCard, { backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]} 
-                    activeOpacity={0.8}
-                  >
-                    <View style={[styles.featureIconBox, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F6F9' }]}>
-                      <Ionicons name="book" size={rs(18)} color="#00ADC1" />
+                  </View>
+                  <View style={styles.dashboardStatDivider} />
+                  <View style={styles.dashboardStatCol}>
+                    <View style={[styles.statIconWrap, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F6F9' }]}>
+                      <Ionicons name="time-outline" size={rs(18)} color="#00ADC1" />
                     </View>
-                    <View style={styles.featureTextCol}>
-                      <Text style={[styles.featureValue, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>{formattedReadingTime}</Text>
-                      <Text style={[styles.featureLabel, { color: isDark ? '#94A3B8' : '#64748B' }]}>Read Today</Text>
+                    <View style={styles.statTextWrap}>
+                      <Text style={[styles.statValue, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>{formattedReadingTime}</Text>
+                      <Text style={[styles.statLabel, { color: isDark ? '#94A3B8' : '#64748B' }]}>Total Learning</Text>
                     </View>
-                  </TouchableOpacity>
+                  </View>
                 </View>
 
-                <View style={styles.featureCardsRow}>
-                  {/* Card 3: Draft */}
-                  <TouchableOpacity 
-                    style={[styles.featureCard, { backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]} 
-                    activeOpacity={0.8}
-                    onPress={() => navigation.navigate('NamesList', { statusFilter: 'drafts' })}
-                  >
-                    <View style={[styles.featureIconBox, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F6F9' }]}>
-                      <Ionicons name="document-text" size={rs(18)} color="#00ADC1" />
-                    </View>
-                    <View style={styles.featureTextCol}>
-                      <Text style={[styles.featureValue, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>{draftCount}</Text>
-                      <Text style={[styles.featureLabel, { color: isDark ? '#94A3B8' : '#64748B' }]}>Draft</Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Card 4: Continue */}
-                  <TouchableOpacity 
-                    style={[styles.featureCard, { backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]} 
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      AsyncStorage.getItem('last_reading_progress').then(saved => {
-                        if (saved) {
-                          const parsed = JSON.parse(saved);
-                          const item = names.find(n => n.number === parsed.nameNumber || n.id === parsed.nameNumber);
-                          if (item) navigation.navigate('NameDetail', { name: item, initialStepIndex: parsed.stepIndex });
-                        }
-                      }).catch(() => {});
-                    }}
-                  >
-                    <View style={[styles.featureIconBox, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F6F9' }]}>
-                      <Ionicons name="play" size={rs(18)} color="#00ADC1" />
-                    </View>
-                    <View style={styles.featureTextCol}>
-                      <Text style={[styles.featureValue, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>Resume</Text>
-                      <Text style={[styles.featureLabel, { color: isDark ? '#94A3B8' : '#64748B' }]}>Continue</Text>
-                    </View>
-                  </TouchableOpacity>
+                {/* Progress Bar */}
+                <View style={styles.dashboardProgressWrap}>
+                  {/* <View style={[styles.progressBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]}>
+                    <View style={[styles.progressBarFill, { width: `${Math.min(100, (learnedIds.length / 99) * 100)}%`, backgroundColor: '#00ADC1' }]} />
+                  </View> */}
+                  <View style={styles.progressTextRow}>
+                    <Text style={[styles.progressTextValue, { color: isDark ? '#00ADC1' : '#0097A7' }]}>
+                      {learnedIds.length} / 99 <Text style={{ fontWeight: '400', fontSize: rs(10) }}>Names</Text>
+                    </Text>
+                  </View>
                 </View>
               </View>
 
+              {/* ── ACTION BUTTONS ── */}
+              <View style={styles.actionButtonsRow}>
+                <TouchableOpacity
+                  style={[styles.actionBtn, { backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}
+                  activeOpacity={0.8}
+                  onPress={() => navigation.navigate('NamesList', { statusFilter: 'favorites' })}
+                >
+                  <Ionicons name="heart-outline" size={rs(16)} color="#F43F5E" />
+                  <Text style={[styles.actionBtnText, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]} numberOfLines={1}>Favorites</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionBtn, { backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}
+                  activeOpacity={0.8}
+                  onPress={() => navigation.navigate('NamesList', { statusFilter: 'drafts' })}
+                >
+                  <Ionicons name="document-text-outline" size={rs(16)} color="#8B5CF6" />
+                  <Text style={[styles.actionBtnText, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]} numberOfLines={1}>Drafts</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionBtn, { backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}
+                  activeOpacity={0.8}
+                  onPress={() => navigation.navigate('NamesList', { statusFilter: 'learned' })}
+                >
+                  <Ionicons name="bookmark-outline" size={rs(16)} color="#F59E0B" />
+                  <Text style={[styles.actionBtnText, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]} numberOfLines={1}>Revision</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* ── LEGEND ROW ── */}
+              <View style={styles.legendRow}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#FFC107' }]} />
+                  <Text style={[styles.legendText, { color: isDark ? '#94A3B8' : '#64748B' }]}>Mastered</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#4CAF50' }]} />
+                  <Text style={[styles.legendText, { color: isDark ? '#94A3B8' : '#64748B' }]}>Learned</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: '#03B7CE' }]} />
+                  <Text style={[styles.legendText, { color: isDark ? '#94A3B8' : '#64748B' }]}>Unlearned</Text>
+                </View>
+              </View>
             </View>
 
             {/* ── CARD STACK ENGINE ── */}
@@ -566,12 +731,12 @@ const NamesScreen = ({ navigation, route }) => {
                           },
                         ],
                       }]}>
-                        <NameCardBackground 
-                          width={config.width} 
-                          height={config.height} 
-                          style={StyleSheet.absoluteFillObject} 
-                          gradEnd={isDark ? '#1A2332' : '#BCECF7'} 
-                          strokeColor={isDark ? '#2A3A50' : '#A0DCE9'} 
+                        <NameCardBackground
+                          width={config.width}
+                          height={config.height}
+                          style={StyleSheet.absoluteFillObject}
+                          gradEnd={isDark ? '#1A2332' : '#BCECF7'}
+                          strokeColor={isDark ? '#2A3A50' : '#A0DCE9'}
                         />
                       </Animated.View>
                     );
@@ -595,7 +760,8 @@ const NamesScreen = ({ navigation, route }) => {
                         {
                           translateY: scrollAnim.interpolate({
                             inputRange: [-1, 0, 1],
-                            outputRange: offset === -1 ? [-CARD_SLOT, -CARD_SLOT, 0]
+                            // outputRange: offset === -1 ? [-CARD_SLOT, -CARD_SLOT, 0]
+                            outputRange: offset === -1 ? [CARD_SLOT, CARD_SLOT, 0]
                               : offset === 0 ? [0, 0, 0]
                                 : [0, CARD_SLOT, CARD_SLOT],
                             extrapolate: 'clamp',
@@ -630,60 +796,105 @@ const NamesScreen = ({ navigation, route }) => {
 
             </View>
 
-            {/* ── FILTER MODAL ── */}
-            <Modal visible={filterVisible} animationType="slide" transparent={true}>
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <View style={styles.modalHandle} />
+            {/* ── FILTER BOTTOM SHEET ── */}
+            <Modal
+              visible={filterVisible}
+              animationType="none"
+              transparent
+              statusBarTranslucent
+              onRequestClose={() => {
+                Animated.timing(sheetAnim, {
+                  toValue: BS_HIDDEN, duration: 280,
+                  easing: Easing.out(Easing.ease), useNativeDriver: false,
+                }).start(() => { setFilterVisible(false); sheetStateRef.current = 'hidden'; });
+              }}
+            >
+              {/* Animated backdrop — tap outside sheet to dismiss */}
+              <Animated.View
+                pointerEvents="box-none"
+                style={[
+                  StyleSheet.absoluteFill,
+                  {
+                    backgroundColor: sheetAnim.interpolate({
+                      inputRange: [BS_EXPANDED, BS_PEEK, BS_HIDDEN],
+                      outputRange: ['rgba(0,0,0,0.65)', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0)'],
+                      extrapolate: 'clamp',
+                    }),
+                  },
+                ]}
+              >
+                <TouchableOpacity
+                  style={StyleSheet.absoluteFill}
+                  activeOpacity={1}
+                  onPress={() => {
+                    Animated.timing(sheetAnim, {
+                      toValue: BS_HIDDEN, duration: 280,
+                      easing: Easing.out(Easing.ease), useNativeDriver: false,
+                    }).start(() => { setFilterVisible(false); sheetStateRef.current = 'hidden'; });
+                  }}
+                />
+              </Animated.View>
 
+              {/* Sheet panel — 'top' is animated so bottom:0 always anchors Apply to screen edge */}
+              <Animated.View
+                style={[styles.bsSheet, { top: sheetAnim }]}
+                {...sheetPanResponder.panHandlers}
+              >
+                {/* Drag handle */}
+                <View style={styles.bsHandleArea}>
+                  <View style={styles.bsHandle} />
+                </View>
+
+                {/* Sticky header */}
+                <View style={styles.bsHeader}>
+                  <Text style={styles.bsTitle}>Filter & Sort</Text>
+                </View>
+
+                {/* Filter content — plain View so horizontal ScrollViews get all gestures */}
+                <View style={styles.bsContent}>
                   <Text style={styles.filterSectionTitle}>CATEGORY</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterScrollContent}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bsChipRow}>
                     {['All', ...(categories ? Object.keys(categories).map(k => k.charAt(0).toUpperCase() + k.slice(1)) : [])].map(cat => {
                       const isActive = tempCat === cat;
                       return (
                         <TouchableOpacity
                           key={cat}
                           onPress={() => setTempCat(cat)}
-                          style={[styles.filterPill, isActive && styles.filterPillActive]}
+                          style={[styles.filterPill, isActive && styles.filterPillActive, { flexDirection: 'row', alignItems: 'center' }]}
                         >
+                          {cat === 'All' && (
+                            <Ionicons name="grid-outline" size={rs(16)} color={isActive ? '#00ADC1' : '#1A1A1A'} style={{ marginRight: rs(6) }} />
+                          )}
                           <Text style={[styles.filterPillText, isActive && styles.filterPillTextActive]}>{cat}</Text>
                         </TouchableOpacity>
                       );
                     })}
                   </ScrollView>
 
-                  <Text style={styles.filterSectionTitle}>STATUS</Text>
-                  <View style={styles.filterRow}>
+                  <Text style={[styles.filterSectionTitle, { marginTop: hs(20) }]}>STATUS</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bsChipRow}>
                     {['All', 'Learned', 'Mastered', 'Remaining'].map(status => {
                       const isActive = tempStatus === status;
+                      let dotColor = '#00ADC1';
+                      if (status === 'Learned') dotColor = '#4CAF50';
+                      if (status === 'Mastered') dotColor = '#FFC107';
+                      if (status === 'Remaining') dotColor = '#007BFF';
                       return (
                         <TouchableOpacity
                           key={status}
                           onPress={() => setTempStatus(status)}
-                          style={[styles.filterPill, isActive && styles.filterPillActive]}
+                          style={[styles.filterPill, isActive && styles.filterPillActive, { flexDirection: 'row', alignItems: 'center' }]}
                         >
+                          <View style={{ width: rs(8), height: rs(8), borderRadius: rs(4), backgroundColor: dotColor, marginRight: rs(8) }} />
                           <Text style={[styles.filterPillText, isActive && styles.filterPillTextActive]}>{status}</Text>
                         </TouchableOpacity>
                       );
                     })}
-                  </View>
+                  </ScrollView>
+                </View>
 
-                  <Text style={styles.filterSectionTitle}>NAMES</Text>
-                  <View style={styles.namesFilterRow}>
-                    <Text style={styles.namesFilterLabel}>Select the name number</Text>
-                    <View style={styles.numberInputBox}>
-                      <TextInput
-                        style={styles.numberInput}
-                        value={tempNumber}
-                        onChangeText={setTempNumber}
-                        keyboardType="number-pad"
-                        maxLength={2}
-                        placeholder="--"
-                        placeholderTextColor="#A0A0A0"
-                      />
-                    </View>
-                  </View>
-
+                {/* Sticky Apply button */}
+                <View style={styles.bsApplyArea}>
                   <TouchableOpacity
                     style={styles.applyFilterBtn}
                     onPress={() => {
@@ -693,13 +904,19 @@ const NamesScreen = ({ navigation, route }) => {
                       setActiveIndex(0);
                       activeIndexRef.current = 0;
                       pendingReset.current = true;
-                      setFilterVisible(false);
+                      Animated.timing(sheetAnim, {
+                        toValue: BS_HIDDEN, duration: 280,
+                        easing: Easing.out(Easing.ease), useNativeDriver: false,
+                      }).start(() => { setFilterVisible(false); sheetStateRef.current = 'hidden'; });
                     }}
                   >
-                    <Text style={styles.applyFilterBtnText}>Done</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={styles.applyFilterBtnText}>Apply Filters</Text>
+                      <Ionicons name="options-outline" size={rs(18)} color="#FFFFFF" style={{ marginLeft: rs(8) }} />
+                    </View>
                   </TouchableOpacity>
                 </View>
-              </View>
+              </Animated.View>
             </Modal>
           </>
         )}
@@ -713,31 +930,25 @@ const styles = StyleSheet.create({
   topSection: { alignItems: 'center', paddingTop: hs(15), zIndex: 30 },
   headerContainer: {
     alignItems: 'center',
-    marginBottom: hs(15),
-  },
-  headerDividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: rs(140),
-  },
-  headerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#0891b2',
-    opacity: 0.35,
-  },
-  headerDiamond: {
-    color: '#0891b2',
-    fontSize: rs(10),
-    marginHorizontal: rs(6),
+    marginBottom: hs(12),
   },
   headerTitleText: {
-    fontFamily: FONTS.bold,
-    fontSize: rs(18),
-    color: '#0891b2',
-    marginVertical: hs(4),
+    fontFamily: FONTS.serif || FONTS.bold,
+    fontSize: rs(20),
+    color: '#00ADC1',
     textAlign: 'center',
+  },
+  headerSubtitleText: {
+    fontSize: rs(12),
+    textAlign: 'center',
+    marginTop: hs(4),
+    letterSpacing: 0.5,
+  },
+  headerDividerRow: {
+    marginTop: hs(8),
+  },
+  headerDiamond: {
+    fontSize: rs(10),
   },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: rs(10), marginBottom: hs(10), marginTop: hs(4) },
   searchPill: { flex: 1, height: rs(38), backgroundColor: '#FFFFFF', borderRadius: rs(19), flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(14), gap: rs(8), elevation: 2 },
@@ -798,37 +1009,89 @@ const styles = StyleSheet.create({
   peekFrame: { position: 'absolute', alignSelf: 'center' },
 
 
-  // ── FILTER MODAL ──
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: rs(24), borderTopRightRadius: rs(24), padding: rs(24), paddingBottom: hs(40) },
-  modalHandle: { width: rs(40), height: hs(4), backgroundColor: '#E0E0E0', borderRadius: rs(2), alignSelf: 'center', marginBottom: hs(24) },
+  // ── BOTTOM SHEET ──
+  bsSheet: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    // NO height — sheet fills from animated 'top' down to bottom:0 (screen edge).
+    // This guarantees the Apply button is always pinned to the screen bottom.
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: rs(24), borderTopRightRadius: rs(24),
+    elevation: 24,
+    shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15, shadowRadius: rs(12),
+  },
+  bsHandleArea: { alignItems: 'center', paddingTop: hs(12), paddingBottom: hs(8) },
+  bsHandle: { width: rs(40), height: hs(4), backgroundColor: '#E0E0E0', borderRadius: rs(2) },
+  bsHeader: {
+    paddingHorizontal: rs(24), paddingBottom: hs(14),
+    borderBottomWidth: 1, borderBottomColor: '#F0F0F0',
+  },
+  bsTitle: { fontSize: rs(18), fontWeight: '700', color: '#1A1A1A' },
+  bsContent: { paddingHorizontal: rs(24), paddingTop: hs(8), paddingBottom: hs(8) },
+  bsChipRow: { flexDirection: 'row', gap: rs(10), paddingBottom: hs(4), paddingRight: rs(24) },
+  bsApplyArea: {
+    paddingHorizontal: rs(24), paddingVertical: hs(16),
+    borderTopWidth: 1, borderTopColor: '#F0F0F0',
+    backgroundColor: '#FFFFFF',
+  },
 
-  filterSectionTitle: { fontSize: rs(12), fontWeight: '800', color: '#1A1A1A', marginTop: hs(16), marginBottom: hs(10), letterSpacing: 0.5 },
-  filterScroll: { flexGrow: 0, marginBottom: hs(16) },
-  filterScrollContent: { gap: rs(10), paddingRight: rs(20) },
-  filterRow: { flexDirection: 'row', gap: rs(10), marginBottom: hs(16) },
+  filterSectionTitle: { fontSize: rs(12), fontWeight: '800', color: '#1A1A1A', marginBottom: hs(10), letterSpacing: 0.5 },
 
-  filterPill: { paddingHorizontal: rs(20), paddingVertical: hs(8), backgroundColor: '#DADBDF', borderRadius: rs(16), borderWidth: 1, borderColor: 'transparent' },
+  filterPill: { paddingHorizontal: rs(16), paddingVertical: hs(9), backgroundColor: '#FFFFFF', borderRadius: rs(20), borderWidth: 1, borderColor: '#E2E8F0' },
   filterPillActive: { backgroundColor: '#E0F6F9', borderColor: '#00ADC1' },
   filterPillText: { fontSize: rs(13), color: '#1A1A1A', fontWeight: '500' },
   filterPillTextActive: { color: '#00ADC1' },
 
-  namesFilterRow: { flexDirection: 'row', alignItems: 'center', marginBottom: hs(30), gap: rs(15) },
-  namesFilterLabel: { fontSize: rs(13), color: '#4A4A4A' },
-  numberInputBox: { backgroundColor: '#DADBDF', borderRadius: rs(6), paddingHorizontal: rs(12), paddingVertical: hs(4) },
-  numberInput: { fontSize: rs(14), fontWeight: '700', color: '#1A1A1A', textAlign: 'center' },
-
   applyFilterBtn: { width: '100%', backgroundColor: '#00ADC1', borderRadius: rs(12), paddingVertical: hs(16), alignItems: 'center' },
   applyFilterBtnText: { color: '#FFFFFF', fontSize: rs(16), fontWeight: '700' },
 
-  // ── FEATURE CARDS ──
-  featureCardsContainer: { paddingHorizontal: rs(20), width: '100%', marginTop: hs(4), marginBottom: hs(24), gap: hs(12) },
-  featureCardsRow: { flexDirection: 'row', gap: rs(12), width: '100%' },
-  featureCard: { flex: 1, flexDirection: 'row', alignItems: 'center', padding: rs(12), borderRadius: rs(16), borderWidth: 1 },
-  featureIconBox: { width: rs(40), height: rs(40), borderRadius: rs(12), justifyContent: 'center', alignItems: 'center', marginRight: rs(12) },
-  featureTextCol: { flex: 1, justifyContent: 'center' },
-  featureValue: { fontSize: rs(15), fontWeight: '700', marginBottom: hs(2) },
-  featureLabel: { fontSize: rs(11), fontWeight: '500' },
+  // ── DASHBOARD CARD ──
+  dashboardCard: { width: SW - rs(40), borderRadius: rs(16), borderWidth: 1, padding: rs(16), marginBottom: hs(12) },
+  dashboardStatsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: hs(16) },
+  dashboardStatCol: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  statIconWrap: { width: rs(36), height: rs(36), borderRadius: rs(18), justifyContent: 'center', alignItems: 'center', marginRight: rs(10) },
+  statTextWrap: { justifyContent: 'center' },
+  statValue: { fontSize: rs(16), fontWeight: '700', marginBottom: hs(2) },
+  statLabel: { fontSize: rs(10), fontWeight: '500' },
+  dashboardStatDivider: { width: 1, height: '80%', backgroundColor: 'rgba(150,150,150,0.2)' },
+  dashboardProgressWrap: { width: '100%', alignItems: 'center' },
+  progressBarBg: { width: '100%', height: hs(6), borderRadius: rs(3), overflow: 'hidden', marginBottom: hs(8) },
+  progressBarFill: { height: '100%', borderRadius: rs(3) },
+  progressTextRow: { flexDirection: 'row', width: '100%', justifyContent: 'center' },
+  progressTextValue: { fontSize: rs(11), fontWeight: '700', letterSpacing: 0.5 },
+
+  // ── ACTION BUTTONS ──
+  actionButtonsRow: { flexDirection: 'row', gap: rs(8), width: SW - rs(40), marginBottom: hs(12) },
+  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: hs(12), paddingHorizontal: rs(4), borderRadius: rs(12), borderWidth: 1 },
+  actionBtnText: { fontSize: rs(12), fontWeight: '600', marginLeft: rs(6) },
+
+  // ── LEGEND ROW ──
+  legendRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(40), marginVertical: hs(5), marginBottom: hs(15) },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: rs(6) },
+  legendDot: { width: rs(8), height: rs(8), borderRadius: rs(4) },
+  legendText: { fontSize: rs(11), fontWeight: '500' },
+
+  // ── CAUGHT UP CARD BUTTONS ──
+  caughtUpBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: hs(10), borderRadius: rs(10), borderWidth: 1, gap: rs(8) },
+  caughtUpBtnText: { fontSize: rs(13), fontWeight: '600' },
+  caughtUpSquareBtn: {
+    width: rs(115),
+    height: hs(88),
+    borderRadius: rs(14),
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: rs(8),
+  },
+  caughtUpSquareBtnTitle: {
+    fontSize: rs(13),
+    fontWeight: '700',
+  },
+  caughtUpSquareBtnSub: {
+    fontSize: rs(10),
+    fontWeight: '500',
+    marginTop: hs(2),
+  },
 
 });
 

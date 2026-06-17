@@ -1,17 +1,29 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, StatusBar, Animated, Dimensions, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../context/ThemeContext';
 import { FONTS } from '../theme';
 import http from '../config/http';
-import TimeBasedBackground from '../components/TimeBasedBackground';
 
 const NotificationScreen = ({ navigation }) => {
   const { isDark, colors } = useAppTheme();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const exitAnim = React.useRef(new Animated.Value(0)).current;
+
+  const handleClose = useCallback(() => {
+    Animated.timing(exitAnim, {
+      toValue: Dimensions.get('window').height,
+      duration: 350,
+      useNativeDriver: true,
+      easing: Easing.out(Easing.poly(4)),
+    }).start(() => {
+      navigation.goBack();
+    });
+  }, [exitAnim, navigation]);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -62,13 +74,11 @@ const NotificationScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: 'transparent' }]} edges={['top']}>
-      <TimeBasedBackground showElements={false}>
-        {({ isNight }) => (
-          <>
-            <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
-            <View style={styles.header}>
-              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+    <Animated.View style={[styles.root, { transform: [{ translateY: exitAnim }] }]}>
+      <SafeAreaView style={[styles.root, { backgroundColor: isDark ? '#0F172A' : '#F0F0FF' }]} edges={['top']}>
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={handleClose}>
                 <Ionicons name="chevron-back" size={24} color={colors.text} />
                 <Text style={[styles.headerTitle, { color: colors.text }]}>Notifications</Text>
               </TouchableOpacity>
@@ -119,10 +129,8 @@ const NotificationScreen = ({ navigation }) => {
                 }}
               />
             )}
-          </>
-        )}
-      </TimeBasedBackground>
-    </SafeAreaView>
+      </SafeAreaView>
+    </Animated.View>
   );
 };
 

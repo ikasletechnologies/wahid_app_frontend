@@ -2,10 +2,12 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   View, Text, StyleSheet, Dimensions, Animated, Easing,
   Image, TouchableOpacity, StatusBar, PanResponder, ScrollView, TextInput,
-  LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform, Keyboard
+  LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform, Keyboard,
+  Share
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Circle as SvgCircle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNames } from '../context/NamesContext';
@@ -15,6 +17,8 @@ import { useIsFocused } from '@react-navigation/native';
 import NameDetailHeader from '../components/NameDetailHeader';
 import TimeBasedBackground from '../components/TimeBasedBackground';
 import http from '../config/http';
+import { FONTS } from '../theme';
+import LottieView from 'lottie-react-native';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 const BASE_W = 393;
@@ -24,14 +28,114 @@ const hScale = SH / BASE_H;
 const rs = (n) => Math.round(n * wScale);
 const hs = (n) => Math.round(n * hScale);
 
+const countWords = (content) => {
+  if (!content) return 0;
+  if (Array.isArray(content)) {
+    return content.reduce((sum, item) => {
+      if (typeof item === 'string') {
+        return sum + countWords(item);
+      }
+      if (item && typeof item === 'object') {
+        return sum + countWords(item.view || item.simpleMeaning || item.tr || item.arabic || '');
+      }
+      return sum;
+    }, 0);
+  }
+  return content.trim().split(/\s+/).filter(w => w.length > 0).length;
+};
+
+const getMeaningSentences = (nameObj) => {
+  let displayMeaning = nameObj.description || nameObj.meaning || '';
+  if (typeof displayMeaning === 'string' && displayMeaning.includes('—')) {
+    displayMeaning = displayMeaning.split('—')[1].trim();
+  }
+  let parts = displayMeaning.split(/([.?!])(?:[\s]+|$)/);
+  let sentences = [];
+  for (let i = 0; i < parts.length; i += 2) {
+    let text = parts[i];
+    let punct = parts[i + 1] || '';
+    let combined = (text + punct).trim();
+    if (combined && combined.replace(/[.?!\s]/g, '').length > 0) sentences.push(combined);
+  }
+  return sentences.length > 0 ? sentences : [displayMeaning.trim()];
+};
+
+const FadeContent = ({ contentKey, children }) => {
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const [displayChildren, setDisplayChildren] = useState(children);
+  const prevKey = useRef(contentKey);
+
+  useEffect(() => {
+    if (contentKey !== prevKey.current) {
+      prevKey.current = contentKey;
+      Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
+        setDisplayChildren(children);
+        Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+      });
+    } else {
+      setDisplayChildren(children);
+    }
+  }, [contentKey, children]);
+
+  return <Animated.View style={{ opacity: fadeAnim, width: '100%', alignItems: 'center' }}>{displayChildren}</Animated.View>;
+};
+
 const NameDetailScreen = ({ route, navigation }) => {
-  const { name, initialStepIndex = 0 } = route.params;
-  const { markAsLearned, masteredIds, revisitCounts, userReflections, incrementReadingTime, markAsDraft, removeDraft } = useNames();
+  const { name: originalName, initialStepIndex = 0 } = route.params;
+
+  // Intercept name 1 (Allah) with static content as requested
+  const name = useMemo(() => {
+    if (originalName.number === 1 || originalName.id === 1) {
+      return {
+        ...originalName,
+        arabic: originalName.arabic || originalName.ar || "اللَّهُ",
+        transliteration: originalName.transliteration || originalName.tr || "Allah",
+        meaning: originalName.meaning || originalName.en, // Use the dynamic meaning from the database
+        description: "Allah is the proper and personal name of the one true God. No other being is truly called by this name.\nHe is unique and completely free from any imperfection. He has no partners, no equals, and He alone deserves every form of worship.",
+        gifts: [
+          "It answers the deepest question of the fitrah: “Who is my Rabb?” by pointing clearly to the One who is necessarily existent, without beginning or end, the Rabb of all worlds.",
+          "As this name cannot be shared, pluralized, or truly applied to anyone else, it closes the doors of confusion and doubt about who deserves our obedience, fear, hope, and love.",
+          "Scholars mention that “Allah” is the all‑encompassing name that gathers within it all the beautiful Names, and many describe it as al‑Ism al‑Aʿẓam (the Greatest Name)."
+        ],
+        quran: [
+          {
+            ref: "Qur’an 7:180",
+            tr: "Allah has the most beautiful and perfect names, so call on Him using them, and remember Him through them.",
+            ar: "وَلِلَّهِ ٱلْأَسْمَآءُ ٱلْحُسْنَىٰ فَٱدْعُوهُ بِهَا"
+          },
+          {
+            ref: "Qur’an 20:14",
+            tr: "Allah tells Musa, “I am Allah, the only true God, so worship only Me and keep up the prayer so that you remember Me.”",
+            ar: "إِنَّنِيٓ أَنَا ٱللَّهُ لَآ إِلَٰهَ إِلَّآ أَنَا فَٱعْبُدْنِي وَأَقِمِ ٱلصَّلَوٰةَ لِذِكْرِي"
+          },
+          {
+            ref: "Qur’an 2:255 (Ayatul Kursi)",
+            tr: "Allah is the only true God, Ever‑Living and always taking care of all creation. Nothing makes Him drowsy or sleepy.\nEverything in the heavens and the earth belongs to Him alone. No one can intercede or speak for anyone in His presence except if He gives permission.\nHe knows everything about His creation – past, present, and future – and people only know what He allows them to know.\nHis kursī (Seat) is so vast that it covers the heavens and the earth, and taking care of them does not tire Him at all. He is the Most High, the Most Great.",
+            ar: "ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ ٱلْحَيُّ ٱلْقَيُّومُ\nلَا تَأْخُذُهُۥ سِنَةٌ وَلَا نَوْمٌ\nلَّهُۥ مَا فِى ٱلسَّمَٰوَٰتِ وَمَا فِى ٱلْأَرْضِ\nمَن ذَا ٱلَّذِى يَشْفَعُ عِندَهُۥٓ إِلَّا بِإِذْنِهِۦ\nيَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ\nوَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِۦٓ إِلَّا بِمَا شَآءَ\nوَسِعَ كُرْسِيُّهُ ٱلسَّمَٰوَٰتِ وَٱلْأَرْضَ\nوَلَا يَـُٔودُهُۥ حِفْظُهُمَا\nوَهُوَ ٱلْعَلِىُّ ٱلْعَظِيمُ"
+          },
+          {
+            ref: "Qur’an 20:98",
+            tr: "Your only true God is Allah; there is no god except Him, and His knowledge surrounds everything.",
+            ar: "إِنَّمَآ إِلَٰهُكُمُ ٱللَّهُ ٱلَّذِي لَآ إِلَٰهَ إِلَّا هُوَ ۚ وَسِعَ كُلَّ شَيْءٍ عِلْمًا"
+          }
+        ],
+        practicalWays: [
+          "Begin and end tasks consciously with “Bismillah” and “Alhamdulillah,” letting your heart remember that every moment is under the gaze of Allah.",
+          "Say Aʿūdhu billāhi mina sh‑shayṭāni r‑rajīm (I seek refuge in Allah from Shayṭān, the accursed) when there is waswasa (Shayṭān’s whispers pushing you towards sin), trusting that Allah protects your heart from those whispers.",
+          "When you study the other Names, see them as doors leading back to the One named “Allah,” never separate from Him."
+        ],
+        scholarlyViews: []
+      };
+    }
+    return originalName;
+  }, [originalName]);
+  const { markAsLearned, masteredIds, revisitCounts, userReflections, incrementReadingTime, markAsDraft, removeDraft, reviewLaterIds, toggleReviewLater } = useNames();
   const { favouriteIds, toggleFavourite } = usePlaylist();
   const isFocused = useIsFocused();
   const { isDark } = useAppTheme();
   const isMastered = masteredIds ? masteredIds.includes(name.id) : false;
   const isFavorite = favouriteIds ? favouriteIds.has(name.number || name.id) : false;
+  const isReviewLater = reviewLaterIds ? reviewLaterIds.includes(name.number || name.id) : false;
   const revisits = revisitCounts[name.id] || 0;
   const isSaturated = isMastered || revisits >= 3;
 
@@ -63,7 +167,7 @@ const NameDetailScreen = ({ route, navigation }) => {
     dimText: '#7A7A7A',
     inputBg: '#FFFFFF',
     inputBorder: 'rgba(0,173,193,0.25)',
-    safeBg: '#C5F2F7',
+    safeBg: '#F8FAFC',
     progressTrack: '#FFFFFF',
     pillText: '#1A1A1A',
     optionBg: '#FFFFFF',
@@ -86,35 +190,41 @@ const NameDetailScreen = ({ route, navigation }) => {
     const s = [];    // 1. Meaning Step
     s.push({ type: 'meaning' });
 
-    // 2. Reference Steps
-    // Prefer the new Prisma 'quran' array format which has rich data
-    if (name.quran && name.quran.length > 0) {
-      name.quran.forEach((ref, index) => {
-        s.push({
-          type: 'reference',
-          data: {
-            arabic: ref.ar,
-            simpleMeaning: ref.tr,
-            reference: ref.ref,
-            significance: ref.significance
-          },
-          index
-        });
-      });
-    } else {
-      // Fallback to legacy arrays if 'quran' is empty
-      const isSunnah = name.category === 'sunnah' || name.cat === 'sunnah';
-      const references = isSunnah ? name.sunnah : name.quranic;
-      if (references && references.length > 0) {
-        references.forEach((ref, index) => {
-          s.push({ type: 'reference', data: ref, index });
-        });
-      }
-    }
-
-    // 3. Gifts Step
+    // 2. Gifts Step (Moved right after Meaning as requested)
     if (name.gifts && name.gifts.length > 0) {
       s.push({ type: 'gifts' });
+    }
+
+    // 3. Qur'an References
+    if (name.quran && name.quran.length > 0) {
+      const formattedRefs = name.quran.map((ref) => {
+        if (typeof ref === 'string') return ref;
+        return {
+          arabic: ref?.ar,
+          simpleMeaning: ref?.tr,
+          reference: ref?.ref,
+          significance: ref?.significance
+        };
+      });
+      s.push({ type: 'quran', data: formattedRefs });
+    } else if (name.quranic && name.quranic.length > 0) {
+      s.push({ type: 'quran', data: name.quranic });
+    }
+
+    // 4. Hadith / Sunnah References
+    if (name.hadith && name.hadith.length > 0) {
+      const formattedRefs = name.hadith.map((ref) => {
+        if (typeof ref === 'string') return ref;
+        return {
+          arabic: ref?.ar,
+          simpleMeaning: ref?.tr,
+          reference: ref?.ref,
+          significance: ref?.significance
+        };
+      });
+      s.push({ type: 'hadith', data: formattedRefs });
+    } else if (name.sunnah && name.sunnah.length > 0) {
+      s.push({ type: 'hadith', data: name.sunnah });
     }
     if (name.practicalWays && name.practicalWays.length > 0) {
       s.push({ type: 'practical' });
@@ -139,10 +249,12 @@ const NameDetailScreen = ({ route, navigation }) => {
   const [phase, setPhase] = useState('content'); // 'content' | 'journey'
   const [masteryAnswer, setMasteryAnswer] = useState(null);
   const [masteryDone, setMasteryDone] = useState(false);
-  const [refSubStep, setRefSubStep] = useState(0);
-  const [giftSubStep, setGiftSubStep] = useState(0);
-  const [practicalSubStep, setPracticalSubStep] = useState(0);
-  const [scholarSubStep, setScholarSubStep] = useState(0);
+  const [meaningSubStep, setMeaningSubStep] = useState(-1);
+  const [refSubStep, setRefSubStep] = useState(-1);
+  const [showArabicVerse, setShowArabicVerse] = useState(false);
+  const [giftSubStep, setGiftSubStep] = useState(-1);
+  const [practicalSubStep, setPracticalSubStep] = useState(-1);
+  const [scholarSubStep, setScholarSubStep] = useState(-1);
 
   const [reflection1, setReflection1] = useState('');
   const [reflection2, setReflection2] = useState('');
@@ -151,6 +263,62 @@ const NameDetailScreen = ({ route, navigation }) => {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const scrollViewRef = useRef(null);
+  const lastReadTimerRef = useRef(null);
+  const flipAnim = useRef(new Animated.Value(0)).current;
+
+  const triggerFlip = useCallback((callback) => {
+    Animated.timing(flipAnim, {
+      toValue: 90,
+      duration: 250,
+      easing: Easing.in(Easing.ease),
+      useNativeDriver: true,
+    }).start(() => {
+      callback();
+      flipAnim.setValue(-90);
+      Animated.timing(flipAnim, {
+        toValue: 0,
+        duration: 250,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    });
+  }, [flipAnim]);
+
+  const [activeCardTime, setActiveCardTime] = useState(0);
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  useEffect(() => {
+    const loadTime = async () => {
+      try {
+        const nameKey = name.number || name.id;
+        if (!nameKey) return;
+        const stored = await AsyncStorage.getItem(`reading_time_name_${nameKey}`);
+        if (stored) setActiveCardTime(parseInt(stored, 10));
+      } catch (e) { }
+    };
+    loadTime();
+  }, [name]);
+
+  useEffect(() => {
+    if (!isFocused || phase !== 'content') return;
+    const interval = setInterval(() => {
+      setActiveCardTime(prev => {
+        const next = prev + 1;
+        const nameKey = name.number || name.id;
+        if (nameKey) {
+          AsyncStorage.setItem(`reading_time_name_${nameKey}`, String(next)).catch(() => { });
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isFocused, name, phase]);
+
+  const formatTime = (seconds) => {
+    if (seconds < 60) return `${seconds} sec`;
+    const m = Math.floor(seconds / 60);
+    return `${m} min`;
+  };
 
   // Persist reading position and mark as draft
   useEffect(() => {
@@ -160,12 +328,26 @@ const NameDetailScreen = ({ route, navigation }) => {
       stepIndex: currentStepIndex,
     })).catch(() => { });
 
-    http.post('/api/me/last-read', { nameNumber, stepIndex: currentStepIndex }).catch(() => {});
+    // Debounce backend sync: only POST after the user settles on a step for 3s
+    if (lastReadTimerRef.current) clearTimeout(lastReadTimerRef.current);
+    lastReadTimerRef.current = setTimeout(() => {
+      http.post('/api/me/last-read', { nameNumber, stepIndex: currentStepIndex }).catch(() => { });
+    }, 3000);
 
     if (currentStepIndex > 0 && phase === 'content') {
       markAsDraft(nameNumber);
     }
+
+    return () => {
+      if (lastReadTimerRef.current) clearTimeout(lastReadTimerRef.current);
+    };
   }, [currentStepIndex, name, phase, markAsDraft]);
+
+  const isBackDisabled = useMemo(() => {
+    if (showCelebration) return true;
+    if (currentStepIndex === 0 && meaningSubStep === 0) return true;
+    return false;
+  }, [currentStepIndex, meaningSubStep, showCelebration]);
 
   // Active reading timer
   useEffect(() => {
@@ -176,10 +358,100 @@ const NameDetailScreen = ({ route, navigation }) => {
     return () => clearInterval(interval);
   }, [isFocused, incrementReadingTime]);
 
-  const currentStep = steps[currentStepIndex];
-  const progress = (currentStepIndex + 1) / steps.length;
+  const safeStepIndex = Math.max(0, Math.min(currentStepIndex, steps.length - 1));
+  const currentStep = steps[safeStepIndex];
+
+  const calculatedProgress = useMemo(() => {
+    if (!steps || steps.length === 0) return 0;
+    let totalSubsteps = 0;
+    let completedSubsteps = 0;
+
+    steps.forEach((step, idx) => {
+      let stepTotal = 1;
+      let stepCompleted = 0;
+
+      if (step.type === 'meaning') {
+        const sentences = getMeaningSentences(name);
+        stepTotal = sentences.length;
+        if (idx < safeStepIndex) {
+          stepCompleted = stepTotal;
+        } else if (idx === safeStepIndex) {
+          stepCompleted = meaningSubStep === -1 ? 0 : meaningSubStep + 1;
+        }
+      } else if (step.type === 'quran' || step.type === 'hadith') {
+        const refsCount = Array.isArray(step.data) ? step.data.length : 1;
+        stepTotal = refsCount;
+        if (idx < safeStepIndex) {
+          stepCompleted = stepTotal;
+        } else if (idx === safeStepIndex) {
+          stepCompleted = refSubStep === -1 ? 0 : refSubStep + 1;
+        }
+      } else if (step.type === 'gifts') {
+        const giftsCount = name.gifts ? name.gifts.length : 1;
+        stepTotal = giftsCount;
+        if (idx < safeStepIndex) {
+          stepCompleted = stepTotal;
+        } else if (idx === safeStepIndex) {
+          stepCompleted = giftSubStep === -1 ? 0 : giftSubStep + 1;
+        }
+      } else if (step.type === 'practical') {
+        const waysCount = name.practicalWays ? name.practicalWays.length : 1;
+        stepTotal = waysCount;
+        if (idx < safeStepIndex) {
+          stepCompleted = stepTotal;
+        } else if (idx === safeStepIndex) {
+          stepCompleted = practicalSubStep === -1 ? 0 : practicalSubStep + 1;
+        }
+      } else if (step.type === 'scholarly') {
+        const viewsCount = name.scholarlyViews ? name.scholarlyViews.length : 1;
+        stepTotal = viewsCount;
+        if (idx < safeStepIndex) {
+          stepCompleted = stepTotal;
+        } else if (idx === safeStepIndex) {
+          stepCompleted = scholarSubStep === -1 ? 0 : scholarSubStep + 1;
+        }
+      } else if (step.type === 'reflection') {
+        stepTotal = 3;
+        if (idx < safeStepIndex) {
+          stepCompleted = stepTotal;
+        } else if (idx === safeStepIndex) {
+          stepCompleted = reflectionSubStep;
+        }
+      } else if (step.type === 'mastery') {
+        stepTotal = 1;
+        if (idx < safeStepIndex) {
+          stepCompleted = stepTotal;
+        } else if (idx === safeStepIndex) {
+          stepCompleted = masteryDone ? 1 : 0;
+        }
+      }
+
+      totalSubsteps += stepTotal;
+      completedSubsteps += stepCompleted;
+    });
+
+    if (totalSubsteps === 0) return 0;
+    return Math.min(1, Math.max(0, completedSubsteps / totalSubsteps));
+  }, [steps, safeStepIndex, meaningSubStep, refSubStep, giftSubStep, practicalSubStep, scholarSubStep, reflectionSubStep, masteryDone, name]);
+
+  const progressAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: calculatedProgress,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [calculatedProgress]);
+
+  useEffect(() => {
+    if (currentStepIndex !== safeStepIndex) {
+      setCurrentStepIndex(safeStepIndex);
+    }
+  }, [currentStepIndex, safeStepIndex]);
 
   const isSlideDisabled = useMemo(() => {
+    if (showCelebration) return true;
     if (!currentStep) return false;
     if (currentStep.type === 'mastery') {
       const correctAns = name.mcq && name.mcq.length > 0 ? name.mcq[0].ans : 0;
@@ -190,9 +462,10 @@ const NameDetailScreen = ({ route, navigation }) => {
       return countWords(reflection1) < 4 || countWords(reflection2) < 4 || countWords(reflection3) < 4;
     }
     return false;
-  }, [currentStep, masteryDone, masteryAnswer, name.mcq, reflection1, reflection2, reflection3]);
+  }, [showCelebration, currentStep, masteryDone, masteryAnswer, name.mcq, reflection1, reflection2, reflection3]);
 
   // Animations
+  const exitAnim = useRef(new Animated.Value(0)).current;
   const contentOpacity = useRef(new Animated.Value(1)).current;
   const contentTranslateY = useRef(new Animated.Value(0)).current;
   const slidePanX = useRef(new Animated.Value(0)).current;
@@ -202,6 +475,17 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   const journeyOpacity = useRef(new Animated.Value(0)).current;
   const journeyTranslate = useRef(new Animated.Value(50)).current;
+
+  const handleClose = useCallback(() => {
+    Animated.timing(exitAnim, {
+      toValue: Dimensions.get('window').height,
+      duration: 350,
+      useNativeDriver: true,
+      easing: Easing.out(Easing.poly(4)),
+    }).start(() => {
+      navigation.goBack();
+    });
+  }, [exitAnim, navigation]);
 
   useEffect(() => {
     handLoopRef.current = Animated.loop(
@@ -242,37 +526,104 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   const goToStep = useCallback((index) => {
     if (index < 0 || index >= steps.length) return;
-    Animated.parallel([
-      Animated.timing(contentOpacity, { toValue: 0, duration: 150, useNativeDriver: true }),
-      Animated.timing(contentTranslateY, { toValue: 10, duration: 150, useNativeDriver: true }),
-    ]).start(() => {
-      setCurrentStepIndex(index);
-      setRefSubStep(0);
-      setGiftSubStep(0);
-      setPracticalSubStep(0);
-      setScholarSubStep(0);
-      setReflection1('');
-      setReflection2('');
-      setReflection3('');
-      setReflectionSubStep(0);
-      Animated.parallel([
-        Animated.timing(contentOpacity, { toValue: 1, duration: 250, easing: Easing.out(Easing.ease), useNativeDriver: true }),
-        Animated.timing(contentTranslateY, { toValue: 0, duration: 250, easing: Easing.out(Easing.back(1.5)), useNativeDriver: true }),
-      ]).start();
-    });
-  }, [steps.length, contentOpacity, contentTranslateY]);
+
+    // Update state instantly so the outer card remains fixed
+    // The FadeContent component inside will handle the text cross-fading
+    setCurrentStepIndex(index);
+    setMeaningSubStep(-1);
+    setRefSubStep(-1);
+    setShowArabicVerse(false);
+    setGiftSubStep(-1);
+    setPracticalSubStep(-1);
+    setScholarSubStep(-1);
+    setReflection1('');
+    setReflection2('');
+    setReflection3('');
+    setReflectionSubStep(0);
+  }, [steps.length]);
 
   const goNext = useCallback(() => {
     if (currentStepIndex < steps.length - 1) {
-      goToStep(currentStepIndex + 1);
+      triggerFlip(() => {
+        goToStep(currentStepIndex + 1);
+      });
     }
-  }, [currentStepIndex, steps.length, goToStep]);
+  }, [currentStepIndex, steps.length, goToStep, triggerFlip]);
 
   const goPrev = useCallback(() => {
-    if (currentStepIndex > 0) {
-      goToStep(currentStepIndex - 1);
+    const currentStep = steps[currentStepIndex];
+    if (!currentStep) return;
+
+    if (currentStep.type === 'meaning' && meaningSubStep > -1) {
+      if (meaningSubStep === 0) {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setMeaningSubStep(-1);
+      } else {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setMeaningSubStep(prev => prev - 1);
+      }
+      return;
+    } else if ((currentStep.type === 'quran' || currentStep.type === 'hadith') && refSubStep > -1) {
+      if (refSubStep === 0) {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setRefSubStep(-1);
+        setShowArabicVerse(false);
+      } else {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setRefSubStep(prev => prev - 1);
+        setShowArabicVerse(false);
+      }
+      return;
+    } else if (currentStep.type === 'gifts' && giftSubStep > -1) {
+      if (giftSubStep === 0) {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setGiftSubStep(-1);
+      } else {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setGiftSubStep(prev => prev - 1);
+      }
+      return;
+    } else if (currentStep.type === 'practical' && practicalSubStep > -1) {
+      if (practicalSubStep === 0) {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setPracticalSubStep(-1);
+      } else {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setPracticalSubStep(prev => prev - 1);
+      }
+      return;
+    } else if (currentStep.type === 'scholarly' && scholarSubStep > -1) {
+      if (scholarSubStep === 0) {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setScholarSubStep(-1);
+      } else {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setScholarSubStep(prev => prev - 1);
+      }
+      return;
     }
-  }, [currentStepIndex, goToStep]);
+
+    if (currentStepIndex > 0) {
+      const prevStep = steps[currentStepIndex - 1];
+      triggerFlip(() => {
+        goToStep(currentStepIndex - 1);
+        // Restore the LAST sub-step of the previous section so Previous feels natural
+        if (prevStep?.type === 'meaning') {
+          const sentences = getMeaningSentences(name);
+          setMeaningSubStep(Math.max(0, sentences.length - 1));
+        } else if (prevStep?.type === 'quran' || prevStep?.type === 'hadith') {
+          const refsCount = Array.isArray(prevStep.data) ? prevStep.data.length : 1;
+          setRefSubStep(Math.max(0, refsCount - 1));
+        } else if (prevStep?.type === 'gifts') {
+          setGiftSubStep(Math.max(0, (name.gifts?.length || 1) - 1));
+        } else if (prevStep?.type === 'practical') {
+          setPracticalSubStep(Math.max(0, (name.practicalWays?.length || 1) - 1));
+        } else if (prevStep?.type === 'scholarly') {
+          setScholarSubStep(Math.max(0, (name.scholarlyViews?.length || 1) - 1));
+        }
+      });
+    }
+  }, [currentStepIndex, goToStep, steps, meaningSubStep, refSubStep, giftSubStep, practicalSubStep, scholarSubStep, name, triggerFlip]);
 
   const goJourney = useCallback((reflectionData = null) => {
     markAsLearned(name.id, reflectionData);
@@ -285,297 +636,422 @@ const NameDetailScreen = ({ route, navigation }) => {
     ]).start();
   }, [markAsLearned, name.id, name.number, journeyOpacity, journeyTranslate, removeDraft]);
 
-  const handleSlideTap = useCallback(() => {
-    Animated.sequence([
-      Animated.timing(slideBtnScale, { toValue: 0.95, duration: 80, useNativeDriver: true }),
-      Animated.timing(slideBtnScale, { toValue: 1, duration: 120, useNativeDriver: true }),
-    ]).start(() => {
-      let ans = 0;
-      if (name.mcq && name.mcq.length > 0) ans = name.mcq[0].ans;
+  const triggerSectionCelebration = useCallback((callback) => {
+    setShowCelebration(true);
+    setTimeout(() => {
+      setShowCelebration(false);
+      callback();
+    }, 1800);
+  }, []);
 
-      if (currentStep.type === 'mastery') {
-        if (masteryDone && masteryAnswer === ans) {
-          goJourney();
-        }
-      } else if (currentStep.type === 'reflection') {
-        goJourney({
-          q1: reflection1,
-          q2: reflection2,
-          q3: reflection3
-        });
-      } else if (currentStep.type === 'reference') {
-        let maxSubSteps = 0;
-        if (currentStep.data.simpleMeaning) maxSubSteps++;
-        if (currentStep.data.significance) maxSubSteps++;
+  const handleNext = useCallback(() => {
+    let ans = 0;
+    if (name.mcq && name.mcq.length > 0) ans = name.mcq[0].ans;
 
-        if (refSubStep < maxSubSteps) {
+    // Celebration only fires when the NEXT step is reflection or mastery
+    const isLastContentStep = () => {
+      const nextIdx = currentStepIndex + 1;
+      if (nextIdx >= steps.length) return false;
+      const t = steps[nextIdx]?.type;
+      return t === 'reflection' || t === 'mastery';
+    };
+    const advance = () => isLastContentStep() ? triggerSectionCelebration(goNext) : goNext();
+
+    if (currentStep.type === 'mastery') {
+      if (masteryDone && masteryAnswer === ans) {
+        goJourney();
+      }
+    } else if (currentStep.type === 'reflection') {
+      goJourney({
+        q1: reflection1,
+        q2: reflection2,
+        q3: reflection3
+      });
+    } else if (currentStep.type === 'meaning') {
+      const sentences = getMeaningSentences(name);
+      let nextStep = meaningSubStep + 1;
+      while (nextStep < sentences.length && !sentences[nextStep]?.replace(/[.?!\s]/g, '').length) {
+        nextStep++;
+      }
+      if (nextStep < sentences.length) {
+        if (meaningSubStep === -1) {
           LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          setRefSubStep(prev => prev + 1);
-          setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-          }, 50);
+          setMeaningSubStep(nextStep);
         } else {
-          goNext();
-        }
-      } else if (currentStep.type === 'gifts') {
-        const maxSubSteps = name.gifts ? name.gifts.length - 1 : 0;
-        if (giftSubStep < maxSubSteps) {
           LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          setGiftSubStep(prev => prev + 1);
-          setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-          }, 50);
-        } else {
-          goNext();
-        }
-      } else if (currentStep.type === 'practical') {
-        const maxSubSteps = name.practicalWays ? name.practicalWays.length - 1 : 0;
-        if (practicalSubStep < maxSubSteps) {
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          setPracticalSubStep(prev => prev + 1);
-          setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-          }, 50);
-        } else {
-          goNext();
-        }
-      } else if (currentStep.type === 'scholarly') {
-        const maxSubSteps = name.scholarlyViews ? name.scholarlyViews.length - 1 : 0;
-        if (scholarSubStep < maxSubSteps) {
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          setScholarSubStep(prev => prev + 1);
-          setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-          }, 50);
-        } else {
-          goNext();
+          setMeaningSubStep(nextStep);
         }
       } else {
-        goNext();
+        advance();
       }
-    });
-  }, [goJourney, slideBtnScale, currentStep.type, masteryDone, masteryAnswer, name.mcq, goNext, currentStep.data, refSubStep, giftSubStep, practicalSubStep, scholarSubStep, name.gifts, name.practicalWays, name.scholarlyViews, reflection1, reflection2, reflection3]);
-
-  const slidePanResponder = useMemo(() => {
-    const MAX_SLIDE = SW - rs(32) - rs(64);
-    return PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        handLoopRef.current?.stop();
-        handAnim.setValue(0);
-      },
-      onPanResponderMove: (_, gestureState) => {
-        let val = gestureState.dx;
-        if (val < 0) val = 0;
-        if (val > MAX_SLIDE) val = MAX_SLIDE;
-        slidePanX.setValue(val);
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dx > MAX_SLIDE * 0.7) {
-          Animated.timing(slidePanX, {
-            toValue: MAX_SLIDE,
-            duration: 150,
-            useNativeDriver: true,
-          }).start(() => {
-            handleSlideTap();
-            Animated.timing(slidePanX, {
-              toValue: 0,
-              duration: 400,
-              easing: Easing.out(Easing.ease),
-              useNativeDriver: true,
-            }).start(() => {
-              handLoopRef.current?.start();
-            });
-          });
+    } else if (currentStep.type === 'quran' || currentStep.type === 'hadith') {
+      const refsCount = Array.isArray(currentStep.data) ? currentStep.data.length : 1;
+      if (refSubStep < refsCount - 1) {
+        if (refSubStep === -1) {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setRefSubStep(prev => prev + 1);
+          setShowArabicVerse(false);
         } else {
-          Animated.timing(slidePanX, {
-            toValue: 0,
-            duration: 400,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
-          }).start(() => {
-            handLoopRef.current?.start();
-          });
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setRefSubStep(prev => prev + 1);
+          setShowArabicVerse(false);
         }
+      } else {
+        advance();
       }
-    });
-  }, [handleSlideTap, handAnim, slidePanX]);
+    } else if (currentStep.type === 'gifts') {
+      const maxSubSteps = name.gifts ? name.gifts.length - 1 : 0;
+      if (giftSubStep < maxSubSteps) {
+        if (giftSubStep === -1) {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setGiftSubStep(prev => prev + 1);
+        } else {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setGiftSubStep(prev => prev + 1);
+        }
+      } else {
+        advance();
+      }
+    } else if (currentStep.type === 'practical') {
+      const maxSubSteps = name.practicalWays ? name.practicalWays.length - 1 : 0;
+      if (practicalSubStep < maxSubSteps) {
+        if (practicalSubStep === -1) {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setPracticalSubStep(prev => prev + 1);
+        } else {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setPracticalSubStep(prev => prev + 1);
+        }
+      } else {
+        advance();
+      }
+    } else if (currentStep.type === 'scholarly') {
+      const maxSubSteps = name.scholarlyViews ? name.scholarlyViews.length - 1 : 0;
+      if (scholarSubStep < maxSubSteps) {
+        if (scholarSubStep === -1) {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setScholarSubStep(prev => prev + 1);
+        } else {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setScholarSubStep(prev => prev + 1);
+        }
+      } else {
+        advance();
+      }
+    } else {
+      goNext();
+    }
+  }, [goJourney, currentStep.type, masteryDone, masteryAnswer, name.mcq, triggerSectionCelebration, goNext, currentStepIndex, steps, refSubStep, giftSubStep, practicalSubStep, scholarSubStep, name.gifts, name.practicalWays, name.scholarlyViews, reflection1, reflection2, reflection3, meaningSubStep, name, currentStep.data, triggerFlip]);
+
+
 
   // ── Render Helpers ──
 
-  const renderMeaning = () => {
-    // Extract the long description text.
-    // In the new schema, name.meaning is usually the short translation (e.g. "The One"),
-    // and name.description contains the long text.
-    let displayMeaning = name.description || name.meaning || '';
-
-    if (typeof displayMeaning === 'string' && displayMeaning.includes('—')) {
-      displayMeaning = displayMeaning.split('—')[1].trim();
-    }
-
-    return (
-      <View style={styles.tabContentContainer}>
-        <View style={styles.meaningCardWrap}>
-          <View style={[styles.meaningCard, { backgroundColor: t.cardBg, borderColor: t.cardBorder }]}>
-            <Text style={[styles.meaningText, { color: t.text }]}>{displayMeaning}</Text>
-          </View>
-          <View style={styles.meaningBadge}>
-            <LinearGradient colors={['#00ADC1', '#0090A8']} style={styles.meaningBadgeGrad}>
-              <Text style={styles.meaningBadgeText}>Meaning</Text>
-            </LinearGradient>
-          </View>
-        </View>
-      </View>
-    );
-  };
-
-  const renderReference = (refData) => {
-    const hasSimple = !!refData.simpleMeaning;
-    const hasSig = !!refData.significance;
-
-    const showSimple = hasSimple && refSubStep >= 1;
-    const showSig = hasSig && (hasSimple ? refSubStep >= 2 : refSubStep >= 1);
-
-    return (
-      <View style={styles.tabContentContainer}>
-        <View style={[styles.refCard, { backgroundColor: t.cardBg }]}>
-          <Text style={[styles.refArabic, { color: t.text }]}>{refData.arabic}</Text>
-          {refData.reference && <Text style={[styles.refLabel, { color: t.subText }]}>{refData.reference}</Text>}
-        </View>
-
-        {showSimple && (
-          <View style={styles.fadeInBlock}>
-            <View style={styles.refDividerWrap}>
-              <Image source={require('../../assets/name_detail/line_gold.png')} style={styles.goldDivider} resizeMode="contain" />
-            </View>
-
-            <Text style={[styles.sectionTitle, { color: t.text }]}>Simple Meaning</Text>
-            <Text style={[styles.refSimpleMeaning, { color: t.subText }]}>{refData.simpleMeaning}</Text>
-          </View>
-        )}
-
-        {showSig && (
-          <View style={styles.fadeInBlock}>
-            <View style={[styles.refDividerWrap, { marginVertical: hs(24) }]}>
-              <Image source={require('../../assets/name_detail/line_gold.png')} style={styles.goldDivider} resizeMode="contain" />
-            </View>
-            <Text style={[styles.sectionTitle, { color: t.text }]}>Significance of the Name</Text>
-            <Text style={[styles.refSignificance, { color: t.subText }]}>{refData.significance}</Text>
-          </View>
-        )}
-      </View>
-    );
-  };
-
-  const renderGifts = () => (
+  const renderReadingCard = ({ title, text, badgeIcon, scholarName, scholarWork, customContent }) => (
     <View style={styles.tabContentContainer}>
-      {name.gifts?.slice(0, giftSubStep + 1).map((gift, i) => (
-        <View key={i}>
-          <View style={[styles.giftCardContainer, { backgroundColor: t.cardBg }]}>
-            <View style={styles.giftCardInner}>
-              <View style={styles.giftLeft}>
-                <Text style={[styles.giftLeftLabel, { color: t.text }]}>Spiritual{'\n'}benefit</Text>
-                <View style={styles.giftArch}>
-                  <View style={styles.giftNumCircle}>
-                    <Text style={styles.giftNumText}>{String(i + 1).padStart(2, '0')}</Text>
-                  </View>
-                </View>
-              </View>
-              <View style={styles.giftDivider} />
-              <View style={styles.giftRight}>
-                <Text style={[styles.giftText, { color: t.subText }]}>{gift}</Text>
-              </View>
-            </View>
+      <View style={[styles.modernCard, { backgroundColor: t.cardBg, borderColor: t.cardBorder }]}>
+
+        {/* Top Badges Row */}
+        <View style={styles.cardBadgesRow}>
+          <View style={[styles.badgeCircle, { backgroundColor: isDark ? '#1A2332' : '#F2FAFB', flexShrink: 0 }]}>
+            <Ionicons name={badgeIcon} size={rs(18)} color="#00ADC1" />
           </View>
-          {i < giftSubStep && (
-            <View style={styles.refDividerWrap}>
-              <Image source={require('../../assets/name_detail/line_gold.png')} style={styles.goldDivider} resizeMode="contain" />
-            </View>
-          )}
+          <Text style={[styles.cardHeaderTitleText, { color: isDark ? '#E8EDF2' : '#112F33', marginLeft: rs(12) }]}>
+            {title}
+          </Text>
+          <View style={[styles.badgePill, { backgroundColor: isDark ? '#1A2332' : '#F2FAFB', marginLeft: 'auto', flexShrink: 0 }]}>
+            <Ionicons name="time-outline" size={rs(14)} color="#00ADC1" style={{ marginRight: rs(4) }} />
+            <Text style={[styles.badgePillText, { color: isDark ? '#9EAAB8' : '#112F33' }]}>{formatTime(activeCardTime)}</Text>
+          </View>
         </View>
-      ))}
+
+        {/* Custom Divider */}
+        <View style={styles.customDividerWrap}>
+          <View style={styles.customDividerLine} />
+          <Ionicons name="snow-outline" size={rs(16)} color="#00ADC1" style={{ marginHorizontal: rs(8) }} />
+          <View style={styles.customDividerLine} />
+        </View>
+
+        {/* Main Text with Proper Fade Animation */}
+        <View style={styles.textContentWrap}>
+          <FadeContent contentKey={text || (customContent ? 'custom' : '')}>
+            {customContent ? customContent : (
+              <>
+                <Text style={[styles.readingText, { color: t.text }]}>{text}</Text>
+                {!!scholarName && <Text style={[styles.scholarName, { color: t.text, marginTop: hs(16) }]}>{scholarName}</Text>}
+                {!!scholarWork && <Text style={[styles.scholarWork, { color: '#00ADC1' }]}>{scholarWork}</Text>}
+              </>
+            )}
+          </FadeContent>
+        </View>
+
+        {/* Card Action Divider */}
+        <View style={[styles.cardActionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2F8FA' }]} />
+
+        {/* Action Bar Row */}
+        <View style={styles.cardActionBar}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => toggleFavourite(name.number || name.id)} activeOpacity={0.7}>
+            <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={rs(18)} color={isFavorite ? "#EF4444" : (isDark ? '#E8EDF2' : '#4A5568')} />
+            <Text style={[styles.actionText, { color: t.text }]}>Favorite</Text>
+          </TouchableOpacity>
+          <View style={styles.actionDivider} />
+          <TouchableOpacity style={styles.actionBtn} onPress={() => toggleReviewLater(name.number || name.id)} activeOpacity={0.7}>
+            <Ionicons name={isReviewLater ? "bookmark" : "bookmark-outline"} size={rs(18)} color={isReviewLater ? "#00ADC1" : (isDark ? '#E8EDF2' : '#4A5568')} />
+            <Text style={[styles.actionText, { color: t.text }]}>Review Later</Text>
+          </TouchableOpacity>
+          <View style={styles.actionDivider} />
+          <TouchableOpacity style={styles.actionBtn} onPress={handleShare} activeOpacity={0.7}>
+            <Ionicons name="share-social-outline" size={rs(18)} color={isDark ? '#E8EDF2' : '#4A5568'} />
+            <Text style={[styles.actionText, { color: t.text }]}>Share</Text>
+          </TouchableOpacity>
+        </View>
+
+      </View>
     </View>
   );
 
-  const getPracticalIcon = (title) => {
-    if (title.includes('DAILY')) return 'calendar-outline';
-    if (title.includes('WORSHIP')) return 'moon-outline';
-    if (title.includes('CHARACTER')) return 'person-outline';
-    if (title.includes('REFLECTION')) return 'shield-outline';
-    return 'shield-outline';
-  };
+  const renderIntroCard = ({ title, iconName, subtitle, insightsCount = 0, readTimeSec = 30 }) => {
+    const sectionNum = safeStepIndex + 1;
+    const totalSections = steps.length;
+    const readLabel = readTimeSec < 60
+      ? `~${readTimeSec} sec read`
+      : `~${Math.ceil(readTimeSec / 60)} min read`;
+    const GS = rs(150); // geometric SVG size
+    const cx = GS / 2;
 
-  const renderPractical = () => (
-    <View style={styles.tabContentContainer}>
-      {name.practicalWays?.slice(0, practicalSubStep + 1).map((way, i) => {
-        let title = "ACTION";
-        let text = way;
-        if (i === 0) title = "DAILY ACTION";
-        else if (i === 1) title = "WORSHIP ACTION";
-        else if (i === 2) title = "CHARACTER ACTION";
-        else if (i === 3) title = "REFLECTION ACTION";
-
-        return (
-          <View key={i}>
-            <View style={[styles.practicalCardContainer, { backgroundColor: t.cardBg }]}>
-              <View style={[styles.practicalCardInner, { borderColor: t.notebookBorder }]}>
-                <View style={[styles.practicalLeftCol, { backgroundColor: t.notebookLeft, borderRightColor: t.notebookBorder }]}>
-                  <Ionicons name={getPracticalIcon(title)} size={rs(28)} color="#00ADC1" />
-                </View>
-                <View style={styles.notebookRings}>
-                  {[...Array(6)].map((_, j) => (
-                    <View key={j} style={styles.ringWrap}>
-                      <View style={[styles.ringHoleLeft, { backgroundColor: t.ringHole }]} />
-                      <View style={[styles.ringHoleRight, { backgroundColor: t.ringHole }]} />
-                      <View style={styles.ringMetal} />
-                    </View>
-                  ))}
-                </View>
-                <View style={[styles.practicalContent, { backgroundColor: t.cardBg }]}>
-                  <Text style={[styles.practicalTitle, { color: t.text }]}>{title}</Text>
-                  <Text style={[styles.practicalText, { color: t.subText }]}>{text}</Text>
-                </View>
-              </View>
+    return (
+      <View style={styles.tabContentContainer}>
+        <View style={[styles.introCard2, {
+          borderColor: t.cardBorder,
+          backgroundColor: isDark ? '#162331' : '#FFFFFF',
+        }]}>
+          {/* Section badge */}
+          <View style={styles.sectionBadgeWrap}>
+            <View style={styles.sectionBadge}>
+              <Text style={styles.sectionBadgeText}>SECTION {sectionNum} OF {totalSections}</Text>
             </View>
-            {i < practicalSubStep && (
-              <View style={styles.refDividerWrap}>
-                <Image source={require('../../assets/name_detail/line_gold.png')} style={styles.goldDivider} resizeMode="contain" />
+          </View>
+
+          {/* Icon with geometric concentric ring background */}
+          <View style={[styles.introIconArea, { width: GS, height: GS }]}>
+            <Svg width={GS} height={GS} style={StyleSheet.absoluteFillObject}>
+              <SvgCircle cx={cx} cy={cx} r={cx - rs(2)}  stroke="#00ADC1" strokeWidth={0.6} fill="none" opacity={0.12} />
+              <SvgCircle cx={cx} cy={cx} r={cx * 0.78}   stroke="#00ADC1" strokeWidth={0.6} fill={isDark ? 'rgba(0,173,193,0.04)' : 'rgba(0,173,193,0.06)'} />
+              <SvgCircle cx={cx} cy={cx} r={cx * 0.56}   stroke="#00ADC1" strokeWidth={0.8} fill={isDark ? 'rgba(0,173,193,0.07)' : 'rgba(0,173,193,0.1)'} />
+              {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, j) => {
+                const rad = (deg * Math.PI) / 180;
+                return (
+                  <SvgCircle
+                    key={j}
+                    cx={cx + (cx - rs(5)) * Math.cos(rad)}
+                    cy={cx + (cx - rs(5)) * Math.sin(rad)}
+                    r={rs(2.5)} fill="#00ADC1" opacity={0.25}
+                  />
+                );
+              })}
+            </Svg>
+            <View style={[styles.introIconBubble2, { backgroundColor: isDark ? 'rgba(0,173,193,0.2)' : '#D4F7FA' }]}>
+              <Ionicons name={iconName} size={rs(46)} color="#00ADC1" />
+            </View>
+          </View>
+
+          {/* Title */}
+          <FadeContent contentKey={title}>
+            <Text style={[styles.introTitleText2, { color: t.text }]}>{title}</Text>
+          </FadeContent>
+
+          {/* Ornament divider */}
+          <View style={styles.introOrnamentRow}>
+            <View style={[styles.introOrnamentLine, { backgroundColor: isDark ? 'rgba(0,173,193,0.2)' : 'rgba(0,173,193,0.25)' }]} />
+            <Text style={styles.introOrnamentStar}>✦</Text>
+            <View style={[styles.introOrnamentLine, { backgroundColor: isDark ? 'rgba(0,173,193,0.2)' : 'rgba(0,173,193,0.25)' }]} />
+          </View>
+
+          {/* Subtitle */}
+          <Text style={[styles.introSubtitleText2, { color: t.subText }]}>{subtitle || 'Tap continue to begin'}</Text>
+
+          {/* Info pills */}
+          <View style={styles.introInfoRow}>
+            {insightsCount > 0 && (
+              <View style={[styles.introInfoPill, { backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#EBF9FB' }]}>
+                <Ionicons name="document-text-outline" size={rs(13)} color="#00ADC1" style={{ marginRight: rs(5) }} />
+                <Text style={styles.introInfoText}>{insightsCount} Insights</Text>
               </View>
             )}
+            <View style={[styles.introInfoPill, { backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#EBF9FB' }]}>
+              <Ionicons name="time-outline" size={rs(13)} color="#00ADC1" style={{ marginRight: rs(5) }} />
+              <Text style={styles.introInfoText}>{readLabel}</Text>
+            </View>
           </View>
-        );
-      })}
-    </View>
-  );
 
-  const renderScholarly = () => (
-    <View style={styles.tabContentContainer}>
-      {name.scholarlyViews?.slice(0, scholarSubStep + 1).map((view, i) => (
-        <View key={i}>
-          {isDark ? (
-            <View style={[styles.scholarCard, { backgroundColor: '#1A2332', borderWidth: 1, borderColor: 'rgba(0,173,193,0.20)', borderRadius: rs(12) }]}>
-              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, borderTopLeftRadius: rs(12), borderTopRightRadius: rs(12), backgroundColor: '#00ADC1' }} />
-              <Text style={[styles.scholarName, { color: '#E8EDF2' }]}>{view.scholar}</Text>
-              <Text style={[styles.scholarWork, { color: '#00ADC1' }]}>{view.work?.replace(/\*/g, '')}</Text>
-              <Text style={[styles.scholarQuote, { color: '#B0BEC5' }]}>"{view.view}"</Text>
-            </View>
-          ) : (
-            <ImageBackground source={require('../../assets/name_detail/bg_card.png')} style={styles.scholarCard} imageStyle={{ borderRadius: rs(12) }} resizeMode="cover">
-              <Text style={[styles.scholarName, { color: '#1A1A1A' }]}>{view.scholar}</Text>
-              <Text style={[styles.scholarWork, { color: '#1A1A1A' }]}>{view.work?.replace(/\*/g, '')}</Text>
-              <Text style={[styles.scholarQuote, { color: '#3A3A3A' }]}>"{view.view}"</Text>
-            </ImageBackground>
-          )}
-          {i < scholarSubStep && (
-            <View style={styles.refDividerWrap}>
-              <Image source={require('../../assets/name_detail/line_gold.png')} style={styles.goldDivider} resizeMode="contain" />
-            </View>
-          )}
+          {/* Card Action Divider */}
+          <View style={[styles.cardActionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2F8FA', marginTop: hs(24), width: '100%' }]} />
+
+          {/* Action Bar Row */}
+          <View style={[styles.cardActionBar, { width: '100%' }]}>
+            <TouchableOpacity style={styles.actionBtn} onPress={() => toggleFavourite(name.number || name.id)} activeOpacity={0.7}>
+              <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={rs(18)} color={isFavorite ? "#EF4444" : (isDark ? '#E8EDF2' : '#4A5568')} />
+              <Text style={[styles.actionText, { color: t.text }]}>Favorite</Text>
+            </TouchableOpacity>
+            <View style={styles.actionDivider} />
+            <TouchableOpacity style={styles.actionBtn} onPress={() => toggleReviewLater(name.number || name.id)} activeOpacity={0.7}>
+              <Ionicons name={isReviewLater ? "bookmark" : "bookmark-outline"} size={rs(18)} color={isReviewLater ? "#00ADC1" : (isDark ? '#E8EDF2' : '#4A5568')} />
+              <Text style={[styles.actionText, { color: t.text }]}>Review Later</Text>
+            </TouchableOpacity>
+            <View style={styles.actionDivider} />
+            <TouchableOpacity style={styles.actionBtn} onPress={handleShare} activeOpacity={0.7}>
+              <Ionicons name="share-social-outline" size={rs(18)} color={isDark ? '#E8EDF2' : '#4A5568'} />
+              <Text style={[styles.actionText, { color: t.text }]}>Share</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      ))}
-    </View>
-  );
+      </View>
+    );
+  };
+
+  const renderMeaning = () => {
+    if (meaningSubStep === -1) {
+      const sentences = getMeaningSentences(name);
+      const meaningText = sentences.join(' ');
+      const wordCount = countWords(meaningText);
+      const readTimeSec = Math.max(15, Math.round((wordCount / 180) * 60));
+      return renderIntroCard({
+        title: 'Simple Meaning',
+        iconName: 'book-outline',
+        subtitle: 'Understand the essence of ' + (name.transliteration || name.tr || ''),
+        insightsCount: sentences.length,
+        readTimeSec,
+      });
+    }
+    const sentences = getMeaningSentences(name);
+    const currentSentence = sentences[meaningSubStep] || '';
+    return renderReadingCard({ title: 'Simple Meaning', text: currentSentence, badgeIcon: 'book-outline' });
+  };
+
+  const renderReference = (refDataArray, type) => {
+    const isQuran = type === 'quran';
+    const title = isQuran ? "Pearls from the Qur'an" : "Pearls from the Hadith";
+    const subtitle = isQuran ? 'Divine context from the Holy Book' : 'Wisdom from the Prophet ﷺ';
+
+    if (refSubStep === -1) {
+      const refCount = Array.isArray(refDataArray) ? refDataArray.length : 1;
+      const refText = (Array.isArray(refDataArray) ? refDataArray : [refDataArray])
+        .map(r => (typeof r === 'string' ? r : `${r.simpleMeaning || ''} ${r.significance || ''}`))
+        .join(' ');
+      const wordCount = countWords(refText);
+      const readTimeSec = Math.max(20, Math.round((wordCount / 180) * 60));
+      return renderIntroCard({
+        title,
+        iconName: 'library-outline',
+        subtitle,
+        insightsCount: refCount,
+        readTimeSec,
+      });
+    }
+    
+    const refData = Array.isArray(refDataArray) ? refDataArray[refSubStep] : refDataArray;
+
+    if (typeof refData === 'string') {
+      return renderReadingCard({ title, text: refData, badgeIcon: 'library-outline' });
+    }
+
+    const customContent = (
+      <View style={{ width: '100%' }}>
+        {!!refData.reference && (
+          <View style={styles.refBadgeRow}>
+            <View style={[styles.refBadgePill, { backgroundColor: isDark ? '#0F2A30' : '#E8F9FB', borderColor: isDark ? '#1E4A55' : '#A0E4EC' }]}>
+              <Ionicons name="book-outline" size={rs(13)} color="#00ADC1" style={{ marginRight: rs(6) }} />
+              <Text style={[styles.refBadgeText, { color: isDark ? '#9EAAB8' : '#1A4A55' }]}>{refData.reference}</Text>
+            </View>
+          </View>
+        )}
+
+        <Text style={[styles.refSectionLabel, { color: '#00ADC1' }]}>Simple explanation</Text>
+
+        <Text style={[styles.readingText, { color: t.text, marginBottom: hs(20) }]}>{refData.simpleMeaning || ''}</Text>
+
+        {!!refData.significance && (
+          <Text style={[styles.readingText, { color: t.subText, fontSize: rs(16), marginBottom: hs(20) }]}>{refData.significance}</Text>
+        )}
+
+        {!!refData.arabic && (
+          <>
+            <TouchableOpacity
+              style={[styles.seeArabicBtn, { borderColor: isDark ? 'rgba(0,173,193,0.30)' : 'rgba(0,173,193,0.25)', backgroundColor: isDark ? '#0F2A30' : '#F0FCFD' }]}
+              onPress={() => setShowArabicVerse(prev => !prev)}
+              activeOpacity={0.75}
+            >
+              <Ionicons name={showArabicVerse ? 'eye-off-outline' : 'eye-outline'} size={rs(16)} color="#00ADC1" style={{ marginRight: rs(8) }} />
+              <Text style={styles.seeArabicBtnText}>{showArabicVerse ? 'Hide Arabic Verse' : 'See Arabic Verse'}</Text>
+            </TouchableOpacity>
+
+            {showArabicVerse && (
+              <View style={[styles.arabicVerseBox, { backgroundColor: isDark ? '#0D1F29' : '#F8FDFE', borderColor: isDark ? 'rgba(0,173,193,0.20)' : '#C8F0F5' }]}>
+                <Text style={[styles.modernArabicText, { color: t.text }]}>{refData.arabic}</Text>
+              </View>
+            )}
+          </>
+        )}
+      </View>
+    );
+
+    return renderReadingCard({ title, customContent, badgeIcon: 'library-outline' });
+  };
+
+  const renderGifts = () => {
+    if (giftSubStep === -1) {
+      const giftsList = name.gifts || [];
+      const giftsText = giftsList.join(' ');
+      const wordCount = countWords(giftsText);
+      const readTimeSec = Math.max(15, Math.round((wordCount / 180) * 60));
+      return renderIntroCard({
+        title: 'The Gift of This Name',
+        iconName: 'gift-outline',
+        subtitle: 'What this name brings to your life',
+        insightsCount: giftsList.length,
+        readTimeSec,
+      });
+    }
+    const currentGift = name.gifts?.[giftSubStep] || '';
+    return renderReadingCard({ title: 'The Gift of This Name', text: currentGift, badgeIcon: 'gift-outline' });
+  };
+
+  const renderPractical = () => {
+    if (practicalSubStep === -1) {
+      const waysList = name.practicalWays || [];
+      const waysText = waysList.join(' ');
+      const wordCount = countWords(waysText);
+      const readTimeSec = Math.max(15, Math.round((wordCount / 180) * 60));
+      return renderIntroCard({
+        title: 'How To Live With This Name',
+        iconName: 'compass-outline',
+        subtitle: 'Practical applications for daily life',
+        insightsCount: waysList.length,
+        readTimeSec,
+      });
+    }
+    const way = name.practicalWays?.[practicalSubStep] || '';
+    return renderReadingCard({ title: 'How To Live With This Name', text: way, badgeIcon: 'compass-outline' });
+  };
+
+  const renderScholarly = () => {
+    if (scholarSubStep === -1) {
+      const viewsList = name.scholarlyViews || [];
+      const viewsText = viewsList.map(v => v.view || '').join(' ');
+      const wordCount = countWords(viewsText);
+      const readTimeSec = Math.max(15, Math.round((wordCount / 180) * 60));
+      return renderIntroCard({
+        title: 'Scholarly View',
+        iconName: 'school-outline',
+        subtitle: 'Wisdom from the scholars',
+        insightsCount: viewsList.length,
+        readTimeSec,
+      });
+    }
+    const view = name.scholarlyViews?.[scholarSubStep];
+    if (!view) return null;
+    return renderReadingCard({ title: 'Scholarly View', text: `"${view.view}"`, badgeIcon: 'school-outline', scholarName: view.scholar, scholarWork: view.work?.replace(/\*/g, '') });
+  };
 
   const renderReflection = () => {
     const pastReflections = revisits === 1 ? userReflections[name.id] : null;
@@ -753,6 +1229,16 @@ const NameDetailScreen = ({ route, navigation }) => {
     );
   };
 
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `Check out this beautiful Name of Allah: ${name.transliteration} (${name.arabic}) - ${name.meaning}.\n\nLearn more on the Wahid App!`,
+      });
+    } catch (error) {
+      console.log('Error sharing:', error);
+    }
+  };
+
   // ── Render ──
 
   if (phase === 'journey') {
@@ -834,45 +1320,27 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   const handX = handAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
 
+
   return (
-    <View style={styles.root}>
+    <Animated.View style={[styles.root, { transform: [{ translateY: exitAnim }] }]}>
       <TimeBasedBackground showElements={false}>
         {({ isNight }) => (
           <>
             <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
             <SafeAreaView style={{ flex: 1, backgroundColor: t.safeBg }} edges={['top']}>
               <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
-                <NameDetailHeader 
-                  name={name} 
-                  onClose={() => navigation.goBack()} 
-                  isFavorite={isFavorite}
-                  onToggleFavorite={() => toggleFavourite(name.number || name.id)}
+                <NameDetailHeader
+                  name={name}
+                  steps={steps}
+                  currentStepIndex={safeStepIndex}
                 />
 
-                {/* ── Progress Bar & Navigation ── */}
-                <View style={styles.navSection}>
-                  <View style={styles.progressWrap}>
-                    <View style={[styles.progressTrack, { backgroundColor: t.progressTrack }]}>
-                      <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-                    </View>
-                  </View>
-
-                  <View style={styles.navRow}>
-                    <LinearGradient
-                      colors={['rgba(0,173,193,0)', 'rgba(0,173,193,0.5)', 'rgba(0,173,193,0)']}
-                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                      style={styles.categoryPill}
-                    >
-                      <Text style={[styles.categoryPillText, { color: t.pillText }]}>{categoryPillText}</Text>
-                    </LinearGradient>
-                  </View>
-                </View>
 
                 {/* ── Fixed Main Title ── */}
                 {(() => {
                   let stepTitle = null;
-                  if (currentStep.type === 'gifts') stepTitle = 'The Gift of This Name';
-                  else if (currentStep.type === 'practical') stepTitle = 'Practical ways to live with this Name';
+                  if (currentStep.type === 'gifts') stepTitle = '';
+                  else if (currentStep.type === 'practical') stepTitle = '';
                   else if (currentStep.type === 'scholarly') stepTitle = 'Scholarly Views';
                   else if (currentStep.type === 'reflection') stepTitle = 'Reflection';
                   else if (currentStep.type === 'mastery') stepTitle = 'Mastery Test';
@@ -885,69 +1353,96 @@ const NameDetailScreen = ({ route, navigation }) => {
                   );
                 })()}
 
-                <ScrollView ref={scrollViewRef} style={styles.scrollArea} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                  <Animated.View style={{ opacity: contentOpacity, transform: [{ translateY: contentTranslateY }] }}>
+                <ScrollView
+                  ref={scrollViewRef}
+                  style={styles.scrollArea}
+                  contentContainerStyle={styles.scrollContent}
+                  showsVerticalScrollIndicator={false}
+                  scrollEnabled={true}
+                >
+                  <Animated.View style={{ opacity: contentOpacity, transform: [{ translateY: contentTranslateY }, { rotateY: flipAnim.interpolate({ inputRange: [-90, 0, 90], outputRange: ['-90deg', '0deg', '90deg'] }) }] }}>
                     {currentStep.type === 'meaning' && renderMeaning()}
-                    {currentStep.type === 'reference' && renderReference(currentStep.data)}
+                    {(currentStep.type === 'quran' || currentStep.type === 'hadith') && renderReference(currentStep.data, currentStep.type)}
                     {currentStep.type === 'gifts' && renderGifts()}
                     {currentStep.type === 'practical' && renderPractical()}
                     {currentStep.type === 'scholarly' && renderScholarly()}
                     {currentStep.type === 'reflection' && renderReflection()}
                     {currentStep.type === 'mastery' && renderMastery()}
                   </Animated.View>
-                  <View style={{ height: (currentStep.type === 'reflection' ? hs(220) : hs(120)) + (keyboardHeight > 0 ? keyboardHeight * 0.5 : 0) }} />
+                  <View style={{ height: (currentStep.type === 'reflection' ? hs(220) : hs(160)) + (keyboardHeight > 0 ? keyboardHeight * 0.5 : 0) }} />
                 </ScrollView>
 
-                {/* ── Previous step button ── */}
-                {currentStepIndex > 0 &&
-                  currentStep.type !== 'reflection' &&
-                  currentStep.type !== 'mastery' && (
-                    <TouchableOpacity
-                      style={styles.prevBtn}
-                      onPress={goPrev}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="chevron-back" size={rs(15)} color="#00ADC1" />
-                      <Text style={styles.prevBtnText}>Previous</Text>
-                    </TouchableOpacity>
-                  )}
 
-                {/* ── Fixed bottom: Slide to Continue ── */}
-                <Animated.View
-                  style={[
-                    styles.slideBar,
-                    { transform: [{ scale: slideBtnScale }] },
-                    isSlideDisabled && { opacity: 0.6 },
-                    isDark && { backgroundColor: '#1E293B', shadowColor: '#0F172A' }
-                  ]}
-                >
-                  <View style={styles.slideGrad}>
-                    <Animated.View
-                      {...(!isSlideDisabled ? slidePanResponder.panHandlers : {})}
-                      style={[
-                        styles.slideThumb,
-                        { position: 'absolute', left: 0, zIndex: 10 },
-                        { transform: [{ translateX: slidePanX }] },
-                        isDark && { backgroundColor: '#0F172A', borderRightColor: '#334155' }
-                      ]}
+
+                {/* ── Bottom Navigation ── */}
+                <View style={styles.bottomNav}>
+                  {/* Previous */}
+                  <TouchableOpacity
+                    style={[styles.bottomNavPrev, isBackDisabled && { opacity: 0.3 }]}
+                    disabled={isBackDisabled}
+                    onPress={goPrev}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.bottomNavPrevCircle, { backgroundColor: isDark ? '#1E293B' : '#EEF2F5' }]}>
+                      <Ionicons name="arrow-back" size={rs(16)} color={isDark ? '#94A3B8' : '#4A5568'} />
+                    </View>
+                    <View style={styles.bottomNavPrevTexts}>
+                      <Text style={[styles.bottomNavPrevTitle, { color: isDark ? '#E2E8F0' : '#1A1A1A' }]}>Previous</Text>
+                      <Text style={[styles.bottomNavPrevSub, { color: isDark ? '#64748B' : '#9EAAB8' }]}>Go back</Text>
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Pause */}
+                  <View style={styles.bottomNavPauseWrap}>
+                    <TouchableOpacity
+                      style={[styles.bottomNavPauseCircle, {
+                        backgroundColor: isDark ? '#1A2332' : '#FFFFFF',
+                        borderColor: isDark ? 'rgba(0,173,193,0.25)' : '#D8F4F7',
+                      }]}
+                      activeOpacity={0.7}
+                      onPress={handleClose}
                     >
-                      <Animated.Image
-                        source={require('../../assets/name_detail/sign_hand.png')}
-                        style={[styles.slideHand, { transform: [{ translateX: handX }] }]}
-                        resizeMode="contain"
-                      />
-                    </Animated.View>
-                    <Text style={[styles.slideText, { marginLeft: rs(80) }]}>
-                      Slide to Continue
-                    </Text>
+                      <Ionicons name="pause" size={rs(18)} color="#00ADC1" />
+                    </TouchableOpacity>
+                    <Text style={[styles.bottomNavPauseLabel, { color: isDark ? '#CBD5E1' : '#1A1A1A' }]}>Pause</Text>
+                    <Text style={[styles.bottomNavPauseSub, { color: isDark ? '#64748B' : '#9EAAB8' }]}>End session</Text>
                   </View>
-                </Animated.View>
+
+                  {/* Continue */}
+                  <TouchableOpacity
+                    style={[styles.bottomNavContinue, isSlideDisabled && { opacity: 0.55 }]}
+                    disabled={isSlideDisabled}
+                    onPress={handleNext}
+                    activeOpacity={0.85}
+                  >
+                    <View>
+                      <Text style={styles.bottomNavContinueTitle}>Continue</Text>
+                      <Text style={styles.bottomNavContinueSub}>Keep learning</Text>
+                    </View>
+                    <View style={styles.bottomNavContinueArrow}>
+                      <Ionicons name="arrow-forward" size={rs(16)} color="#00ADC1" />
+                    </View>
+                  </TouchableOpacity>
+                </View>
               </KeyboardAvoidingView>
             </SafeAreaView>
+
+            {/* Section Celebration Overlay */}
+            {showCelebration && (
+              <View style={[StyleSheet.absoluteFillObject, { zIndex: 9999, elevation: 9999 }]} pointerEvents="none">
+                <LottieView
+                  source={require('../../assets/animation/celebration.json')}
+                  autoPlay
+                  loop={false}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="cover"
+                />
+              </View>
+            )}
           </>
         )}
       </TimeBasedBackground>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -970,13 +1465,180 @@ const styles = StyleSheet.create({
   mainTitle: { fontSize: rs(20), fontWeight: '800', color: '#1A1A1A', marginBottom: hs(24) },
   sectionTitle: { fontSize: rs(18), fontWeight: '800', color: '#1A1A1A', marginBottom: hs(12) },
 
-  // ── Meaning Card ──
-  meaningCardWrap: { alignItems: 'center', marginTop: hs(20) },
-  meaningCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: rs(12), padding: rs(24), paddingTop: hs(40), paddingBottom: hs(40), shadowColor: '#00ADC1', shadowOpacity: 0.15, shadowRadius: rs(15), shadowOffset: { width: 0, height: 8 }, elevation: 5, borderWidth: 1, borderColor: '#DFF6F8' },
-  meaningText: { fontSize: rs(16), color: '#1A1A1A', textAlign: 'center', lineHeight: rs(24), fontWeight: '700' },
-  meaningBadge: { position: 'absolute', top: hs(-18), borderRadius: rs(6), overflow: 'hidden', shadowColor: '#00ADC1', shadowOpacity: 0.3, shadowRadius: 6, shadowOffset: { width: 0, height: 4 }, elevation: 6, borderWidth: 1, borderColor: '#4CD6E8' },
-  meaningBadgeGrad: { paddingHorizontal: rs(32), paddingVertical: hs(8) },
-  meaningBadgeText: { color: '#FFFFFF', fontSize: rs(18), fontWeight: 'bold', textAlign: 'center' },
+  // ── Modern Cards (Glassmorphic / Minimal) ──
+  modernCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: rs(24), shadowColor: '#00ADC1', shadowOpacity: 0.04, shadowRadius: rs(20), shadowOffset: { width: 0, height: 10 }, elevation: 4, borderWidth: 1, borderColor: '#E2F8FA', overflow: 'hidden', minHeight: hs(320), paddingBottom: 0 },
+  cardBadgesRow: { flexDirection: 'row', alignItems: 'center', padding: rs(20), zIndex: 2 },
+  badgeCircle: { width: rs(40), height: rs(40), borderRadius: rs(20), justifyContent: 'center', alignItems: 'center', marginRight: rs(12) },
+  badgePill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(12), minHeight: rs(32), paddingVertical: hs(6), borderRadius: rs(16) },
+  badgePillText: { fontSize: rs(12), fontWeight: '700' },
+  cardHeaderTitleText: { fontSize: rs(16), fontWeight: '800', fontFamily: FONTS.bold, flexShrink: 1 },
+  customDividerWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: rs(40), marginVertical: hs(16), zIndex: 2 },
+  customDividerLine: { flex: 1, height: 1, backgroundColor: '#00ADC1', opacity: 0.2 },
+  textContentWrap: { flex: 1, paddingHorizontal: rs(30), paddingTop: hs(10), paddingBottom: hs(10), alignItems: 'center', justifyContent: 'center', zIndex: 2 },
+  readingText: { fontSize: rs(22), fontFamily: FONTS.arabic, fontWeight: '500', textAlign: 'center', lineHeight: rs(34) },
+
+  // ── Action Bar ──
+  actionBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: rs(16), marginTop: hs(16), paddingVertical: hs(16), shadowColor: '#00ADC1', shadowOpacity: 0.04, shadowRadius: rs(12), shadowOffset: { width: 0, height: 4 }, elevation: 3, borderWidth: 1, borderColor: '#E2F8FA' },
+  fixedActionBar: { flexDirection: 'row', alignItems: 'center', marginHorizontal: rs(20), marginBottom: hs(8), paddingVertical: hs(12) },
+  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  actionText: { fontSize: rs(13), fontWeight: '700', marginLeft: rs(8) },
+  actionDivider: { width: 1, height: '60%', backgroundColor: '#00ADC1', opacity: 0.15 },
+  cardActionDivider: { height: 1, width: '100%' },
+  cardActionBar: { flexDirection: 'row', alignItems: 'center', paddingVertical: hs(14) },
+
+  // ── Intro Cards (Section Covers) ──
+  introCard2: {
+    width: '100%', borderRadius: rs(24),
+    shadowColor: '#00ADC1', shadowOpacity: 0.08, shadowRadius: rs(20),
+    shadowOffset: { width: 0, height: 10 }, elevation: 5,
+    borderWidth: 1, overflow: 'hidden',
+    paddingBottom: 0,
+  },
+  sectionBadgeWrap: { alignItems: 'center', paddingTop: hs(20), marginBottom: hs(16) },
+  sectionBadge: {
+    backgroundColor: '#00ADC1', borderRadius: rs(20),
+    paddingHorizontal: rs(16), paddingVertical: hs(5),
+  },
+  sectionBadgeText: { fontSize: rs(11), fontWeight: '700', color: '#FFFFFF', letterSpacing: 1 },
+  introIconArea: {
+    alignSelf: 'center',
+    justifyContent: 'center', alignItems: 'center',
+    marginBottom: hs(20),
+  },
+  introIconBubble2: {
+    width: rs(80), height: rs(80), borderRadius: rs(40),
+    justifyContent: 'center', alignItems: 'center',
+  },
+  introTitleText2: {
+    fontSize: rs(26), fontWeight: '900',
+    textAlign: 'center', paddingHorizontal: rs(20),
+    letterSpacing: 0.3,
+  },
+  introOrnamentRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: rs(40), marginVertical: hs(10),
+  },
+  introOrnamentLine: { flex: 1, height: 1 },
+  introOrnamentStar: { fontSize: rs(11), color: '#00ADC1', marginHorizontal: rs(10), opacity: 0.6 },
+  introSubtitleText2: {
+    fontSize: rs(14), fontWeight: '400',
+    textAlign: 'center', paddingHorizontal: rs(30),
+    lineHeight: rs(22),
+  },
+  introInfoRow: {
+    flexDirection: 'row', justifyContent: 'center',
+    gap: rs(12), marginTop: hs(16),
+    paddingHorizontal: rs(20),
+  },
+  introInfoPill: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: rs(12), paddingVertical: hs(7),
+    borderRadius: rs(20),
+  },
+  introInfoText: { fontSize: rs(12), fontWeight: '600', color: '#00ADC1' },
+
+  // ── Bottom Navigation ──
+  bottomNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: rs(20),
+    paddingVertical: hs(10),
+    marginBottom: Platform.OS === 'ios' ? hs(20) : hs(12),
+  },
+  bottomNavPrev: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rs(10),
+  },
+  bottomNavPrevCircle: {
+    width: rs(44),
+    height: rs(44),
+    borderRadius: rs(22),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bottomNavPrevTexts: {
+    justifyContent: 'center',
+  },
+  bottomNavPrevTitle: {
+    fontSize: rs(13),
+    fontWeight: '800',
+    lineHeight: rs(18),
+  },
+  bottomNavPrevSub: {
+    fontSize: rs(10),
+    lineHeight: rs(14),
+  },
+  bottomNavPauseWrap: {
+    alignItems: 'center',
+    marginHorizontal: rs(14),
+  },
+  bottomNavPauseCircle: {
+    width: rs(48),
+    height: rs(48),
+    borderRadius: rs(24),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    shadowColor: '#00ADC1',
+    shadowOpacity: 0.08,
+    shadowRadius: rs(8),
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  bottomNavPauseLabel: {
+    fontSize: rs(11),
+    fontWeight: '800',
+    marginTop: hs(4),
+    letterSpacing: 0.2,
+  },
+  bottomNavPauseSub: {
+    fontSize: rs(9),
+    marginTop: hs(1),
+  },
+  bottomNavContinue: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#00ADC1',
+    borderRadius: rs(36),
+    paddingVertical: hs(16),
+    paddingLeft: rs(22),
+    paddingRight: rs(10),
+  },
+  bottomNavContinueTitle: {
+    fontSize: rs(15),
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
+  bottomNavContinueSub: {
+    fontSize: rs(10),
+    color: 'rgba(255,255,255,0.75)',
+    marginTop: hs(2),
+  },
+  bottomNavContinueArrow: {
+    width: rs(36),
+    height: rs(36),
+    borderRadius: rs(18),
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  navCardTexts: {
+    flex: 1,
+    justifyContent: 'center',
+    marginHorizontal: rs(8),
+  },
+  navCardTitle: {
+    fontSize: rs(13),
+    fontWeight: '800',
+  },
+  navCardSubtitle: {
+    fontSize: rs(9),
+    marginTop: hs(1),
+  },
 
   // ── Reference Card ──
   refCard: { backgroundColor: '#FFFFFF', borderTopRightRadius: rs(8), borderBottomRightRadius: rs(8), borderTopLeftRadius: rs(4), borderBottomLeftRadius: rs(4), borderLeftWidth: rs(6), borderLeftColor: '#00ADC1', borderWidth: 1, borderColor: '#00ADC1', padding: rs(16), paddingBottom: hs(40), shadowColor: '#00ADC1', shadowOpacity: 0.1, shadowRadius: rs(8), shadowOffset: { width: 0, height: 4 }, elevation: 3, position: 'relative', overflow: 'hidden' },
@@ -988,6 +1650,14 @@ const styles = StyleSheet.create({
   refDividerWrap: { alignItems: 'center', marginVertical: hs(20) },
   goldDivider: { width: rs(140), height: hs(12), opacity: 0.9 },
   fadeInBlock: { width: '100%' },
+  refBadgeRow: { marginBottom: hs(14) },
+  refBadgePill: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: rs(12), paddingVertical: hs(5), borderRadius: rs(20), borderWidth: 1 },
+  refBadgeText: { fontSize: rs(12), fontWeight: '700' },
+  refSectionLabel: { fontSize: rs(11), fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: hs(10), color: '#00ADC1' },
+  seeArabicBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: rs(14), paddingVertical: hs(8), borderRadius: rs(20), borderWidth: 1, marginBottom: hs(12) },
+  seeArabicBtnText: { fontSize: rs(13), fontWeight: '700', color: '#00ADC1' },
+  arabicVerseBox: { borderRadius: rs(12), borderWidth: 1, padding: rs(16), marginTop: hs(4) },
+  modernArabicText: { fontSize: rs(20), fontWeight: '700', textAlign: 'right', lineHeight: rs(38), writingDirection: 'rtl' },
 
   // ── Gifts Card ──
   giftCardContainer: { backgroundColor: '#FFFFFF', borderRadius: rs(8), shadowColor: '#00ADC1', shadowOpacity: 0.1, shadowRadius: rs(8), shadowOffset: { width: 0, height: 4 }, elevation: 3, marginBottom: hs(4) },
@@ -1061,16 +1731,13 @@ const styles = StyleSheet.create({
   tryAgainBtn: { alignSelf: 'center', marginTop: hs(16) },
   tryAgainText: { color: '#00ADC1', fontSize: rs(14), fontWeight: '700', textDecorationLine: 'underline' },
 
-  // ── Previous button ──
-  prevBtn: { position: 'absolute', bottom: hs(90), left: rs(24), flexDirection: 'row', alignItems: 'center', gap: rs(4), paddingVertical: hs(6) },
-  prevBtnText: { fontSize: rs(13), fontWeight: '700', color: '#00ADC1' },
-
-  // ── Slide to Continue ──
-  slideBar: { position: 'absolute', bottom: 0, left: 0, right: 0, height: hs(56), marginHorizontal: rs(16), marginBottom: hs(24), borderRadius: rs(8), overflow: 'hidden', backgroundColor: '#00ADC1', elevation: 4, shadowColor: '#00ADC1', shadowOpacity: 0.25, shadowRadius: rs(12), shadowOffset: { width: 0, height: 6 } },
-  slideGrad: { flex: 1, flexDirection: 'row', alignItems: 'center' },
-  slideThumb: { width: rs(64), height: '100%', backgroundColor: '#89DFE9', justifyContent: 'center', alignItems: 'center', borderRightWidth: 1, borderRightColor: '#68C3D2' },
-  slideHand: { width: rs(28), height: rs(28), tintColor: '#FFFFFF' },
-  slideText: { fontSize: rs(15), fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.5 },
+  // ── Premium 3-Button Floating Navigation Pill ──
+  floatingNavContainer: { position: 'absolute', bottom: Platform.OS === 'ios' ? hs(30) : hs(20), alignSelf: 'center', width: '90%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', borderRadius: rs(40), paddingHorizontal: rs(10), paddingVertical: rs(8), elevation: 20, shadowColor: '#00ADC1', shadowOpacity: 0.15, shadowRadius: 25, shadowOffset: { width: 0, height: 10 } },
+  floatingNavContainerDark: { backgroundColor: '#1E293B', shadowColor: '#000000', shadowOpacity: 0.3 },
+  floatingIconBtn: { width: rs(44), height: rs(44), borderRadius: rs(22), overflow: 'hidden', elevation: 4, shadowColor: '#00ADC1', shadowOpacity: 0.2, shadowRadius: 5, shadowOffset: { width: 0, height: 2 } },
+  iconCircle: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
+  floatingCenterBtn: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  floatingCenterText: { fontSize: rs(16), fontWeight: '800', letterSpacing: 0.5 },
 
   // ── Journey screen ──
   journeyRoot: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: rs(24) },

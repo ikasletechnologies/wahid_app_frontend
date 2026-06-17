@@ -35,7 +35,7 @@ const AppNavigator = () => {
           <Stack.Screen
             name="NameDetail"
             component={NameDetailScreen}
-            options={{ animation: 'slide_from_bottom' }}
+            options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: 'transparent' } }}
           />
           <Stack.Screen
             name="NowPlaying"
@@ -65,7 +65,7 @@ const AppNavigator = () => {
             <Stack.Screen
               name="Notifications"
               component={NotificationScreen}
-              options={{ animation: 'slide_from_right' }}
+              options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: 'transparent' } }}
             />
             <Stack.Screen
               name="NotificationSettings"
@@ -75,7 +75,7 @@ const AppNavigator = () => {
             <Stack.Screen
               name="NamesList"
               component={NamesListScreen}
-              options={{ animation: 'slide_from_right' }}
+              options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: 'transparent' } }}
             />
             <Stack.Screen
               name="Profile"
