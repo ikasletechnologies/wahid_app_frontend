@@ -47,13 +47,22 @@ const LoginScreen = ({ navigation, route }) => {
   const passwordInput = useRef(null);
 
   const handleLogin = async () => {
-    if (!identifier.trim() || !password) {
+    const digits = identifier.replace(/\D/g, '');
+    if (!identifier.trim() || digits.length === 0) {
       Toast.show({ type: 'error', text1: 'Incomplete Fields', text2: 'Please enter your phone and password.' });
+      return;
+    }
+    if (digits.length !== 10) {
+      Toast.show({ type: 'error', text1: 'Invalid Number', text2: 'Phone number must be exactly 10 digits.' });
+      return;
+    }
+    if (!password) {
+      Toast.show({ type: 'error', text1: 'Incomplete Fields', text2: 'Please enter your password.' });
       return;
     }
     setLoading(true);
     const raw       = identifier.trim();
-    const fullPhone = raw.startsWith('+') ? raw : `${country.code}${raw.replace(/\D/g, '')}`;
+    const fullPhone = raw.startsWith('+') ? raw : `${country.code}${digits}`;
     const result    = await login(fullPhone, password);
     setLoading(false);
     if (!result.success) {
@@ -111,6 +120,7 @@ const LoginScreen = ({ navigation, route }) => {
                 onFocus={() => setFocused('phone')}
                 onBlur={() => setFocused(null)}
                 keyboardType="phone-pad"
+                maxLength={10}
                 returnKeyType="next"
                 onSubmitEditing={() => passwordInput.current?.focus()}
                 selectionColor="#03B7CE"
@@ -152,6 +162,14 @@ const LoginScreen = ({ navigation, route }) => {
                 <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#7A8FA6" />
               </TouchableOpacity>
             </View>
+
+            <TouchableOpacity
+              style={styles.forgotRow}
+              onPress={() => navigation.navigate('ForgotPassword')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.forgotText}>Forgot Password?</Text>
+            </TouchableOpacity>
           </View>
 
           {/* ── Footer ── */}
@@ -283,6 +301,15 @@ const styles = StyleSheet.create({
 
   footer: {
     marginTop: 'auto',
+  },
+  forgotRow: {
+    alignItems: 'flex-end',
+    marginTop: 12,
+  },
+  forgotText: {
+    color: '#03B7CE',
+    fontSize: 13,
+    fontWeight: '600',
   },
   promptRow: {
     flexDirection: 'row',

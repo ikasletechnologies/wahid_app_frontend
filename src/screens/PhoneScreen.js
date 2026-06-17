@@ -67,6 +67,11 @@ const PhoneScreen = ({ navigation }) => {
     if (check.exists) {
       setExistingPhone(fullPhone);
       setAccountExists(true);
+      Toast.show({
+        type: 'error',
+        text1: 'Number Already Registered',
+        text2: 'This number already has an account. Please sign in.',
+      });
       return;
     }
 
@@ -84,17 +89,6 @@ const PhoneScreen = ({ navigation }) => {
 
   const handleSignInWithPassword = () => {
     navigation.navigate('Login', { identifier: existingPhone });
-  };
-
-  const handleSignInWithOTP = async () => {
-    setLoading(true);
-    const result = await sendOTP(existingPhone);
-    setLoading(false);
-    if (!result.success) {
-      Toast.show({ type: 'error', text1: 'Could Not Send OTP', text2: result.message });
-      return;
-    }
-    navigation.navigate('OTP', { phone: existingPhone });
   };
 
   return (
@@ -177,11 +171,11 @@ const PhoneScreen = ({ navigation }) => {
             {accountExists ? (
               <>
                 <View style={styles.existsBox}>
-                  <Text style={styles.existsTitle}>Account already exists.</Text>
-                  <Text style={styles.existsSubtitle}>Please sign in.</Text>
+                  <Text style={styles.existsTitle}>This number is already registered.</Text>
+                  <Text style={styles.existsSubtitle}>Please sign in to your account instead.</Text>
                 </View>
 
-                <TouchableOpacity onPress={handleSignInWithPassword} disabled={loading} activeOpacity={0.85}>
+                <TouchableOpacity onPress={handleSignInWithPassword} activeOpacity={0.85}>
                   <LinearGradient
                     colors={['#02889D', '#03B7CE', '#4BD5E8']}
                     locations={[0, 0.5048, 1]}
@@ -189,20 +183,8 @@ const PhoneScreen = ({ navigation }) => {
                     end={{ x: 0, y: 1 }}
                     style={styles.button}
                   >
-                    <Text style={styles.buttonText}>Sign In with Password</Text>
+                    <Text style={styles.buttonText}>Sign In</Text>
                   </LinearGradient>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={handleSignInWithOTP}
-                  disabled={loading}
-                  activeOpacity={0.85}
-                  style={styles.outlineButton}
-                >
-                  {loading
-                    ? <ActivityIndicator color="#03B7CE" />
-                    : <Text style={styles.outlineButtonText}>Sign In with OTP</Text>
-                  }
                 </TouchableOpacity>
 
                 <TouchableOpacity

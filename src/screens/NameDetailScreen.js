@@ -286,6 +286,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   const [activeCardTime, setActiveCardTime] = useState(0);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     const loadTime = async () => {
@@ -300,7 +301,7 @@ const NameDetailScreen = ({ route, navigation }) => {
   }, [name]);
 
   useEffect(() => {
-    if (!isFocused || phase !== 'content') return;
+    if (!isFocused || phase !== 'content' || isPaused) return;
     const interval = setInterval(() => {
       setActiveCardTime(prev => {
         const next = prev + 1;
@@ -312,7 +313,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isFocused, name, phase]);
+  }, [isFocused, name, phase, isPaused]);
 
   const formatTime = (seconds) => {
     if (seconds < 60) return `${seconds} sec`;
@@ -351,12 +352,12 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   // Active reading timer
   useEffect(() => {
-    if (!isFocused) return;
+    if (!isFocused || isPaused) return;
     const interval = setInterval(() => {
       incrementReadingTime(5);
     }, 5000);
     return () => clearInterval(interval);
-  }, [isFocused, incrementReadingTime]);
+  }, [isFocused, incrementReadingTime, isPaused]);
 
   const safeStepIndex = Math.max(0, Math.min(currentStepIndex, steps.length - 1));
   const currentStep = steps[safeStepIndex];
@@ -1386,7 +1387,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
                     {/* Pause */}
                     <View style={styles.pauseWrap}>
-                      <TouchableOpacity onPress={handleClose} activeOpacity={0.8} style={styles.pauseBtn}>
+                      <TouchableOpacity onPress={() => setIsPaused(p => !p)} activeOpacity={0.8} style={styles.pauseBtn}>
                         {isDark ? (
                           <View style={{ width: rs(56), height: rs(56), justifyContent: 'center', alignItems: 'center' }}>
                             <Svg width={rs(56)} height={rs(56)} style={StyleSheet.absoluteFillObject}>
@@ -1400,10 +1401,16 @@ const NameDetailScreen = ({ route, navigation }) => {
                               <Path d={`M${rs(34)},${rs(12)} Q${rs(36)},${rs(14)} ${rs(38)},${rs(12)} Q${rs(36)},${rs(10)} ${rs(34)},${rs(12)} Z`} fill="#FFFFFF" opacity={0.8} />
                             </Svg>
                             <View style={{ width: rs(34), height: rs(34), borderRadius: rs(17), backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: rs(6), elevation: 4 }}>
-                              <View style={{ flexDirection: 'row', gap: rs(4) }}>
-                                <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#0F172A', borderRadius: rs(2) }} />
-                                <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#0F172A', borderRadius: rs(2) }} />
-                              </View>
+                              {isPaused ? (
+                                <Svg width={rs(12)} height={rs(14)} viewBox="0 0 14 16" style={{ marginLeft: rs(3) }}>
+                                  <Path d="M0 0L14 8L0 16V0Z" fill="#0F172A" />
+                                </Svg>
+                              ) : (
+                                <View style={{ flexDirection: 'row', gap: rs(4) }}>
+                                  <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#0F172A', borderRadius: rs(2) }} />
+                                  <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#0F172A', borderRadius: rs(2) }} />
+                                </View>
+                              )}
                             </View>
                           </View>
                         ) : (
@@ -1429,15 +1436,21 @@ const NameDetailScreen = ({ route, navigation }) => {
                               })}
                             </Svg>
                             <View style={{ width: rs(38), height: rs(38), borderRadius: rs(19), backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', shadowColor: '#00ADC1', shadowOpacity: 0.15, shadowRadius: rs(6), shadowOffset: { width: 0, height: 3 }, elevation: 3, borderWidth: 1, borderColor: '#F4F9FA' }}>
-                              <View style={{ flexDirection: 'row', gap: rs(4) }}>
-                                <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#FACC15', borderRadius: rs(2) }} />
-                                <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#FACC15', borderRadius: rs(2) }} />
-                              </View>
+                              {isPaused ? (
+                                <Svg width={rs(14)} height={rs(16)} viewBox="0 0 14 16" style={{ marginLeft: rs(3) }}>
+                                  <Path d="M0 0L14 8L0 16V0Z" fill="#FACC15" />
+                                </Svg>
+                              ) : (
+                                <View style={{ flexDirection: 'row', gap: rs(4) }}>
+                                  <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#FACC15', borderRadius: rs(2) }} />
+                                  <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#FACC15', borderRadius: rs(2) }} />
+                                </View>
+                              )}
                             </View>
                           </View>
                         )}
                       </TouchableOpacity>
-                      <Text style={[styles.pauseText, { color: isDark ? '#FFFFFF' : '#112F33' }]}>Pause</Text>
+                      <Text style={[styles.pauseText, { color: isDark ? '#FFFFFF' : '#112F33' }]}>{isPaused ? 'Resume' : 'Pause'}</Text>
                     </View>
 
                     {/* Continue */}

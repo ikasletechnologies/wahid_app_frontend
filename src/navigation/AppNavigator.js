@@ -18,6 +18,7 @@ import PersonalDetailsScreen from '../screens/PersonalDetailsScreen';
 import SettingsScreen     from '../screens/SettingsScreen';
 import NamesListScreen    from '../screens/NamesListScreen';
 import ProfileScreen      from '../screens/ProfileScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -104,6 +105,12 @@ const AppNavigator = () => {
           <Stack.Screen
             name="Register"
             component={RegisterScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          {/* Forgot password → OTP → reset */}
+          <Stack.Screen
+            name="ForgotPassword"
+            component={ForgotPasswordScreen}
             options={{ animation: 'slide_from_right' }}
           />
           {/* Step 4: registration success → then completeLogin() switches to auth stack */}

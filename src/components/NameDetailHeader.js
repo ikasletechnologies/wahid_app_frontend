@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { FONTS } from '../theme';
 import { useAppTheme } from '../context/ThemeContext';
 
@@ -9,35 +10,58 @@ const rs = (n) => Math.round(n * (SW / 393));
 const hs = (n) => Math.round(n * (SH / 900));
 
 const STEP_META = {
-  meaning:    { label: 'Simple\nMeaning',     icon: 'book-outline' },
-  gifts:      { label: 'Gift Of\nThis Name',  icon: 'gift-outline' },
-  quran:      { label: "Pearls From\nQur'an", icon: 'library-outline' },
-  hadith:     { label: 'Pearls From\nHadith', icon: 'library-outline' },
-  practical:  { label: 'How To\nLive By It',  icon: 'moon-outline' },
-  scholarly:  { label: 'Scholarly\nView',     icon: 'school-outline' },
-  reflection: { label: 'Reflection',          icon: 'pencil-outline' },
-  mastery:    { label: 'Quiz',                icon: 'help-circle-outline' },
+  meaning: { label: 'Simple\nMeaning', icon: 'book-outline' },
+  gifts: { label: 'Gift Of\nThis Name', icon: 'gift-outline' },
+  quran: { label: "Pearls From\nQur'an", icon: 'library-outline' },
+  hadith: { label: 'Pearls From\nHadith', icon: 'library-outline' },
+  practical: { label: 'How To\nLive By It', icon: 'moon-outline' },
+  scholarly: { label: 'Scholarly\nView', icon: 'school-outline' },
+  reflection: { label: 'Reflection', icon: 'pencil-outline' },
+  mastery: { label: 'Quiz', icon: 'help-circle-outline' },
 };
 
 const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0 }) => {
   const { isDark } = useAppTheme();
+  const navigation = useNavigation();
 
   const teal = '#00ADC1';
-  const textColor    = isDark ? '#E8EDF2' : '#112F33';
-  const inactiveBg   = isDark ? '#1E293B' : '#F0F9FB';
+  const textColor = isDark ? '#E8EDF2' : '#112F33';
+  const inactiveBg = isDark ? '#1E293B' : '#F0F9FB';
   const inactiveBord = isDark ? '#2A3A4A' : '#CBD5E1';
-  const inactiveLbl  = isDark ? '#5A6A7A' : '#94A3B8';
-  const inactiveIco  = isDark ? '#4A5A6A' : '#94A3B8';
+  const inactiveLbl = isDark ? '#5A6A7A' : '#94A3B8';
+  const inactiveIco = isDark ? '#4A5A6A' : '#94A3B8';
   const connInactive = isDark ? '#2A3A4A' : '#D1E8EC';
 
   return (
     <View style={styles.container}>
+      {/* Top Bar */}
+      <View style={styles.topRow}>
+        <TouchableOpacity
+          style={[styles.iconButton, { backgroundColor: isDark ? '#1E293B' : '#F8FAFC' }]}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="arrow-back" size={rs(20)} color={isDark ? '#E2E8F0' : '#1E293B'} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.iconButton, { backgroundColor: isDark ? '#1E293B' : '#F8FAFC' }]}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="flag-outline" size={rs(20)} color={isDark ? '#E2E8F0' : '#1E293B'} />
+        </TouchableOpacity>
+      </View>
+
       {/* Name display */}
       <View style={styles.nameRow}>
-        <Text style={[styles.arabic,   { color: textColor }]}>{name.arabic}</Text>
-        <Text style={[styles.latin,    { color: textColor }]}>✦ {name.transliteration} ✦</Text>
+        <Text style={[styles.arabic, { color: isDark ? '#E8EDF2' : '#0B292C' }]}>{name.arabic}</Text>
+        <Text style={[styles.latin, { color: isDark ? '#E8EDF2' : '#0F172A' }]}>
+          <Text style={{ color: teal }}>✦ </Text>
+          {name.transliteration}
+          <Text style={{ color: teal }}> ✦</Text>
+        </Text>
         {!!(name.meaning || name.en) && (
-          <Text style={[styles.meaning, { color: textColor }]}>{name.meaning || name.en}</Text>
+          <Text style={[styles.meaning, { color: isDark ? '#94A3B8' : '#64748B' }]}>{name.meaning || name.en}</Text>
         )}
       </View>
 
@@ -53,10 +77,10 @@ const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0 }) => {
           ]}
         >
           {steps.map((step, i) => {
-            const meta    = STEP_META[step.type] || { label: step.type, icon: 'ellipse-outline' };
+            const meta = STEP_META[step.type] || { label: step.type, icon: 'ellipse-outline' };
             const isActive = i === currentStepIndex;
-            const isDone   = i < currentStepIndex;
-            const circBg   = isActive || isDone ? teal : inactiveBg;
+            const isDone = i < currentStepIndex;
+            const circBg = isActive || isDone ? teal : inactiveBg;
             const circBord = isActive || isDone ? teal : inactiveBord;
             const lblColor = isActive || isDone ? teal : inactiveLbl;
             const icoColor = isActive || isDone ? '#FFFFFF' : inactiveIco;
@@ -67,7 +91,7 @@ const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0 }) => {
                   <View style={[styles.stepCircle, { backgroundColor: circBg, borderColor: circBord }]}>
                     {isDone
                       ? <Ionicons name="checkmark" size={rs(11)} color="#FFFFFF" />
-                      : <Ionicons name={meta.icon}  size={rs(12)} color={icoColor} />
+                      : <Ionicons name={meta.icon} size={rs(12)} color={icoColor} />
                     }
                   </View>
                   <Text
@@ -96,15 +120,28 @@ const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0 }) => {
 const styles = StyleSheet.create({
   container: { width: '100%', paddingBottom: hs(6) },
 
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: rs(15),
+    paddingTop: hs(5),
+  },
+  iconButton: {
+    width: rs(44), height: rs(44),
+    borderRadius: rs(14),
+    justifyContent: 'center', alignItems: 'center',
+  },
+
+
   nameRow: {
     alignItems: 'center',
     paddingHorizontal: rs(20),
-    paddingTop: hs(10),
+    marginTop: hs(-24), // Pull it up between the icons
     paddingBottom: hs(6),
   },
-  arabic:  { fontSize: rs(32), fontFamily: FONTS.arabic, fontWeight: '700', marginBottom: rs(2) },
-  latin:   { fontSize: rs(17), fontFamily: FONTS.arabic, fontWeight: '700', letterSpacing: 0.5 },
-  meaning: { fontSize: rs(13), fontWeight: '500', marginTop: rs(2), opacity: 0.75 },
+  arabic: { fontSize: rs(40), fontFamily: FONTS.arabic, fontWeight: '700', marginBottom: hs(-18) },
+  latin: { fontSize: rs(20), fontFamily: FONTS.arabic, fontWeight: '700', letterSpacing: 0.5 },
+  meaning: { fontSize: rs(14), fontWeight: '500', marginTop: hs(4), marginBottom: hs(15) },
 
   tracker: { width: '100%' },
   trackerContent: {
