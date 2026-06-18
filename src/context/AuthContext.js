@@ -41,15 +41,12 @@ export const AuthProvider = ({ children }) => {
       const response = await http.post(ENDPOINTS.checkPhone, { phone });
       return { success: true, exists: response.data?.exists ?? false };
     } catch (error) {
-      const status = error.response?.status;
-      // 404 means the backend endpoint isn't implemented yet — treat as "new user"
-      // so signup can still proceed rather than blocking the user entirely.
-      if (status === 404) {
+      if (error.response?.status === 404) {
         return { success: true, exists: false };
       }
       return {
         success: false,
-        message: error.response?.data?.message || 'Could not check phone number.',
+        message: error.response?.data?.message || 'Could not verify phone number. Please try again.',
       };
     }
   };
@@ -146,6 +143,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const resetPassword = async (verificationToken, newPassword) => {
+    try {
+      await http.post(ENDPOINTS.resetPassword, { verificationToken, newPassword });
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Password reset failed.',
+      };
+    }
+  };
+
   const logout = async () => {
     try {
       const refreshToken = await AsyncStorage.getItem('refreshToken');
@@ -195,6 +204,7 @@ export const AuthProvider = ({ children }) => {
       signup,
       completeLogin,
       login,
+      resetPassword,
       updateProfile,
       logout
     }}>

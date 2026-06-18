@@ -15,6 +15,9 @@ export const ENDPOINTS = {
   logout:    `${API_BASE_URL}/api/auth/logout`,    // POST { refreshToken }
   profile:   `${API_BASE_URL}/api/me`,
 
+  // Password reset
+  resetPassword: `${API_BASE_URL}/api/auth/reset-password`, // POST { verificationToken, newPassword }
+
   // Legacy email/password (kept for admin use)
   login:    `${API_BASE_URL}/api/auth/login`,
   register: `${API_BASE_URL}/api/auth/register`,

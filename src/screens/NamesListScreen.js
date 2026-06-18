@@ -9,6 +9,7 @@ import { useNames } from '../context/NamesContext';
 import { usePlaylist } from '../context/PlaylistContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { FONTS } from '../theme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { height: SH } = Dimensions.get('window');
 
@@ -131,12 +132,22 @@ const NamesListScreen = ({ navigation, route }) => {
           },
         ]}
         activeOpacity={0.7}
-        onPress={() =>
+        onPress={async () => {
+          let extraParams = { initialStepIndex: 0 };
+          if (statusFilter === 'drafts') {
+            try {
+              const saved = await AsyncStorage.getItem(`draft_progress_${item.number ?? item.id}`);
+              if (saved) {
+                 extraParams.draftProgress = JSON.parse(saved);
+                 extraParams.initialStepIndex = extraParams.draftProgress.stepIndex || 0;
+              }
+            } catch (e) {}
+          }
           navigation.navigate('NameDetail', {
             name: { ...item, id: item.id ?? item.number },
-            initialStepIndex: 0,
-          })
-        }
+            ...extraParams,
+          });
+        }}
       >
         {/* Number bubble */}
         <View style={[styles.numBubble, { backgroundColor: isDark ? '#1E293B' : '#EFF6FF' }]}>
@@ -191,9 +202,6 @@ const NamesListScreen = ({ navigation, route }) => {
 
           <View style={styles.headerCenter}>
             <Text style={[styles.headerTitle, { color: colors.text }]}>{config.title}</Text>
-            <View style={[styles.countBadge, { backgroundColor: isDark ? '#1E293B' : '#E0F2FE' }]}>
-              <Text style={[styles.countBadgeText, { color: '#00ADC1' }]}>{baseList.length}</Text>
-            </View>
           </View>
 
           {/* 3-dot filter button */}
@@ -387,16 +395,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: FONTS.bold,
   },
-  countBadge: {
-    marginLeft: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  countBadgeText: {
-    fontSize: 12,
-    fontFamily: FONTS.bold,
-  },
+
 
   // ── Subtitle ──
   subtitle: {

@@ -81,7 +81,7 @@ const FadeContent = ({ contentKey, children }) => {
 };
 
 const NameDetailScreen = ({ route, navigation }) => {
-  const { name: originalName, initialStepIndex = 0 } = route.params;
+  const { name: originalName, initialStepIndex = 0, draftProgress } = route.params;
 
   // Intercept name 1 (Allah) with static content as requested
   const name = useMemo(() => {
@@ -249,17 +249,17 @@ const NameDetailScreen = ({ route, navigation }) => {
   const [phase, setPhase] = useState('content'); // 'content' | 'journey'
   const [masteryAnswer, setMasteryAnswer] = useState(null);
   const [masteryDone, setMasteryDone] = useState(false);
-  const [meaningSubStep, setMeaningSubStep] = useState(-1);
-  const [refSubStep, setRefSubStep] = useState(-1);
+  const [meaningSubStep, setMeaningSubStep] = useState(draftProgress?.meaningSubStep ?? -1);
+  const [refSubStep, setRefSubStep] = useState(draftProgress?.refSubStep ?? -1);
   const [showArabicVerse, setShowArabicVerse] = useState(false);
-  const [giftSubStep, setGiftSubStep] = useState(-1);
-  const [practicalSubStep, setPracticalSubStep] = useState(-1);
-  const [scholarSubStep, setScholarSubStep] = useState(-1);
+  const [giftSubStep, setGiftSubStep] = useState(draftProgress?.giftSubStep ?? -1);
+  const [practicalSubStep, setPracticalSubStep] = useState(draftProgress?.practicalSubStep ?? -1);
+  const [scholarSubStep, setScholarSubStep] = useState(draftProgress?.scholarSubStep ?? -1);
 
   const [reflection1, setReflection1] = useState('');
   const [reflection2, setReflection2] = useState('');
   const [reflection3, setReflection3] = useState('');
-  const [reflectionSubStep, setReflectionSubStep] = useState(0);
+  const [reflectionSubStep, setReflectionSubStep] = useState(draftProgress?.reflectionSubStep ?? 0);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const scrollViewRef = useRef(null);
@@ -286,6 +286,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   const [activeCardTime, setActiveCardTime] = useState(0);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     const loadTime = async () => {
@@ -300,7 +301,7 @@ const NameDetailScreen = ({ route, navigation }) => {
   }, [name]);
 
   useEffect(() => {
-    if (!isFocused || phase !== 'content') return;
+    if (!isFocused || phase !== 'content' || isPaused) return;
     const interval = setInterval(() => {
       setActiveCardTime(prev => {
         const next = prev + 1;
@@ -312,7 +313,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isFocused, name, phase]);
+  }, [isFocused, name, phase, isPaused]);
 
   const formatTime = (seconds) => {
     if (seconds < 60) return `${seconds} sec`;
@@ -328,6 +329,16 @@ const NameDetailScreen = ({ route, navigation }) => {
       stepIndex: currentStepIndex,
     })).catch(() => { });
 
+    AsyncStorage.setItem(`draft_progress_${nameNumber}`, JSON.stringify({
+      stepIndex: currentStepIndex,
+      meaningSubStep,
+      giftSubStep,
+      refSubStep,
+      practicalSubStep,
+      scholarSubStep,
+      reflectionSubStep
+    })).catch(() => { });
+
     // Debounce backend sync: only POST after the user settles on a step for 3s
     if (lastReadTimerRef.current) clearTimeout(lastReadTimerRef.current);
     lastReadTimerRef.current = setTimeout(() => {
@@ -341,7 +352,7 @@ const NameDetailScreen = ({ route, navigation }) => {
     return () => {
       if (lastReadTimerRef.current) clearTimeout(lastReadTimerRef.current);
     };
-  }, [currentStepIndex, name, phase, markAsDraft]);
+  }, [currentStepIndex, meaningSubStep, giftSubStep, refSubStep, practicalSubStep, scholarSubStep, reflectionSubStep, name, phase, markAsDraft]);
 
   const isBackDisabled = useMemo(() => {
     if (showCelebration) return true;
@@ -351,12 +362,12 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   // Active reading timer
   useEffect(() => {
-    if (!isFocused) return;
+    if (!isFocused || isPaused) return;
     const interval = setInterval(() => {
       incrementReadingTime(5);
     }, 5000);
     return () => clearInterval(interval);
-  }, [isFocused, incrementReadingTime]);
+  }, [isFocused, incrementReadingTime, isPaused]);
 
   const safeStepIndex = Math.max(0, Math.min(currentStepIndex, steps.length - 1));
   const currentStep = steps[safeStepIndex];
@@ -556,8 +567,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
     if (currentStep.type === 'meaning' && meaningSubStep > -1) {
       if (meaningSubStep === 0) {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setMeaningSubStep(-1);
+        triggerFlip(() => setMeaningSubStep(-1));
       } else {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setMeaningSubStep(prev => prev - 1);
@@ -565,9 +575,10 @@ const NameDetailScreen = ({ route, navigation }) => {
       return;
     } else if ((currentStep.type === 'quran' || currentStep.type === 'hadith') && refSubStep > -1) {
       if (refSubStep === 0) {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setRefSubStep(-1);
-        setShowArabicVerse(false);
+        triggerFlip(() => {
+          setRefSubStep(-1);
+          setShowArabicVerse(false);
+        });
       } else {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setRefSubStep(prev => prev - 1);
@@ -576,8 +587,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       return;
     } else if (currentStep.type === 'gifts' && giftSubStep > -1) {
       if (giftSubStep === 0) {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setGiftSubStep(-1);
+        triggerFlip(() => setGiftSubStep(-1));
       } else {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setGiftSubStep(prev => prev - 1);
@@ -585,8 +595,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       return;
     } else if (currentStep.type === 'practical' && practicalSubStep > -1) {
       if (practicalSubStep === 0) {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setPracticalSubStep(-1);
+        triggerFlip(() => setPracticalSubStep(-1));
       } else {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setPracticalSubStep(prev => prev - 1);
@@ -594,8 +603,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       return;
     } else if (currentStep.type === 'scholarly' && scholarSubStep > -1) {
       if (scholarSubStep === 0) {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setScholarSubStep(-1);
+        triggerFlip(() => setScholarSubStep(-1));
       } else {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setScholarSubStep(prev => prev - 1);
@@ -675,8 +683,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       }
       if (nextStep < sentences.length) {
         if (meaningSubStep === -1) {
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          setMeaningSubStep(nextStep);
+          triggerFlip(() => setMeaningSubStep(nextStep));
         } else {
           LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
           setMeaningSubStep(nextStep);
@@ -688,9 +695,10 @@ const NameDetailScreen = ({ route, navigation }) => {
       const refsCount = Array.isArray(currentStep.data) ? currentStep.data.length : 1;
       if (refSubStep < refsCount - 1) {
         if (refSubStep === -1) {
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          setRefSubStep(prev => prev + 1);
-          setShowArabicVerse(false);
+          triggerFlip(() => {
+            setRefSubStep(prev => prev + 1);
+            setShowArabicVerse(false);
+          });
         } else {
           LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
           setRefSubStep(prev => prev + 1);
@@ -703,8 +711,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       const maxSubSteps = name.gifts ? name.gifts.length - 1 : 0;
       if (giftSubStep < maxSubSteps) {
         if (giftSubStep === -1) {
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          setGiftSubStep(prev => prev + 1);
+          triggerFlip(() => setGiftSubStep(prev => prev + 1));
         } else {
           LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
           setGiftSubStep(prev => prev + 1);
@@ -716,8 +723,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       const maxSubSteps = name.practicalWays ? name.practicalWays.length - 1 : 0;
       if (practicalSubStep < maxSubSteps) {
         if (practicalSubStep === -1) {
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          setPracticalSubStep(prev => prev + 1);
+          triggerFlip(() => setPracticalSubStep(prev => prev + 1));
         } else {
           LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
           setPracticalSubStep(prev => prev + 1);
@@ -729,8 +735,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       const maxSubSteps = name.scholarlyViews ? name.scholarlyViews.length - 1 : 0;
       if (scholarSubStep < maxSubSteps) {
         if (scholarSubStep === -1) {
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          setScholarSubStep(prev => prev + 1);
+          triggerFlip(() => setScholarSubStep(prev => prev + 1));
         } else {
           LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
           setScholarSubStep(prev => prev + 1);
@@ -773,7 +778,12 @@ const NameDetailScreen = ({ route, navigation }) => {
         </View>
 
         {/* Main Text with Proper Fade Animation */}
-        <View style={styles.textContentWrap}>
+        <ScrollView 
+          style={styles.textScrollView}
+          contentContainerStyle={styles.textScrollContent}
+          showsVerticalScrollIndicator={true}
+          nestedScrollEnabled={true}
+        >
           <FadeContent contentKey={text || (customContent ? 'custom' : '')}>
             {customContent ? customContent : (
               <>
@@ -783,7 +793,7 @@ const NameDetailScreen = ({ route, navigation }) => {
               </>
             )}
           </FadeContent>
-        </View>
+        </ScrollView>
 
         {/* Card Action Divider */}
         <View style={[styles.cardActionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2F8FA' }]} />
@@ -810,12 +820,9 @@ const NameDetailScreen = ({ route, navigation }) => {
     </View>
   );
 
-  const renderIntroCard = ({ title, iconName, subtitle, insightsCount = 0, readTimeSec = 30 }) => {
+  const renderIntroCard = ({ title, iconName, subtitle, insightsCount = 0 }) => {
     const sectionNum = safeStepIndex + 1;
     const totalSections = steps.length;
-    const readLabel = readTimeSec < 60
-      ? `~${readTimeSec} sec read`
-      : `~${Math.ceil(readTimeSec / 60)} min read`;
 
     return (
       <View style={styles.tabContentContainer}>
@@ -823,76 +830,82 @@ const NameDetailScreen = ({ route, navigation }) => {
           borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#F0F4F8',
           backgroundColor: isDark ? '#162331' : '#FFFFFF',
         }]}>
-          {/* Section badge */}
-          <View style={styles.sectionBadgeWrap}>
-            <View style={styles.sectionBadge}>
-              <Text style={styles.sectionBadgeText}>SECTION {sectionNum} OF {totalSections}</Text>
-            </View>
-          </View>
-
-          {/* Icon area */}
-          <View style={styles.introIconArea}>
-            <View style={[styles.introIconCircle, { 
-              backgroundColor: isDark ? '#1E2D3D' : '#FFFFFF',
-              borderColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB'
-            }]}>
-              <Ionicons name={iconName} size={rs(52)} color="#00ADC1" />
-            </View>
-          </View>
-
-          {/* Title */}
-          <FadeContent contentKey={title}>
-            <Text style={[styles.introTitleText2, { color: isDark ? '#E8EDF2' : '#0A1128' }]}>{title}</Text>
-          </FadeContent>
-
-          {/* Ornament divider */}
-          <View style={styles.introOrnamentRow}>
-            <View style={[styles.introOrnamentLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]} />
-            <Text style={styles.introOrnamentStar}>✦</Text>
-            <View style={[styles.introOrnamentLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]} />
-          </View>
-
-          {/* Subtitle */}
-          <Text style={[styles.introSubtitleText2, { color: isDark ? '#94A3B8' : '#64748B' }]}>{subtitle || 'Tap continue to begin'}</Text>
-
-          {/* Info pills */}
-          <View style={styles.introInfoRow}>
-            {insightsCount > 0 && (
-              <View style={[styles.introInfoPill, { backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB' }]}>
-                <Ionicons name="document-text-outline" size={rs(14)} color="#0090A8" style={{ marginRight: rs(6) }} />
-                <Text style={styles.introInfoText}>{insightsCount} Insights</Text>
+          <ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingBottom: hs(20) }} showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
+            {/* Section badge */}
+            <View style={styles.sectionBadgeWrap}>
+              <View style={styles.sectionBadge}>
+                <Text style={styles.sectionBadgeText}>SECTION {sectionNum} OF {totalSections}</Text>
               </View>
-            )}
-            <View style={[styles.introInfoPill, { backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB' }]}>
-              <Ionicons name="time-outline" size={rs(14)} color="#0090A8" style={{ marginRight: rs(6) }} />
-              <Text style={styles.introInfoText}>{readLabel}</Text>
             </View>
-          </View>
 
-          {/* Card Action Divider */}
-          <View style={[styles.cardActionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0F4F8', marginTop: hs(32), width: '100%' }]} />
+            {/* Icon area */}
+            <View style={styles.introIconArea}>
+              <View style={[styles.introIconCircle, { 
+                backgroundColor: isDark ? '#1E2D3D' : '#FFFFFF',
+                borderColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB'
+              }]}>
+                <Ionicons name={iconName} size={rs(52)} color="#00ADC1" />
+              </View>
+            </View>
 
-          {/* Action Bar Row */}
-          <View style={[styles.cardActionBar, { width: '100%', paddingVertical: hs(20) }]}>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => toggleFavourite(name.number || name.id)} activeOpacity={0.7}>
-              <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={rs(20)} color={isFavorite ? "#EF4444" : (isDark ? '#94A3B8' : '#475569')} />
-              <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Favorite</Text>
-            </TouchableOpacity>
-            
-            <View style={[styles.actionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0', height: rs(20) }]} />
-            
-            <TouchableOpacity style={styles.actionBtn} onPress={() => toggleReviewLater(name.number || name.id)} activeOpacity={0.7}>
-              <Ionicons name={isReviewLater ? "bookmark" : "bookmark-outline"} size={rs(20)} color={isReviewLater ? "#00ADC1" : (isDark ? '#94A3B8' : '#475569')} />
-              <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Review Later</Text>
-            </TouchableOpacity>
-            
-            <View style={[styles.actionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0', height: rs(20) }]} />
-            
-            <TouchableOpacity style={styles.actionBtn} onPress={handleShare} activeOpacity={0.7}>
-              <Ionicons name="share-social-outline" size={rs(20)} color={isDark ? '#94A3B8' : '#475569'} />
-              <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Share</Text>
-            </TouchableOpacity>
-          </View>
+            {/* Title */}
+            <FadeContent contentKey={title}>
+              <Text style={[styles.introTitleText2, { color: isDark ? '#E8EDF2' : '#0A1128' }]}>{title}</Text>
+            </FadeContent>
+
+            {/* Ornament divider */}
+            <View style={styles.introOrnamentRow}>
+              <View style={[styles.introOrnamentLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]} />
+              <Text style={styles.introOrnamentStar}>✦</Text>
+              <View style={[styles.introOrnamentLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]} />
+            </View>
+
+            {/* Subtitle */}
+            <Text style={[styles.introSubtitleText2, { color: isDark ? '#94A3B8' : '#64748B' }]}>{subtitle || 'Tap continue to begin'}</Text>
+
+            {/* Info pills */}
+            <View style={styles.introInfoRow}>
+              {insightsCount > 0 && (
+                <View style={[styles.introInfoPill, { backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB' }]}>
+                  <Ionicons name="document-text-outline" size={rs(14)} color="#0090A8" style={{ marginRight: rs(6) }} />
+                  <Text style={styles.introInfoText}>{insightsCount} Insights</Text>
+                </View>
+              )}
+              <View style={[styles.introInfoPill, { backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB' }]}>
+                <Ionicons name="time-outline" size={rs(14)} color="#0090A8" style={{ marginRight: rs(6) }} />
+                <Text style={styles.introInfoText}>{formatTime(activeCardTime)}</Text>
+              </View>
+            </View>
+          </ScrollView>
+
+          {title !== 'Simple Meaning' && (
+            <>
+              {/* Card Action Divider */}
+              <View style={[styles.cardActionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0F4F8', width: '100%' }]} />
+
+              {/* Action Bar Row */}
+              <View style={[styles.cardActionBar, { width: '100%', paddingVertical: hs(20) }]}>
+                <TouchableOpacity style={styles.actionBtn} onPress={() => toggleFavourite(name.number || name.id)} activeOpacity={0.7}>
+                  <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={rs(20)} color={isFavorite ? "#EF4444" : (isDark ? '#94A3B8' : '#475569')} />
+                  <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Favorite</Text>
+                </TouchableOpacity>
+                
+                <View style={[styles.actionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0', height: rs(20) }]} />
+                
+                <TouchableOpacity style={styles.actionBtn} onPress={() => toggleReviewLater(name.number || name.id)} activeOpacity={0.7}>
+                  <Ionicons name={isReviewLater ? "bookmark" : "bookmark-outline"} size={rs(20)} color={isReviewLater ? "#00ADC1" : (isDark ? '#94A3B8' : '#475569')} />
+                  <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Review Later</Text>
+                </TouchableOpacity>
+                
+                <View style={[styles.actionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0', height: rs(20) }]} />
+                
+                <TouchableOpacity style={styles.actionBtn} onPress={handleShare} activeOpacity={0.7}>
+                  <Ionicons name="share-social-outline" size={rs(20)} color={isDark ? '#94A3B8' : '#475569'} />
+                  <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Share</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
         </View>
       </View>
     );
@@ -1348,6 +1361,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                   contentContainerStyle={styles.scrollContent}
                   showsVerticalScrollIndicator={false}
                   scrollEnabled={true}
+                  bounces={false}
                 >
                   <Animated.View style={{ opacity: contentOpacity, transform: [{ translateY: contentTranslateY }, { rotateY: flipAnim.interpolate({ inputRange: [-90, 0, 90], outputRange: ['-90deg', '0deg', '90deg'] }) }] }}>
                     {currentStep.type === 'meaning' && renderMeaning()}
@@ -1358,7 +1372,9 @@ const NameDetailScreen = ({ route, navigation }) => {
                     {currentStep.type === 'reflection' && renderReflection()}
                     {currentStep.type === 'mastery' && renderMastery()}
                   </Animated.View>
-                  <View style={{ height: (currentStep.type === 'reflection' ? hs(220) : hs(160)) + (keyboardHeight > 0 ? keyboardHeight * 0.5 : 0) }} />
+                  {currentStep.type === 'reflection' && (
+                    <View style={{ height: hs(220) + (keyboardHeight > 0 ? keyboardHeight * 0.5 : 0) }} />
+                  )}
                 </ScrollView>
 
 
@@ -1372,38 +1388,63 @@ const NameDetailScreen = ({ route, navigation }) => {
                     {/* Previous */}
                     <TouchableOpacity
                       style={[styles.navBtn, { 
-                        backgroundColor: isDark ? '#1E2A3B' : '#F2F6F8',
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F2F6F8',
+                        borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'transparent',
+                        borderWidth: isDark ? 1 : 0,
                         opacity: isBackDisabled ? 0.4 : 1
                       }]}
                       disabled={isBackDisabled}
                       onPress={goPrev}
                       activeOpacity={0.7}
                     >
-                      <Ionicons name="arrow-back" size={rs(18)} color={isDark ? '#FFFFFF' : '#00ADC1'} />
+                      <Ionicons name="arrow-back" size={rs(18)} color={isDark ? '#E2E8F0' : '#00ADC1'} />
                       <View style={[styles.navDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,173,193,0.15)' }]} />
-                      <Text style={[styles.navBtnText, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>Previous</Text>
+                      <Text style={[styles.navBtnText, { color: isDark ? '#E2E8F0' : '#1A1A1A' }]}>Previous</Text>
                     </TouchableOpacity>
 
                     {/* Pause */}
                     <View style={styles.pauseWrap}>
-                      <TouchableOpacity onPress={handleClose} activeOpacity={0.8} style={styles.pauseBtn}>
+                      <TouchableOpacity onPress={() => setIsPaused(p => !p)} activeOpacity={0.8} style={styles.pauseBtn}>
                         {isDark ? (
-                          <View style={{ width: rs(56), height: rs(56), justifyContent: 'center', alignItems: 'center' }}>
-                            <Svg width={rs(56)} height={rs(56)} style={StyleSheet.absoluteFillObject}>
-                              <SvgCircle cx={rs(28)} cy={rs(28)} r={rs(26)} fill="#162335" /> 
+                          <View style={{ width: rs(58), height: rs(58), justifyContent: 'center', alignItems: 'center' }}>
+                            <Svg width={rs(58)} height={rs(58)} style={StyleSheet.absoluteFillObject}>
+                              <SvgCircle cx={rs(29)} cy={rs(29)} r={rs(28)} fill="#141E30" stroke="rgba(255,255,255,0.08)" strokeWidth={1} /> 
                               {/* Stars */}
-                              <SvgCircle cx={rs(16)} cy={rs(16)} r={rs(1)} fill="#FFFFFF" opacity={0.8} />
-                              <SvgCircle cx={rs(40)} cy={rs(20)} r={rs(1.5)} fill="#FFFFFF" opacity={0.6} />
-                              <SvgCircle cx={rs(12)} cy={rs(32)} r={rs(1)} fill="#FFFFFF" opacity={0.5} />
-                              <SvgCircle cx={rs(44)} cy={rs(38)} r={rs(1.2)} fill="#FFFFFF" opacity={0.7} />
-                              <SvgCircle cx={rs(24)} cy={rs(44)} r={rs(1.5)} fill="#FFFFFF" opacity={0.9} />
-                              <Path d={`M${rs(34)},${rs(12)} Q${rs(36)},${rs(14)} ${rs(38)},${rs(12)} Q${rs(36)},${rs(10)} ${rs(34)},${rs(12)} Z`} fill="#FFFFFF" opacity={0.8} />
+                              {/* Top Left Four-Pointed Star */}
+                              <Path d={`M${rs(15)},${rs(12)} Q${rs(15)},${rs(15)} ${rs(18)},${rs(15)} Q${rs(15)},${rs(15)} ${rs(15)},${rs(18)} Q${rs(15)},${rs(15)} ${rs(12)},${rs(15)} Q${rs(15)},${rs(15)} ${rs(15)},${rs(12)} Z`} fill="#FFFFFF" opacity={0.9} />
+                              
+                              {/* Top Dot */}
+                              <SvgCircle cx={rs(29)} cy={rs(7)} r={rs(1)} fill="#FFFFFF" opacity={0.6} />
+                              
+                              {/* Top Right Dot */}
+                              <SvgCircle cx={rs(45)} cy={rs(14)} r={rs(1.2)} fill="#FFFFFF" opacity={0.8} />
+                              
+                              {/* Right Dot */}
+                              <SvgCircle cx={rs(52)} cy={rs(29)} r={rs(1)} fill="#FFFFFF" opacity={0.5} />
+                              
+                              {/* Bottom Right Four-Pointed Star */}
+                              <Path d={`M${rs(44)},${rs(42)} Q${rs(44)},${rs(44)} ${rs(46)},${rs(44)} Q${rs(44)},${rs(44)} ${rs(44)},${rs(46)} Q${rs(44)},${rs(44)} ${rs(42)},${rs(44)} Q${rs(44)},${rs(44)} ${rs(44)},${rs(42)} Z`} fill="#FFFFFF" opacity={0.7} />
+                              
+                              {/* Bottom Dot */}
+                              <SvgCircle cx={rs(29)} cy={rs(51)} r={rs(1.5)} fill="#FFFFFF" opacity={0.9} />
+                              
+                              {/* Bottom Left Dot */}
+                              <SvgCircle cx={rs(14)} cy={rs(43)} r={rs(1.2)} fill="#FFFFFF" opacity={0.6} />
+                              
+                              {/* Left Dot */}
+                              <SvgCircle cx={rs(7)} cy={rs(29)} r={rs(1)} fill="#FFFFFF" opacity={0.7} />
                             </Svg>
-                            <View style={{ width: rs(34), height: rs(34), borderRadius: rs(17), backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: rs(6), elevation: 4 }}>
-                              <View style={{ flexDirection: 'row', gap: rs(4) }}>
-                                <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#0F172A', borderRadius: rs(2) }} />
-                                <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#0F172A', borderRadius: rs(2) }} />
-                              </View>
+                            <View style={{ width: rs(36), height: rs(36), borderRadius: rs(18), backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: rs(6), elevation: 4 }}>
+                              {isPaused ? (
+                                <Svg width={rs(12)} height={rs(14)} viewBox="0 0 14 16" style={{ marginLeft: rs(3) }}>
+                                  <Path d="M0 0L14 8L0 16V0Z" fill="#1E293B" />
+                                </Svg>
+                              ) : (
+                                <View style={{ flexDirection: 'row', gap: rs(4) }}>
+                                  <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#1E293B', borderRadius: rs(2) }} />
+                                  <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#1E293B', borderRadius: rs(2) }} />
+                                </View>
+                              )}
                             </View>
                           </View>
                         ) : (
@@ -1429,30 +1470,39 @@ const NameDetailScreen = ({ route, navigation }) => {
                               })}
                             </Svg>
                             <View style={{ width: rs(38), height: rs(38), borderRadius: rs(19), backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', shadowColor: '#00ADC1', shadowOpacity: 0.15, shadowRadius: rs(6), shadowOffset: { width: 0, height: 3 }, elevation: 3, borderWidth: 1, borderColor: '#F4F9FA' }}>
-                              <View style={{ flexDirection: 'row', gap: rs(4) }}>
-                                <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#FACC15', borderRadius: rs(2) }} />
-                                <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#FACC15', borderRadius: rs(2) }} />
-                              </View>
+                              {isPaused ? (
+                                <Svg width={rs(14)} height={rs(16)} viewBox="0 0 14 16" style={{ marginLeft: rs(3) }}>
+                                  <Path d="M0 0L14 8L0 16V0Z" fill="#FACC15" />
+                                </Svg>
+                              ) : (
+                                <View style={{ flexDirection: 'row', gap: rs(4) }}>
+                                  <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#FACC15', borderRadius: rs(2) }} />
+                                  <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#FACC15', borderRadius: rs(2) }} />
+                                </View>
+                              )}
                             </View>
                           </View>
                         )}
                       </TouchableOpacity>
-                      <Text style={[styles.pauseText, { color: isDark ? '#FFFFFF' : '#112F33' }]}>Pause</Text>
+                      <Text style={[styles.pauseText, { color: isDark ? '#94A3B8' : '#112F33' }]}>{isPaused ? 'Resume' : 'Pause'}</Text>
                     </View>
 
                     {/* Continue */}
                     <TouchableOpacity
                       style={[styles.navBtn, { 
-                        backgroundColor: isDark ? '#1E2A3B' : '#F2F6F8',
-                        opacity: isSlideDisabled ? 0.4 : 1
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F2F6F8',
+                        borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'transparent',
+                        borderWidth: isDark ? 1 : 0,
+                        opacity: isSlideDisabled ? 0.4 : 1,
+                        justifyContent: 'center',
+                        gap: rs(10)
                       }]}
                       disabled={isSlideDisabled}
                       onPress={handleNext}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.navBtnText, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>Continue</Text>
-                      <View style={[styles.navDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,173,193,0.15)' }]} />
-                      <Ionicons name="arrow-forward" size={rs(18)} color={isDark ? '#FFFFFF' : '#00ADC1'} />
+                      <Text style={[styles.navBtnText, { color: isDark ? '#E2E8F0' : '#1A1A1A' }]}>Continue</Text>
+                      <Ionicons name="arrow-forward" size={rs(18)} color={isDark ? '#E2E8F0' : '#00ADC1'} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -1498,7 +1548,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: rs(18), fontWeight: '800', color: '#1A1A1A', marginBottom: hs(12) },
 
   // ── Modern Cards (Glassmorphic / Minimal) ──
-  modernCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: rs(24), shadowColor: '#00ADC1', shadowOpacity: 0.04, shadowRadius: rs(20), shadowOffset: { width: 0, height: 10 }, elevation: 4, borderWidth: 1, borderColor: '#E2F8FA', overflow: 'hidden', minHeight: hs(320), paddingBottom: 0 },
+  modernCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: rs(24), shadowColor: '#00ADC1', shadowOpacity: 0.04, shadowRadius: rs(20), shadowOffset: { width: 0, height: 10 }, elevation: 4, borderWidth: 1, borderColor: '#E2F8FA', overflow: 'hidden', height: hs(460), paddingBottom: 0 },
   cardBadgesRow: { flexDirection: 'row', alignItems: 'center', padding: rs(20), zIndex: 2 },
   badgeCircle: { width: rs(40), height: rs(40), borderRadius: rs(20), justifyContent: 'center', alignItems: 'center', marginRight: rs(12) },
   badgePill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(12), minHeight: rs(32), paddingVertical: hs(6), borderRadius: rs(16) },
@@ -1506,7 +1556,9 @@ const styles = StyleSheet.create({
   cardHeaderTitleText: { fontSize: rs(16), fontWeight: '800', fontFamily: FONTS.bold, flexShrink: 1 },
   customDividerWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: rs(40), marginVertical: hs(16), zIndex: 2 },
   customDividerLine: { flex: 1, height: 1, backgroundColor: '#00ADC1', opacity: 0.2 },
-  textContentWrap: { flex: 1, paddingHorizontal: rs(30), paddingTop: hs(10), paddingBottom: hs(10), alignItems: 'center', justifyContent: 'center', zIndex: 2 },
+  textContentWrap: { flex: 1, paddingHorizontal: rs(30), paddingTop: hs(10), paddingBottom: hs(30), alignItems: 'center', justifyContent: 'center', zIndex: 2 },
+  textScrollView: { flex: 1, width: '100%' },
+  textScrollContent: { flexGrow: 1, paddingHorizontal: rs(30), paddingTop: hs(10), paddingBottom: hs(20), alignItems: 'center', justifyContent: 'center' },
   readingText: { fontSize: rs(22), fontFamily: FONTS.arabic, fontWeight: '500', textAlign: 'center', lineHeight: rs(34) },
 
   // ── Action Bar ──
@@ -1525,6 +1577,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 }, elevation: 4,
     borderWidth: 1, overflow: 'hidden',
     paddingBottom: 0,
+    height: hs(460),
   },
   sectionBadgeWrap: { alignItems: 'center', paddingTop: hs(28), marginBottom: hs(24) },
   sectionBadge: {
@@ -1592,7 +1645,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: rs(24),
-    paddingHorizontal: rs(16),
+    paddingHorizontal: rs(20),
     height: rs(46),
   },
   navDivider: {
