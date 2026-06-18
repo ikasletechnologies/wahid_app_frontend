@@ -46,18 +46,7 @@ const countWords = (content) => {
 
 const getMeaningSentences = (nameObj) => {
   let displayMeaning = nameObj.description || nameObj.meaning || '';
-  if (typeof displayMeaning === 'string' && displayMeaning.includes('—')) {
-    displayMeaning = displayMeaning.split('—')[1].trim();
-  }
-  let parts = displayMeaning.split(/([.?!])(?:[\s]+|$)/);
-  let sentences = [];
-  for (let i = 0; i < parts.length; i += 2) {
-    let text = parts[i];
-    let punct = parts[i + 1] || '';
-    let combined = (text + punct).trim();
-    if (combined && combined.replace(/[.?!\s]/g, '').length > 0) sentences.push(combined);
-  }
-  return sentences.length > 0 ? sentences : [displayMeaning.trim()];
+  return [displayMeaning.trim()];
 };
 
 const FadeContent = ({ contentKey, children }) => {
@@ -81,54 +70,7 @@ const FadeContent = ({ contentKey, children }) => {
 };
 
 const NameDetailScreen = ({ route, navigation }) => {
-  const { name: originalName, initialStepIndex = 0, draftProgress } = route.params;
-
-  // Intercept name 1 (Allah) with static content as requested
-  const name = useMemo(() => {
-    if (originalName.number === 1 || originalName.id === 1) {
-      return {
-        ...originalName,
-        arabic: originalName.arabic || originalName.ar || "اللَّهُ",
-        transliteration: originalName.transliteration || originalName.tr || "Allah",
-        meaning: originalName.meaning || originalName.en, // Use the dynamic meaning from the database
-        description: "Allah is the proper and personal name of the one true God. No other being is truly called by this name.\nHe is unique and completely free from any imperfection. He has no partners, no equals, and He alone deserves every form of worship.",
-        gifts: [
-          "It answers the deepest question of the fitrah: “Who is my Rabb?” by pointing clearly to the One who is necessarily existent, without beginning or end, the Rabb of all worlds.",
-          "As this name cannot be shared, pluralized, or truly applied to anyone else, it closes the doors of confusion and doubt about who deserves our obedience, fear, hope, and love.",
-          "Scholars mention that “Allah” is the all‑encompassing name that gathers within it all the beautiful Names, and many describe it as al‑Ism al‑Aʿẓam (the Greatest Name)."
-        ],
-        quran: [
-          {
-            ref: "Qur’an 7:180",
-            tr: "Allah has the most beautiful and perfect names, so call on Him using them, and remember Him through them.",
-            ar: "وَلِلَّهِ ٱلْأَسْمَآءُ ٱلْحُسْنَىٰ فَٱدْعُوهُ بِهَا"
-          },
-          {
-            ref: "Qur’an 20:14",
-            tr: "Allah tells Musa, “I am Allah, the only true God, so worship only Me and keep up the prayer so that you remember Me.”",
-            ar: "إِنَّنِيٓ أَنَا ٱللَّهُ لَآ إِلَٰهَ إِلَّآ أَنَا فَٱعْبُدْنِي وَأَقِمِ ٱلصَّلَوٰةَ لِذِكْرِي"
-          },
-          {
-            ref: "Qur’an 2:255 (Ayatul Kursi)",
-            tr: "Allah is the only true God, Ever‑Living and always taking care of all creation. Nothing makes Him drowsy or sleepy.\nEverything in the heavens and the earth belongs to Him alone. No one can intercede or speak for anyone in His presence except if He gives permission.\nHe knows everything about His creation – past, present, and future – and people only know what He allows them to know.\nHis kursī (Seat) is so vast that it covers the heavens and the earth, and taking care of them does not tire Him at all. He is the Most High, the Most Great.",
-            ar: "ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ ٱلْحَيُّ ٱلْقَيُّومُ\nلَا تَأْخُذُهُۥ سِنَةٌ وَلَا نَوْمٌ\nلَّهُۥ مَا فِى ٱلسَّمَٰوَٰتِ وَمَا فِى ٱلْأَرْضِ\nمَن ذَا ٱلَّذِى يَشْفَعُ عِندَهُۥٓ إِلَّا بِإِذْنِهِۦ\nيَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ\nوَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِۦٓ إِلَّا بِمَا شَآءَ\nوَسِعَ كُرْسِيُّهُ ٱلسَّمَٰوَٰتِ وَٱلْأَرْضَ\nوَلَا يَـُٔودُهُۥ حِفْظُهُمَا\nوَهُوَ ٱلْعَلِىُّ ٱلْعَظِيمُ"
-          },
-          {
-            ref: "Qur’an 20:98",
-            tr: "Your only true God is Allah; there is no god except Him, and His knowledge surrounds everything.",
-            ar: "إِنَّمَآ إِلَٰهُكُمُ ٱللَّهُ ٱلَّذِي لَآ إِلَٰهَ إِلَّا هُوَ ۚ وَسِعَ كُلَّ شَيْءٍ عِلْمًا"
-          }
-        ],
-        practicalWays: [
-          "Begin and end tasks consciously with “Bismillah” and “Alhamdulillah,” letting your heart remember that every moment is under the gaze of Allah.",
-          "Say Aʿūdhu billāhi mina sh‑shayṭāni r‑rajīm (I seek refuge in Allah from Shayṭān, the accursed) when there is waswasa (Shayṭān’s whispers pushing you towards sin), trusting that Allah protects your heart from those whispers.",
-          "When you study the other Names, see them as doors leading back to the One named “Allah,” never separate from Him."
-        ],
-        scholarlyViews: []
-      };
-    }
-    return originalName;
-  }, [originalName]);
+  const { name, initialStepIndex = 0, draftProgress } = route.params;
   const { markAsLearned, masteredIds, revisitCounts, userReflections, incrementReadingTime, markAsDraft, removeDraft, reviewLaterIds, toggleReviewLater } = useNames();
   const { favouriteIds, toggleFavourite } = usePlaylist();
   const isFocused = useIsFocused();
@@ -778,7 +720,7 @@ const NameDetailScreen = ({ route, navigation }) => {
         </View>
 
         {/* Main Text with Proper Fade Animation */}
-        <ScrollView 
+        <ScrollView
           style={styles.textScrollView}
           contentContainerStyle={styles.textScrollContent}
           showsVerticalScrollIndicator={true}
@@ -840,7 +782,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
             {/* Icon area */}
             <View style={styles.introIconArea}>
-              <View style={[styles.introIconCircle, { 
+              <View style={[styles.introIconCircle, {
                 backgroundColor: isDark ? '#1E2D3D' : '#FFFFFF',
                 borderColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB'
               }]}>
@@ -889,16 +831,16 @@ const NameDetailScreen = ({ route, navigation }) => {
                   <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={rs(20)} color={isFavorite ? "#EF4444" : (isDark ? '#94A3B8' : '#475569')} />
                   <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Favorite</Text>
                 </TouchableOpacity>
-                
+
                 <View style={[styles.actionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0', height: rs(20) }]} />
-                
+
                 <TouchableOpacity style={styles.actionBtn} onPress={() => toggleReviewLater(name.number || name.id)} activeOpacity={0.7}>
                   <Ionicons name={isReviewLater ? "bookmark" : "bookmark-outline"} size={rs(20)} color={isReviewLater ? "#00ADC1" : (isDark ? '#94A3B8' : '#475569')} />
                   <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Review Later</Text>
                 </TouchableOpacity>
-                
+
                 <View style={[styles.actionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0', height: rs(20) }]} />
-                
+
                 <TouchableOpacity style={styles.actionBtn} onPress={handleShare} activeOpacity={0.7}>
                   <Ionicons name="share-social-outline" size={rs(20)} color={isDark ? '#94A3B8' : '#475569'} />
                   <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Share</Text>
@@ -950,7 +892,7 @@ const NameDetailScreen = ({ route, navigation }) => {
         readTimeSec,
       });
     }
-    
+
     const refData = Array.isArray(refDataArray) ? refDataArray[refSubStep] : refDataArray;
 
     if (typeof refData === 'string') {
@@ -1381,13 +1323,13 @@ const NameDetailScreen = ({ route, navigation }) => {
 
                 {/* ── Bottom Navigation ── */}
                 <View style={styles.bottomNavWrapper}>
-                  <View style={[styles.bottomNavInner, { 
+                  <View style={[styles.bottomNavInner, {
                     backgroundColor: isDark ? '#141D2B' : '#FFFFFF',
                     shadowColor: isDark ? '#000000' : '#00ADC1',
                   }]}>
                     {/* Previous */}
                     <TouchableOpacity
-                      style={[styles.navBtn, { 
+                      style={[styles.navBtn, {
                         backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F2F6F8',
                         borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'transparent',
                         borderWidth: isDark ? 1 : 0,
@@ -1408,29 +1350,29 @@ const NameDetailScreen = ({ route, navigation }) => {
                         {isDark ? (
                           <View style={{ width: rs(58), height: rs(58), justifyContent: 'center', alignItems: 'center' }}>
                             <Svg width={rs(58)} height={rs(58)} style={StyleSheet.absoluteFillObject}>
-                              <SvgCircle cx={rs(29)} cy={rs(29)} r={rs(28)} fill="#141E30" stroke="rgba(255,255,255,0.08)" strokeWidth={1} /> 
+                              <SvgCircle cx={rs(29)} cy={rs(29)} r={rs(28)} fill="#141E30" stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
                               {/* Stars */}
                               {/* Top Left Four-Pointed Star */}
                               <Path d={`M${rs(15)},${rs(12)} Q${rs(15)},${rs(15)} ${rs(18)},${rs(15)} Q${rs(15)},${rs(15)} ${rs(15)},${rs(18)} Q${rs(15)},${rs(15)} ${rs(12)},${rs(15)} Q${rs(15)},${rs(15)} ${rs(15)},${rs(12)} Z`} fill="#FFFFFF" opacity={0.9} />
-                              
+
                               {/* Top Dot */}
                               <SvgCircle cx={rs(29)} cy={rs(7)} r={rs(1)} fill="#FFFFFF" opacity={0.6} />
-                              
+
                               {/* Top Right Dot */}
                               <SvgCircle cx={rs(45)} cy={rs(14)} r={rs(1.2)} fill="#FFFFFF" opacity={0.8} />
-                              
+
                               {/* Right Dot */}
                               <SvgCircle cx={rs(52)} cy={rs(29)} r={rs(1)} fill="#FFFFFF" opacity={0.5} />
-                              
+
                               {/* Bottom Right Four-Pointed Star */}
                               <Path d={`M${rs(44)},${rs(42)} Q${rs(44)},${rs(44)} ${rs(46)},${rs(44)} Q${rs(44)},${rs(44)} ${rs(44)},${rs(46)} Q${rs(44)},${rs(44)} ${rs(42)},${rs(44)} Q${rs(44)},${rs(44)} ${rs(44)},${rs(42)} Z`} fill="#FFFFFF" opacity={0.7} />
-                              
+
                               {/* Bottom Dot */}
                               <SvgCircle cx={rs(29)} cy={rs(51)} r={rs(1.5)} fill="#FFFFFF" opacity={0.9} />
-                              
+
                               {/* Bottom Left Dot */}
                               <SvgCircle cx={rs(14)} cy={rs(43)} r={rs(1.2)} fill="#FFFFFF" opacity={0.6} />
-                              
+
                               {/* Left Dot */}
                               <SvgCircle cx={rs(7)} cy={rs(29)} r={rs(1)} fill="#FFFFFF" opacity={0.7} />
                             </Svg>
@@ -1489,7 +1431,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
                     {/* Continue */}
                     <TouchableOpacity
-                      style={[styles.navBtn, { 
+                      style={[styles.navBtn, {
                         backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F2F6F8',
                         borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'transparent',
                         borderWidth: isDark ? 1 : 0,
