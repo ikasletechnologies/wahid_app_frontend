@@ -1,34 +1,85 @@
 import React, { useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Image, TouchableOpacity,
-  StatusBar, Dimensions, Animated,
+  StatusBar, Dimensions, Animated, Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons, Feather } from '@expo/vector-icons';
+import Svg, { Circle } from 'react-native-svg';
 import { useAuth } from '../context/AuthContext';
+import { useAppTheme } from '../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
+const DecorativeBackground = ({ isDark }) => (
+  <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+    {/* Soft top-left glow */}
+    <View style={[styles.topLeftGlow, isDark && { backgroundColor: '#00ACC1', opacity: 0.05 }]} />
+
+    {/* Soft top-right grid of dots */}
+    <View style={styles.topRightDots}>
+      <Svg width={120} height={120} viewBox="0 0 120 120" fill="none">
+        {Array.from({ length: 6 }).map((_, r) =>
+          Array.from({ length: 6 }).map((_, c) => (
+            <Circle
+              key={`${r}-${c}`}
+              cx={20 + c * 16}
+              cy={20 + r * 16}
+              r={2}
+              fill="#03B7CE"
+              opacity={isDark ? 0.08 - (r + c) * 0.005 : 0.15 - (r + c) * 0.01}
+            />
+          ))
+        )}
+      </Svg>
+    </View>
+  </View>
+);
+
+const CustomDivider = ({ isDark }) => (
+  <View style={styles.dividerRow}>
+    <View style={[styles.dividerLine, isDark && { backgroundColor: 'rgba(255,255,255,0.12)' }]} />
+    <View style={[styles.dividerDot, isDark && { backgroundColor: 'rgba(255,255,255,0.2)' }]} />
+    <View style={styles.dividerDiamond} />
+    <View style={[styles.dividerDot, isDark && { backgroundColor: 'rgba(255,255,255,0.2)' }]} />
+    <View style={[styles.dividerLine, isDark && { backgroundColor: 'rgba(255,255,255,0.12)' }]} />
+  </View>
+);
+
 const SuccessScreen = ({ route }) => {
-  const { user, accessToken, refreshToken } = route.params;
+  const { user, accessToken, refreshToken } = route.params || {
+    user: { name: 'Hari' },
+    accessToken: 'test_access',
+    refreshToken: 'test_refresh'
+  };
   const { completeLogin } = useAuth();
+  const { isDark, colors } = useAppTheme();
 
   // Entrance animations
-  const badgeScale   = useRef(new Animated.Value(0.4)).current;
-  const badgeOpacity = useRef(new Animated.Value(0)).current;
-  const textOpacity  = useRef(new Animated.Value(0)).current;
-  const btnOpacity   = useRef(new Animated.Value(0)).current;
+  const checkmarkScale = useRef(new Animated.Value(0.4)).current;
+  const checkmarkOpacity = useRef(new Animated.Value(0)).current;
+  const textOpacity = useRef(new Animated.Value(0)).current;
+  const cardOpacity = useRef(new Animated.Value(0)).current;
+  const cardTranslateY = useRef(new Animated.Value(30)).current;
+  const bookOpacity = useRef(new Animated.Value(0)).current;
+  const btnOpacity = useRef(new Animated.Value(0)).current;
+
+  // Spin and pulse loops
+  const spinValue = useRef(new Animated.Value(0)).current;
+  const pulseValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Entrance animations
     Animated.sequence([
-      // Badge pops in
+      // Checkmark pops in
       Animated.parallel([
-        Animated.spring(badgeScale, {
+        Animated.spring(checkmarkScale, {
           toValue: 1,
-          tension: 60,
-          friction: 7,
+          tension: 50,
+          friction: 6,
           useNativeDriver: true,
         }),
-        Animated.timing(badgeOpacity, {
+        Animated.timing(checkmarkOpacity, {
           toValue: 1,
           duration: 400,
           useNativeDriver: true,
@@ -40,151 +91,446 @@ const SuccessScreen = ({ route }) => {
         duration: 350,
         useNativeDriver: true,
       }),
-      // Button fades in
-      Animated.timing(btnOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
+      // Card slides up and fades in
+      Animated.parallel([
+        Animated.timing(cardOpacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cardTranslateY, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]),
+      // Book image and button fade in together
+      Animated.parallel([
+        Animated.timing(bookOpacity, {
+          toValue: 1,
+          duration: 350,
+          useNativeDriver: true,
+        }),
+        Animated.timing(btnOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]),
     ]).start();
+
+    // Spin animation for the outer ring (infinite loop)
+    Animated.loop(
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 15000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+
+    // Pulse animation for the background ripple (infinite loop)
+    Animated.loop(
+      Animated.timing(pulseValue, {
+        toValue: 1,
+        duration: 2500,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      })
+    ).start();
   }, []);
+
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const rippleScale = pulseValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.9, 1.4],
+  });
+
+  const rippleOpacity = pulseValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.6, 0],
+  });
 
   const handleContinue = async () => {
     await completeLogin(user, accessToken, refreshToken);
-    // AppNavigator automatically switches to authenticated flow
   };
 
+  const displayName = user?.name || 'Learner';
+
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+    <LinearGradient
+      colors={isDark ? ['#041012', '#080E10', '#050505'] : ['#EBF8FA', '#F4FDFE', '#FFFFFF']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.root}
+    >
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
+      <DecorativeBackground isDark={isDark} />
 
-      <LinearGradient
-        colors={['#02889D', '#041518', '#000000']}
-        locations={[0, 0.42, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+      {/* Main Container */}
+      <View style={styles.container}>
 
-      {/* Decorative star dots */}
-      {STARS.map((s, i) => (
-        <View
-          key={i}
-          style={[styles.star, { top: s.top, left: s.left, width: s.size, height: s.size, opacity: s.opacity }]}
-        />
-      ))}
+        {/* Top Checkmark Section */}
+        <Animated.View style={[
+          styles.checkmarkWrapper,
+          { opacity: checkmarkOpacity, transform: [{ scale: checkmarkScale }] }
+        ]}>
+          <Ionicons name="sparkles" size={14} color="#00ACC1" style={[styles.sparkle, { top: -2, left: 20, opacity: 0.5 }]} />
+          <Ionicons name="sparkles" size={10} color="#00ACC1" style={[styles.sparkle, { bottom: 10, right: 10, opacity: 0.4 }]} />
+          <Ionicons name="sparkles" size={12} color="#00ACC1" style={[styles.sparkle, { top: 30, right: -12, opacity: 0.5 }]} />
+          <Ionicons name="sparkles" size={8} color="#00ACC1" style={[styles.sparkle, { bottom: 30, left: -8, opacity: 0.4 }]} />
 
-      {/* Badge */}
-      <Animated.View style={[styles.badgeWrap, { opacity: badgeOpacity, transform: [{ scale: badgeScale }] }]}>
-        <Image
-          source={require('../../assets/success/success.png')}
-          style={styles.badge}
-          resizeMode="contain"
-        />
-      </Animated.View>
+          <View style={styles.checkmarkOuterRingContainer}>
+            {/* Pulsing Ripple Circle */}
+            <Animated.View style={[
+              styles.checkmarkRipple,
+              isDark && { backgroundColor: 'rgba(3, 183, 206, 0.15)' },
+              {
+                transform: [{ scale: rippleScale }],
+                opacity: rippleOpacity,
+              }
+            ]} />
 
-      {/* Text */}
-      <Animated.View style={[styles.textWrap, { opacity: textOpacity }]}>
-        <Text style={styles.title}>You're all Set</Text>
-        <Text style={styles.subtitle}>Let you explore the course now!</Text>
-      </Animated.View>
+            {/* Spinning Dashed Ring */}
+            <Animated.View style={[
+              styles.checkmarkOuterRing,
+              isDark && { borderColor: 'rgba(255, 255, 255, 0.12)' },
+              { transform: [{ rotate: spin }] }
+            ]} />
 
-      {/* Button */}
-      <Animated.View style={[styles.btnWrap, { opacity: btnOpacity }]}>
-        <TouchableOpacity onPress={handleContinue} activeOpacity={0.85}>
-          <LinearGradient
-            colors={['#02889D', '#03B7CE', '#4BD5E8']}
-            locations={[0, 0.5048, 1]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={styles.button}
-          >
-            <Text style={styles.buttonText}>Continue to the course</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </Animated.View>
-    </View>
+            {/* Fixed Inner Circle */}
+            <View style={[
+              styles.checkmarkInnerCircle,
+              isDark && { backgroundColor: '#111111', shadowColor: '#00ACC1' }
+            ]}>
+              <Ionicons name="checkmark" size={38} color="#00ACC1" />
+            </View>
+          </View>
+        </Animated.View>
+
+        {/* Text Section */}
+        <Animated.View style={[styles.textSection, { opacity: textOpacity }]}>
+          <Text style={[styles.welcomeText, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>
+            Welcome, <Text style={styles.nameText}>{displayName}</Text>
+          </Text>
+          <Text style={[styles.accountReadyText, { color: isDark ? '#A0AEC0' : '#718096' }]}>Your account is ready</Text>
+
+          <CustomDivider isDark={isDark} />
+
+          <Text style={[styles.journeyText, { color: isDark ? '#A0AEC0' : '#718096' }]}>
+            Let's begin your learning journey{'\n'}with the 99 Beautiful Names of Allah.
+          </Text>
+        </Animated.View>
+
+        {/* Menu Cards */}
+        <Animated.View style={[
+          styles.card,
+          isDark && { backgroundColor: '#111111', shadowColor: '#000', shadowOpacity: 0.1 },
+          { opacity: cardOpacity, transform: [{ translateY: cardTranslateY }] }
+        ]}>
+
+          {/* Row 1 */}
+          <TouchableOpacity style={styles.cardRow} activeOpacity={0.7}>
+            <View style={[styles.iconContainer, isDark && { backgroundColor: 'rgba(3, 183, 206, 0.15)' }]}>
+              <Ionicons name="book-outline" size={20} color="#00ACC1" />
+            </View>
+            <View style={styles.cardTextContainer}>
+              <Text style={[styles.cardRowTitle, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>99 Beautiful Names</Text>
+              <Text style={[styles.cardRowSubtitle, { color: isDark ? '#A0AEC0' : '#718096' }]}>Explore and learn at your own pace.</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#03B7CE" />
+          </TouchableOpacity>
+
+          <View style={[styles.cardDivider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.08)' }]} />
+
+          {/* Row 2 */}
+          <TouchableOpacity style={styles.cardRow} activeOpacity={0.7}>
+            <View style={[styles.iconContainer, isDark && { backgroundColor: 'rgba(3, 183, 206, 0.15)' }]}>
+              <Feather name="target" size={20} color="#00ACC1" />
+            </View>
+            <View style={styles.cardTextContainer}>
+              <Text style={[styles.cardRowTitle, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>Track Progress</Text>
+              <Text style={[styles.cardRowSubtitle, { color: isDark ? '#A0AEC0' : '#718096' }]}>See your growth and stay motivated.</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#03B7CE" />
+          </TouchableOpacity>
+
+          <View style={[styles.cardDivider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.08)' }]} />
+
+          {/* Row 3 */}
+          <TouchableOpacity style={styles.cardRow} activeOpacity={0.7}>
+            <View style={[styles.iconContainer, isDark && { backgroundColor: 'rgba(3, 183, 206, 0.15)' }]}>
+              <Ionicons name="star" size={20} color="#00ACC1" />
+            </View>
+            <View style={styles.cardTextContainer}>
+              <Text style={[styles.cardRowTitle, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>Learn Daily</Text>
+              <Text style={[styles.cardRowSubtitle, { color: isDark ? '#A0AEC0' : '#718096' }]}>Build a habit and grow closer to Allah.</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#03B7CE" />
+          </TouchableOpacity>
+
+        </Animated.View>
+
+        {/* Bottom Graphic */}
+        <Animated.View style={[styles.graphicContainer, { opacity: bookOpacity }]}>
+          <Image
+            source={require('../../assets/successbook.png')}
+            style={styles.bookImage}
+            resizeMode="contain"
+          />
+        </Animated.View>
+
+        {/* Button */}
+        <Animated.View style={[styles.btnWrap, { opacity: btnOpacity }]}>
+          <TouchableOpacity onPress={handleContinue} activeOpacity={0.85} style={styles.buttonContainer}>
+            <LinearGradient
+              colors={['#00BAD4', '#0097AB']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.button}
+            >
+              <Text style={styles.buttonText}>Start Learning</Text>
+              <Ionicons name="arrow-forward" size={18} color="#FFFFFF" style={styles.buttonIcon} />
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animated.View>
+
+      </View>
+    </LinearGradient>
   );
 };
-
-// Static decorative star positions
-const STARS = [
-  { top: height * 0.1,  left: width * 0.08,  size: 5, opacity: 0.6 },
-  { top: height * 0.14, left: width * 0.82,  size: 4, opacity: 0.5 },
-  { top: height * 0.22, left: width * 0.15,  size: 3, opacity: 0.4 },
-  { top: height * 0.28, left: width * 0.75,  size: 6, opacity: 0.5 },
-  { top: height * 0.35, left: width * 0.05,  size: 4, opacity: 0.35 },
-  { top: height * 0.18, left: width * 0.55,  size: 3, opacity: 0.45 },
-  { top: height * 0.42, left: width * 0.88,  size: 5, opacity: 0.4 },
-  { top: height * 0.08, left: width * 0.45,  size: 4, opacity: 0.5 },
-];
 
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#000',
+
+  },
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: height * 0.18,
+  },
+
+  // Decorative Background elements
+  topLeftGlow: {
+    position: 'absolute',
+    top: -50,
+    left: -50,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: '#03B7CE',
+    opacity: 0.08,
+  },
+  topRightDots: {
+    position: 'absolute',
+    top: 20,
+    right: -20,
+  },
+
+  // Checkmark styles
+  checkmarkWrapper: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  checkmarkOuterRingContainer: {
+    width: 106,
+    height: 106,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  checkmarkOuterRing: {
+    position: 'absolute',
+    width: 106,
+    height: 106,
+    borderRadius: 53,
+    borderWidth: 1.5,
+    borderColor: '#D4F1F4',
+    borderStyle: 'dashed',
+    zIndex: 1,
+  },
+  checkmarkInnerCircle: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#00ACC1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#00ACC1',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 4,
+    zIndex: 2,
+  },
+  checkmarkRipple: {
+    position: 'absolute',
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    backgroundColor: '#EBF8FA',
+    zIndex: 0,
+  },
+  sparkle: {
+    position: 'absolute',
+    zIndex: 1,
+  },
+
+  // Text section
+  textSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  welcomeText: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#0F203C',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  nameText: {
+    color: '#00BAD4',
+  },
+  accountReadyText: {
+    fontSize: 15,
+    color: '#718096',
+    fontWeight: '600',
+  },
+  journeyText: {
+    fontSize: 13,
+    color: '#718096',
+    textAlign: 'center',
+    lineHeight: 18,
+    fontWeight: '500',
+  },
+
+  // Custom Divider
+  dividerRow: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    marginVertical: 14,
+    gap: 8,
+  },
+  dividerLine: {
+    width: 20,
+    height: 1,
+    backgroundColor: '#E2E8F0',
+  },
+  dividerDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#CBD5E1',
+  },
+  dividerDiamond: {
+    width: 5,
+    height: 5,
+    transform: [{ rotate: '45deg' }],
+    backgroundColor: '#00ACC1',
   },
 
-  star: {
-    position: 'absolute',
-    borderRadius: 999,
-    backgroundColor: '#4BD5E8',
+  // Card styles
+  card: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    shadowColor: '#0F203C',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.04,
+    shadowRadius: 16,
+    elevation: 3,
+    zIndex: 10,
+    marginBottom: 20,
   },
-
-  badgeWrap: {
-    marginBottom: 36,
-  },
-  badge: {
-    width: width * 0.52,
-    height: width * 0.52,
-  },
-
-  textWrap: {
+  cardRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 60,
-    paddingHorizontal: 32,
+    paddingVertical: 14,
   },
-  title: {
-    fontSize: 28,
+  iconContainer: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#E6F8FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  cardTextContainer: {
+    flex: 1,
+  },
+  cardRowTitle: {
+    fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 10,
-    letterSpacing: 0.3,
+    color: '#0F203C',
+    marginBottom: 2,
   },
-  subtitle: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#8A9A9D',
-    textAlign: 'center',
+  cardRowSubtitle: {
+    fontSize: 11,
+    color: '#718096',
+    fontWeight: '500',
+  },
+  cardDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginHorizontal: 4,
   },
 
+  // Graphic container
+  graphicContainer: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    maxHeight: 180,
+    marginBottom: 20,
+  },
+  bookImage: {
+    width: '100%',
+    height: '100%',
+  },
+
+  // Button wrapping
   btnWrap: {
-    position: 'absolute',
-    bottom: 40,
-    left: 24,
-    right: 24,
+    width: '100%',
+    paddingBottom: 24,
+  },
+  buttonContainer: {
+    width: '100%',
   },
   button: {
-    height: 56,
-    borderRadius: 30,
+    height: 54,
+    borderRadius: 12,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 0.5,
-    borderColor: '#FDFEFE',
-    elevation: 6,
-    shadowColor: '#4BD5E8',
+    shadowColor: '#00BAD4',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.24,
-    shadowRadius: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   buttonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
-    letterSpacing: 0.4,
+    marginRight: 8,
+  },
+  buttonIcon: {
+    marginTop: 1,
   },
 });
 

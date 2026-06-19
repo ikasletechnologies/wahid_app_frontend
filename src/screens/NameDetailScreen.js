@@ -83,52 +83,7 @@ const FadeContent = ({ contentKey, children }) => {
 const NameDetailScreen = ({ route, navigation }) => {
   const { name: originalName, initialStepIndex = 0, draftProgress } = route.params;
 
-  // Intercept name 1 (Allah) with static content as requested
-  const name = useMemo(() => {
-    if (originalName.number === 1 || originalName.id === 1) {
-      return {
-        ...originalName,
-        arabic: originalName.arabic || originalName.ar || "اللَّهُ",
-        transliteration: originalName.transliteration || originalName.tr || "Allah",
-        meaning: originalName.meaning || originalName.en, // Use the dynamic meaning from the database
-        description: "Allah is the proper and personal name of the one true God. No other being is truly called by this name.\nHe is unique and completely free from any imperfection. He has no partners, no equals, and He alone deserves every form of worship.",
-        gifts: [
-          "It answers the deepest question of the fitrah: “Who is my Rabb?” by pointing clearly to the One who is necessarily existent, without beginning or end, the Rabb of all worlds.",
-          "As this name cannot be shared, pluralized, or truly applied to anyone else, it closes the doors of confusion and doubt about who deserves our obedience, fear, hope, and love.",
-          "Scholars mention that “Allah” is the all‑encompassing name that gathers within it all the beautiful Names, and many describe it as al‑Ism al‑Aʿẓam (the Greatest Name)."
-        ],
-        quran: [
-          {
-            ref: "Qur’an 7:180",
-            tr: "Allah has the most beautiful and perfect names, so call on Him using them, and remember Him through them.",
-            ar: "وَلِلَّهِ ٱلْأَسْمَآءُ ٱلْحُسْنَىٰ فَٱدْعُوهُ بِهَا"
-          },
-          {
-            ref: "Qur’an 20:14",
-            tr: "Allah tells Musa, “I am Allah, the only true God, so worship only Me and keep up the prayer so that you remember Me.”",
-            ar: "إِنَّنِيٓ أَنَا ٱللَّهُ لَآ إِلَٰهَ إِلَّآ أَنَا فَٱعْبُدْنِي وَأَقِمِ ٱلصَّلَوٰةَ لِذِكْرِي"
-          },
-          {
-            ref: "Qur’an 2:255 (Ayatul Kursi)",
-            tr: "Allah is the only true God, Ever‑Living and always taking care of all creation. Nothing makes Him drowsy or sleepy.\nEverything in the heavens and the earth belongs to Him alone. No one can intercede or speak for anyone in His presence except if He gives permission.\nHe knows everything about His creation – past, present, and future – and people only know what He allows them to know.\nHis kursī (Seat) is so vast that it covers the heavens and the earth, and taking care of them does not tire Him at all. He is the Most High, the Most Great.",
-            ar: "ٱللَّهُ لَآ إِلَٰهَ إِلَّا هُوَ ٱلْحَيُّ ٱلْقَيُّومُ\nلَا تَأْخُذُهُۥ سِنَةٌ وَلَا نَوْمٌ\nلَّهُۥ مَا فِى ٱلسَّمَٰوَٰتِ وَمَا فِى ٱلْأَرْضِ\nمَن ذَا ٱلَّذِى يَشْفَعُ عِندَهُۥٓ إِلَّا بِإِذْنِهِۦ\nيَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ\nوَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِۦٓ إِلَّا بِمَا شَآءَ\nوَسِعَ كُرْسِيُّهُ ٱلسَّمَٰوَٰتِ وَٱلْأَرْضَ\nوَلَا يَـُٔودُهُۥ حِفْظُهُمَا\nوَهُوَ ٱلْعَلِىُّ ٱلْعَظِيمُ"
-          },
-          {
-            ref: "Qur’an 20:98",
-            tr: "Your only true God is Allah; there is no god except Him, and His knowledge surrounds everything.",
-            ar: "إِنَّمَآ إِلَٰهُكُمُ ٱللَّهُ ٱلَّذِي لَآ إِلَٰهَ إِلَّا هُوَ ۚ وَسِعَ كُلَّ شَيْءٍ عِلْمًا"
-          }
-        ],
-        practicalWays: [
-          "Begin and end tasks consciously with “Bismillah” and “Alhamdulillah,” letting your heart remember that every moment is under the gaze of Allah.",
-          "Say Aʿūdhu billāhi mina sh‑shayṭāni r‑rajīm (I seek refuge in Allah from Shayṭān, the accursed) when there is waswasa (Shayṭān’s whispers pushing you towards sin), trusting that Allah protects your heart from those whispers.",
-          "When you study the other Names, see them as doors leading back to the One named “Allah,” never separate from Him."
-        ],
-        scholarlyViews: []
-      };
-    }
-    return originalName;
-  }, [originalName]);
+  const name = originalName;
   const { markAsLearned, masteredIds, revisitCounts, userReflections, incrementReadingTime, markAsDraft, removeDraft, reviewLaterIds, toggleReviewLater } = useNames();
   const { favouriteIds, toggleFavourite } = usePlaylist();
   const isFocused = useIsFocused();
@@ -229,9 +184,7 @@ const NameDetailScreen = ({ route, navigation }) => {
     if (name.practicalWays && name.practicalWays.length > 0) {
       s.push({ type: 'practical' });
     }
-    if (name.scholarlyViews && name.scholarlyViews.length > 0) {
-      s.push({ type: 'scholarly' });
-    }
+
 
     if (revisits < 2 && !isSaturated) {
       s.push({ type: 'reflection' });
@@ -1373,7 +1326,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                     {currentStep.type === 'mastery' && renderMastery()}
                   </Animated.View>
                   {currentStep.type === 'reflection' && (
-                    <View style={{ height: hs(220) + (keyboardHeight > 0 ? keyboardHeight * 0.5 : 0) }} />
+                    <View style={{ height: hs(40) }} />
                   )}
                 </ScrollView>
 

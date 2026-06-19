@@ -1,15 +1,17 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, ScrollView,
-  ActivityIndicator, StatusBar, Dimensions,
+  ActivityIndicator, StatusBar, Dimensions, Animated, Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
+import Svg, { Circle } from 'react-native-svg';
 import { useAuth } from '../context/AuthContext';
+import { useAppTheme } from '../context/ThemeContext';
 
-const { height } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const COUNTRIES = [
   { code: '+91',  name: 'India' },
@@ -23,8 +25,34 @@ const COUNTRIES = [
 
 const OTP_LENGTH = 6;
 
+const DecorativeBackground = ({ isDark }) => (
+  <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+    {/* Soft top-left glow */}
+    <View style={[styles.topLeftGlow, isDark && { backgroundColor: '#00ACC1', opacity: 0.05 }]} />
+    
+    {/* Soft top-right grid of dots */}
+    <View style={styles.topRightDots}>
+      <Svg width={120} height={120} viewBox="0 0 120 120" fill="none">
+        {Array.from({ length: 6 }).map((_, r) =>
+          Array.from({ length: 6 }).map((_, c) => (
+            <Circle
+              key={`${r}-${c}`}
+              cx={20 + c * 16}
+              cy={20 + r * 16}
+              r={2}
+              fill="#03B7CE"
+              opacity={isDark ? 0.08 - (r + c) * 0.005 : 0.15 - (r + c) * 0.01}
+            />
+          ))
+        )}
+      </Svg>
+    </View>
+  </View>
+);
+
 const ForgotPasswordScreen = ({ navigation }) => {
   const { checkPhone, sendOTP, verifyOTP, resetPassword, login } = useAuth();
+  const { isDark, colors } = useAppTheme();
 
   const [step, setStep] = useState('phone'); // 'phone' | 'otp' | 'newPassword'
 
@@ -51,6 +79,41 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
   const [loading, setLoading]     = useState(false);
   const [resending, setResending] = useState(false);
+  const [timer, setTimer]         = useState(30);
+
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    let intervalId;
+    if (step === 'otp' && timer > 0) {
+      intervalId = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [step, timer]);
+
+  useEffect(() => {
+    // Trigger animation when step changes
+    fadeAnim.setValue(0);
+    slideAnim.setValue(20);
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, [step]);
 
   const handleBack = () => {
     if (step === 'otp')         return setStep('phone');
@@ -90,6 +153,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
     setFullPhone(fp);
     setOtpValue('');
     setStep('otp');
+    setTimer(30);
     Toast.show({ type: 'success', text1: 'OTP Sent', text2: `Code sent to ${fp}` });
   };
 
@@ -114,11 +178,13 @@ const ForgotPasswordScreen = ({ navigation }) => {
   };
 
   const handleResend = async () => {
+    if (timer > 0) return;
     setResending(true);
     const result = await sendOTP(fullPhone);
     setResending(false);
     if (result.success) {
       Toast.show({ type: 'success', text1: 'Code Sent', text2: 'OTP has been resent.' });
+      setTimer(30);
     }
   };
 
@@ -133,8 +199,11 @@ const ForgotPasswordScreen = ({ navigation }) => {
       Toast.show({ type: 'error', text1: 'Mismatch', text2: 'Passwords do not match.' });
       return;
     }
-    if (newPassword.length < 6) {
-      Toast.show({ type: 'error', text1: 'Too Short', text2: 'Password must be at least 6 characters.' });
+    const hasMinLength = newPassword.length >= 8;
+    const hasNumber = /\d/.test(newPassword);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+    if (!hasMinLength || !hasNumber || !hasSpecialChar) {
+      Toast.show({ type: 'error', text1: 'Weak Password', text2: 'Password must meet all complexity requirements.' });
       return;
     }
     setLoading(true);
@@ -157,24 +226,46 @@ const ForgotPasswordScreen = ({ navigation }) => {
   // ── Render helpers ────────────────────────────────────────────────────────
 
   const renderPhone = () => (
-    <>
+    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
       <View style={styles.header}>
-        <Text style={styles.title}>Reset Password</Text>
-        <Text style={styles.subtitle}>Enter your phone number to receive an OTP</Text>
+        <Image
+          source={require('../../assets/lock.png')}
+          style={styles.lockImage}
+          resizeMode="contain"
+        />
+        <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>
+          Forgot <Text style={styles.titleAccent}>Password?</Text>
+        </Text>
+        <Text style={[styles.subtitle, { color: isDark ? '#A0AEC0' : '#718096' }]}>
+          Don’t worry! Enter your mobile number{'\n'}and we’ll send you a verification code.
+        </Text>
       </View>
 
-      <View style={styles.form}>
-        <Text style={styles.label}>Phone Number</Text>
-        <View style={[styles.inputRow, phoneFocused && styles.inputRowFocused]}>
+      <View style={[
+        styles.card,
+        {
+          backgroundColor: isDark ? '#111111' : '#FFFFFF',
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
+        }
+      ]}>
+        <Text style={[styles.label, { color: isDark ? '#E2E8F0' : '#0F203C' }]}>Mobile Number</Text>
+        <View style={[
+          styles.inputRow,
+          {
+            backgroundColor: isDark ? '#161616' : '#FFFFFF',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0'
+          },
+          phoneFocused && (isDark ? { borderColor: '#00ACC1', backgroundColor: '#191919' } : styles.inputRowFocused)
+        ]}>
           <TouchableOpacity style={styles.countryBtn} onPress={() => setShowPicker(v => !v)} activeOpacity={0.7}>
-            <Text style={styles.countryCode}>{country.code}</Text>
-            <Ionicons name="chevron-down" size={13} color="#aaa" style={{ marginLeft: 3 }} />
+            <Text style={[styles.countryCode, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>{country.code}</Text>
+            <Ionicons name="chevron-down" size={14} color="#00ACC1" style={{ marginLeft: 4 }} />
           </TouchableOpacity>
-          <View style={styles.divider} />
+          <View style={[styles.inputDivider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.12)' }]} />
           <TextInput
-            style={styles.input}
-            placeholder="Enter a phone number"
-            placeholderTextColor="#4A5568"
+            style={[styles.input, { color: isDark ? '#FFFFFF' : '#0F203C' }]}
+            placeholder="Enter mobile number"
+            placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
             value={phone}
             onChangeText={setPhone}
             onFocus={() => setPhoneFocused(true)}
@@ -184,181 +275,394 @@ const ForgotPasswordScreen = ({ navigation }) => {
             onSubmitEditing={handleSendOTP}
             selectionColor="#03B7CE"
           />
+          <Ionicons name="phone-portrait-outline" size={20} color="#00ACC1" style={styles.inputIcon} />
         </View>
 
         {showPicker && (
-          <View style={styles.picker}>
-            {COUNTRIES.map(c => (
-              <TouchableOpacity key={c.code} style={styles.pickerItem} onPress={() => { setCountry(c); setShowPicker(false); }}>
-                <Text style={styles.pickerCode}>{c.code}</Text>
-                <Text style={styles.pickerName}>{c.name}</Text>
-              </TouchableOpacity>
-            ))}
+          <View style={[styles.picker, isDark && { backgroundColor: '#161616', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
+            <ScrollView style={styles.pickerScroll} nestedScrollEnabled={true}>
+              {COUNTRIES.map(c => (
+                <TouchableOpacity key={c.code} style={styles.pickerItem} onPress={() => { setCountry(c); setShowPicker(false); }}>
+                  <Text style={[styles.pickerCode, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>{c.code}</Text>
+                  <Text style={[styles.pickerName, { color: isDark ? '#A0AEC0' : '#718096' }]}>{c.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         )}
-      </View>
 
-      <View style={styles.footer}>
-        <TouchableOpacity onPress={handleSendOTP} disabled={loading} activeOpacity={0.85}>
+        <TouchableOpacity onPress={handleSendOTP} disabled={loading} activeOpacity={0.85} style={styles.buttonWrapper}>
           <LinearGradient
-            colors={['#02889D', '#03B7CE', '#4BD5E8']}
-            locations={[0, 0.5048, 1]}
-            start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+            colors={['#00BAD4', '#0097AB']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
             style={styles.button}
           >
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Send OTP</Text>}
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <>
+                <Text style={styles.buttonText}>Send OTP</Text>
+                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" style={styles.buttonIcon} />
+              </>
+            )}
           </LinearGradient>
         </TouchableOpacity>
       </View>
-    </>
+
+      <View style={styles.rememberRow}>
+        <View style={[styles.rememberLine, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]} />
+        <Text style={[styles.rememberText, isDark && { color: '#94A3B8' }]}>Remember your password?</Text>
+        <View style={[styles.rememberLine, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]} />
+      </View>
+
+      <TouchableOpacity onPress={handleBack} style={styles.backLink} activeOpacity={0.7}>
+        <Text style={styles.backLinkText}>Back to Sign In</Text>
+        <Ionicons name="arrow-forward" size={16} color="#00ACC1" style={styles.backLinkIcon} />
+      </TouchableOpacity>
+    </Animated.View>
   );
 
-  const renderOTP = () => (
-    <>
-      <View style={styles.header}>
-        <Text style={styles.title}>Verify OTP</Text>
-        <Text style={styles.subtitle}>Enter the 6-digit code sent to {fullPhone}</Text>
-      </View>
-
-      <View style={styles.form}>
-        <Text style={styles.label}>Enter OTP</Text>
-        <TouchableOpacity activeOpacity={1} onPress={() => otpRef.current?.focus()} style={styles.otpRow}>
-          {Array(OTP_LENGTH).fill(0).map((_, i) => {
-            const isCursor = otpFocused && otpValue.length === i;
-            const isFilled = i < otpValue.length;
-            return (
-              <View key={i} style={[styles.otpBox, (isFilled || isCursor) && styles.otpBoxActive]}>
-                <Text style={styles.otpDigit}>{otpValue[i] || ''}</Text>
-              </View>
-            );
-          })}
-          <TextInput
-            ref={otpRef}
-            style={styles.hiddenInput}
-            value={otpValue}
-            onChangeText={handleOtpChange}
-            onFocus={() => setOtpFocused(true)}
-            onBlur={() => setOtpFocused(false)}
-            maxLength={OTP_LENGTH}
-            keyboardType="number-pad"
-            textContentType="oneTimeCode"
-            autoComplete="sms-otp"
-            autoFocus
-            caretHidden
+  const renderOTP = () => {
+    const formattedTimer = `00:${timer < 10 ? `0${timer}` : timer}`;
+    return (
+      <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+        <View style={styles.header}>
+          <Image
+            source={require('../../assets/verify.png')}
+            style={styles.lockImage}
+            resizeMode="contain"
           />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.footer}>
-        <View style={styles.resendPrompt}>
-          <Text style={styles.promptText}>Didn't receive an OTP? </Text>
-          <TouchableOpacity onPress={handleResend} disabled={resending} activeOpacity={0.7}>
-            {resending
-              ? <ActivityIndicator size="small" color="#03B7CE" />
-              : <Text style={styles.resendText}>Resend OTP</Text>
-            }
-          </TouchableOpacity>
+          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>
+            Verify <Text style={{ color: '#03B7CE' }}>OTP</Text>
+          </Text>
+          <Text style={[styles.subtitle, { color: isDark ? '#A0AEC0' : '#718096' }]}>
+            Enter the 6-digit code sent to{'\n'}
+            <Text style={{ color: '#03B7CE', fontWeight: '700' }}>{fullPhone}</Text>
+          </Text>
         </View>
-        <TouchableOpacity
-          onPress={() => handleVerifyOTP(otpValue)}
-          disabled={loading || otpValue.length < OTP_LENGTH}
-          activeOpacity={0.85}
-        >
-          <LinearGradient
-            colors={['#02889D', '#03B7CE', '#4BD5E8']}
-            locations={[0, 0.5048, 1]}
-            start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
-            style={styles.button}
+
+        <View style={[
+          styles.card,
+          {
+            backgroundColor: isDark ? '#111111' : '#FFFFFF',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
+          }
+        ]}>
+          <TouchableOpacity activeOpacity={1} onPress={() => otpRef.current?.focus()} style={styles.otpRow}>
+            {Array(OTP_LENGTH).fill(0).map((_, i) => {
+              const isCursor = otpFocused && otpValue.length === i;
+              const isFilled = i < otpValue.length;
+              return (
+                <View
+                  key={i}
+                  style={[
+                    styles.otpBox,
+                    {
+                      backgroundColor: isDark ? '#161616' : '#FFFFFF',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0',
+                    },
+                    isCursor && { borderColor: '#03B7CE', borderWidth: 2 },
+                    isFilled && { borderColor: isDark ? '#03B7CE' : '#E2E8F0' }
+                  ]}
+                >
+                  {isCursor ? (
+                    <Text style={[styles.otpDigit, { color: '#03B7CE' }]}>|</Text>
+                  ) : (
+                    <Text style={[
+                      styles.otpDigit,
+                      { color: isDark ? '#FFFFFF' : '#0F203C' },
+                      otpValue[i] === undefined && { color: isDark ? '#4A5568' : '#718096', fontSize: 28, marginTop: -4 }
+                    ]}>
+                      {otpValue[i] !== undefined ? otpValue[i] : '•'}
+                    </Text>
+                  )}
+                </View>
+              );
+            })}
+            <TextInput
+              ref={otpRef}
+              style={styles.hiddenInput}
+              value={otpValue}
+              onChangeText={handleOtpChange}
+              onFocus={() => setOtpFocused(true)}
+              onBlur={() => setOtpFocused(false)}
+              maxLength={OTP_LENGTH}
+              keyboardType="number-pad"
+              textContentType="oneTimeCode"
+              autoComplete="sms-otp"
+              autoFocus
+              caretHidden
+            />
+          </TouchableOpacity>
+
+          <View style={styles.resendContainer}>
+            {timer > 0 ? (
+              <Text style={[styles.resendPromptText, { color: isDark ? '#A0AEC0' : '#718096', textAlign: 'center' }]}>
+                Resend OTP in <Text style={{ color: '#03B7CE', fontWeight: '700' }}>{formattedTimer}</Text>
+              </Text>
+            ) : (
+              <TouchableOpacity onPress={handleResend} disabled={resending} activeOpacity={0.7}>
+                {resending ? (
+                  <ActivityIndicator size="small" color="#03B7CE" />
+                ) : (
+                  <Text style={styles.resendLinkText}>Resend OTP</Text>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <TouchableOpacity
+            onPress={() => handleVerifyOTP(otpValue)}
+            disabled={loading || otpValue.length < OTP_LENGTH}
+            activeOpacity={0.85}
+            style={styles.buttonWrapper}
           >
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Verify</Text>}
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
-    </>
-  );
-
-  const renderNewPassword = () => (
-    <>
-      <View style={styles.header}>
-        <Text style={styles.title}>New Password</Text>
-        <Text style={styles.subtitle}>Create a strong new password</Text>
-      </View>
-
-      <View style={styles.form}>
-        <Text style={styles.label}>New Password</Text>
-        <View style={[styles.inputRow, pwFocused === 'new' && styles.inputRowFocused]}>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter new password"
-            placeholderTextColor="#4A5568"
-            value={newPassword}
-            onChangeText={setNewPassword}
-            onFocus={() => setPwFocused('new')}
-            onBlur={() => setPwFocused(null)}
-            secureTextEntry={!showNewPassword}
-            returnKeyType="next"
-            onSubmitEditing={() => confirmRef.current?.focus()}
-            selectionColor="#03B7CE"
-          />
-          <TouchableOpacity onPress={() => setShowNewPassword(v => !v)} style={styles.eyeBtn} activeOpacity={0.7}>
-            <Ionicons name={showNewPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#7A8FA6" />
+            <LinearGradient
+              colors={['#00BAD4', '#0097AB']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.button}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.buttonText}>Verify OTP</Text>
+                  <Ionicons name="arrow-forward" size={18} color="#FFFFFF" style={styles.buttonIcon} />
+                </>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
         </View>
 
-        <Text style={[styles.label, { marginTop: 22 }]}>Confirm Password</Text>
-        <View style={[styles.inputRow, pwFocused === 'confirm' && styles.inputRowFocused]}>
-          <TextInput
-            ref={confirmRef}
-            style={styles.input}
-            placeholder="Confirm new password"
-            placeholderTextColor="#4A5568"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            onFocus={() => setPwFocused('confirm')}
-            onBlur={() => setPwFocused(null)}
-            secureTextEntry={!showConfirmPassword}
-            returnKeyType="done"
-            onSubmitEditing={handleResetPassword}
-            selectionColor="#03B7CE"
+        <TouchableOpacity onPress={handleBack} style={styles.backLink} activeOpacity={0.7}>
+          <Text style={styles.backLinkText}>Back to Phone</Text>
+          <Ionicons name="arrow-forward" size={16} color="#00ACC1" style={styles.backLinkIcon} />
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
+  const renderNewPassword = () => {
+    const hasMinLength = newPassword.length >= 8;
+    const hasNumber = /\d/.test(newPassword);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+    const score = (hasMinLength ? 1 : 0) + (hasNumber ? 1 : 0) + (hasSpecialChar ? 1 : 0);
+
+    let strengthText = '';
+    let strengthColor = '#E2E8F0';
+    if (score === 1) {
+      strengthText = 'Weak';
+      strengthColor = '#EF4444';
+    } else if (score === 2) {
+      strengthText = 'Medium';
+      strengthColor = '#F59E0B';
+    } else if (score === 3) {
+      strengthText = 'Strong';
+      strengthColor = '#03B7CE';
+    }
+
+    return (
+      <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+        <View style={styles.header}>
+          <Image
+            source={require('../../assets/lockwithkey.png')}
+            style={styles.lockImage}
+            resizeMode="contain"
           />
-          <TouchableOpacity onPress={() => setShowConfirmPassword(v => !v)} style={styles.eyeBtn} activeOpacity={0.7}>
-            <Ionicons name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color="#7A8FA6" />
+          <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>
+            Create New <Text style={{ color: '#03B7CE' }}>Password</Text>
+          </Text>
+          <Text style={[styles.subtitle, { color: isDark ? '#A0AEC0' : '#718096' }]}>
+            Your new password must be{'\n'}different from previous passwords.
+          </Text>
+        </View>
+
+        <View style={[
+          styles.card,
+          {
+            backgroundColor: isDark ? '#111111' : '#FFFFFF',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
+          }
+        ]}>
+          {/* New Password Input */}
+          <View style={[
+            styles.inputRowCard,
+            {
+              backgroundColor: isDark ? '#161616' : '#FFFFFF',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0'
+            },
+            pwFocused === 'new' && { borderColor: '#00ACC1', borderWidth: 1.5 }
+          ]}>
+            <Ionicons name="lock-closed-outline" size={20} color={isDark ? '#64748B' : '#7A8FA6'} style={styles.inputCardIcon} />
+            <View style={styles.inputCardContent}>
+              <Text style={[styles.inputCardLabel, { color: isDark ? '#64748B' : '#718096' }]}>New Password</Text>
+              <TextInput
+                style={[styles.inputCardField, { color: isDark ? '#FFFFFF' : '#0F203C' }]}
+                placeholder="••••••••"
+                placeholderTextColor={isDark ? '#4A5568' : '#A0AEC0'}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                onFocus={() => setPwFocused('new')}
+                onBlur={() => setPwFocused(null)}
+                secureTextEntry={!showNewPassword}
+                returnKeyType="next"
+                onSubmitEditing={() => confirmRef.current?.focus()}
+                selectionColor="#03B7CE"
+              />
+            </View>
+            <TouchableOpacity onPress={() => setShowNewPassword(v => !v)} style={styles.eyeBtn} activeOpacity={0.7}>
+              <Ionicons name={showNewPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={isDark ? '#64748B' : '#7A8FA6'} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Confirm Password Input */}
+          <View style={[
+            styles.inputRowCard,
+            {
+              backgroundColor: isDark ? '#161616' : '#FFFFFF',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0',
+              marginTop: 16
+            },
+            pwFocused === 'confirm' && { borderColor: '#00ACC1', borderWidth: 1.5 }
+          ]}>
+            <Ionicons name="lock-closed-outline" size={20} color={isDark ? '#64748B' : '#7A8FA6'} style={styles.inputCardIcon} />
+            <View style={styles.inputCardContent}>
+              <Text style={[styles.inputCardLabel, { color: isDark ? '#64748B' : '#718096' }]}>Confirm Password</Text>
+              <TextInput
+                ref={confirmRef}
+                style={[styles.inputCardField, { color: isDark ? '#FFFFFF' : '#0F203C' }]}
+                placeholder="••••••••"
+                placeholderTextColor={isDark ? '#4A5568' : '#A0AEC0'}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                onFocus={() => setPwFocused('confirm')}
+                onBlur={() => setPwFocused(null)}
+                secureTextEntry={!showConfirmPassword}
+                returnKeyType="done"
+                onSubmitEditing={handleResetPassword}
+                selectionColor="#03B7CE"
+              />
+            </View>
+            <TouchableOpacity onPress={() => setShowConfirmPassword(v => !v)} style={styles.eyeBtn} activeOpacity={0.7}>
+              <Ionicons name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={isDark ? '#64748B' : '#7A8FA6'} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Password Strength Indicator */}
+          <View style={styles.strengthContainer}>
+            <View style={styles.strengthHeader}>
+              <Text style={[styles.strengthTitle, { color: isDark ? '#A0AEC0' : '#718096' }]}>Password Strength</Text>
+              <Text style={[styles.strengthLabel, { color: score > 0 ? strengthColor : (isDark ? '#4A5568' : '#A0AEC0') }]}>
+                {score > 0 ? strengthText : 'Too Short'}
+              </Text>
+            </View>
+            <View style={styles.strengthBarsRow}>
+              {Array.from({ length: 4 }).map((_, i) => {
+                const filled = score === 1 ? i === 0 : score === 2 ? i < 2 : score === 3 ? i < 4 : false;
+                return (
+                  <View
+                    key={i}
+                    style={[
+                      styles.strengthBar,
+                      { backgroundColor: isDark ? '#1F2937' : '#E5E7EB' },
+                      filled && { backgroundColor: strengthColor }
+                    ]}
+                  />
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Requirements Checklist */}
+          <View style={styles.requirementsContainer}>
+            <View style={styles.requirementRow}>
+              <Ionicons
+                name="checkmark-circle"
+                size={18}
+                color={hasMinLength ? '#03B7CE' : (isDark ? '#1F2937' : '#E5E7EB')}
+              />
+              <Text style={[styles.requirementText, { color: isDark ? '#A0AEC0' : '#475569' }, hasMinLength && { color: isDark ? '#FFFFFF' : '#0F203C' }]}>
+                Minimum 8 characters
+              </Text>
+            </View>
+            <View style={styles.requirementRow}>
+              <Ionicons
+                name="checkmark-circle"
+                size={18}
+                color={hasNumber ? '#03B7CE' : (isDark ? '#1F2937' : '#E5E7EB')}
+              />
+              <Text style={[styles.requirementText, { color: isDark ? '#A0AEC0' : '#475569' }, hasNumber && { color: isDark ? '#FFFFFF' : '#0F203C' }]}>
+                At least 1 number
+              </Text>
+            </View>
+            <View style={styles.requirementRow}>
+              <Ionicons
+                name="checkmark-circle"
+                size={18}
+                color={hasSpecialChar ? '#03B7CE' : (isDark ? '#1F2937' : '#E5E7EB')}
+              />
+              <Text style={[styles.requirementText, { color: isDark ? '#A0AEC0' : '#475569' }, hasSpecialChar && { color: isDark ? '#FFFFFF' : '#0F203C' }]}>
+                At least 1 special character
+              </Text>
+            </View>
+          </View>
+
+          {/* Reset Button */}
+          <TouchableOpacity onPress={handleResetPassword} disabled={loading} activeOpacity={0.85} style={styles.buttonWrapper}>
+            <LinearGradient
+              colors={['#00BAD4', '#0097AB']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.button}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.buttonText}>Reset Password</Text>
+                  <Ionicons name="arrow-forward" size={18} color="#FFFFFF" style={styles.buttonIcon} />
+                </>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
         </View>
-      </View>
 
-      <View style={styles.footer}>
-        <TouchableOpacity onPress={handleResetPassword} disabled={loading} activeOpacity={0.85}>
-          <LinearGradient
-            colors={['#02889D', '#03B7CE', '#4BD5E8']}
-            locations={[0, 0.5048, 1]}
-            start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
-            style={styles.button}
-          >
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Reset Password</Text>}
-          </LinearGradient>
+        <TouchableOpacity onPress={handleBack} style={styles.backLink} activeOpacity={0.7}>
+          <Text style={styles.backLinkText}>Back to Verification</Text>
+          <Ionicons name="arrow-forward" size={16} color="#00ACC1" style={styles.backLinkIcon} />
         </TouchableOpacity>
-      </View>
-    </>
-  );
+      </Animated.View>
+    );
+  };
 
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-      <LinearGradient
-        colors={['#02889D', '#041518', '#000000']}
-        locations={[0, 0.42, 1]}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+    <LinearGradient
+      colors={isDark ? ['#041012', '#080E10', '#050505'] : ['#EBF8FA', '#F4FDFE', '#FFFFFF']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.root}
+    >
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
+      <DecorativeBackground isDark={isDark} />
+
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.kav}>
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <TouchableOpacity style={styles.backBtn} onPress={handleBack} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={22} color="#fff" />
+          {/* Header Fixed elements - Back button */}
+          <TouchableOpacity
+            style={[
+              styles.backBtn,
+              isDark && { backgroundColor: '#111111', shadowColor: '#000', shadowOpacity: 0.1 }
+            ]}
+            onPress={handleBack}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={20} color="#00ACC1" />
           </TouchableOpacity>
 
           {step === 'phone'       && renderPhone()}
@@ -366,69 +670,188 @@ const ForgotPasswordScreen = ({ navigation }) => {
           {step === 'newPassword' && renderNewPassword()}
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#000' },
+  root: { flex: 1 },
   kav:  { flex: 1 },
+
+  // New Password Custom Styles
+  inputRowCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    height: 60,
+  },
+  inputCardIcon: {
+    marginRight: 12,
+  },
+  inputCardContent: {
+    flex: 1,
+    justifyContent: 'center',
+    height: '100%',
+  },
+  inputCardLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    marginBottom: 0,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  inputCardField: {
+    fontSize: 14,
+    fontWeight: '600',
+    padding: 0,
+    margin: 0,
+    height: 20,
+  },
+  strengthContainer: {
+    marginTop: 16,
+    width: '100%',
+  },
+  strengthHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  strengthTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  strengthLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  strengthBarsRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 16,
+  },
+  strengthBar: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+  },
+  requirementsContainer: {
+    marginBottom: 16,
+    gap: 8,
+  },
+  requirementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  requirementText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
 
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: height * 0.08,
+    paddingTop: height * 0.06,
     paddingBottom: 36,
   },
 
+  // Back Button
   backBtn: {
-    alignSelf: 'flex-start',
-    padding: 4,
-    marginBottom: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    shadowColor: '#0F203C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
 
+  // Decorative Background
+  topLeftGlow: {
+    position: 'absolute',
+    top: -50,
+    left: -50,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: '#03B7CE',
+    opacity: 0.08,
+  },
+  topRightDots: {
+    position: 'absolute',
+    top: 20,
+    right: -20,
+  },
+
+  // Header styles
   header: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 24,
+  },
+  lockImage: {
+    width: 200,
+    height: 170,
+    marginBottom: 16,
   },
   title: {
-    fontSize: 30,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#0F203C',
     textAlign: 'center',
-    marginBottom: 8,
-    letterSpacing: 0.3,
+    marginBottom: 6,
+  },
+  titleAccent: {
+    color: '#00BAD4',
   },
   subtitle: {
     fontSize: 13,
-    fontWeight: '400',
-    color: '#8A9A9D',
+    color: '#718096',
     textAlign: 'center',
-    paddingHorizontal: 8,
+    lineHeight: 18,
+    fontWeight: '500',
+    paddingHorizontal: 16,
   },
 
-  form: {
-    marginBottom: 32,
+  // Card styles
+  card: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#0F203C',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.04,
+    shadowRadius: 16,
+    elevation: 3,
+    marginBottom: 24,
   },
   label: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0F203C',
     marginBottom: 10,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0D1517',
-    borderWidth: 1.5,
-    borderColor: 'rgba(3,183,206,0.3)',
-    borderRadius: 28,
-    height: 56,
-    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    height: 52,
+    paddingHorizontal: 14,
+    position: 'relative',
   },
   inputRowFocused: {
-    borderColor: '#03B7CE',
-    backgroundColor: '#091A1E',
+    borderColor: '#00ACC1',
   },
   countryBtn: {
     flexDirection: 'row',
@@ -436,112 +859,163 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   countryCode: {
-    color: '#FFFFFF',
+    color: '#0F203C',
     fontSize: 14,
     fontWeight: '600',
   },
-  divider: {
+  inputDivider: {
     width: 1,
-    height: 22,
-    backgroundColor: '#2A3540',
+    height: 20,
+    backgroundColor: '#E2E8F0',
     marginRight: 12,
   },
   input: {
     flex: 1,
-    color: '#FFFFFF',
-    fontSize: 15,
+    color: '#0F203C',
+    fontSize: 14,
     height: '100%',
+  },
+  inputIcon: {
+    marginLeft: 6,
   },
   eyeBtn: {
     padding: 6,
   },
 
+  // Picker
   picker: {
-    backgroundColor: '#141E22',
-    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     marginTop: 6,
-    paddingVertical: 6,
     borderWidth: 1,
-    borderColor: 'rgba(3,183,206,0.2)',
+    borderColor: '#E2E8F0',
+    maxHeight: 150,
+    zIndex: 100,
+  },
+  pickerScroll: {
+    paddingVertical: 6,
   },
   pickerItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 11,
-    paddingHorizontal: 18,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     gap: 10,
   },
-  pickerCode: { color: '#fff', fontSize: 13, fontWeight: '600', width: 44 },
-  pickerName: { color: '#8A9A9D', fontSize: 13 },
+  pickerCode: { color: '#0F203C', fontSize: 13, fontWeight: '600', width: 44 },
+  pickerName: { color: '#718096', fontSize: 13 },
 
+  // OTP Styles
   otpRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 8,
+    marginBottom: 14,
   },
   otpBox: {
     flex: 1,
-    height: 56,
-    backgroundColor: '#0D1517',
-    borderWidth: 1.5,
-    borderColor: 'rgba(3,183,206,0.25)',
-    borderRadius: 14,
+    height: 50,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   otpBoxActive: {
-    borderColor: '#03B7CE',
-    backgroundColor: '#091A1E',
+    borderColor: '#00ACC1',
+    backgroundColor: '#F4FDFE',
   },
   otpDigit: {
-    color: '#fff',
-    fontSize: 20,
+    color: '#0F203C',
+    fontSize: 18,
     fontWeight: '700',
   },
   hiddenInput: {
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
-    opacity: 1,
-    color: 'transparent',
-    backgroundColor: 'transparent',
+    opacity: 0,
   },
 
-  footer: {
-    marginTop: 'auto',
-  },
-  resendPrompt: {
+  // Resend OTP
+  resendContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 22,
+    marginBottom: 16,
   },
-  promptText: {
-    color: '#8A9A9D',
-    fontSize: 13,
+  resendPromptText: {
+    color: '#718096',
+    fontSize: 12,
   },
-  resendText: {
-    color: '#03B7CE',
-    fontSize: 13,
+  resendLinkText: {
+    color: '#00ACC1',
+    fontSize: 12,
     fontWeight: '700',
+  },
+
+  // Button Wrapper
+  buttonWrapper: {
+    marginTop: 8,
+    width: '100%',
   },
   button: {
-    height: 56,
-    borderRadius: 30,
+    height: 52,
+    borderRadius: 12,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 0.5,
-    borderColor: '#FDFEFE',
-    elevation: 6,
-    shadowColor: '#4BD5E8',
+    shadowColor: '#00BAD4',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.24,
-    shadowRadius: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    marginRight: 6,
+  },
+  buttonIcon: {
+    marginTop: 1,
+  },
+
+  // Divider for footer
+  rememberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    marginBottom: 16,
+    gap: 10,
+  },
+  rememberLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E2E8F0',
+  },
+  rememberText: {
+    color: '#718096',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+
+  // Back Link
+  backLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    gap: 4,
+  },
+  backLinkText: {
+    color: '#00ACC1',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  backLinkIcon: {
+    marginTop: 1,
   },
 });
 
