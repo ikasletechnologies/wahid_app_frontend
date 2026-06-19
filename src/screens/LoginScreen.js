@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, ScrollView,
@@ -11,6 +11,10 @@ import { useAppTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Polygon } from 'react-native-svg';
+import { useGoogleAuth } from '../hooks/useGoogleAuth';
+import { authenticateWithGoogle } from '../services/auth/googleAuth';
+import { useFacebookAuth } from '../hooks/useFacebookAuth';
+import { loginWithFacebook } from '../services/auth/facebookAuth';
 
 const { width, height } = Dimensions.get('window');
 
@@ -46,9 +50,110 @@ const DecorativeBackground = ({ isDark }) => (
 );
 
 const LoginScreen = ({ navigation, route }) => {
-  const { login } = useAuth();
+  const { login, completeLogin } = useAuth();
   const { isDark, colors } = useAppTheme();
   const { identifier: initialIdentifier } = route.params || {};
+
+  const { promptAsync, googleAccessToken, error: googleError, loading: googleAuthLoading } = useGoogleAuth();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const isGoogleLoading = googleAuthLoading || googleLoading;
+
+  useEffect(() => {
+    if (googleError) {
+      Toast.show({
+        type: 'error',
+        text1: 'Google Auth',
+        text2: googleError,
+      });
+    }
+  }, [googleError]);
+
+  useEffect(() => {
+    const handleGoogleAuthBackend = async () => {
+      if (googleAccessToken) {
+        setGoogleLoading(true);
+        try {
+          const response = await authenticateWithGoogle(googleAccessToken);
+          if (response.success) {
+            await completeLogin(response.user, response.token || response.accessToken, response.refreshToken);
+            Toast.show({
+              type: 'success',
+              text1: 'Welcome back!',
+              text2: 'Signed in with Google successfully.'
+            });
+            // Satisfying requirement 9: Navigate to Home screen after successful login.
+            navigation.navigate('Main', { screen: 'Home' });
+          } else {
+            Toast.show({
+              type: 'error',
+              text1: 'Google Auth Error',
+              text2: response.message || 'Verification failed.'
+            });
+          }
+        } catch (error) {
+          Toast.show({
+            type: 'error',
+            text1: 'Google Auth Error',
+            text2: error.response?.data?.message || error.message || 'Something went wrong.'
+          });
+        } finally {
+          setGoogleLoading(false);
+        }
+      }
+    };
+
+    handleGoogleAuthBackend();
+  }, [googleAccessToken]);
+
+  const { promptAsync: promptFacebookAsync, user: facebookUser, error: facebookError, loading: facebookAuthLoading } = useFacebookAuth();
+  const [facebookLoading, setFacebookLoading] = useState(false);
+  const isFacebookLoading = facebookAuthLoading || facebookLoading;
+
+  useEffect(() => {
+    if (facebookError) {
+      Toast.show({
+        type: 'error',
+        text1: 'Facebook Auth',
+        text2: facebookError,
+      });
+    }
+  }, [facebookError]);
+
+  useEffect(() => {
+    const handleFacebookAuthBackend = async () => {
+      if (facebookUser?.accessToken) {
+        setFacebookLoading(true);
+        try {
+          const response = await loginWithFacebook(facebookUser.accessToken);
+          if (response.success) {
+            await completeLogin(response.user, response.token || response.accessToken, response.refreshToken);
+            Toast.show({
+              type: 'success',
+              text1: 'Welcome back!',
+              text2: 'Signed in with Facebook successfully.'
+            });
+            navigation.navigate('Main', { screen: 'Home' });
+          } else {
+            Toast.show({
+              type: 'error',
+              text1: 'Facebook Auth Error',
+              text2: response.message || 'Verification failed.'
+            });
+          }
+        } catch (error) {
+          Toast.show({
+            type: 'error',
+            text1: 'Facebook Auth Error',
+            text2: error.response?.data?.message || error.message || 'Something went wrong.'
+          });
+        } finally {
+          setFacebookLoading(false);
+        }
+      }
+    };
+
+    handleFacebookAuthBackend();
+  }, [facebookUser]);
 
   const [country, setCountry] = useState(() => {
     if (initialIdentifier?.startsWith('+')) {
@@ -241,15 +346,29 @@ const LoginScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.socialContainer}>
-            <TouchableOpacity style={[
-              styles.socialBtn,
-              {
-                backgroundColor: isDark ? '#111111' : '#FFFFFF',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
-              }
-            ]} activeOpacity={0.7}>
-              <Ionicons name="logo-google" size={20} color="#EA4335" style={styles.socialIcon} />
-              <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>Continue with Google</Text>
+            <TouchableOpacity 
+              style={[
+                styles.socialBtn,
+                {
+                  backgroundColor: isDark ? '#111111' : '#FFFFFF',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
+                }
+              ]} 
+              activeOpacity={0.7}
+              onPress={() => promptAsync()}
+              disabled={loading || isGoogleLoading}
+            >
+              {isGoogleLoading ? (
+                <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color="#EA4335" />
+                  <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C', marginLeft: 8 }]}>Connecting...</Text>
+                </View>
+              ) : (
+                <>
+                  <Ionicons name="logo-google" size={20} color="#EA4335" style={styles.socialIcon} />
+                  <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>Continue with Google</Text>
+                </>
+              )}
             </TouchableOpacity>
             <TouchableOpacity style={[
               styles.socialBtn,
@@ -261,15 +380,29 @@ const LoginScreen = ({ navigation, route }) => {
               <Ionicons name="logo-apple" size={20} color={isDark ? '#FFFFFF' : '#000000'} style={styles.socialIcon} />
               <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>Continue with Apple</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[
-              styles.socialBtn,
-              {
-                backgroundColor: isDark ? '#111111' : '#FFFFFF',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
-              }
-            ]} activeOpacity={0.7}>
-              <Ionicons name="logo-facebook" size={20} color="#1877F2" style={styles.socialIcon} />
-              <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>Continue with Facebook</Text>
+            <TouchableOpacity 
+              style={[
+                styles.socialBtn,
+                {
+                  backgroundColor: isDark ? '#111111' : '#FFFFFF',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
+                }
+              ]} 
+              activeOpacity={0.7}
+              onPress={() => promptFacebookAsync()}
+              disabled={loading || isFacebookLoading}
+            >
+              {isFacebookLoading ? (
+                <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color="#1877F2" />
+                  <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C', marginLeft: 8 }]}>Connecting...</Text>
+                </View>
+              ) : (
+                <>
+                  <Ionicons name="logo-facebook" size={20} color="#1877F2" style={styles.socialIcon} />
+                  <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>Continue with Facebook</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
 

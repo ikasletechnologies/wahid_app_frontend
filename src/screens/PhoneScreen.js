@@ -236,7 +236,7 @@ const PhoneScreen = ({ navigation }) => {
               <Ionicons name="logo-google" size={20} color="#EA4335" style={styles.socialIcon} />
               <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>Continue with Google</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[
+            {/* <TouchableOpacity style={[
               styles.socialBtn,
               {
                 backgroundColor: isDark ? '#111111' : '#FFFFFF',
@@ -245,7 +245,7 @@ const PhoneScreen = ({ navigation }) => {
             ]} activeOpacity={0.7}>
               <Ionicons name="logo-apple" size={20} color={isDark ? '#FFFFFF' : '#000000'} style={styles.socialIcon} />
               <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>Continue with Apple</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
             <TouchableOpacity style={[
               styles.socialBtn,
               {

@@ -21,6 +21,8 @@ export const ENDPOINTS = {
   // Legacy email/password (kept for admin use)
   login:    `${API_BASE_URL}/api/auth/login`,
   register: `${API_BASE_URL}/api/auth/register`,
+  google:   `${API_BASE_URL}/api/auth/google`,
+  facebook: `${API_BASE_URL}/api/auth/facebook`,
 
   // Core
   names:    `${API_BASE_URL}/api/names`,
