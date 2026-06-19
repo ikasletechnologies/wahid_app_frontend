@@ -70,13 +70,7 @@ const FadeContent = ({ contentKey, children }) => {
 };
 
 const NameDetailScreen = ({ route, navigation }) => {
-<<<<<<< HEAD
   const { name, initialStepIndex = 0, draftProgress } = route.params;
-=======
-  const { name: originalName, initialStepIndex = 0, draftProgress } = route.params;
-
-  const name = originalName;
->>>>>>> 4a5d83896b7717ecdf87e457a9eb7cbaf6df1222
   const { markAsLearned, masteredIds, revisitCounts, userReflections, incrementReadingTime, markAsDraft, removeDraft, reviewLaterIds, toggleReviewLater } = useNames();
   const { favouriteIds, toggleFavourite } = usePlaylist();
   const isFocused = useIsFocused();
