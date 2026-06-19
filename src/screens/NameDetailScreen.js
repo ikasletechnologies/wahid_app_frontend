@@ -70,7 +70,13 @@ const FadeContent = ({ contentKey, children }) => {
 };
 
 const NameDetailScreen = ({ route, navigation }) => {
+<<<<<<< HEAD
   const { name, initialStepIndex = 0, draftProgress } = route.params;
+=======
+  const { name: originalName, initialStepIndex = 0, draftProgress } = route.params;
+
+  const name = originalName;
+>>>>>>> 4a5d83896b7717ecdf87e457a9eb7cbaf6df1222
   const { markAsLearned, masteredIds, revisitCounts, userReflections, incrementReadingTime, markAsDraft, removeDraft, reviewLaterIds, toggleReviewLater } = useNames();
   const { favouriteIds, toggleFavourite } = usePlaylist();
   const isFocused = useIsFocused();
@@ -171,9 +177,7 @@ const NameDetailScreen = ({ route, navigation }) => {
     if (name.practicalWays && name.practicalWays.length > 0) {
       s.push({ type: 'practical' });
     }
-    if (name.scholarlyViews && name.scholarlyViews.length > 0) {
-      s.push({ type: 'scholarly' });
-    }
+
 
     if (revisits < 2 && !isSaturated) {
       s.push({ type: 'reflection' });
@@ -1315,7 +1319,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                     {currentStep.type === 'mastery' && renderMastery()}
                   </Animated.View>
                   {currentStep.type === 'reflection' && (
-                    <View style={{ height: hs(220) + (keyboardHeight > 0 ? keyboardHeight * 0.5 : 0) }} />
+                    <View style={{ height: hs(40) }} />
                   )}
                 </ScrollView>
 

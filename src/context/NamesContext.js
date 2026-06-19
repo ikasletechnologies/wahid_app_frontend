@@ -4,7 +4,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import http from '../config/http';
 import { ENDPOINTS } from '../config/api';
 import { useAuth } from './AuthContext';
-import { ENHANCED_NAMES } from '../data/namesData';
 
 const NamesContext = createContext();
 
@@ -51,13 +50,28 @@ export const NUMBER_TO_CATEGORY = {
   96:'exalted', 97:'exalted',
 };
 
-// Helper: inject category into a name object from the API and merge local extended data
+// Helper: inject category into a name object from the API and map fields
 const withCategory = (name) => {
   const nameId = name.number || name.id;
-  const localData = ENHANCED_NAMES.find(n => n.id === nameId) || {};
+  
+  let practicalWays = [];
+  if (name.learningInsight) {
+    try {
+      practicalWays = typeof name.learningInsight === 'string'
+        ? JSON.parse(name.learningInsight)
+        : name.learningInsight;
+    } catch (e) {
+      console.warn('Error parsing learningInsight for name ' + nameId, e);
+    }
+  }
+
   return {
-    ...localData, // Contains gifts, practicalWays, scholarlyViews, mcq
-    ...name,      // Overwrite with API data (quran, ar, tr, etc.)
+    ...name,
+    gifts: name.benefits || [],
+    practicalWays: practicalWays || [],
+    quranic: name.quran || [],
+    sunnah: name.hadith || [],
+    scholarlyViews: [],
     category: name.category || NUMBER_TO_CATEGORY[nameId] || 'mercy',
   };
 };

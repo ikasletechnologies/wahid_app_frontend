@@ -3,32 +3,57 @@ import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, ScrollView,
   ActivityIndicator, StatusBar, Dimensions,
+  Image
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../context/AuthContext';
+import { useAppTheme } from '../context/ThemeContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Circle } from 'react-native-svg';
 
-const { height } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const COUNTRIES = [
-  { code: '+91',  name: 'India' },
-  { code: '+1',   name: 'USA/CA' },
-  { code: '+44',  name: 'UK' },
+  { code: '+91', name: 'India' },
+  { code: '+1', name: 'USA/CA' },
+  { code: '+44', name: 'UK' },
   { code: '+971', name: 'UAE' },
-  { code: '+92',  name: 'Pakistan' },
-  { code: '+60',  name: 'Malaysia' },
+  { code: '+92', name: 'Pakistan' },
+  { code: '+60', name: 'Malaysia' },
   { code: '+966', name: 'Saudi Arabia' },
 ];
 
+const WahidLogo = () => (
+  <View style={styles.logoContainer}>
+    <Image
+      source={require('../../assets/icon.png')}
+      style={{ width: 65, height: 65 }}
+      resizeMode="contain"
+    />
+    <Text style={styles.logoTitle}>WAHID</Text>
+    <Text style={styles.logoSubtitle}>Learn • Reflect • Grow</Text>
+  </View>
+);
+
+const DecorativeBackground = ({ isDark }) => (
+  <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+    <Svg width={width} height={height} style={{ position: 'absolute', top: 0, right: 0 }}>
+      <Circle cx={width * 0.9} cy={height * 0.02} r={width * 0.55} fill={isDark ? "#00ACC1" : "#E1F5F8"} opacity={isDark ? 0.15 : 1} />
+      <Circle cx={width * 0.8} cy={-height * 0.05} r={width * 0.35} fill={isDark ? "#00ACC1" : "#CFF0F5"} opacity={isDark ? 0.1 : 0.6} />
+    </Svg>
+  </View>
+);
+
 const PhoneScreen = ({ navigation }) => {
   const { checkPhone, sendOTP } = useAuth();
+  const { isDark, colors } = useAppTheme();
 
-  const [country, setCountry]           = useState(COUNTRIES[0]);
-  const [phone, setPhone]               = useState('');
-  const [loading, setLoading]           = useState(false);
-  const [showPicker, setShowPicker]     = useState(false);
-  const [focused, setFocused]           = useState(false);
+  const [country, setCountry] = useState(COUNTRIES[0]);
+  const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [accountExists, setAccountExists] = useState(false);
   const [existingPhone, setExistingPhone] = useState('');
 
@@ -87,320 +112,404 @@ const PhoneScreen = ({ navigation }) => {
     navigation.navigate('OTP', { phone: fullPhone });
   };
 
-  const handleSignInWithPassword = () => {
-    navigation.navigate('Login', { identifier: existingPhone });
-  };
-
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-
-      <LinearGradient
-        colors={['#02889D', '#041518', '#000000']}
-        locations={[0, 0.42, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+    <LinearGradient
+      colors={isDark ? ['#041012', '#080E10', '#050505'] : ['#EBF8FA', '#F4FDFE', '#FFFFFF']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={styles.root}
+    >
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
+      <DecorativeBackground isDark={isDark} />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.kav}>
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* ── Header ── */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>
-              Start your journey with <Text style={styles.brand}>WAHID</Text>
-            </Text>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+
+          <View style={styles.topSection}>
+            <View style={styles.logoContainer}>
+              <Image
+                source={require('../../assets/icon.png')}
+                style={{ width: 65, height: 65 }}
+                resizeMode="contain"
+              />
+              <Text style={[styles.logoTitle, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>WAHID</Text>
+              <Text style={[styles.logoSubtitle, { color: isDark ? '#A0AEC0' : '#718096' }]}>Learn • Reflect • Grow</Text>
+            </View>
+            <Image
+              source={require('../../assets/signInBook.png')}
+              style={styles.illustrationImage}
+              resizeMode="contain"
+            />
           </View>
 
-          {/* ── Form ── */}
+          <View style={styles.header}>
+            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>Create Account</Text>
+            <Text style={[styles.subtitle, { color: isDark ? '#A0AEC0' : '#718096' }]}>Continue your learning journey</Text>
+          </View>
+
           <View style={styles.form}>
-            <Text style={styles.label}>Enter Mobile Number</Text>
+            {accountExists ? (
+              <View style={[styles.existsBox, isDark && { backgroundColor: '#151515', borderColor: '#03B7CE' }]}>
+                <Text style={[styles.existsTitle, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>This number is already registered.</Text>
+                <Text style={[styles.existsSubtitle, { color: isDark ? '#A0AEC0' : '#718096' }]}>Please sign in to your account instead.</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Login', { identifier: existingPhone })} style={{ marginTop: 10 }}>
+                  <Text style={{ color: '#03B7CE', fontWeight: '700' }}>Go to Sign In</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
 
-            <View style={[styles.inputRow, focused && styles.inputRowFocused]}>
-              <TouchableOpacity
-                style={styles.countryBtn}
-                onPress={() => setShowPicker(v => !v)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.countryCode}>{country.code}</Text>
-                <Ionicons name="chevron-down" size={13} color="#aaa" style={{ marginLeft: 3 }} />
-              </TouchableOpacity>
-
-              <View style={styles.divider} />
-
-              <TextInput
-                ref={phoneInput}
-                style={styles.input}
-                placeholder="Enter a phone number"
-                placeholderTextColor="#4A5568"
-                value={phone}
-                onChangeText={handlePhoneChange}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                keyboardType="phone-pad"
-                maxLength={15}
-                returnKeyType="done"
-                onSubmitEditing={handleSend}
-                selectionColor="#03B7CE"
-              />
+            <View style={[
+              styles.inputContainer,
+              {
+                backgroundColor: isDark ? '#111111' : '#FFFFFF',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
+              },
+              focused && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#151515' } : styles.inputFocused)
+            ]}>
+              <View style={[styles.iconBox, isDark && { backgroundColor: 'rgba(3, 183, 206, 0.15)' }]}>
+                <Ionicons name="phone-portrait-outline" size={18} color="#03B7CE" />
+              </View>
+              <View style={styles.inputContentWrapper}>
+                <Text style={[styles.inputLabel, { color: isDark ? '#E2E8F0' : '#1A202C' }]}>Mobile Number</Text>
+                <View style={styles.phoneInputContent}>
+                  <TouchableOpacity style={styles.countryBtn} onPress={() => setShowPicker(v => !v)}>
+                    <Text style={[styles.countryCode, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>{country.code}</Text>
+                    <Ionicons name="chevron-down" size={14} color={isDark ? '#E2E8F0' : '#1A202C'} />
+                  </TouchableOpacity>
+                  <View style={[styles.divider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.12)' }]} />
+                  <TextInput
+                    ref={phoneInput}
+                    style={[styles.input, { color: isDark ? '#FFFFFF' : '#1A202C' }]}
+                    placeholder="Enter mobile number"
+                    placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
+                    value={phone}
+                    onChangeText={handlePhoneChange}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
+                    keyboardType="phone-pad"
+                    maxLength={15}
+                    returnKeyType="done"
+                    onSubmitEditing={handleSend}
+                    selectionColor="#03B7CE"
+                  />
+                </View>
+              </View>
             </View>
 
             {showPicker && (
-              <View style={styles.picker}>
+              <View style={[styles.picker, isDark && { backgroundColor: '#161616', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
                 {COUNTRIES.map(c => (
-                  <TouchableOpacity
-                    key={c.code}
-                    style={styles.pickerItem}
-                    onPress={() => { setCountry(c); setShowPicker(false); }}
-                  >
-                    <Text style={styles.pickerCode}>{c.code}</Text>
-                    <Text style={styles.pickerName}>{c.name}</Text>
+                  <TouchableOpacity key={c.code} style={styles.pickerItem} onPress={() => { setCountry(c); setShowPicker(false); }}>
+                    <Text style={[styles.pickerCode, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>{c.code}</Text>
+                    <Text style={[styles.pickerName, { color: isDark ? '#A0AEC0' : '#718096' }]}>{c.name}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             )}
+
+            <TouchableOpacity style={styles.signInButton} onPress={handleSend} disabled={loading} activeOpacity={0.85}>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.signInText}>Continue</Text>
+                  <Ionicons name="arrow-forward" size={18} color="#fff" style={{ position: 'absolute', right: 24 }} />
+                </>
+              )}
+            </TouchableOpacity>
           </View>
 
-          {/* ── Footer ── */}
-          <View style={styles.footer}>
-            {accountExists ? (
-              <>
-                <View style={styles.existsBox}>
-                  <Text style={styles.existsTitle}>This number is already registered.</Text>
-                  <Text style={styles.existsSubtitle}>Please sign in to your account instead.</Text>
-                </View>
-
-                <TouchableOpacity onPress={handleSignInWithPassword} activeOpacity={0.85}>
-                  <LinearGradient
-                    colors={['#02889D', '#03B7CE', '#4BD5E8']}
-                    locations={[0, 0.5048, 1]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    style={styles.button}
-                  >
-                    <Text style={styles.buttonText}>Sign In</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => setAccountExists(false)}
-                  style={styles.resetRow}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.promptLink}>Use a different number</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <View style={styles.promptRow}>
-                  <Text style={styles.promptText}>Already have an account? </Text>
-                  <TouchableOpacity onPress={() => navigation.navigate('Login')} activeOpacity={0.7}>
-                    <Text style={styles.promptLink}>Sign In</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity onPress={handleSend} disabled={loading} activeOpacity={0.85}>
-                  <LinearGradient
-                    colors={['#02889D', '#03B7CE', '#4BD5E8']}
-                    locations={[0, 0.5048, 1]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    style={styles.button}
-                  >
-                    {loading
-                      ? <ActivityIndicator color="#fff" />
-                      : <Text style={styles.buttonText}>Get OTP</Text>
-                    }
-                  </LinearGradient>
-                </TouchableOpacity>
-              </>
-            )}
+          <View style={styles.orContainer}>
+            <View style={[styles.orLine, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]} />
+            <Text style={[styles.orText, isDark && { color: '#94A3B8' }]}>OR</Text>
+            <View style={[styles.orLine, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]} />
           </View>
+
+          <View style={styles.socialContainer}>
+            <TouchableOpacity style={[
+              styles.socialBtn,
+              {
+                backgroundColor: isDark ? '#111111' : '#FFFFFF',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
+              }
+            ]} activeOpacity={0.7}>
+              <Ionicons name="logo-google" size={20} color="#EA4335" style={styles.socialIcon} />
+              <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>Continue with Google</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[
+              styles.socialBtn,
+              {
+                backgroundColor: isDark ? '#111111' : '#FFFFFF',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
+              }
+            ]} activeOpacity={0.7}>
+              <Ionicons name="logo-apple" size={20} color={isDark ? '#FFFFFF' : '#000000'} style={styles.socialIcon} />
+              <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>Continue with Apple</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[
+              styles.socialBtn,
+              {
+                backgroundColor: isDark ? '#111111' : '#FFFFFF',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
+              }
+            ]} activeOpacity={0.7}>
+              <Ionicons name="logo-facebook" size={20} color="#1877F2" style={styles.socialIcon} />
+              <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>Continue with Facebook</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.promptRow}>
+            <Text style={[styles.promptText, isDark && { color: '#94A3B8' }]}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7} style={styles.promptLinkContainer}>
+              <Text style={styles.promptLink}>Sign In </Text>
+              <Ionicons name="chevron-forward" size={13} color="#03B7CE" style={{ marginTop: 1 }} />
+            </TouchableOpacity>
+          </View>
+
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#000' },
-  kav:  { flex: 1 },
-
+  root: { flex: 1 },
+  kav: { flex: 1 },
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: height * 0.13,
+    paddingTop: height * 0.15,
     paddingBottom: 36,
   },
-
+  topSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+    zIndex: 10,
+  },
+  logoContainer: {
+    marginTop: 2,
+    top: 0,
+    left: 0,
+  },
+  logoTitle: {
+    fontSize: 25,
+    fontWeight: '800',
+    color: '#0F203C',
+    letterSpacing: 0.5,
+    marginTop: 4,
+  },
+  logoSubtitle: {
+    fontSize: 10,
+    color: '#718096',
+    fontWeight: '600',
+    marginTop: 1,
+  },
+  illustrationImage: {
+    width: 280,
+    height: 340,
+    position: 'absolute',
+    right: -50,
+    top: -140,
+    zIndex: 5,
+  },
   header: {
-    alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 28,
+    marginTop: 16,
+    zIndex: 10,
   },
   title: {
-    fontSize: 30,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 8,
-    letterSpacing: 0.3,
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#0F203C',
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#8A9A9D',
-    textAlign: 'center',
-  },
-  brand: {
-    color: '#03B7CE',
-    fontWeight: '700',
-  },
-
-  form: {
-    marginBottom: 32,
-  },
-  label: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 10,
+    color: '#718096',
+    fontWeight: '500',
   },
-  inputRow: {
+  form: {
+    marginBottom: 20,
+    zIndex: 10,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#F1F5F9',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  inputFocused: {
+    borderColor: '#03B7CE',
+    backgroundColor: '#FAFDFF',
+  },
+  iconBox: {
+    width: 36,
+    height: 46,
+    borderRadius: 10,
+    backgroundColor: '#E6F8FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  inputContentWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  inputLabel: {
+    fontSize: 11,
+    color: '#1A202C',
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  phoneInputContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0D1517',
-    borderWidth: 1.5,
-    borderColor: 'rgba(3,183,206,0.3)',
-    borderRadius: 28,
-    height: 56,
-    paddingHorizontal: 16,
-  },
-  inputRowFocused: {
-    borderColor: '#03B7CE',
-    backgroundColor: '#091A1E',
   },
   countryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingRight: 8,
+    gap: 4,
   },
   countryCode: {
-    color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
+    color: '#1A202C',
   },
   divider: {
     width: 1,
-    height: 22,
-    backgroundColor: '#2A3540',
-    marginRight: 12,
+    height: 18,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: 12,
   },
   input: {
     flex: 1,
-    color: '#FFFFFF',
     fontSize: 15,
-    height: '100%',
+    color: '#1A202C',
+    padding: 0,
+    margin: 0,
+    fontWeight: '500',
   },
-
   picker: {
-    backgroundColor: '#141E22',
-    borderRadius: 14,
-    marginTop: 6,
-    paddingVertical: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginTop: -16,
+    marginBottom: 24,
     borderWidth: 1,
-    borderColor: 'rgba(3,183,206,0.2)',
+    borderColor: '#F1F5F9',
+    paddingVertical: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    zIndex: 20,
   },
   pickerItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 11,
-    paddingHorizontal: 18,
-    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    gap: 12,
   },
-  pickerCode: { color: '#fff', fontSize: 13, fontWeight: '600', width: 44 },
-  pickerName: { color: '#8A9A9D', fontSize: 13 },
-
-  footer: {
-    marginTop: 'auto',
-  },
-
+  pickerCode: { color: '#1A202C', fontSize: 13, fontWeight: '600', width: 40 },
+  pickerName: { color: '#718096', fontSize: 13 },
   existsBox: {
-    backgroundColor: 'rgba(3,183,206,0.08)',
+    backgroundColor: '#FAFDFF',
     borderWidth: 1,
-    borderColor: 'rgba(3,183,206,0.3)',
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    marginBottom: 20,
-    alignItems: 'center',
+    borderColor: '#03B7CE',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 16,
   },
   existsTitle: {
-    color: '#FFFFFF',
-    fontSize: 15,
+    color: '#1A202C',
+    fontSize: 14,
     fontWeight: '700',
     marginBottom: 4,
   },
   existsSubtitle: {
-    color: '#8A9A9D',
+    color: '#718096',
     fontSize: 13,
   },
-  outlineButton: {
-    height: 56,
-    borderRadius: 30,
-    borderWidth: 1.5,
-    borderColor: '#03B7CE',
+  signInButton: {
+    flexDirection: 'row',
+    backgroundColor: '#03B7CE',
+    height: 54,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 12,
   },
-  outlineButtonText: {
-    color: '#03B7CE',
+  signInText: {
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
-    letterSpacing: 0.5,
   },
-  resetRow: {
+  orContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 18,
+    marginBottom: 24,
   },
-
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#F1F5F9',
+  },
+  orText: {
+    marginHorizontal: 16,
+    color: '#A0AEC0',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  socialContainer: {
+    gap: 12,
+    marginBottom: 32,
+  },
+  socialBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    height: 54,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#F1F5F9',
+  },
+  socialIcon: {
+    position: 'absolute',
+    left: 24,
+  },
+  socialBtnText: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1A202C',
+  },
   promptRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 22,
+    alignItems: 'center',
   },
   promptText: {
-    color: '#8A9A9D',
-    fontSize: 13,
+    color: '#718096',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  promptLinkContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   promptLink: {
     color: '#03B7CE',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
-  },
-  button: {
-    height: 56,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 0.5,
-    borderColor: '#FDFEFE',
-    elevation: 6,
-    shadowColor: '#4BD5E8',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.24,
-    shadowRadius: 4,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.5,
   },
 });
 
