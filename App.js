@@ -13,6 +13,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import ThemedToast from './src/components/ThemedToast';
 import NetworkScreen from './src/screens/NetworkScreen';
 import NetInfo from '@react-native-community/netinfo';
+import './src/services/google/googleConfig';
 
 // Keep the native splash screen visible until the app is ready
 SplashScreen.preventAutoHideAsync();

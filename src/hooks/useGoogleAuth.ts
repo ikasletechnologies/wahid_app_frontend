@@ -1,52 +1,58 @@
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-import { useEffect, useState } from 'react';
-
-WebBrowser.maybeCompleteAuthSession();
+import { useState } from 'react';
+import {
+  GoogleSignin,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 
 export const useGoogleAuth = () => {
   const [googleAccessToken, setGoogleAccessToken] =
     useState<string | null>(null);
 
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const [request, response, promptAsync] =
-    Google.useAuthRequest({
-      androidClientId:
-        process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+  const [error, setError] =
+    useState<string | null>(null);
 
-      iosClientId:
-        process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+  const signInWithGoogle = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-      webClientId:
-        process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    });
+      await GoogleSignin.hasPlayServices();
 
-  useEffect(() => {
-    if (!response) return;
+      await GoogleSignin.signIn();
 
-    if (response.type === 'success') {
-      const token =
-        response.authentication?.accessToken;
+      const tokens =
+        await GoogleSignin.getTokens();
 
-      if (token) {
-        setGoogleAccessToken(token);
-      }
-    }
-
-    if (response.type === 'error') {
-      setError(
-        response.error?.message ||
-          'Google Sign In Failed'
+      setGoogleAccessToken(
+        tokens.accessToken
       );
+
+      return {
+        accessToken: tokens.accessToken,
+      };
+    } catch (error: any) {
+      if (
+        error.code === statusCodes.SIGN_IN_CANCELLED
+      ) {
+        setError('Sign in cancelled');
+      } else {
+        setError(
+          error.message || 'Google Sign-In failed'
+        );
+      }
+
+      return null;
+    } finally {
+      setLoading(false);
     }
-  }, [response]);
+  };
 
   return {
-    request,
-    response,
-    promptAsync,
+    signInWithGoogle,
     googleAccessToken,
+    loading,
     error,
   };
 };

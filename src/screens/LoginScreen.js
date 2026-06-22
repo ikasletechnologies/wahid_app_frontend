@@ -54,7 +54,7 @@ const LoginScreen = ({ navigation, route }) => {
   const { isDark, colors } = useAppTheme();
   const { identifier: initialIdentifier } = route.params || {};
 
-  const { promptAsync, googleAccessToken, error: googleError, loading: googleAuthLoading } = useGoogleAuth();
+  const { signInWithGoogle, error: googleError, loading: googleAuthLoading } = useGoogleAuth();
   const [googleLoading, setGoogleLoading] = useState(false);
   const isGoogleLoading = googleAuthLoading || googleLoading;
 
@@ -68,42 +68,38 @@ const LoginScreen = ({ navigation, route }) => {
     }
   }, [googleError]);
 
-  useEffect(() => {
-    const handleGoogleAuthBackend = async () => {
-      if (googleAccessToken) {
-        setGoogleLoading(true);
-        try {
-          const response = await authenticateWithGoogle(googleAccessToken);
-          if (response.success) {
-            await completeLogin(response.user, response.token || response.accessToken, response.refreshToken);
-            Toast.show({
-              type: 'success',
-              text1: 'Welcome back!',
-              text2: 'Signed in with Google successfully.'
-            });
-            // Satisfying requirement 9: Navigate to Home screen after successful login.
-            navigation.navigate('Main', { screen: 'Home' });
-          } else {
-            Toast.show({
-              type: 'error',
-              text1: 'Google Auth Error',
-              text2: response.message || 'Verification failed.'
-            });
-          }
-        } catch (error) {
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    try {
+      const result = await signInWithGoogle();
+      if (result?.accessToken) {
+        const response = await authenticateWithGoogle(result.accessToken);
+        if (response.success) {
+          await completeLogin(response.user, response.token || response.accessToken, response.refreshToken);
+          Toast.show({
+            type: 'success',
+            text1: 'Welcome back!',
+            text2: 'Signed in with Google successfully.'
+          });
+          navigation.navigate('Main', { screen: 'Home' });
+        } else {
           Toast.show({
             type: 'error',
             text1: 'Google Auth Error',
-            text2: error.response?.data?.message || error.message || 'Something went wrong.'
+            text2: response.message || 'Verification failed.'
           });
-        } finally {
-          setGoogleLoading(false);
         }
       }
-    };
-
-    handleGoogleAuthBackend();
-  }, [googleAccessToken]);
+    } catch (err) {
+      Toast.show({
+        type: 'error',
+        text1: 'Google Auth Error',
+        text2: err.response?.data?.message || err.message || 'Something went wrong.'
+      });
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   const { promptAsync: promptFacebookAsync, user: facebookUser, error: facebookError, loading: facebookAuthLoading } = useFacebookAuth();
   const [facebookLoading, setFacebookLoading] = useState(false);
@@ -355,7 +351,7 @@ const LoginScreen = ({ navigation, route }) => {
                 }
               ]} 
               activeOpacity={0.7}
-              onPress={() => promptAsync()}
+              onPress={() => handleGoogleLogin()}
               disabled={loading || isGoogleLoading}
             >
               {isGoogleLoading ? (
