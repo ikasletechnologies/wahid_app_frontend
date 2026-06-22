@@ -6,172 +6,126 @@ import {
   Animated,
   Dimensions,
   StatusBar,
+  Image,
+  ActivityIndicator,
 } from 'react-native';
-import LottieView from 'lottie-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../context/ThemeContext';
-import { COLORS, FONTS, SIZES, SPACE, RADIUS } from '../theme';
-
+import { COLORS, FONTS, SPACE } from '../theme';
 
 const { width, height } = Dimensions.get('window');
 
 const SplashScreen = () => {
   const { colors, isDark } = useAppTheme();
-  const animation = useRef(null);
+  
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  const loaderFadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Start entering animation for logo/name
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
-      Animated.spring(scaleAnim, { toValue: 1, friction: 6, tension: 60, useNativeDriver: true }),
-    ]).start();
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 7,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      // Fade in the loader slightly after the logo resolves
+      Animated.timing(loaderFadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
+    });
   }, []);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
-
-      <LinearGradient
-        colors={isDark ? ['rgba(20, 22, 33, 1)', 'rgba(0, 0, 0, 1)'] : [colors.surface, colors.background]}
-        style={StyleSheet.absoluteFill}
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        translucent
+        backgroundColor="transparent"
       />
 
-      {/* Decorative Orbs */}
-      <View style={styles.topOrb} />
-      <View style={styles.bottomOrb} />
-
-      <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
-        {/* Lottie animation */}
-        <View style={styles.lottieWrap}>
-          <LottieView
-            ref={animation}
-            source={
-              isDark
-                ? require('../../assets/animation/bismillah-dark.json')
-                : require('../../assets/animation/bismillah-light.json')
-            }
-            autoPlay
-            loop
-            style={styles.lottie}
+      <Animated.View
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }],
+          },
+        ]}
+      >
+        <View style={styles.logoWrap}>
+          <Image
+            source={require('../../assets/icon.png')}
+            style={styles.logo}
             resizeMode="contain"
           />
         </View>
 
-        {/* Text section */}
-        <View style={styles.textWrap}>
-          <View style={[styles.dividerWrap, { opacity: isDark ? 0.6 : 1.0 }]}>
-            <View style={[styles.line, { backgroundColor: COLORS.primary }]} />
-            <Ionicons name="sparkles" size={12} color={COLORS.primary} />
-            <View style={[styles.line, { backgroundColor: COLORS.primary }]} />
-          </View>
+        <Text style={[styles.title, { color: colors.text }]}>WAHID</Text>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+          LEARN • REFLECT • GROW
+        </Text>
+      </Animated.View>
 
-          <Text style={[styles.arabicTitle, { color: COLORS.primary, textShadowColor: isDark ? 'rgba(201, 168, 76, 0.3)' : 'rgba(0, 0, 0, 0.1)' }]}>أسماء الله الحسنى</Text>
-          <Text style={[styles.englishTitle, { color: colors.textMuted }]}>The 99 Names of Allah</Text>
-
-          <View style={styles.loaderWrap}>
-            <View style={[styles.loaderDot, { backgroundColor: colors.borderStrong }]} />
-            <View style={[styles.loaderDot, styles.loaderDotActive, { backgroundColor: colors.primary }]} />
-            <View style={[styles.loaderDot, { backgroundColor: colors.borderStrong }]} />
-          </View>
-        </View>
+      <Animated.View style={[styles.loaderContainer, { opacity: loaderFadeAnim }]}>
+        <ActivityIndicator size="small" color={colors.primary} />
       </Animated.View>
     </View>
   );
 };
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.black,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  topOrb: {
-    position: 'absolute',
-    top: -height * 0.1,
-    right: -width * 0.2,
-    width: width * 0.8,
-    height: width * 0.8,
-    borderRadius: width * 0.4,
-    backgroundColor: 'rgba(45, 156, 150, 0.05)', // Subtle teal
-    filter: 'blur(60px)',
-  },
-  bottomOrb: {
-    position: 'absolute',
-    bottom: -height * 0.1,
-    left: -width * 0.2,
-    width: width * 0.8,
-    height: width * 0.8,
-    borderRadius: width * 0.4,
-    backgroundColor: 'rgba(201, 168, 76, 0.03)', // Subtle gold
-    filter: 'blur(60px)',
   },
   content: {
     alignItems: 'center',
-    width: '100%',
+    justifyContent: 'center',
   },
-  lottieWrap: {
-    width: width * 0.8,
-    height: width * 0.8,
+  logoWrap: {
+    width: 110,
+    height: 110,
+    marginBottom: SPACE.md,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  lottie: {
+  logo: {
     width: '100%',
     height: '100%',
   },
-  textWrap: {
-    alignItems: 'center',
-    marginTop: SPACE.xl,
-  },
-  dividerWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: SPACE.md,
-    opacity: 0.6,
-  },
-  line: {
-    width: 40,
-    height: 1,
-    backgroundColor: '#c9a84c',
-  },
-  arabicTitle: {
-    fontFamily: FONTS.arabicBold,
-    fontSize: 44,
-    color: '#edca66', // Premium Gold
-    textAlign: 'center',
-    textShadowColor: 'rgba(201, 168, 76, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 10,
-  },
-  englishTitle: {
-    fontFamily: FONTS.regular,
-    fontSize: 12,
-    color: COLORS.muted,
-    textTransform: 'uppercase',
+  title: {
+    fontFamily: FONTS.bold,
+    fontSize: 32,
+    fontWeight: '800',
     letterSpacing: 4,
-    marginTop: 8,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+  },
+  subtitle: {
+    fontFamily: FONTS.medium,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 3,
+    marginTop: SPACE.xs,
     textAlign: 'center',
   },
-  loaderWrap: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: SPACE.xxl,
+  loaderContainer: {
+    position: 'absolute',
+    bottom: height * 0.12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  loaderDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  loaderDotActive: {
-    backgroundColor: '#c9a84c',
-    width: 12,
-  }
 });
 
 export default SplashScreen;
