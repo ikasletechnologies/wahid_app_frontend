@@ -14,13 +14,18 @@ export const useGoogleAuth = () => {
     scheme: 'wahid',
   });
 
+  // DEBUG
   console.log('====================');
-  console.log('GOOGLE CONFIG');
   console.log('Redirect URI:', redirectUri);
   console.log('Android Client:', process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID);
   console.log('iOS Client:', process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID);
   console.log('Web Client:', process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID);
   console.log('====================');
+
+  // DEBUG ALERT
+  setTimeout(() => {
+    alert(`Redirect URI:\n${redirectUri}`);
+  }, 1000);
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
