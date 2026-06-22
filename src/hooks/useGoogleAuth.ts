@@ -2,6 +2,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
 import { useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -12,25 +13,36 @@ export const useGoogleAuth = () => {
 
   const redirectUri = AuthSession.makeRedirectUri({
     scheme: 'wahid',
+    path: 'oauthredirect',
   });
 
-  // DEBUG
-  console.log('====================');
+  console.log('==============================');
   console.log('Redirect URI:', redirectUri);
-  console.log('Android Client:', process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID);
-  console.log('iOS Client:', process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID);
-  console.log('Web Client:', process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID);
-  console.log('====================');
+  console.log(
+    'Android Client:',
+    process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID
+  );
+  console.log(
+    'iOS Client:',
+    process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID
+  );
+  console.log(
+    'Web Client:',
+    process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
+  );
+  console.log('==============================');
 
-  // DEBUG ALERT
-  setTimeout(() => {
-    alert(`Redirect URI:\n${redirectUri}`);
-  }, 1000);
+  useEffect(() => {
+    Alert.alert('Google Redirect URI', redirectUri);
+  }, []);
 
   const [request, response, promptAsync] = Google.useAuthRequest({
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    androidClientId:
+      process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    iosClientId:
+      process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    webClientId:
+      process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
     redirectUri,
     scopes: ['profile', 'email'],
   });
@@ -38,7 +50,10 @@ export const useGoogleAuth = () => {
   useEffect(() => {
     if (!response) return;
 
-    console.log('Google Response:', JSON.stringify(response, null, 2));
+    console.log(
+      'Google Response:',
+      JSON.stringify(response, null, 2)
+    );
 
     if (response.type === 'success') {
       const auth = response.authentication;
@@ -72,13 +87,19 @@ export const useGoogleAuth = () => {
 
       const result = await promptAsync();
 
-      console.log('Prompt Result:', result);
+      console.log(
+        'Prompt Result:',
+        JSON.stringify(result, null, 2)
+      );
 
       return result;
     } catch (err: any) {
       console.log('Google Prompt Error:', err);
 
-      setError(err?.message || 'Failed to launch Google Sign-In.');
+      setError(
+        err?.message || 'Failed to launch Google Sign-In.'
+      );
+
       return null;
     } finally {
       setLoading(false);
