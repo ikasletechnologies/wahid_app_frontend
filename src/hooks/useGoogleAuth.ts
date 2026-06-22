@@ -1,8 +1,8 @@
 import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
 import { useEffect, useState } from 'react';
 
-// Required for redirect handling on web/standalone apps
 WebBrowser.maybeCompleteAuthSession();
 
 export const useGoogleAuth = () => {
@@ -10,37 +10,84 @@ export const useGoogleAuth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const redirectUri = AuthSession.makeRedirectUri({
+    scheme: 'wahid',
+  });
+
+  console.log('====================');
+  console.log('GOOGLE CONFIG');
+  console.log('Redirect URI:', redirectUri);
+  console.log('Android Client:', process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID);
+  console.log('iOS Client:', process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID);
+  console.log('Web Client:', process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID);
+  console.log('====================');
+
   const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
     androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    redirectUri,
+    scopes: ['profile', 'email'],
   });
 
   useEffect(() => {
-    if (response) {
-      if (response.type === 'success') {
-        const { authentication } = response;
-        if (authentication?.accessToken) {
-          setError(null);
-          setGoogleAccessToken(authentication.accessToken);
-        } else {
-          setError('Failed to retrieve authentication token from Google.');
-        }
-      } else if (response.type === 'error') {
-        setError(response.error?.message || 'Google Authentication failed.');
-      } else if (response.type === 'cancel') {
-        setError('Google Sign-In was cancelled.');
+    if (!response) return;
+
+    console.log('Google Response:', JSON.stringify(response, null, 2));
+
+    if (response.type === 'success') {
+      const auth = response.authentication;
+
+      if (auth?.accessToken) {
+        setGoogleAccessToken(auth.accessToken);
+        setError(null);
+      } else {
+        setError('Google access token not received.');
       }
+    }
+
+    if (response.type === 'error') {
+      console.log('Google Error:', response.error);
+
+      setError(
+        response.error?.message ||
+        'Google authentication failed.'
+      );
+    }
+
+    if (response.type === 'cancel') {
+      setError('Google Sign-In cancelled.');
     }
   }, [response]);
 
+  const signInWithGoogle = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const result = await promptAsync();
+
+      console.log('Prompt Result:', result);
+
+      return result;
+    } catch (err: any) {
+      console.log('Google Prompt Error:', err);
+
+      setError(err?.message || 'Failed to launch Google Sign-In.');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
-    promptAsync,
     request,
     response,
     googleAccessToken,
     loading,
     error,
+    signInWithGoogle,
+    promptAsync: signInWithGoogle,
     setGoogleAccessToken,
   };
 };
