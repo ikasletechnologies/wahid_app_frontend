@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import {
-  GoogleSignin,
-  statusCodes,
-} from '@react-native-google-signin/google-signin';
+// import {
+//   GoogleSignin,
+//   statusCodes,
+// } from '@react-native-google-signin/google-signin';
 
 export const useGoogleAuth = () => {
   const [googleAccessToken, setGoogleAccessToken] =
@@ -14,39 +14,8 @@ export const useGoogleAuth = () => {
     useState<string | null>(null);
 
   const signInWithGoogle = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      await GoogleSignin.hasPlayServices();
-
-      await GoogleSignin.signIn();
-
-      const tokens =
-        await GoogleSignin.getTokens();
-
-      setGoogleAccessToken(
-        tokens.accessToken
-      );
-
-      return {
-        accessToken: tokens.accessToken,
-      };
-    } catch (error: any) {
-      if (
-        error.code === statusCodes.SIGN_IN_CANCELLED
-      ) {
-        setError('Sign in cancelled');
-      } else {
-        setError(
-          error.message || 'Google Sign-In failed'
-        );
-      }
-
-      return null;
-    } finally {
-      setLoading(false);
-    }
+    setError('Google Sign-In is temporarily commented out');
+    return null;
   };
 
   return {

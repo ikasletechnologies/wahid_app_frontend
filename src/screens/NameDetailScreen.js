@@ -277,6 +277,10 @@ const NameDetailScreen = ({ route, navigation }) => {
   // Persist reading position and mark as draft
   useEffect(() => {
     const nameNumber = name.number || name.id;
+    if (phase === 'journey') {
+      return;
+    }
+
     AsyncStorage.setItem('last_reading_progress', JSON.stringify({
       nameNumber,
       stepIndex: currentStepIndex,
@@ -298,7 +302,8 @@ const NameDetailScreen = ({ route, navigation }) => {
       http.post('/api/me/last-read', { nameNumber, stepIndex: currentStepIndex }).catch(() => { });
     }, 3000);
 
-    if (currentStepIndex > 0 && phase === 'content') {
+    const hasStarted = currentStepIndex > 0 || meaningSubStep > -1 || giftSubStep > -1 || refSubStep > -1 || practicalSubStep > -1 || scholarSubStep > -1;
+    if (hasStarted && phase === 'content' && !isMastered) {
       markAsDraft(nameNumber);
     }
 
@@ -324,6 +329,49 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   const safeStepIndex = Math.max(0, Math.min(currentStepIndex, steps.length - 1));
   const currentStep = steps[safeStepIndex];
+
+  // Circle progress ring animation state and effect
+  const [ringProgress, setRingProgress] = useState(0);
+  const ringProgressAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const totalSections = steps.length || 1;
+    const targetProgress = (safeStepIndex + 1) / totalSections;
+    
+    const listenerId = ringProgressAnim.addListener(({ value }) => {
+      setRingProgress(value);
+    });
+
+    Animated.timing(ringProgressAnim, {
+      toValue: targetProgress,
+      duration: 700,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: false,
+    }).start();
+
+    return () => {
+      ringProgressAnim.removeListener(listenerId);
+    };
+  }, [safeStepIndex, steps.length]);
+
+  // Solar system continuous orbital rotation
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(spinAnim, {
+        toValue: 1,
+        duration: 12000, // 12 seconds per full orbit
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, [spinAnim]);
+
+  const spinRotation = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   const calculatedProgress = useMemo(() => {
     if (!steps || steps.length === 0) return 0;
@@ -587,9 +635,11 @@ const NameDetailScreen = ({ route, navigation }) => {
   }, [currentStepIndex, goToStep, steps, meaningSubStep, refSubStep, giftSubStep, practicalSubStep, scholarSubStep, name, triggerFlip]);
 
   const goJourney = useCallback((reflectionData = null) => {
+    const nameNumber = name.number || name.id;
     markAsLearned(name.id, reflectionData);
-    removeDraft(name.number || name.id);
+    removeDraft(nameNumber);
     AsyncStorage.removeItem('last_reading_progress').catch(() => { });
+    AsyncStorage.removeItem(`draft_progress_${nameNumber}`).catch(() => { });
     setPhase('journey');
     Animated.parallel([
       Animated.timing(journeyOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
@@ -760,7 +810,7 @@ const NameDetailScreen = ({ route, navigation }) => {
           <View style={styles.actionDivider} />
           <TouchableOpacity style={styles.actionBtn} onPress={() => toggleReviewLater(name.number || name.id)} activeOpacity={0.7}>
             <Ionicons name={isReviewLater ? "bookmark" : "bookmark-outline"} size={rs(18)} color={isReviewLater ? "#00ADC1" : (isDark ? '#E8EDF2' : '#4A5568')} />
-            <Text style={[styles.actionText, { color: t.text }]}>Review Later</Text>
+            <Text style={[styles.actionText, { color: t.text }]}>Revision</Text>
           </TouchableOpacity>
           <View style={styles.actionDivider} />
           <TouchableOpacity style={styles.actionBtn} onPress={handleShare} activeOpacity={0.7}>
@@ -784,20 +834,70 @@ const NameDetailScreen = ({ route, navigation }) => {
           backgroundColor: isDark ? '#162331' : '#FFFFFF',
         }]}>
           <ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingBottom: hs(20) }} showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
-            {/* Section badge */}
-            <View style={styles.sectionBadgeWrap}>
-              <View style={styles.sectionBadge}>
-                <Text style={styles.sectionBadgeText}>SECTION {sectionNum} OF {totalSections}</Text>
+            {/* Section badge row with flanking ornaments */}
+            <View style={styles.sectionBadgeRow}>
+              <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]} />
+              <Text style={[styles.badgeStar, { color: isDark ? 'rgba(0,173,193,0.4)' : '#00ADC1' }]}>✦</Text>
+              <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]} />
+              
+              <View style={[styles.sectionBadge, {
+                backgroundColor: isDark ? 'rgba(0, 173, 193, 0.08)' : '#F0FAFB',
+                borderColor: isDark ? 'rgba(0, 173, 193, 0.25)' : 'rgba(0, 173, 193, 0.18)',
+                borderWidth: 1,
+              }]}>
+                <Text style={[styles.sectionBadgeText, { color: isDark ? '#4CD5E8' : '#0090A8' }]}>SECTION {sectionNum} OF {totalSections}</Text>
               </View>
+              
+              <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]} />
+              <Text style={[styles.badgeStar, { color: isDark ? 'rgba(0,173,193,0.4)' : '#00ADC1' }]}>✦</Text>
+              <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]} />
             </View>
 
-            {/* Icon area */}
+            {/* Icon area with SVG Progress Ring */}
             <View style={styles.introIconArea}>
-              <View style={[styles.introIconCircle, { 
-                backgroundColor: isDark ? '#1E2D3D' : '#FFFFFF',
-                borderColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB'
-              }]}>
-                <Ionicons name={iconName} size={rs(52)} color="#00ADC1" />
+              <View style={styles.svgRingWrapper}>
+                <Animated.View style={{ transform: [{ rotate: spinRotation }] }}>
+                  <Svg width={rs(154)} height={rs(154)} viewBox="0 0 154 154">
+                    {/* Background thin circle */}
+                    <SvgCircle
+                      cx="77"
+                      cy="77"
+                      r="75"
+                      stroke={isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 173, 193, 0.12)'}
+                      strokeWidth="1.2"
+                      fill="transparent"
+                    />
+                    {/* Progress arc */}
+                    <SvgCircle
+                      cx="77"
+                      cy="77"
+                      r="75"
+                      stroke="#00ADC1"
+                      strokeWidth="1.5"
+                      fill="transparent"
+                      strokeDasharray={`${2 * Math.PI * 75}`}
+                      strokeDashoffset={`${2 * Math.PI * 75 * (1 - ringProgress)}`}
+                      strokeLinecap="round"
+                      transform="rotate(-90 77 77)"
+                    />
+                    {/* Progress Dot */}
+                    <SvgCircle
+                      cx={`${77 + 75 * Math.cos(ringProgress * 2 * Math.PI - Math.PI / 2)}`}
+                      cy={`${77 + 75 * Math.sin(ringProgress * 2 * Math.PI - Math.PI / 2)}`}
+                      r="3.5"
+                      fill="#00ADC1"
+                    />
+                  </Svg>
+                </Animated.View>
+                
+                {/* Central Circle */}
+                <View style={[styles.introIconCircle, { 
+                  backgroundColor: isDark ? '#1E2D3D' : '#FFFFFF',
+                  borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#F0F8FA',
+                  shadowColor: isDark ? '#000000' : '#00ADC1',
+                }]}>
+                  <Ionicons name={iconName} size={rs(46)} color="#00ADC1" />
+                </View>
               </View>
             </View>
 
@@ -847,7 +947,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                 
                 <TouchableOpacity style={styles.actionBtn} onPress={() => toggleReviewLater(name.number || name.id)} activeOpacity={0.7}>
                   <Ionicons name={isReviewLater ? "bookmark" : "bookmark-outline"} size={rs(20)} color={isReviewLater ? "#00ADC1" : (isDark ? '#94A3B8' : '#475569')} />
-                  <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Review Later</Text>
+                  <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Revision</Text>
                 </TouchableOpacity>
                 
                 <View style={[styles.actionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0', height: rs(20) }]} />
@@ -1530,24 +1630,49 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 }, elevation: 4,
     borderWidth: 1, overflow: 'hidden',
     paddingBottom: 0,
-    height: hs(460),
+    height: hs(440),
   },
-  sectionBadgeWrap: { alignItems: 'center', paddingTop: hs(28), marginBottom: hs(24) },
+  sectionBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: hs(18),
+    marginBottom: hs(12),
+    width: '100%',
+    paddingHorizontal: rs(20),
+  },
+  badgeLine: {
+    flex: 1,
+    height: 1,
+    maxWidth: rs(40),
+  },
+  badgeStar: {
+    fontSize: rs(10),
+    marginHorizontal: rs(8),
+  },
   sectionBadge: {
-    backgroundColor: '#0090A8', borderRadius: rs(20),
-    paddingHorizontal: rs(16), paddingVertical: hs(6),
+    borderRadius: rs(20),
+    paddingHorizontal: rs(16),
+    paddingVertical: hs(6),
   },
-  sectionBadgeText: { fontSize: rs(11), fontWeight: '800', color: '#FFFFFF', letterSpacing: 1.5, textTransform: 'uppercase' },
+  sectionBadgeText: { fontSize: rs(11), fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' },
   introIconArea: {
     alignSelf: 'center',
     justifyContent: 'center', alignItems: 'center',
-    marginBottom: hs(24),
+    marginBottom: hs(12),
+  },
+  svgRingWrapper: {
+    width: rs(154),
+    height: rs(154),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   introIconCircle: {
-    width: rs(120), height: rs(120), borderRadius: rs(60),
-    borderWidth: rs(8),
+    position: 'absolute',
+    width: rs(114), height: rs(114), borderRadius: rs(57),
     justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#000000', shadowOpacity: 0.03, shadowRadius: rs(10), shadowOffset: { width: 0, height: 4 }, elevation: 2,
+    borderWidth: 1,
+    shadowOpacity: 0.05, shadowRadius: rs(12), shadowOffset: { width: 0, height: 6 }, elevation: 3,
   },
   introTitleText2: {
     fontSize: rs(28), fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif', fontWeight: 'bold',
@@ -1556,7 +1681,7 @@ const styles = StyleSheet.create({
   },
   introOrnamentRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    marginVertical: hs(18),
+    marginVertical: hs(10),
   },
   introOrnamentLine: { width: rs(80), height: 1 },
   introOrnamentStar: { fontSize: rs(14), color: '#00ADC1', marginHorizontal: rs(12) },
@@ -1566,13 +1691,15 @@ const styles = StyleSheet.create({
   },
   introInfoRow: {
     flexDirection: 'row', justifyContent: 'center',
-    gap: rs(12), marginTop: hs(20),
+    gap: rs(12), marginTop: hs(10),
     paddingHorizontal: rs(20),
   },
   introInfoPill: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: rs(16), paddingVertical: hs(10),
+    paddingHorizontal: rs(16), paddingVertical: hs(6),
     borderRadius: rs(20),
+    borderWidth: 1,
+    borderColor: 'rgba(0,173,193,0.15)',
   },
   introInfoText: { fontSize: rs(13), fontWeight: '600', color: '#0090A8' },
 

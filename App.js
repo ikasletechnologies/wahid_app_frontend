@@ -13,7 +13,8 @@ import AppNavigator from './src/navigation/AppNavigator';
 import ThemedToast from './src/components/ThemedToast';
 import NetworkScreen from './src/screens/NetworkScreen';
 import NetInfo from '@react-native-community/netinfo';
-import './src/services/google/googleConfig';
+// import './src/services/google/googleConfig';
+// import { Settings } from 'react-native-fbsdk-next';
 
 // Keep the native splash screen visible until the app is ready
 SplashScreen.preventAutoHideAsync();
@@ -25,6 +26,9 @@ export default function App() {
     // Hide the native splash screen as soon as the JS is ready.
     // This allows the custom animated SplashScreen to take over.
     SplashScreen.hideAsync();
+
+    // Initialize Facebook SDK
+    // Settings.initializeSDK();
 
     // Listen to network status changes
     const unsubscribe = NetInfo.addEventListener((state) => {

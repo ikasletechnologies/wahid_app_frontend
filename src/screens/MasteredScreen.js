@@ -1,109 +1,28 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar,
-  Animated, Dimensions, Easing, TextInput, Modal, Alert,
+  Animated, Dimensions, Easing, TextInput, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNames } from '../context/NamesContext';
-import { usePlaylist } from '../context/PlaylistContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { FONTS } from '../theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { height: SH } = Dimensions.get('window');
 
-const SCREEN_CONFIGS = {
-  favorites: {
-    title: 'Favorite Names',
-    subtitle: 'Your saved names for quick access.',
-    placeholder: 'Search your favorites...',
-    emptyIcon: 'heart-outline',
-  },
-  drafts: {
-    title: 'Draft Names',
-    subtitle: "Names you're currently studying.",
-    placeholder: 'Search your drafts...',
-    emptyIcon: 'document-text-outline',
-  },
-  learned: {
-    title: 'Revision',
-    subtitle: 'Names bookmarked for review.',
-    placeholder: 'Search revision names...',
-    emptyIcon: 'bookmark-outline',
-  },
-  mastered: {
-    title: 'Mastered Names',
-    subtitle: "Names you've fully learned.",
-    placeholder: 'Search mastered names...',
-    emptyIcon: 'trophy-outline',
-  },
-  remaining: {
-    title: 'Remaining Names',
-    subtitle: 'Names yet to be learned.',
-    placeholder: 'Search remaining names...',
-    emptyIcon: 'ellipse-outline',
-  },
-};
-
-// Per-screen theme colours
-const THEME_COLORS = {
-  favorites: {
-    accent: '#F43F5E',
-    gradientDark: ['rgba(244, 63, 94, 0.08)', 'transparent'],
-    gradientLight: ['#FFE4E6', 'transparent'],
-    chipBgDark: '#1E293B',
-    chipBgLight: '#FFE4E6',
-  },
-  drafts: {
-    accent: '#8B5CF6',
-    gradientDark: ['rgba(139, 92, 246, 0.08)', 'transparent'],
-    gradientLight: ['#EDE9FE', 'transparent'],
-    chipBgDark: '#1E293B',
-    chipBgLight: '#EDE9FE',
-  },
-  learned: {
-    accent: '#F97316',
-    gradientDark: ['rgba(249, 115, 22, 0.08)', 'transparent'],
-    gradientLight: ['#FFF7ED', 'transparent'],
-    chipBgDark: '#1E293B',
-    chipBgLight: '#FFEDD5',
-  },
-  mastered: {
-    accent: '#F59E0B',
-    gradientDark: ['rgba(245, 158, 11, 0.08)', 'transparent'],
-    gradientLight: ['#FEF3C7', 'transparent'],
-    chipBgDark: '#1E293B',
-    chipBgLight: '#FEF3C7',
-  },
-  remaining: {
-    accent: '#64748B',
-    gradientDark: ['rgba(100, 116, 139, 0.08)', 'transparent'],
-    gradientLight: ['#F1F5F9', 'transparent'],
-    chipBgDark: '#1E293B',
-    chipBgLight: '#F1F5F9',
-  },
-};
-
-const NamesListScreen = ({ navigation, route }) => {
-  const { names, learnedIds, masteredIds, draftIds, reviewLaterIds } = useNames();
-  const { favouriteIds } = usePlaylist();
+const MasteredScreen = ({ navigation }) => {
+  const { names, learnedIds, masteredIds } = useNames();
   const { isDark, colors } = useAppTheme();
 
-  const statusFilter = route.params?.statusFilter || 'all';
-  const config = SCREEN_CONFIGS[statusFilter] ?? {
-    title: 'Names',
-    subtitle: '',
-    placeholder: 'Search names...',
-    emptyIcon: 'list-outline',
+  const config = {
+    title: 'Mastered Names',
+    subtitle: "Names you've fully mastered.",
+    placeholder: 'Search mastered names...',
+    emptyIcon: 'trophy-outline',
   };
-
-  // Resolve the theme for this screen
-  const theme = THEME_COLORS[statusFilter] ?? THEME_COLORS.learned;
-  const accent = theme.accent;
-  const gradientColors = isDark ? theme.gradientDark : theme.gradientLight;
-  const chipBg = isDark ? theme.chipBgDark : theme.chipBgLight;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -120,22 +39,12 @@ const NamesListScreen = ({ navigation, route }) => {
     }).start(() => navigation.goBack());
   }, [exitAnim, navigation]);
 
-  // Base list: filtered by screen type only
+  // Filter: Mastered names
   const baseList = useMemo(() => {
     let result = names ?? [];
-    if (statusFilter === 'learned') {
-      result = result.filter(n => reviewLaterIds && reviewLaterIds.includes(n.number));
-    } else if (statusFilter === 'mastered') {
-      result = result.filter(n => masteredIds.includes(n.number));
-    } else if (statusFilter === 'remaining') {
-      result = result.filter(n => !learnedIds.includes(n.number) && !masteredIds.includes(n.number));
-    } else if (statusFilter === 'favorites') {
-      result = result.filter(n => favouriteIds && favouriteIds.has(n.number ?? n.id));
-    } else if (statusFilter === 'drafts') {
-      result = result.filter(n => draftIds && draftIds.includes(n.number ?? n.id));
-    }
+    result = result.filter(n => masteredIds.includes(n.number));
     return result;
-  }, [names, learnedIds, masteredIds, draftIds, favouriteIds, statusFilter, reviewLaterIds]);
+  }, [names, masteredIds]);
 
   // Categories that actually appear in this list
   const availableCategories = useMemo(() => {
@@ -181,34 +90,23 @@ const NamesListScreen = ({ navigation, route }) => {
 
     return (
       <TouchableOpacity
-        style={[styles.row, { backgroundColor: cardBg, borderColor: cardBorder }]}
+        style={[
+          styles.row,
+          {
+            backgroundColor: cardBg,
+            borderColor: cardBorder,
+          },
+        ]}
         activeOpacity={0.7}
         onPress={async () => {
-          const isDraftLimitReached = draftIds && draftIds.length >= 5;
-          const isNew = !learnedIds.includes(item.number) && !masteredIds.includes(item.number) && (!draftIds || !draftIds.includes(item.number));
-
-          if (isDraftLimitReached && isNew) {
-            Alert.alert(
-              "Draft Limit Reached",
-              "You have 5 pending drafts. Please complete them before starting a new name.",
-              [
-                { text: "Cancel", style: "cancel" },
-                { text: "Study Drafts", onPress: () => navigation.navigate('NamesList', { statusFilter: 'drafts' }) }
-              ]
-            );
-            return;
-          }
-
           let extraParams = { initialStepIndex: 0 };
-          if (statusFilter === 'drafts' || statusFilter === 'learned') {
-            try {
-              const saved = await AsyncStorage.getItem(`draft_progress_${item.number ?? item.id}`);
-              if (saved) {
-                extraParams.draftProgress = JSON.parse(saved);
-                extraParams.initialStepIndex = extraParams.draftProgress.stepIndex || 0;
-              }
-            } catch (e) {}
-          }
+          try {
+            const saved = await AsyncStorage.getItem(`draft_progress_${item.number ?? item.id}`);
+            if (saved) {
+               extraParams.draftProgress = JSON.parse(saved);
+               extraParams.initialStepIndex = extraParams.draftProgress.stepIndex || 0;
+            }
+          } catch (e) {}
           navigation.navigate('NameDetail', {
             name: { ...item, id: item.id ?? item.number },
             ...extraParams,
@@ -217,7 +115,7 @@ const NamesListScreen = ({ navigation, route }) => {
       >
         {/* Number bubble */}
         <View style={[styles.numBubble, { backgroundColor: isDark ? '#1E293B' : '#EFF6FF' }]}>
-          <Text style={[styles.numText, { color: accent }]}>
+          <Text style={[styles.numText, { color: '#F59E0B' }]}>
             {String(item.number).padStart(2, '0')}
           </Text>
           {statusDot && (
@@ -244,7 +142,7 @@ const NamesListScreen = ({ navigation, route }) => {
         />
       </TouchableOpacity>
     );
-  }, [isDark, colors, masteredIds, learnedIds, navigation, accent, statusFilter]);
+  }, [isDark, colors, masteredIds, learnedIds, navigation]);
 
   const hasActiveFilter = selectedCategory !== 'All';
 
@@ -256,9 +154,9 @@ const NamesListScreen = ({ navigation, route }) => {
       >
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
-        {/* ── PREMIUM THEMED GRADIENT HEADER ── */}
+        {/* Subtle top gradient background for the header area */}
         <LinearGradient
-          colors={gradientColors}
+          colors={isDark ? ['rgba(245, 158, 11, 0.08)', 'transparent'] : ['#FEF3C7', 'transparent']}
           style={styles.headerBg}
         />
 
@@ -280,7 +178,7 @@ const NamesListScreen = ({ navigation, route }) => {
           <TouchableOpacity
             style={[
               styles.iconBtn,
-              hasActiveFilter && { backgroundColor: accent, borderRadius: 18 },
+              hasActiveFilter && { backgroundColor: '#F59E0B', borderRadius: 18 },
             ]}
             onPress={() => setMenuVisible(true)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -294,21 +192,21 @@ const NamesListScreen = ({ navigation, route }) => {
         </View>
 
         {/* Subtitle */}
-        <Text style={[styles.subtitle, { color: accent, opacity: 0.85 }]}>
+        <Text style={[styles.subtitle, { color: '#F59E0B', opacity: 0.85 }]}>
           {config.subtitle}
         </Text>
 
         {/* Active category chip */}
         {hasActiveFilter && (
           <View style={styles.activeChipRow}>
-            <View style={[styles.activeChip, { backgroundColor: chipBg }]}>
-              <Ionicons name="pricetag-outline" size={12} color={accent} style={{ marginRight: 4 }} />
-              <Text style={[styles.activeChipText, { color: accent }]}>{selectedCategory}</Text>
+            <View style={[styles.activeChip, { backgroundColor: isDark ? '#1E293B' : '#FEF3C7' }]}>
+              <Ionicons name="pricetag-outline" size={12} color="#F59E0B" style={{ marginRight: 4 }} />
+              <Text style={styles.activeChipText}>{selectedCategory}</Text>
               <TouchableOpacity
                 onPress={() => setSelectedCategory('All')}
                 hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
               >
-                <Ionicons name="close-circle" size={15} color={accent} style={{ marginLeft: 6 }} />
+                <Ionicons name="close-circle" size={15} color="#F59E0B" style={{ marginLeft: 6 }} />
               </TouchableOpacity>
             </View>
           </View>
@@ -320,28 +218,28 @@ const NamesListScreen = ({ navigation, route }) => {
             styles.searchBar,
             {
               backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
-              borderColor: isDark ? `${accent}40` : `${accent}30`,
+              borderColor: isDark ? 'rgba(245, 158, 11, 0.25)' : '#FEF3C7',
             },
           ]}
         >
-          <Ionicons name="search" size={16} color={accent} style={{ opacity: 0.8 }} />
+          <Ionicons name="search" size={16} color={isDark ? '#F59E0B' : '#F59E0B'} style={{ opacity: 0.8 }} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
             placeholder={config.placeholder}
-            placeholderTextColor={isDark ? '#475569' : '#94A3B8'}
+            placeholderTextColor={isDark ? 'rgba(245,158,11,0.5)' : '#94A3B8'}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={16} color={accent} />
+              <Ionicons name="close-circle" size={16} color="#F59E0B" />
             </TouchableOpacity>
           )}
         </View>
 
         {/* Results count when filtered */}
         {(hasActiveFilter || searchQuery.trim()) && (
-          <Text style={[styles.resultsCount, { color: accent, opacity: 0.8 }]}>
+          <Text style={[styles.resultsCount, { color: isDark ? '#F59E0B' : '#F59E0B', opacity: 0.8 }]}>
             {listData.length} result{listData.length !== 1 ? 's' : ''}
           </Text>
         )}
@@ -363,7 +261,7 @@ const NamesListScreen = ({ navigation, route }) => {
               </Text>
               {(searchQuery || hasActiveFilter) && (
                 <TouchableOpacity
-                  style={[styles.clearBtn, { backgroundColor: accent }]}
+                  style={styles.clearBtn}
                   onPress={() => { setSearchQuery(''); setSelectedCategory('All'); }}
                 >
                   <Text style={styles.clearBtnText}>Clear filters</Text>
@@ -413,16 +311,16 @@ const NamesListScreen = ({ navigation, route }) => {
                     key={cat}
                     style={[
                       styles.dropdownItem,
-                      isActive && { backgroundColor: isDark ? `${accent}20` : `${accent}15` },
+                      isActive && { backgroundColor: isDark ? 'rgba(245,158,11,0.12)' : 'rgba(245,158,11,0.08)' },
                     ]}
                     onPress={() => { setSelectedCategory(cat); setMenuVisible(false); }}
                   >
                     <View style={styles.dropdownItemLeft}>
                       {isActive
-                        ? <Ionicons name="checkmark-circle" size={18} color={accent} style={{ marginRight: 10 }} />
+                        ? <Ionicons name="checkmark-circle" size={18} color="#F59E0B" style={{ marginRight: 10 }} />
                         : <View style={[styles.dropdownDot, { backgroundColor: isDark ? '#334155' : '#E2E8F0' }]} />
                       }
-                      <Text style={[styles.dropdownItemText, { color: isActive ? accent : (isDark ? '#E2E8F0' : '#1A1A1A') }]}>
+                      <Text style={[styles.dropdownItemText, { color: isActive ? '#F59E0B' : (isDark ? '#E2E8F0' : '#1A1A1A') }]}>
                         {cat === 'All' ? 'All Categories' : cat}
                       </Text>
                     </View>
@@ -442,15 +340,12 @@ const NamesListScreen = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   root: { flex: 1, position: 'relative' },
-
-  // ── Gradient header background ──
   headerBg: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     height: 150,
-    zIndex: 0,
   },
 
   // ── Header ──
@@ -507,6 +402,7 @@ const styles = StyleSheet.create({
   activeChipText: {
     fontSize: 12,
     fontFamily: FONTS.bold,
+    color: '#F59E0B',
   },
 
   // ── Search ──
@@ -542,6 +438,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 40,
+    zIndex: 2,
   },
   row: {
     flexDirection: 'row',
@@ -613,6 +510,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 9,
     borderRadius: 10,
+    backgroundColor: '#F59E0B',
   },
   clearBtnText: {
     color: '#FFFFFF',
@@ -687,4 +585,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default NamesListScreen;
+export default MasteredScreen;
