@@ -156,7 +156,8 @@ const SURAHS = [
 const HomeScreen = ({ navigation }) => {
   const { user } = useAuth();
   const { colors, isDark } = useAppTheme();
-  const { names, learnedIds, masteredIds, streak, refresh, refreshing, categories } = useNames();
+  const { names, learnedIds, masteredIds, streak, refresh, refreshing, categories, draftIds } = useNames();
+  const isDraftLimitReached = isNewName && (draftIds?.length >= 5);
 
   const [readingProgress, setReadingProgress] = React.useState({
     surahName: 'Al-Fatihah',
@@ -188,7 +189,7 @@ const HomeScreen = ({ navigation }) => {
             setUnreadNotifications(res.data.data.unreadCount || 0);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }, [])
   );
 
@@ -242,6 +243,11 @@ const HomeScreen = ({ navigation }) => {
   }, []);
 
   const handleBackToReading = async () => {
+    if (isDraftLimitReached) {
+      navigation.navigate('NamesList', { statusFilter: 'drafts' });
+      return;
+    }
+
     if (!lastReadName) {
       const defaultName = names.find(n => n.number === 1) || names[0];
       if (defaultName) {
@@ -252,11 +258,21 @@ const HomeScreen = ({ navigation }) => {
 
     const nameNumber = lastReadName.number || lastReadName.id;
     try {
-      const saved = await AsyncStorage.getItem('last_reading_progress');
-      const progress = saved ? JSON.parse(saved) : null;
+      const [savedProgress, savedDraft] = await Promise.all([
+        AsyncStorage.getItem('last_reading_progress'),
+        AsyncStorage.getItem(`draft_progress_${nameNumber}`)
+      ]);
+      const progress = savedProgress ? JSON.parse(savedProgress) : null;
+      const draft = savedDraft ? JSON.parse(savedDraft) : null;
+
       const initialStepIndex =
         progress?.nameNumber === nameNumber ? (progress.stepIndex ?? 0) : 0;
-      navigation.navigate('NameDetail', { name: lastReadName, initialStepIndex });
+
+      navigation.navigate('NameDetail', {
+        name: lastReadName,
+        initialStepIndex,
+        draftProgress: draft
+      });
     } catch {
       navigation.navigate('NameDetail', { name: lastReadName, initialStepIndex: 0 });
     }
@@ -340,10 +356,10 @@ const HomeScreen = ({ navigation }) => {
       result[key] = { total: 0, learned: 0 };
     });
     names.forEach(name => {
-      const cat = name.category;
-      if (result[cat]) {
+      const cat = name.category ? name.category.toLowerCase() : null;
+      if (cat && result[cat]) {
         result[cat].total += 1;
-        if (learnedIds.includes(name.number)) {
+        if (learnedIds.includes(name.number) || masteredIds.includes(name.number)) {
           result[cat].learned += 1;
         }
       }
@@ -434,188 +450,230 @@ const HomeScreen = ({ navigation }) => {
               }
             >
               <View style={{ paddingBottom: 16 }}>
-              {/* ── Last Read Card ── */}
-              <View style={styles.lastReadCardWrapper}>
-                <LinearGradient
-                  colors={isDark ? ['#1A2332', '#0F172A'] : ['#4BD5E8', '#FDFEFE']}
-                  start={{ x: 0.5, y: 0 }}
-                  end={{ x: 0.5, y: 0.9 }}
-                  style={[styles.lastReadCard, isDark && { borderWidth: 1, borderColor: '#334155' }]}
-                >
-                  <View style={styles.lastReadLeft}>
-                    <View style={styles.lastReadBadge}>
-                      <Image
-                        source={require('../../assets/navigation/names.png')}
-                        style={[styles.lastReadBadgeIcon, { tintColor: isDark ? '#E8EDF2' : '#000000' }]}
-                        resizeMode="contain"
+                {/* ── Last Read Card ── */}
+                <View style={styles.lastReadCardWrapper}>
+                  <LinearGradient
+                    colors={isDark ? ['#1A2332', '#0F172A'] : ['#DDF8F6', '#FFFFFF', '#FFFFFF', '#DDF8F6']}
+                    locations={isDark ? [0, 1] : [0, 0.3, 0.7, 1]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={[styles.lastReadCard, { flexDirection: 'column', height: 'auto', minHeight: hs(180), paddingBottom: hs(16), overflow: 'hidden' }, isDark ? { borderWidth: 1, borderColor: '#334155' } : { borderWidth: 1, borderColor: 'rgba(255,255,255,0.8)' }]}
+                  >
+                    {/* Secondary overlay gradient to color the top-right and bottom-left corners */}
+                    {!isDark && (
+                      <LinearGradient
+                        colors={['#DDF8F6', 'rgba(255,255,255,0)', 'rgba(255,255,255,0)', '#DDF8F6']}
+                        locations={[0, 0.3, 0.7, 1]}
+                        start={{ x: 1, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={[StyleSheet.absoluteFillObject, { zIndex: -1 }]}
                       />
-                      <Text style={[styles.lastReadBadgeText, { color: isDark ? '#E8EDF2' : '#000000' }]}>
-                        {isNewName ? 'New Name' : 'Last Read'}
-                      </Text>
+                    )}
+                    {/* Header Row */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10, width: '100%' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(10) }}>
+                        <View style={{ width: rs(40), height: rs(40), borderRadius: rs(20), backgroundColor: '#09B7C9', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFFFFF', shadowColor: '#09B7C9', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 2 }}>
+                          <Ionicons name="book-outline" size={rs(18)} color="#FFFFFF" />
+                        </View>
+                        <View>
+                          <Text style={{ fontFamily: FONTS.bold, fontSize: rs(16), color: isDark ? '#E8EDF2' : '#0F172A' }}>{isDraftLimitReached ? 'Attention Required' : (isNewName ? 'New Name' : 'Last Read')}</Text>
+                          <Text style={{ fontFamily: FONTS.medium, fontSize: rs(10), color: isDark ? '#94A3B8' : '#64748B' }}>{isDraftLimitReached ? 'Focus on your progress' : 'Continue your journey'}</Text>
+                        </View>
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(6), backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.7)', paddingHorizontal: rs(10), paddingVertical: hs(6), borderRadius: rs(12), borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)' }}>
+                        <View style={{ width: rs(20), height: rs(20), borderRadius: rs(10), backgroundColor: '#09B7C9', justifyContent: 'center', alignItems: 'center' }}>
+                          <Ionicons name="time-outline" size={rs(12)} color="#FFFFFF" />
+                        </View>
+                        <Text style={{ fontFamily: FONTS.bold, fontSize: rs(11), color: '#09B7C9' }}>Today, 2:30 PM</Text>
+                      </View>
                     </View>
 
-                    <View style={styles.lastReadTextGroup}>
-                      <Text style={[styles.lastReadArabic, { color: isDark ? '#E8EDF2' : '#000000ff' }]}>{lastReadName?.arabic || 'الرحمن'}</Text>
-                      <Text style={[styles.lastReadTrans, { color: isDark ? '#E8EDF2' : '#000000' }]}>{lastReadName?.transliteration || 'Ar-rahman'}</Text>
-                      <Text style={[styles.lastReadMeaning, { color: isDark ? '#9EAAB8' : '#374151' }]}>{lastReadName?.meaning || 'The Most Gracious'}</Text>
-                    </View>
+                    {/* Content Row */}
+                    <View style={{ flexDirection: 'row', flex: 1, marginTop: hs(10) }}>
+                      <View style={[styles.lastReadLeft, { paddingLeft: rs(10) }]}>
+                        <View style={[styles.lastReadTextGroup, { marginTop: hs(15), marginBottom: hs(15) }]}>
+                          {isDraftLimitReached ? (
+                            <>
+                              <View style={{ backgroundColor: isDark ? 'rgba(245,158,11,0.1)' : 'rgba(245,158,11,0.15)', paddingHorizontal: rs(10), paddingVertical: hs(4), borderRadius: rs(8), marginBottom: hs(8), alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: rs(4) }}>
+                                <Ionicons name="sparkles" size={rs(12)} color="#F59E0B" />
+                                <Text style={{ fontFamily: FONTS.bold, fontSize: rs(10), color: '#F59E0B', letterSpacing: 0.5, textTransform: 'uppercase' }}>Focus Mode</Text>
+                              </View>
+                              <Text style={{ fontFamily: FONTS.bold, fontSize: rs(20), color: isDark ? '#E8EDF2' : '#0F172A', lineHeight: rs(24) }}>Review Drafts</Text>
+                              <Text style={{ fontFamily: FONTS.medium, fontSize: rs(11), color: isDark ? '#9EAAB8' : '#64748B', marginTop: hs(6), width: '95%', lineHeight: hs(16) }}>Master your {draftIds?.length || 5} pending names before starting a new journey.</Text>
+                            </>
+                          ) : (
+                            <>
+                              <Text style={{ fontSize: rs(12), fontFamily: FONTS.arabic, color: isDark ? '#E8EDF2' : '#09B7C9', marginBottom: hs(4) }}>{lastReadName?.arabic || 'الله'}</Text>
+                              <Text style={{ fontFamily: FONTS.bold, fontSize: rs(22), color: isDark ? '#E8EDF2' : '#0F172A', lineHeight: rs(26) }}>{lastReadName?.transliteration || 'Allah'}</Text>
+                              <Text style={{ fontFamily: FONTS.medium, fontSize: rs(10), color: isDark ? '#9EAAB8' : '#64748B', marginTop: hs(4) }}>{lastReadName?.meaning || 'The God'}</Text>
+                            </>
+                          )}
+                        </View>
 
-                    <TouchableOpacity
-                      style={[styles.backToReadingBtn, { backgroundColor: isDark ? '#00ADC1' : '#000000' }]}
-                      activeOpacity={0.8}
-                      onPress={handleBackToReading}
-                    >
-                      <Text style={[styles.backToReadingText, { color: '#ffffff' }]}>
-                        {isNewName ? 'Start New Name' : 'Continue Reading'}
-                      </Text>
-                      <Ionicons name="chevron-forward" size={15} color="#ffffff" style={{ marginLeft: 20, marginTop: 4 }} />
-                    </TouchableOpacity>
-                  </View>
+                        <View style={{ width: '85%' }}>
+                          <TouchableOpacity
+                            style={[styles.backToReadingBtn, { backgroundColor: isDark ? '#00ADC1' : '#09B7C9', shadowColor: '#09B7C9', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 6, justifyContent: 'space-between', paddingHorizontal: rs(16), paddingVertical: hs(10), borderRadius: rs(10), width: '100%' }]}
+                            activeOpacity={0.8}
+                            onPress={handleBackToReading}
+                          >
+                            <Text style={[styles.backToReadingText, { color: '#ffffff', fontSize: rs(13), fontFamily: FONTS.bold }]}>
+                              {isDraftLimitReached ? 'Study Drafts' : (isNewName ? 'Start New Name' : 'Continue Reading')}
+                            </Text>
+                            <Ionicons name="arrow-forward" size={rs(16)} color="#ffffff" />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
 
-                  <View style={styles.lastReadRight}>
-                    <Animated.Image
-                      source={require('../../assets/names/book.png')}
-                      style={[
-                        styles.lastReadBookImage,
-                        {
-                          transform: [
-                            { rotate: '-6deg' },
+                      <View style={styles.lastReadRight}>
+                        <Animated.Image
+                          source={require('../../assets/names/book.png')}
+                          style={[
+                            styles.lastReadBookImage,
                             {
-                              translateY: floatAnim.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [0, -10]
-                              })
+                              top: hs(-15),
+                              right: rs(-40),
+                              transform: [
+                                { scale: 1.15 },
+                                { rotate: '2deg' },
+                                {
+                                  translateY: floatAnim.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [0, -10]
+                                  })
+                                }
+                              ]
                             }
-                          ]
-                        }
-                      ]}
-                      resizeMode="contain"
-                    />
-                  </View>
-                </LinearGradient>
-              </View>
+                          ]}
+                          resizeMode="contain"
+                        />
+                      </View>
+                    </View>
 
-              {/* ── Progress Card ── */}
-              <View style={[
-                styles.progressContainer,
-                {
-                  backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
-                  borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9'
-                }
-              ]}>
-                <View style={styles.progressHeader}>
-                  <Text style={[styles.progressTitle, { color: isDark ? '#E8EDF2' : '#0F172A' }]}>Learning Journey</Text>
-                  <Text style={[styles.progressPercentText, { color: '#00ADC1' }]}>
-                    {Math.round(stats.progress)}%
-                  </Text>
+
+                  </LinearGradient>
                 </View>
 
+                {/* ── Progress Card ── */}
                 <View style={[
-                  styles.progressBarBg,
-                  { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9' }
-                ]}>
-                  <View style={[styles.progressBarFill, { width: `${stats.progress}%`, backgroundColor: '#00ADC1' }]} />
-                </View>
-
-                <Text style={styles.progressSubtitleText}>
-                  <Text style={{ color: '#00ADC1', fontFamily: FONTS.bold }}>{stats.learned}</Text>
-                  <Text style={{ color: isDark ? '#94A3B8' : '#64748B' }}> of 99 Names Completed</Text>
-                </Text>
-
-                <View style={[styles.progressDivider, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9' }]} />
-
-                <View style={styles.metricsRow}>
-                  {/* Learned Metric Card */}
-                  <TouchableOpacity
-                    style={[
-                      styles.metricCardWrapNew,
-                      { backgroundColor: isDark ? 'rgba(76, 175, 80, 0.05)' : '#F8FAF9', borderColor: isDark ? 'rgba(76, 175, 80, 0.2)' : '#E8F5E9' }
-                    ]}
-                    activeOpacity={0.75}
-                    onPress={() => navigation.navigate('NamesList', { statusFilter: 'learned' })}
-                  >
-                    <View style={styles.metricCardLeft}>
-                      <View style={[styles.metricIconWrap, { backgroundColor: isDark ? 'rgba(76, 175, 80, 0.1)' : '#E8F5E9' }]}>
-                        <Image source={require('../../assets/home/learn_icon.png')} style={{ width: 24, height: 24, tintColor: '#4CAF50' }} resizeMode="contain" />
-                      </View>
-                    </View>
-                    <View style={styles.metricCardRight}>
-                      <Text style={[styles.metricLabelText, { color: '#4CAF50' }]}>Learned</Text>
-                      <Text style={[styles.metricValueText, { color: isDark ? '#E8EDF2' : '#0F172A' }]}>{stats.learned}</Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  <View style={[styles.metricDividerVertical, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9' }]} />
-
-                  {/* Mastered Metric Card */}
-                  <TouchableOpacity
-                    style={[
-                      styles.metricCardWrapNew,
-                      { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.05)' : '#FFFBEB', borderColor: isDark ? 'rgba(245, 158, 11, 0.2)' : '#FEF3C7' }
-                    ]}
-                    activeOpacity={0.75}
-                    onPress={() => navigation.navigate('NamesList', { statusFilter: 'mastered' })}
-                  >
-                    <View style={styles.metricCardLeft}>
-                      <View style={[styles.metricIconWrap, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.1)' : '#FEF3C7' }]}>
-                        <Image source={require('../../assets/home/master_icon.png')} style={{ width: 24, height: 24, tintColor: '#F59E0B' }} resizeMode="contain" />
-                      </View>
-                    </View>
-                    <View style={styles.metricCardRight}>
-                      <Text style={[styles.metricLabelText, { color: '#F59E0B' }]}>Mastered</Text>
-                      <Text style={[styles.metricValueText, { color: isDark ? '#E8EDF2' : '#0F172A' }]}>{stats.mastered}</Text>
-                    </View>
-                  </TouchableOpacity>
-
-                </View>
-              </View>
-
-              {/* ── Invite Card ── */}
-              <TouchableOpacity 
-                style={[
-                  styles.inviteCard, 
-                  { 
+                  styles.progressContainer,
+                  {
                     backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#e2e8f0', 
-                    marginBottom: 16,
-                    marginTop: 0
+                    borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9'
                   }
-                ]}
-                activeOpacity={0.8}
-                onPress={() => {
-                  Share.share({
-                    message: 'Join me in learning the 99 Names of Allah on the Wahid App! Download now: https://wahidapp.com',
-                  });
-                }}
-              >
-                <LinearGradient
-                  colors={isDark ? ['rgba(6, 182, 212, 0.1)', 'transparent'] : ['#ecfeff', '#ffffff']}
-                  style={styles.inviteCardGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <View style={styles.inviteLeft}>
-                    <View style={[styles.inviteIconWrap, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.2)' : '#cffafe' }]}>
-                      <Ionicons name="people" size={24} color="#06b6d4" />
-                    </View>
-                    <View style={styles.inviteTextCol}>
-                      <Text style={[styles.inviteTitle, { color: colors.text }]}>Invite Friends</Text>
-                      <Text style={[styles.inviteSub, { color: colors.textMuted }]}>Share the blessing of learning</Text>
-                    </View>
+                ]}>
+                  <View style={styles.progressHeader}>
+                    <Text style={[styles.progressTitle, { color: isDark ? '#E8EDF2' : '#0F172A' }]}>Learning Journey</Text>
+                    <Text style={[styles.progressPercentText, { color: '#00ADC1' }]}>
+                      {Math.round(stats.progress)}%
+                    </Text>
                   </View>
-                  <View style={styles.inviteShareBtn}>
-                    <Ionicons name="share-social" size={18} color="#ffffff" />
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
 
-              {/* ── Categories Section Title ── */}
-              <View style={styles.categoriesHeaderRow}>
-                <Text style={[styles.categoriesTitle, { color: colors.text }]}>Categories</Text>
-                <TouchableOpacity onPress={() => setCatSortModalVisible(true)} activeOpacity={0.7}>
-                  <Ionicons name="filter" size={20} color="#06b6d4" />
+                  <View style={[
+                    styles.progressBarBg,
+                    { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9' }
+                  ]}>
+                    <View style={[styles.progressBarFill, { width: `${stats.progress}%`, backgroundColor: '#00ADC1' }]} />
+                  </View>
+
+                  <Text style={styles.progressSubtitleText}>
+                    <Text style={{ color: '#00ADC1', fontFamily: FONTS.bold }}>{stats.learned}</Text>
+                    <Text style={{ color: isDark ? '#94A3B8' : '#64748B' }}> of 99 Names Completed</Text>
+                  </Text>
+
+                  <View style={[styles.progressDivider, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9' }]} />
+
+                  <View style={styles.metricsRow}>
+                    {/* Learned Metric Card */}
+                    <TouchableOpacity
+                      style={[
+                        styles.metricCardWrapNew,
+                        { backgroundColor: isDark ? 'rgba(76, 175, 80, 0.05)' : '#F8FAF9', borderColor: isDark ? 'rgba(76, 175, 80, 0.2)' : '#E8F5E9' }
+                      ]}
+                      activeOpacity={0.75}
+                      onPress={() => navigation.navigate('Learned')}
+                    >
+                      <View style={styles.metricCardLeft}>
+                        <View style={[styles.metricIconWrap, { backgroundColor: isDark ? 'rgba(76, 175, 80, 0.1)' : '#E8F5E9' }]}>
+                          <Image source={require('../../assets/home/learn_icon.png')} style={{ width: 24, height: 24, tintColor: '#4CAF50' }} resizeMode="contain" />
+                        </View>
+                      </View>
+                      <View style={styles.metricCardRight}>
+                        <Text style={[styles.metricLabelText, { color: '#4CAF50' }]}>Learned</Text>
+                        <Text style={[styles.metricValueText, { color: isDark ? '#E8EDF2' : '#0F172A' }]}>{stats.learned}</Text>
+                      </View>
+                    </TouchableOpacity>
+
+                    <View style={[styles.metricDividerVertical, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9' }]} />
+
+                    {/* Mastered Metric Card */}
+                    <TouchableOpacity
+                      style={[
+                        styles.metricCardWrapNew,
+                        { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.05)' : '#FFFBEB', borderColor: isDark ? 'rgba(245, 158, 11, 0.2)' : '#FEF3C7' }
+                      ]}
+                      activeOpacity={0.75}
+                      onPress={() => navigation.navigate('Mastered')}
+                    >
+                      <View style={styles.metricCardLeft}>
+                        <View style={[styles.metricIconWrap, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.1)' : '#FEF3C7' }]}>
+                          <Image source={require('../../assets/home/master_icon.png')} style={{ width: 24, height: 24, tintColor: '#F59E0B' }} resizeMode="contain" />
+                        </View>
+                      </View>
+                      <View style={styles.metricCardRight}>
+                        <Text style={[styles.metricLabelText, { color: '#F59E0B' }]}>Mastered</Text>
+                        <Text style={[styles.metricValueText, { color: isDark ? '#E8EDF2' : '#0F172A' }]}>{stats.mastered}</Text>
+                      </View>
+                    </TouchableOpacity>
+
+                  </View>
+                </View>
+
+                {/* ── Invite Card ── */}
+                <TouchableOpacity
+                  style={[
+                    styles.inviteCard,
+                    {
+                      backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#e2e8f0',
+                      marginBottom: 16,
+                      marginTop: 0
+                    }
+                  ]}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    Share.share({
+                      message: 'Join me in learning the 99 Names of Allah on the Wahid App! Download now: https://wahidapp.com',
+                    });
+                  }}
+                >
+                  <LinearGradient
+                    colors={isDark ? ['rgba(6, 182, 212, 0.1)', 'transparent'] : ['#ecfeff', '#ffffff']}
+                    style={styles.inviteCardGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <View style={styles.inviteLeft}>
+                      <View style={[styles.inviteIconWrap, { backgroundColor: isDark ? 'rgba(6, 182, 212, 0.2)' : '#cffafe' }]}>
+                        <Ionicons name="people" size={24} color="#06b6d4" />
+                      </View>
+                      <View style={styles.inviteTextCol}>
+                        <Text style={[styles.inviteTitle, { color: colors.text }]}>Invite Friends</Text>
+                        <Text style={[styles.inviteSub, { color: colors.textMuted }]}>Share the blessing of learning</Text>
+                      </View>
+                    </View>
+                    <View style={styles.inviteShareBtn}>
+                      <Ionicons name="share-social" size={18} color="#ffffff" />
+                    </View>
+                  </LinearGradient>
                 </TouchableOpacity>
-              </View>
+
+                {/* ── Categories Section Title ── */}
+                <View style={styles.categoriesHeaderRow}>
+                  <Text style={[styles.categoriesTitle, { color: colors.text }]}>Categories</Text>
+                  <TouchableOpacity onPress={() => setCatSortModalVisible(true)} activeOpacity={0.7}>
+                    <Ionicons name="filter" size={20} color="#06b6d4" />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               <View style={styles.catVerticalList}>
@@ -665,12 +723,12 @@ const HomeScreen = ({ navigation }) => {
                         </View>
 
                         <View style={styles.catRightSection}>
-                          <LiquidText 
-                            text={`${pct}%`} 
-                            percentage={pct} 
-                            baseColor={isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.14)'} 
-                            fillColor={progressColor} 
-                            textStyle={styles.giantPercentage} 
+                          <LiquidText
+                            text={`${pct}%`}
+                            percentage={pct}
+                            baseColor={isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.14)'}
+                            fillColor={progressColor}
+                            textStyle={styles.giantPercentage}
                           />
                         </View>
                       </LinearGradient>
@@ -798,7 +856,7 @@ const HomeScreen = ({ navigation }) => {
                 <View style={[styles.modalContent, { backgroundColor: isDark ? '#1e293b' : '#ffffff', minHeight: 250 }]}>
                   <View style={styles.modalHandle} />
                   <Text style={[styles.modalTitle, { color: colors.text, marginBottom: 20 }]}>Sort Categories</Text>
-                  
+
                   {[
                     { id: 'default', label: 'Default Order', icon: 'list' },
                     { id: 'high', label: 'Highest Completion', icon: 'arrow-up' },
@@ -811,10 +869,10 @@ const HomeScreen = ({ navigation }) => {
                         style={[
                           styles.sortOptionRow,
                           {
-                            backgroundColor: isSelected 
+                            backgroundColor: isSelected
                               ? (isDark ? 'rgba(6,182,212,0.15)' : '#ecfeff')
                               : 'transparent',
-                            borderColor: isSelected 
+                            borderColor: isSelected
                               ? '#06b6d4'
                               : (isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9')
                           }
@@ -1054,8 +1112,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: rs(-20),
     top: hs(10),
-    width: rs(140),
-    height: hs(140),
+    width: rs(200),
+    height: hs(200),
     zIndex: 3,
   },
 

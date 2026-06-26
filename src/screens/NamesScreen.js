@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from
 import {
   View, Text, StyleSheet, Dimensions, Animated, PanResponder,
   Image, ActivityIndicator, TouchableOpacity, Easing, ImageBackground,
-  Modal, ScrollView, TextInput, StatusBar
+  Modal, ScrollView, TextInput, StatusBar, Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -427,7 +427,9 @@ const NamesScreen = ({ navigation, route }) => {
       const badgeBg = isDark ? '#000000' : '#0B0C0C';
       const badgeTextColor = '#4BD5E8';
       const badgeIcon = 'checkmark-circle';
-      const displayCat = appliedCat !== 'All' ? appliedCat.toUpperCase() : 'GENERAL';
+      const catId = appliedCat ? appliedCat.toLowerCase() : '';
+      const catObj = categories && categories[catId] ? categories[catId] : null;
+      const displayCat = catObj ? catObj.name.toUpperCase() : (appliedCat !== 'All' ? appliedCat.toUpperCase() : 'GENERAL');
 
       return (
         <View style={styles.cardContent}>
@@ -531,9 +533,9 @@ const NamesScreen = ({ navigation, route }) => {
       bookholderSource = require('../../assets/names/bookHolder/learnHolder.png');
     }
 
-    const category = item.category
-      ? item.category.charAt(0).toUpperCase() + item.category.slice(1)
-      : 'General';
+    const catId = item.category ? item.category.toLowerCase() : '';
+    const catObj = categories && categories[catId] ? categories[catId] : null;
+    const category = catObj ? catObj.name : (item.category ? item.category.charAt(0).toUpperCase() + item.category.slice(1) : 'General');
 
     return (
       <View style={styles.cardContent}>
@@ -800,13 +802,42 @@ const NamesScreen = ({ navigation, route }) => {
                       <TouchableOpacity
                         style={styles.mainCard}
                         activeOpacity={0.92}
-                        onPress={() => {
+                        onPress={async () => {
                           if (isAnimating.current) return;
                           const item = filteredNames[dataIdx];
                           if (!item) return;
+
+                          const isDraftLimitReached = draftIds && draftIds.length >= 5;
+                          const isNew = !learnedIds.includes(item.number) && !masteredIds.includes(item.number) && (!draftIds || !draftIds.includes(item.number));
+
+                          if (isDraftLimitReached && isNew) {
+                            Alert.alert(
+                              "Draft Limit Reached",
+                              "You have 5 pending drafts. Please complete them before starting a new name.",
+                              [
+                                { text: "Cancel", style: "cancel" },
+                                { text: "Study Drafts", onPress: () => navigation.navigate('NamesList', { statusFilter: 'drafts' }) }
+                              ]
+                            );
+                            return;
+                          }
+
                           AsyncStorage.setItem('last_viewed_name', String(item.number)).catch(() => { });
                           markAsViewed(item.number);
-                          navigation.navigate('NameDetail', { name: item });
+
+                          let extraParams = { initialStepIndex: 0 };
+                          try {
+                            const saved = await AsyncStorage.getItem(`draft_progress_${item.number}`);
+                            if (saved) {
+                              extraParams.draftProgress = JSON.parse(saved);
+                              extraParams.initialStepIndex = extraParams.draftProgress.stepIndex || 0;
+                            }
+                          } catch (e) {}
+
+                          navigation.navigate('NameDetail', {
+                            name: item,
+                            ...extraParams,
+                          });
                         }}
                       >
                         {renderCardContent(dataIdx)}
