@@ -8,6 +8,7 @@ import {
   StatusBar,
   Image,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useAppTheme } from '../context/ThemeContext';
 import { COLORS, FONTS, SPACE } from '../theme';
@@ -16,7 +17,7 @@ const { width, height } = Dimensions.get('window');
 
 const SplashScreen = () => {
   const { colors, isDark } = useAppTheme();
-  
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const loaderFadeAnim = useRef(new Animated.Value(0)).current;
@@ -70,9 +71,9 @@ const SplashScreen = () => {
           />
         </View>
 
-        <Text style={[styles.title, { color: colors.text }]}>WAHID</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Wahid</Text>
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-          LEARN • REFLECT • GROW
+          LEARN • REFLECT • LIVE BY
         </Text>
       </Animated.View>
 
@@ -105,12 +106,12 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   title: {
-    fontFamily: FONTS.bold,
-    fontSize: 32,
-    fontWeight: '800',
-    letterSpacing: 4,
+    fontSize: 34,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginTop: 4,
     textAlign: 'center',
-    textTransform: 'uppercase',
+    fontFamily: Platform.OS === 'ios' ? 'Snell Roundhand' : 'cursive',
   },
   subtitle: {
     fontFamily: FONTS.medium,

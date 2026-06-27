@@ -72,7 +72,7 @@ const withCategory = (name) => {
     quranic: name.quran || [],
     sunnah: name.hadith || [],
     scholarlyViews: [],
-    category: name.category || NUMBER_TO_CATEGORY[nameId] || 'mercy',
+    category: NUMBER_TO_CATEGORY[nameId] || 'mercy',
   };
 };
 

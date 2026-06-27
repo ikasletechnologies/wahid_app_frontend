@@ -132,7 +132,7 @@ const PhoneScreen = ({ navigation }) => {
                 style={{ width: 65, height: 65 }}
                 resizeMode="contain"
               />
-              <Text style={[styles.logoTitle, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>WAHID</Text>
+              <Text style={[styles.logoTitle, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>Wahid</Text>
               <Text style={[styles.logoSubtitle, { color: isDark ? '#A0AEC0' : '#718096' }]}>Learn • Reflect • Grow</Text>
             </View>
             <Image
@@ -285,11 +285,12 @@ const styles = StyleSheet.create({
     left: 0,
   },
   logoTitle: {
-    fontSize: 25,
-    fontWeight: '800',
+    fontSize: 34,
+    fontWeight: '700',
     color: '#0F203C',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
     marginTop: 4,
+    fontFamily: Platform.OS === 'ios' ? 'Snell Roundhand' : 'cursive',
   },
   logoSubtitle: {
     fontSize: 10,

@@ -101,7 +101,7 @@ const CustomTabBar = ({ state, descriptors, navigation, isNight }) => {
           styles.tabBar,
           {
             height:          BAR_HEIGHT,
-            borderRadius:    BAR_HEIGHT / 2.2,
+            borderRadius:    20,
             backgroundColor: theme.barBg,
             borderColor:     theme.border,
             shadowColor:     theme.shadow,
