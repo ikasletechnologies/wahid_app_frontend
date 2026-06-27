@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import Svg, { Circle as SvgCircle, Line, Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -240,6 +241,7 @@ const NameDetailScreen = ({ route, navigation }) => {
   const [activeCardTime, setActiveCardTime] = useState(0);
   const [showCelebration, setShowCelebration] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
 
   useEffect(() => {
     const loadTime = async () => {
@@ -314,7 +316,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   const isBackDisabled = useMemo(() => {
     if (showCelebration) return true;
-    if (currentStepIndex === 0 && meaningSubStep === 0) return true;
+    if (currentStepIndex === 0 && meaningSubStep === -1) return true;
     return false;
   }, [currentStepIndex, meaningSubStep, showCelebration]);
 
@@ -659,6 +661,10 @@ const NameDetailScreen = ({ route, navigation }) => {
     let ans = 0;
     if (name.mcq && name.mcq.length > 0) ans = name.mcq[0].ans;
 
+    if (currentStep.type !== 'mastery' && currentStep.type !== 'reflection') {
+      setIsFocusMode(true);
+    }
+
     // Celebration only fires when the NEXT step is reflection or mastery
     const isLastContentStep = () => {
       const nextIdx = currentStepIndex + 1;
@@ -755,29 +761,44 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   // ── Render Helpers ──
 
+  const DecorativeFlower = ({ color }) => (
+    <Svg width={rs(24)} height={rs(24)} viewBox="0 0 24 24">
+      {/* 8-petal geometric flower */}
+      <Path d="M12 2 C13 7 17 11 22 12 C17 13 13 17 12 22 C11 17 7 13 2 12 C7 11 11 7 12 2" fill={color} />
+      <Path d="M4.9 4.9 C8.4 7 11.2 11.2 12 12 C11.2 12.8 7 15.6 4.9 19.1 C7 15.6 11.2 12.8 12 12 C12.8 11.2 15.6 7 19.1 4.9 C15.6 7 12.8 11.2 12 12" fill={color} />
+      <SvgCircle cx="12" cy="12" r="2.5" fill="#FFFFFF" />
+    </Svg>
+  );
+
   const renderReadingCard = ({ title, text, badgeIcon, scholarName, scholarWork, customContent }) => (
     <View style={styles.tabContentContainer}>
-      <View style={[styles.modernCard, { backgroundColor: t.cardBg, borderColor: t.cardBorder }]}>
+      <View style={[styles.modernCard, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', borderColor: isDark ? '#334155' : '#F0F4F8' }]}>
 
         {/* Top Badges Row */}
         <View style={styles.cardBadgesRow}>
-          <View style={[styles.badgeCircle, { backgroundColor: isDark ? '#1A2332' : '#F2FAFB', flexShrink: 0 }]}>
-            <Ionicons name={badgeIcon} size={rs(18)} color="#00ADC1" />
+          <View style={[styles.badgeCircle, { backgroundColor: isDark ? '#0F172A' : '#F0F9FA', flexShrink: 0 }]}>
+            <Ionicons name={badgeIcon} size={rs(20)} color="#16858A" />
           </View>
-          <Text style={[styles.cardHeaderTitleText, { color: isDark ? '#E8EDF2' : '#112F33', marginLeft: rs(12) }]}>
+          <Text style={[styles.cardHeaderTitleText, { color: isDark ? '#E8EDF2' : '#14363F', marginLeft: rs(14) }]}>
             {title}
           </Text>
-          <View style={[styles.badgePill, { backgroundColor: isDark ? '#1A2332' : '#F2FAFB', marginLeft: 'auto', flexShrink: 0 }]}>
-            <Ionicons name="time-outline" size={rs(14)} color="#00ADC1" style={{ marginRight: rs(4) }} />
-            <Text style={[styles.badgePillText, { color: isDark ? '#9EAAB8' : '#112F33' }]}>{formatTime(activeCardTime)}</Text>
+          <View style={[styles.badgePill, { backgroundColor: isDark ? '#0F172A' : '#F0F9FA', marginLeft: 'auto', flexShrink: 0 }]}>
+            <Ionicons name="time-outline" size={rs(15)} color="#16858A" style={{ marginRight: rs(4) }} />
+            <Text style={[styles.badgePillText, { color: isDark ? '#9EAAB8' : '#14363F' }]}>{formatTime(activeCardTime)}</Text>
           </View>
         </View>
 
         {/* Custom Divider */}
         <View style={styles.customDividerWrap}>
-          <View style={styles.customDividerLine} />
-          <Ionicons name="snow-outline" size={rs(16)} color="#00ADC1" style={{ marginHorizontal: rs(8) }} />
-          <View style={styles.customDividerLine} />
+          <View style={[styles.dividerDot, { backgroundColor: isDark ? '#4CD5E8' : '#A4D0CB' }]} />
+          <View style={[styles.dividerDot, { backgroundColor: '#16858A', marginLeft: rs(4) }]} />
+          <View style={[styles.customDividerLine, { backgroundColor: isDark ? '#334155' : '#D1E8E6', marginLeft: rs(6), marginRight: rs(12) }]} />
+          
+          <DecorativeFlower color="#16858A" />
+          
+          <View style={[styles.customDividerLine, { backgroundColor: isDark ? '#334155' : '#D1E8E6', marginLeft: rs(12), marginRight: rs(6) }]} />
+          <View style={[styles.dividerDot, { backgroundColor: '#16858A', marginRight: rs(4) }]} />
+          <View style={[styles.dividerDot, { backgroundColor: isDark ? '#4CD5E8' : '#A4D0CB' }]} />
         </View>
 
         {/* Main Text with Proper Fade Animation */}
@@ -790,7 +811,7 @@ const NameDetailScreen = ({ route, navigation }) => {
           <FadeContent contentKey={text || (customContent ? 'custom' : '')}>
             {customContent ? customContent : (
               <>
-                <Text style={[styles.readingText, { color: t.text }]}>{text}</Text>
+                <Text style={[styles.readingText, { color: isDark ? '#E8EDF2' : '#14363F' }]}>{text}</Text>
                 {!!scholarName && <Text style={[styles.scholarName, { color: t.text, marginTop: hs(16) }]}>{scholarName}</Text>}
                 {!!scholarWork && <Text style={[styles.scholarWork, { color: '#00ADC1' }]}>{scholarWork}</Text>}
               </>
@@ -798,25 +819,17 @@ const NameDetailScreen = ({ route, navigation }) => {
           </FadeContent>
         </ScrollView>
 
-        {/* Card Action Divider */}
-        <View style={[styles.cardActionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2F8FA' }]} />
-
-        {/* Action Bar Row */}
-        <View style={styles.cardActionBar}>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => toggleFavourite(name.number || name.id)} activeOpacity={0.7}>
-            <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={rs(18)} color={isFavorite ? "#EF4444" : (isDark ? '#E8EDF2' : '#4A5568')} />
-            <Text style={[styles.actionText, { color: t.text }]}>Favorite</Text>
-          </TouchableOpacity>
-          <View style={styles.actionDivider} />
-          <TouchableOpacity style={styles.actionBtn} onPress={() => toggleReviewLater(name.number || name.id)} activeOpacity={0.7}>
-            <Ionicons name={isReviewLater ? "bookmark" : "bookmark-outline"} size={rs(18)} color={isReviewLater ? "#00ADC1" : (isDark ? '#E8EDF2' : '#4A5568')} />
-            <Text style={[styles.actionText, { color: t.text }]}>Revision</Text>
-          </TouchableOpacity>
-          <View style={styles.actionDivider} />
-          <TouchableOpacity style={styles.actionBtn} onPress={handleShare} activeOpacity={0.7}>
-            <Ionicons name="share-social-outline" size={rs(18)} color={isDark ? '#E8EDF2' : '#4A5568'} />
-            <Text style={[styles.actionText, { color: t.text }]}>Share</Text>
-          </TouchableOpacity>
+        {/* Bottom Graphic Overlay */}
+        <View style={styles.bottomGraphicWrap}>
+           <Svg width="100%" height={hs(80)} viewBox="0 0 300 80" preserveAspectRatio="none">
+             <Path d="M0 50 Q 75 80 150 50 T 300 50 L 300 80 L 0 80 Z" fill={isDark ? 'rgba(0,173,193,0.05)' : '#F2FAF9'} />
+           </Svg>
+           {/* Scattered Dots */}
+           <View style={[styles.scatterDot, { backgroundColor: '#FF9A92', left: '12%', top: '30%' }]} />
+           <View style={[styles.scatterDot, { backgroundColor: '#6DC5C9', left: '38%', top: '70%' }]} />
+           <View style={[styles.scatterDot, { backgroundColor: '#F9CF6E', left: '62%', top: '55%' }]} />
+           <View style={[styles.scatterDot, { backgroundColor: '#FF9A92', left: '88%', top: '35%' }]} />
+           <View style={[styles.scatterDot, { backgroundColor: '#92D7B4', left: '85%', top: '80%' }]} />
         </View>
 
       </View>
@@ -931,34 +944,6 @@ const NameDetailScreen = ({ route, navigation }) => {
             </View>
           </ScrollView>
 
-          {title !== 'Simple Meaning' && (
-            <>
-              {/* Card Action Divider */}
-              <View style={[styles.cardActionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F0F4F8', width: '100%' }]} />
-
-              {/* Action Bar Row */}
-              <View style={[styles.cardActionBar, { width: '100%', paddingVertical: hs(20) }]}>
-                <TouchableOpacity style={styles.actionBtn} onPress={() => toggleFavourite(name.number || name.id)} activeOpacity={0.7}>
-                  <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={rs(20)} color={isFavorite ? "#EF4444" : (isDark ? '#94A3B8' : '#475569')} />
-                  <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Favorite</Text>
-                </TouchableOpacity>
-                
-                <View style={[styles.actionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0', height: rs(20) }]} />
-                
-                <TouchableOpacity style={styles.actionBtn} onPress={() => toggleReviewLater(name.number || name.id)} activeOpacity={0.7}>
-                  <Ionicons name={isReviewLater ? "bookmark" : "bookmark-outline"} size={rs(20)} color={isReviewLater ? "#00ADC1" : (isDark ? '#94A3B8' : '#475569')} />
-                  <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Revision</Text>
-                </TouchableOpacity>
-                
-                <View style={[styles.actionDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0', height: rs(20) }]} />
-                
-                <TouchableOpacity style={styles.actionBtn} onPress={handleShare} activeOpacity={0.7}>
-                  <Ionicons name="share-social-outline" size={rs(20)} color={isDark ? '#94A3B8' : '#475569'} />
-                  <Text style={[styles.actionText, { color: isDark ? '#E2E8F0' : '#1E293B', fontWeight: '500' }]}>Share</Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
         </View>
       </View>
     );
@@ -1384,75 +1369,89 @@ const NameDetailScreen = ({ route, navigation }) => {
             <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
             <SafeAreaView style={{ flex: 1, backgroundColor: t.safeBg }} edges={['top']}>
               <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
-                <NameDetailHeader
-                  name={name}
-                  steps={steps}
-                  currentStepIndex={safeStepIndex}
-                />
-
-
-                {/* ── Fixed Main Title ── */}
-                {(() => {
-                  let stepTitle = null;
-                  if (currentStep.type === 'gifts') stepTitle = '';
-                  else if (currentStep.type === 'practical') stepTitle = '';
-                  else if (currentStep.type === 'scholarly') stepTitle = 'Scholarly Views';
-                  else if (currentStep.type === 'reflection') stepTitle = 'Reflection';
-                  else if (currentStep.type === 'mastery') stepTitle = 'Mastery Test';
-
-                  if (!stepTitle) return null;
-                  return (
-                    <Animated.View style={{ opacity: contentOpacity, paddingHorizontal: rs(20), marginBottom: hs(12) }}>
-                      <Text style={[styles.mainTitle, { marginBottom: 0, color: t.text }]}>{stepTitle}</Text>
-                    </Animated.View>
-                  );
-                })()}
-
-                <ScrollView
-                  ref={scrollViewRef}
-                  style={styles.scrollArea}
-                  contentContainerStyle={styles.scrollContent}
-                  showsVerticalScrollIndicator={false}
-                  scrollEnabled={true}
-                  bounces={false}
+                <View 
+                  style={{ flex: 1 }}
+                  onStartShouldSetResponderCapture={() => {
+                    if (isFocusMode) {
+                      setIsFocusMode(false);
+                      return true;
+                    }
+                    return false;
+                  }}
                 >
-                  <Animated.View style={{ opacity: contentOpacity, transform: [{ translateY: contentTranslateY }, { rotateY: flipAnim.interpolate({ inputRange: [-90, 0, 90], outputRange: ['-90deg', '0deg', '90deg'] }) }] }}>
-                    {currentStep.type === 'meaning' && renderMeaning()}
-                    {(currentStep.type === 'quran' || currentStep.type === 'hadith') && renderReference(currentStep.data, currentStep.type)}
-                    {currentStep.type === 'gifts' && renderGifts()}
-                    {currentStep.type === 'practical' && renderPractical()}
-                    {currentStep.type === 'scholarly' && renderScholarly()}
-                    {currentStep.type === 'reflection' && renderReflection()}
-                    {currentStep.type === 'mastery' && renderMastery()}
-                  </Animated.View>
-                  {currentStep.type === 'reflection' && (
-                    <View style={{ height: hs(40) }} />
+                  {isFocusMode && (
+                    <BlurView 
+                      pointerEvents="none"
+                      tint="dark"
+                      intensity={40}
+                      style={[StyleSheet.absoluteFillObject, { top: -200, bottom: -200, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 50 }]}
+                    />
                   )}
-                </ScrollView>
 
+                  <View style={{ zIndex: 10 }}>
+                    <NameDetailHeader
+                      name={name}
+                      steps={steps}
+                      currentStepIndex={safeStepIndex}
+                      isFavorite={isFavorite}
+                      onFavoritePress={() => toggleFavourite(name.number || name.id)}
+                      onSharePress={() => Share.share({ message: `Learn about the name ${name.transliteration} - ${name.meaning}` })}
+                    />
+                  </View>
 
+                  {/* ── Fixed Main Title ── */}
+                  {(() => {
+                    let stepTitle = null;
+                    if (currentStep.type === 'gifts') stepTitle = '';
+                    else if (currentStep.type === 'practical') stepTitle = '';
+                    else if (currentStep.type === 'scholarly') stepTitle = 'Scholarly Views';
+                    else if (currentStep.type === 'reflection') stepTitle = 'Reflection';
+                    else if (currentStep.type === 'mastery') stepTitle = 'Mastery Test';
 
-                {/* ── Bottom Navigation ── */}
-                <View style={styles.bottomNavWrapper}>
+                    if (!stepTitle) return null;
+                    return (
+                      <Animated.View style={{ opacity: contentOpacity, paddingHorizontal: rs(20), marginBottom: hs(12), zIndex: 10 }}>
+                        <Text style={[styles.mainTitle, { marginBottom: 0, color: t.text }]}>{stepTitle}</Text>
+                      </Animated.View>
+                    );
+                  })()}
+
+                  <ScrollView
+                    ref={scrollViewRef}
+                    style={[styles.scrollArea, { zIndex: 60 }]}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    scrollEnabled={true}
+                    bounces={false}
+                  >
+                    <Animated.View style={{ opacity: contentOpacity, transform: [{ translateY: contentTranslateY }, { rotateY: flipAnim.interpolate({ inputRange: [-90, 0, 90], outputRange: ['-90deg', '0deg', '90deg'] }) }] }}>
+                      {currentStep.type === 'meaning' && renderMeaning()}
+                      {(currentStep.type === 'quran' || currentStep.type === 'hadith') && renderReference(currentStep.data, currentStep.type)}
+                      {currentStep.type === 'gifts' && renderGifts()}
+                      {currentStep.type === 'practical' && renderPractical()}
+                      {currentStep.type === 'scholarly' && renderScholarly()}
+                      {currentStep.type === 'reflection' && renderReflection()}
+                      {currentStep.type === 'mastery' && renderMastery()}
+                    </Animated.View>
+                    {currentStep.type === 'reflection' && (
+                      <View style={{ height: hs(40) }} />
+                    )}
+                  </ScrollView>
+
+                  {/* ── Bottom Navigation ── */}
+                  <View style={[styles.bottomNavWrapper, { zIndex: 10 }]}>
                   <View style={[styles.bottomNavInner, { 
                     backgroundColor: isDark ? '#141D2B' : '#FFFFFF',
                     shadowColor: isDark ? '#000000' : '#00ADC1',
                   }]}>
                     {/* Previous */}
                     <TouchableOpacity
-                      style={[styles.navBtn, { 
-                        backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F2F6F8',
-                        borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'transparent',
-                        borderWidth: isDark ? 1 : 0,
-                        opacity: isBackDisabled ? 0.4 : 1
-                      }]}
+                      style={[styles.squircleNavBtn, { opacity: isBackDisabled ? 0.4 : 1 }]}
                       disabled={isBackDisabled}
                       onPress={goPrev}
                       activeOpacity={0.7}
                     >
-                      <Ionicons name="arrow-back" size={rs(18)} color={isDark ? '#E2E8F0' : '#00ADC1'} />
-                      <View style={[styles.navDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,173,193,0.15)' }]} />
-                      <Text style={[styles.navBtnText, { color: isDark ? '#E2E8F0' : '#1A1A1A' }]}>Previous</Text>
+                      <Ionicons name="arrow-back" size={rs(20)} color="#FFFFFF" />
                     </TouchableOpacity>
 
                     {/* Pause */}
@@ -1542,22 +1541,15 @@ const NameDetailScreen = ({ route, navigation }) => {
 
                     {/* Continue */}
                     <TouchableOpacity
-                      style={[styles.navBtn, { 
-                        backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F2F6F8',
-                        borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'transparent',
-                        borderWidth: isDark ? 1 : 0,
-                        opacity: isSlideDisabled ? 0.4 : 1,
-                        justifyContent: 'center',
-                        gap: rs(10)
-                      }]}
+                      style={[styles.squircleNavBtn, { opacity: isSlideDisabled ? 0.4 : 1 }]}
                       disabled={isSlideDisabled}
                       onPress={handleNext}
                       activeOpacity={0.7}
                     >
-                      <Text style={[styles.navBtnText, { color: isDark ? '#E2E8F0' : '#1A1A1A' }]}>Continue</Text>
-                      <Ionicons name="arrow-forward" size={rs(18)} color={isDark ? '#E2E8F0' : '#00ADC1'} />
+                      <Ionicons name="arrow-forward" size={rs(20)} color="#FFFFFF" />
                     </TouchableOpacity>
                   </View>
+                </View>
                 </View>
               </KeyboardAvoidingView>
             </SafeAreaView>
@@ -1601,36 +1593,28 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: rs(18), fontWeight: '800', color: '#1A1A1A', marginBottom: hs(12) },
 
   // ── Modern Cards (Glassmorphic / Minimal) ──
-  modernCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: rs(24), shadowColor: '#00ADC1', shadowOpacity: 0.04, shadowRadius: rs(20), shadowOffset: { width: 0, height: 10 }, elevation: 4, borderWidth: 1, borderColor: '#E2F8FA', overflow: 'hidden', height: hs(460), paddingBottom: 0 },
-  cardBadgesRow: { flexDirection: 'row', alignItems: 'center', padding: rs(20), zIndex: 2 },
-  badgeCircle: { width: rs(40), height: rs(40), borderRadius: rs(20), justifyContent: 'center', alignItems: 'center', marginRight: rs(12) },
-  badgePill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(12), minHeight: rs(32), paddingVertical: hs(6), borderRadius: rs(16) },
-  badgePillText: { fontSize: rs(12), fontWeight: '700' },
-  cardHeaderTitleText: { fontSize: rs(16), fontWeight: '800', fontFamily: FONTS.bold, flexShrink: 1 },
-  customDividerWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: rs(40), marginVertical: hs(16), zIndex: 2 },
-  customDividerLine: { flex: 1, height: 1, backgroundColor: '#00ADC1', opacity: 0.2 },
+  modernCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: rs(16), borderWidth: 1, borderColor: '#F0F4F8', overflow: 'hidden', height: hs(500), paddingBottom: 0 },
+  cardBadgesRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(24), paddingTop: hs(24), zIndex: 2 },
+  badgeCircle: { width: rs(44), height: rs(44), borderRadius: rs(22), justifyContent: 'center', alignItems: 'center', marginRight: rs(12) },
+  badgePill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(14), minHeight: rs(34), paddingVertical: hs(6), borderRadius: rs(17) },
+  badgePillText: { fontSize: rs(12.5), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: '700' },
+  cardHeaderTitleText: { fontSize: rs(18), fontWeight: '700', flexShrink: 1, fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif' },
+  customDividerWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: rs(24), marginVertical: hs(20), zIndex: 2 },
+  customDividerLine: { flex: 1, height: 1.5 },
+  dividerDot: { width: rs(4), height: rs(4), borderRadius: rs(2) },
   textContentWrap: { flex: 1, paddingHorizontal: rs(30), paddingTop: hs(10), paddingBottom: hs(30), alignItems: 'center', justifyContent: 'center', zIndex: 2 },
-  textScrollView: { flex: 1, width: '100%' },
-  textScrollContent: { flexGrow: 1, paddingHorizontal: rs(30), paddingTop: hs(10), paddingBottom: hs(20), alignItems: 'center', justifyContent: 'center' },
-  readingText: { fontSize: rs(22), fontFamily: FONTS.arabic, fontWeight: '500', textAlign: 'center', lineHeight: rs(34) },
-
-  // ── Action Bar ──
-  actionBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: rs(16), marginTop: hs(16), paddingVertical: hs(16), shadowColor: '#00ADC1', shadowOpacity: 0.04, shadowRadius: rs(12), shadowOffset: { width: 0, height: 4 }, elevation: 3, borderWidth: 1, borderColor: '#E2F8FA' },
-  fixedActionBar: { flexDirection: 'row', alignItems: 'center', marginHorizontal: rs(20), marginBottom: hs(8), paddingVertical: hs(12) },
-  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  actionText: { fontSize: rs(13), fontWeight: '700', marginLeft: rs(8) },
-  actionDivider: { width: 1, height: '60%', backgroundColor: '#00ADC1', opacity: 0.15 },
-  cardActionDivider: { height: 1, width: '100%' },
-  cardActionBar: { flexDirection: 'row', alignItems: 'center', paddingVertical: hs(14) },
+  textScrollView: { flex: 1, width: '100%', zIndex: 2 },
+  textScrollContent: { flexGrow: 1, paddingHorizontal: rs(40), paddingTop: hs(10), paddingBottom: hs(40), alignItems: 'center', justifyContent: 'center' },
+  readingText: { fontSize: rs(22), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: '500', textAlign: 'center', lineHeight: rs(36) },
+  bottomGraphicWrap: { position: 'absolute', bottom: 0, left: 0, right: 0, height: hs(80), zIndex: 1 },
+  scatterDot: { position: 'absolute', width: rs(4.5), height: rs(4.5), borderRadius: rs(2.5) },
 
   // ── Intro Cards (Section Covers) ──
   introCard2: {
-    width: '100%', borderRadius: rs(24),
-    shadowColor: '#00ADC1', shadowOpacity: 0.04, shadowRadius: rs(20),
-    shadowOffset: { width: 0, height: 10 }, elevation: 4,
+    width: '100%', borderRadius: rs(16),
     borderWidth: 1, overflow: 'hidden',
     paddingBottom: 0,
-    height: hs(440),
+    height: hs(500),
   },
   sectionBadgeRow: {
     flexDirection: 'row',
@@ -1655,7 +1639,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(16),
     paddingVertical: hs(6),
   },
-  sectionBadgeText: { fontSize: rs(11), fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' },
+  sectionBadgeText: { fontSize: rs(11), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: '800', letterSpacing: 1.5, textTransform: 'uppercase' },
   introIconArea: {
     alignSelf: 'center',
     justifyContent: 'center', alignItems: 'center',
@@ -1672,10 +1656,9 @@ const styles = StyleSheet.create({
     width: rs(114), height: rs(114), borderRadius: rs(57),
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 1,
-    shadowOpacity: 0.05, shadowRadius: rs(12), shadowOffset: { width: 0, height: 6 }, elevation: 3,
   },
   introTitleText2: {
-    fontSize: rs(28), fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif', fontWeight: 'bold',
+    fontSize: rs(28), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: 'bold',
     textAlign: 'center', paddingHorizontal: rs(20),
     letterSpacing: 0.5,
   },
@@ -1686,7 +1669,7 @@ const styles = StyleSheet.create({
   introOrnamentLine: { width: rs(80), height: 1 },
   introOrnamentStar: { fontSize: rs(14), color: '#00ADC1', marginHorizontal: rs(12) },
   introSubtitleText2: {
-    fontSize: rs(15), fontWeight: '400',
+    fontSize: rs(15), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: '400',
     textAlign: 'center', paddingHorizontal: rs(30),
   },
   introInfoRow: {
@@ -1701,7 +1684,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0,173,193,0.15)',
   },
-  introInfoText: { fontSize: rs(13), fontWeight: '600', color: '#0090A8' },
+  introInfoText: { fontSize: rs(13), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: '600', color: '#0090A8' },
 
   // ── Bottom Navigation ──
   bottomNavWrapper: {
@@ -1713,13 +1696,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: rs(30),
+    borderRadius: rs(16),
     paddingHorizontal: rs(10),
-    paddingVertical: hs(10),
-    shadowOpacity: 0.06,
-    shadowRadius: rs(16),
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    paddingVertical: hs(2),
+    borderWidth: 1,
+    borderColor: '#F0F4F8',
+  },
+  squircleNavBtn: {
+    width: rs(34), height: rs(34),
+    borderRadius: rs(10),
+    backgroundColor: '#3CA2A5', 
+    borderWidth: rs(2),
+    borderColor: '#FFFFFF',
+    justifyContent: 'center', alignItems: 'center',
   },
   navBtn: {
     flexDirection: 'row',
@@ -1744,11 +1733,12 @@ const styles = StyleSheet.create({
   pauseBtn: {
     justifyContent: 'center',
     alignItems: 'center',
+    transform: [{ scale: 0.85 }],
   },
   pauseText: {
-    fontSize: rs(12),
+    fontSize: rs(11),
     fontWeight: '600',
-    marginTop: hs(4),
+    marginTop: hs(-4),
   },
   navCardTexts: {
     flex: 1,
@@ -1765,7 +1755,7 @@ const styles = StyleSheet.create({
   },
 
   // ── Reference Card ──
-  refCard: { backgroundColor: '#FFFFFF', borderTopRightRadius: rs(8), borderBottomRightRadius: rs(8), borderTopLeftRadius: rs(4), borderBottomLeftRadius: rs(4), borderLeftWidth: rs(6), borderLeftColor: '#00ADC1', borderWidth: 1, borderColor: '#00ADC1', padding: rs(16), paddingBottom: hs(40), shadowColor: '#00ADC1', shadowOpacity: 0.1, shadowRadius: rs(8), shadowOffset: { width: 0, height: 4 }, elevation: 3, position: 'relative', overflow: 'hidden' },
+  refCard: { backgroundColor: '#FFFFFF', borderTopRightRadius: rs(8), borderBottomRightRadius: rs(8), borderTopLeftRadius: rs(4), borderBottomLeftRadius: rs(4), borderLeftWidth: rs(6), borderLeftColor: '#00ADC1', borderWidth: 1, borderColor: '#00ADC1', padding: rs(16), paddingBottom: hs(40), position: 'relative', overflow: 'hidden' },
   refArabic: { fontSize: rs(22), fontWeight: '700', color: '#1A1A1A', textAlign: 'justify', lineHeight: rs(40), writingDirection: 'rtl', marginBottom: hs(16), zIndex: 2 },
   refLabel: { position: 'absolute', bottom: hs(12), left: rs(16), fontSize: rs(13), color: '#1A1A1A', fontWeight: '800', zIndex: 2 },
   refSplatter: { position: 'absolute', bottom: hs(-10), right: rs(-10), width: rs(80), height: rs(80), opacity: 0.15, zIndex: 1 },
@@ -1784,7 +1774,7 @@ const styles = StyleSheet.create({
   modernArabicText: { fontSize: rs(20), fontWeight: '700', textAlign: 'right', lineHeight: rs(38), writingDirection: 'rtl' },
 
   // ── Gifts Card ──
-  giftCardContainer: { backgroundColor: '#FFFFFF', borderRadius: rs(8), shadowColor: '#00ADC1', shadowOpacity: 0.1, shadowRadius: rs(8), shadowOffset: { width: 0, height: 4 }, elevation: 3, marginBottom: hs(4) },
+  giftCardContainer: { backgroundColor: '#FFFFFF', borderRadius: rs(8), borderWidth: 1, borderColor: '#F0F4F8', marginBottom: hs(4) },
   giftCardInner: { flexDirection: 'row', borderRadius: rs(8), overflow: 'hidden' },
   giftLeft: { width: rs(90), alignItems: 'center', paddingTop: hs(16), justifyContent: 'space-between' },
   giftLeftLabel: { fontSize: rs(12), color: '#1A1A1A', textAlign: 'center', fontWeight: '800', lineHeight: rs(14), marginBottom: hs(12) },
@@ -1796,7 +1786,7 @@ const styles = StyleSheet.create({
   giftText: { fontSize: rs(13), color: '#1A1A1A', lineHeight: rs(20) },
 
   // ── Practical Card ──
-  practicalCardContainer: { backgroundColor: '#FFFFFF', borderRadius: rs(4), shadowColor: '#00ADC1', shadowOpacity: 0.1, shadowRadius: rs(8), shadowOffset: { width: 0, height: 4 }, elevation: 3, marginBottom: hs(4) },
+  practicalCardContainer: { backgroundColor: '#FFFFFF', borderRadius: rs(4), borderWidth: 1, borderColor: '#F0F4F8', marginBottom: hs(4) },
   practicalCardInner: { flexDirection: 'row', borderRadius: rs(4), overflow: 'hidden', borderWidth: 1, borderColor: '#A0E4EC', position: 'relative' },
   practicalLeftCol: { width: rs(64), backgroundColor: '#F0FAFC', borderRightWidth: 1, borderRightColor: '#A0E4EC', justifyContent: 'center', alignItems: 'center', paddingVertical: hs(20) },
   notebookRings: { position: 'absolute', left: rs(64) - rs(12), width: rs(24), height: '100%', justifyContent: 'space-evenly', alignItems: 'center', paddingVertical: hs(12), zIndex: 2 },
@@ -1809,13 +1799,13 @@ const styles = StyleSheet.create({
   practicalText: { fontSize: rs(13), color: '#3A3A3A', lineHeight: rs(20) },
 
   // ── Scholarly Card ──
-  scholarCard: { borderRadius: rs(12), padding: rs(24), shadowColor: '#D4AF37', shadowOpacity: 0.2, shadowRadius: rs(12), shadowOffset: { width: 0, height: 6 }, elevation: 4, alignItems: 'center' },
-  scholarName: { fontSize: rs(20), fontWeight: '800', color: '#1A1A1A', marginBottom: hs(4) },
-  scholarWork: { fontSize: rs(13), fontWeight: '700', color: '#1A1A1A', marginBottom: hs(16) },
+  scholarCard: { borderRadius: rs(12), padding: rs(24), borderWidth: 1, borderColor: '#F0F4F8', alignItems: 'center' },
+  scholarName: { fontSize: rs(20), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: '800', color: '#1A1A1A', marginBottom: hs(4) },
+  scholarWork: { fontSize: rs(13), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: '700', color: '#1A1A1A', marginBottom: hs(16) },
   scholarQuote: { fontSize: rs(13), color: '#3A3A3A', fontStyle: 'italic', textAlign: 'center', lineHeight: rs(20) },
 
   // ── Reflection Cards (premium) ──
-  reflectionCard: { backgroundColor: '#FFFFFF', borderRadius: rs(16), padding: rs(20), shadowColor: '#00ADC1', shadowOpacity: 0.1, shadowRadius: rs(14), shadowOffset: { width: 0, height: 5 }, elevation: 4, borderWidth: 1, borderColor: 'rgba(0,173,193,0.10)' },
+  reflectionCard: { backgroundColor: '#FFFFFF', borderRadius: rs(16), padding: rs(20), borderWidth: 1, borderColor: 'rgba(0,173,193,0.10)' },
   reflectionCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: hs(16), gap: rs(12) },
   reflectionNumBadge: { width: rs(36), height: rs(36), borderRadius: rs(10), justifyContent: 'center', alignItems: 'center' },
   reflectionNum: { fontSize: rs(13), fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.5 },
@@ -1834,7 +1824,7 @@ const styles = StyleSheet.create({
   reflectionInputSmall: { backgroundColor: '#F8F8F8', borderWidth: 1, borderColor: '#E8E8E8', borderRadius: rs(8), height: hs(60), padding: rs(12), fontSize: rs(14), color: '#1A1A1A', textAlignVertical: 'top', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
 
   // ── Quiz MCQ Cards ──
-  quizMcqCard: { backgroundColor: '#FFFFFF', borderRadius: rs(16), padding: rs(20), shadowColor: '#00ADC1', shadowOpacity: 0.10, shadowRadius: rs(14), shadowOffset: { width: 0, height: 5 }, elevation: 4, borderWidth: 1, borderColor: 'rgba(0,173,193,0.10)' },
+  quizMcqCard: { backgroundColor: '#FFFFFF', borderRadius: rs(16), padding: rs(20), borderWidth: 1, borderColor: 'rgba(0,173,193,0.10)' },
   quizMcqHeader: { flexDirection: 'row', alignItems: 'center', gap: rs(12), marginBottom: hs(16) },
   quizMcqBadge: { width: rs(36), height: rs(36), borderRadius: rs(10), justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
   quizMcqBadgeText: { fontSize: rs(13), fontWeight: '900', color: '#FFFFFF', letterSpacing: 0.5 },
@@ -1843,7 +1833,7 @@ const styles = StyleSheet.create({
   // ── Quiz Options (shared with mastery) ──
   quizQuestion: { fontSize: rs(16), fontWeight: '700', color: '#1A1A1A', marginBottom: hs(20) },
   quizOptions: { gap: hs(12) },
-  quizOptionRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: rs(8), padding: rs(16), shadowColor: '#00ADC1', shadowOpacity: 0.05, shadowRadius: rs(8), shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  quizOptionRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: rs(8), padding: rs(16), borderWidth: 1, borderColor: '#F0F4F8' },
   quizRadio: { width: rs(20), height: rs(20), borderRadius: rs(10), borderWidth: 1.5, justifyContent: 'center', alignItems: 'center', marginRight: rs(12) },
   quizRadioInner: { width: rs(10), height: rs(10), borderRadius: rs(5) },
   quizOptionText: { fontSize: rs(14), color: '#1A1A1A' },
@@ -1856,20 +1846,20 @@ const styles = StyleSheet.create({
   tryAgainText: { color: '#00ADC1', fontSize: rs(14), fontWeight: '700', textDecorationLine: 'underline' },
 
   // ── Premium 3-Button Floating Navigation Pill ──
-  floatingNavContainer: { position: 'absolute', bottom: Platform.OS === 'ios' ? hs(30) : hs(20), alignSelf: 'center', width: '90%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', borderRadius: rs(40), paddingHorizontal: rs(10), paddingVertical: rs(8), elevation: 20, shadowColor: '#00ADC1', shadowOpacity: 0.15, shadowRadius: 25, shadowOffset: { width: 0, height: 10 } },
-  floatingNavContainerDark: { backgroundColor: '#1E293B', shadowColor: '#000000', shadowOpacity: 0.3 },
-  floatingIconBtn: { width: rs(44), height: rs(44), borderRadius: rs(22), overflow: 'hidden', elevation: 4, shadowColor: '#00ADC1', shadowOpacity: 0.2, shadowRadius: 5, shadowOffset: { width: 0, height: 2 } },
+  floatingNavContainer: { position: 'absolute', bottom: Platform.OS === 'ios' ? hs(30) : hs(20), alignSelf: 'center', width: '90%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', borderRadius: rs(40), paddingHorizontal: rs(10), paddingVertical: rs(8), borderWidth: 1, borderColor: '#F0F4F8' },
+  floatingNavContainerDark: { backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#334155' },
+  floatingIconBtn: { width: rs(44), height: rs(44), borderRadius: rs(22), overflow: 'hidden' },
   iconCircle: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
   floatingCenterBtn: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   floatingCenterText: { fontSize: rs(16), fontWeight: '800', letterSpacing: 0.5 },
 
   // ── Journey screen ──
   journeyRoot: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: rs(24) },
-  journeyCard: { width: '100%', borderRadius: rs(16), paddingTop: hs(30), alignItems: 'center', overflow: 'hidden', elevation: 8, shadowColor: '#00ADC1', shadowOpacity: 0.15, shadowRadius: rs(20), shadowOffset: { width: 0, height: 8 }, backgroundColor: '#FFFFFF' },
+  journeyCard: { width: '100%', borderRadius: rs(16), paddingTop: hs(30), alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: '#F0F4F8', backgroundColor: '#FFFFFF' },
   journeyTitle: { fontSize: rs(28), fontWeight: '900', color: '#4CD6E8', marginBottom: hs(6), letterSpacing: 0.2 },
   journeySub: { fontSize: rs(13), color: '#666', marginBottom: hs(36), textAlign: 'center' },
   journeyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: hs(40) },
-  journeyStepCard: { width: rs(105), height: rs(105), backgroundColor: '#FFFFFF', borderRadius: rs(8), shadowColor: '#00ADC1', shadowOpacity: 0.1, shadowRadius: rs(10), shadowOffset: { width: 0, height: 4 }, elevation: 3, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(0, 173, 193, 0.05)' },
+  journeyStepCard: { width: rs(105), height: rs(105), backgroundColor: '#FFFFFF', borderRadius: rs(8), justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(0, 173, 193, 0.1)' },
   journeyImg: { width: rs(44), height: rs(44), marginBottom: hs(8) },
   journeyStepLabel: { fontSize: rs(12), fontWeight: '600', color: '#1A1A1A' },
   journeyLineWrap: { width: rs(60), height: 2, flexDirection: 'row' },

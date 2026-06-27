@@ -42,8 +42,8 @@ const STACK_CONFIG = [
 
 // Bottom-sheet snap points — these are the 'top' Y values of the sheet panel.
 // The sheet has bottom:0 (anchored to screen bottom) so its height = SH - top.
-const BS_HIDDEN   = SH;          // top == screen bottom → sheet fully hidden
-const BS_PEEK     = SH * 0.44;   // sheet occupies bottom 56 % of screen
+const BS_HIDDEN = SH;          // top == screen bottom → sheet fully hidden
+const BS_PEEK = SH * 0.44;   // sheet occupies bottom 56 % of screen
 const BS_EXPANDED = SH * 0.10;   // sheet occupies bottom 90 % of screen
 
 const NameCardBackground = ({ width, height, style, gradEnd = '#BCECF7', strokeColor = '#A0DCE9' }) => {
@@ -153,8 +153,7 @@ const NamesScreen = ({ navigation, route }) => {
   const filteredNames = React.useMemo(() => {
     let result = names;
     if (appliedCat !== 'All') {
-      const catId = appliedCat.toLowerCase();
-      result = result.filter(n => n.category === catId);
+      result = result.filter(n => n.category === appliedCat);
     }
     if (appliedStatus === 'Learned') {
       result = result.filter(n => learnedIds.includes(n.number) && !masteredIds.includes(n.number));
@@ -192,7 +191,7 @@ const NamesScreen = ({ navigation, route }) => {
       let newCat = appliedCat;
       if (p.filter !== undefined) {
         newCat = p.filter
-          ? p.filter.charAt(0).toUpperCase() + p.filter.slice(1)
+          ? p.filter.toLowerCase()
           : 'All';
         if (newCat !== appliedCat) {
           setAppliedCat(newCat);
@@ -240,6 +239,26 @@ const NamesScreen = ({ navigation, route }) => {
   }, [filteredNames]);
 
   const scrollAnim = useRef(new Animated.Value(0)).current;
+  const waveAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(waveAnim, {
+          toValue: 1,
+          duration: 4000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(waveAnim, {
+          toValue: 0,
+          duration: 4000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [waveAnim]);
 
   useLayoutEffect(() => {
     if (pendingReset.current) {
@@ -359,8 +378,8 @@ const NamesScreen = ({ navigation, route }) => {
   // sheetAnim drives the CSS 'top' of the sheet (not translateY).
   // bottom:0 is fixed, so sheet height = SH - sheetAnim.
   // This keeps the Apply button always anchored to the screen edge.
-  const sheetAnim     = useRef(new Animated.Value(BS_HIDDEN)).current;
-  const sheetValRef   = useRef(BS_HIDDEN);
+  const sheetAnim = useRef(new Animated.Value(BS_HIDDEN)).current;
+  const sheetValRef = useRef(BS_HIDDEN);
 
   useEffect(() => {
     const id = sheetAnim.addListener(({ value }) => {
@@ -372,7 +391,7 @@ const NamesScreen = ({ navigation, route }) => {
   }, [sheetAnim]);
 
   const sheetStateRef = useRef('hidden'); // 'hidden' | 'peek' | 'expanded'
-  const bsDragStart   = useRef(0);
+  const bsDragStart = useRef(0);
 
   const sheetPanResponder = useRef(PanResponder.create({
     onStartShouldSetPanResponder: () => false,
@@ -390,13 +409,13 @@ const NamesScreen = ({ navigation, route }) => {
     },
     onPanResponderRelease: (_, gs) => {
       const curTop = sheetValRef.current;
-      const vel    = gs.vy;
+      const vel = gs.vy;
 
       let target;
       // Fast downward swipe OR dragged past 45 % of the peek→hidden range → dismiss
       if (vel > 0.6 || curTop > BS_PEEK + (BS_HIDDEN - BS_PEEK) * 0.45) {
         target = BS_HIDDEN;
-      // Fast upward swipe OR dragged past midpoint between expanded and peek → expand
+        // Fast upward swipe OR dragged past midpoint between expanded and peek → expand
       } else if (vel < -0.4 || curTop < (BS_EXPANDED + BS_PEEK) / 2) {
         target = BS_EXPANDED;
       } else {
@@ -416,7 +435,7 @@ const NamesScreen = ({ navigation, route }) => {
         Animated.spring(sheetAnim, { toValue: target, bounciness: 5, speed: 14, useNativeDriver: false }).start();
       }
     },
-    onPanResponderTerminate: () => {},
+    onPanResponderTerminate: () => { },
   })).current;
 
 
@@ -449,12 +468,12 @@ const NamesScreen = ({ navigation, route }) => {
             </Text>
 
             <View style={{ flexDirection: 'row', gap: rs(14), width: '100%', justifyContent: 'center', marginTop: hs(4) }}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
-                  styles.caughtUpSquareBtn, 
-                  { 
-                    backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : '#F8FAFC', 
-                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0' 
+                  styles.caughtUpSquareBtn,
+                  {
+                    backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : '#F8FAFC',
+                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0'
                   }
                 ]}
                 onPress={() => setFilterVisible(true)}
@@ -464,12 +483,12 @@ const NamesScreen = ({ navigation, route }) => {
                 <Text style={[styles.caughtUpSquareBtnSub, { color: isDark ? '#A0AEC0' : '#666666' }]}>Change Filter</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
-                  styles.caughtUpSquareBtn, 
-                  { 
-                    backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : '#F8FAFC', 
-                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0' 
+                  styles.caughtUpSquareBtn,
+                  {
+                    backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : '#F8FAFC',
+                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0'
                   }
                 ]}
                 onPress={() => {
@@ -626,79 +645,196 @@ const NamesScreen = ({ navigation, route }) => {
             <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
             {/* ── TOP SECTION ── */}
             <View style={styles.topSection}>
-              <View style={styles.headerContainer}>
-                <Text style={[styles.headerTitleText, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>Beautiful Names of Allah</Text>
-                <Text style={[styles.headerSubtitleText, { color: isDark ? '#9EAAB8' : '#64748B' }]}>Learn. Reflect. Live.</Text>
-                <View style={styles.headerDividerRow}>
-                  <Text style={[styles.headerDiamond, { color: isDark ? '#00ADC1' : '#A0DCE9' }]}>✦</Text>
-                </View>
-              </View>
-
-              {/* ── DASHBOARD CARD ── */}
-              <View style={[styles.dashboardCard, { backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
-                <View style={styles.dashboardStatsRow}>
-                  <View style={styles.dashboardStatCol}>
-                    <View style={[styles.statIconWrap, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F6F9' }]}>
-                      <Ionicons name="book-outline" size={rs(18)} color="#00ADC1" />
-                    </View>
-                    <View style={styles.statTextWrap}>
-                      <Text style={[styles.statValue, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>{learnedIds.length}</Text>
-                      <Text style={[styles.statLabel, { color: isDark ? '#94A3B8' : '#64748B' }]}>Names Learned</Text>
-                    </View>
+              {/* ── HEADER ROW ── */}
+              <View style={styles.headerRow}>
+                <View style={styles.headerLeft}>
+                  <View style={styles.headerTitleRow}>
+                    <Text style={[styles.headerTitleText, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>Beautiful Names of Allah</Text>
                   </View>
-                  <View style={styles.dashboardStatDivider} />
-                  <View style={styles.dashboardStatCol}>
-                    <View style={[styles.statIconWrap, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F6F9' }]}>
-                      <Ionicons name="time-outline" size={rs(18)} color="#00ADC1" />
-                    </View>
-                    <View style={styles.statTextWrap}>
-                      <Text style={[styles.statValue, { color: isDark ? '#FFFFFF' : '#1A1A1A' }]}>{formattedReadingTime}</Text>
-                      <Text style={[styles.statLabel, { color: isDark ? '#94A3B8' : '#64748B' }]}>Total Learning</Text>
-                    </View>
-                  </View>
+                  <Text style={[styles.headerSubtitleText, { color: isDark ? '#9EAAB8' : '#64748B' }]}>Learn  Reflect  Live By</Text>
                 </View>
-
-                {/* Progress Bar */}
-                <View style={styles.dashboardProgressWrap}>
-                  {/* <View style={[styles.progressBarBg, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]}>
-                    <View style={[styles.progressBarFill, { width: `${Math.min(100, (learnedIds.length / 99) * 100)}%`, backgroundColor: '#00ADC1' }]} />
-                  </View> */}
-                  <View style={styles.progressTextRow}>
-                    <Text style={[styles.progressTextValue, { color: isDark ? '#00ADC1' : '#0097A7' }]}>
-                      {learnedIds.length} / 99 <Text style={{ fontWeight: '400', fontSize: rs(10) }}>Names</Text>
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* ── ACTION BUTTONS ── */}
-              <View style={styles.actionButtonsRow}>
                 <TouchableOpacity
-                  style={[styles.actionBtn, { backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}
+                  style={[styles.headerBookBtn, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F7FA' }]}
+                  onPress={() => setFilterVisible(true)}
                   activeOpacity={0.8}
+                >
+                  <Ionicons name="list-outline" size={rs(16)} color="#00ADC1" />
+                </TouchableOpacity>
+              </View>
+
+              {/* ── PROGRESS CARD ── */}
+              <LinearGradient
+                colors={isDark ? ['#0F2027', '#1A3A4A'] : ['#F8FDFE', '#E1F8FA']}
+                start={{ x: 0, y: 1 }}
+                end={{ x: 2.5, y: 0 }}
+                style={[styles.progressCard, { shadowColor: isDark ? '#000' : '#B2EBF2' }]}
+              >
+                {/* Bottom-left stars */}
+                <View style={{ position: 'absolute', left: 0, bottom: 0, width: rs(60), height: hs(60), opacity: 0.5 }} pointerEvents="none">
+                  <Svg width="100%" height="100%" viewBox="0 0 60 60">
+                    <Path d="M 20 28 Q 20 40 32 40 Q 20 40 20 52 Q 20 40 8 40 Q 20 40 20 28 Z" fill={isDark ? 'rgba(0,220,255,0.15)' : 'rgba(0,178,190,0.06)'} />
+                    <Path d="M 45 42 Q 45 48 51 48 Q 45 48 45 54 Q 45 48 39 48 Q 45 48 45 42 Z" fill={isDark ? 'rgba(0,220,255,0.1)' : 'rgba(0,178,190,0.04)'} />
+                  </Svg>
+                </View>
+
+                {/* Right side waves and stars */}
+                <View style={{ position: 'absolute', right: rs(-10), top: 0, bottom: 0, width: rs(160), opacity: 0.2 }} pointerEvents="none">
+                  {/* Outer stroked wave (slowest) */}
+                  <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%' }, {
+                    transform: [
+                      { translateX: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, rs(-2)] }) },
+                      { translateY: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, hs(1)] }) }
+                    ]
+                  }]}>
+                    <Svg width="100%" height="100%" viewBox="0 0 160 150" preserveAspectRatio="none">
+                      <Path d="M 20 150 C 20 110 50 100 70 80 C 90 60 100 40 125 30 C 145 22 155 10 160 0" stroke={isDark ? 'rgba(0,220,255,0.2)' : 'rgba(0,178,190,0.15)'} strokeWidth="3" fill="none" />
+                    </Svg>
+                  </Animated.View>
+
+                  {/* Middle stroked wave (medium) */}
+                  <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%' }, {
+                    transform: [
+                      { translateX: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, rs(-5)] }) },
+                      { translateY: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, hs(-2)] }) }
+                    ]
+                  }]}>
+                    <Svg width="100%" height="100%" viewBox="0 0 160 150" preserveAspectRatio="none">
+                      <Path d="M 45 150 C 45 120 70 110 85 95 C 100 80 115 65 135 55 C 150 48 158 35 160 25" stroke={isDark ? 'rgba(0,220,255,0.15)' : 'rgba(0,178,190,0.1)'} strokeWidth="3" fill="none" />
+                    </Svg>
+                  </Animated.View>
+
+                  {/* Inner filled wave (fastest & stretches) */}
+                  <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%' }, {
+                    transform: [
+                      { scaleX: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }) },
+                      { translateX: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, rs(-8)] }) }
+                    ]
+                  }]}>
+                    <Svg width="100%" height="100%" viewBox="0 0 160 150" preserveAspectRatio="none">
+                      <Defs>
+                        <SvgLinearGradient id="waveGrad" x1="0" y1="0" x2="1" y2="1">
+                          <Stop offset="0" stopColor={isDark ? '#00DCFF' : '#00B2BE'} stopOpacity={isDark ? "0.15" : "0.12"} />
+                          <Stop offset="1" stopColor={isDark ? '#00DCFF' : '#00B2BE'} stopOpacity={isDark ? "0.05" : "0.03"} />
+                        </SvgLinearGradient>
+                      </Defs>
+                      <Path d="M 70 150 C 70 130 90 120 105 105 C 120 90 130 80 145 75 C 155 71 160 60 160 55 L 160 150 Z" fill="url(#waveGrad)" />
+                    </Svg>
+                  </Animated.View>
+
+                  {/* Stars (twinkling) */}
+                  <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%' }, {
+                    opacity: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
+                    transform: [
+                      { scale: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }
+                    ]
+                  }]}>
+                    <Svg width="100%" height="100%" viewBox="0 0 160 150" preserveAspectRatio="none">
+                      <Path d="M 115 20 Q 115 35 130 35 Q 115 35 115 50 Q 115 35 100 35 Q 115 35 115 20 Z" fill={isDark ? 'rgba(0,220,255,0.4)' : 'rgba(0,178,190,0.2)'} />
+                      <Path d="M 145 10 Q 145 20 155 20 Q 145 20 145 30 Q 145 20 135 20 Q 145 20 145 10 Z" fill={isDark ? 'rgba(0,220,255,0.3)' : 'rgba(0,178,190,0.15)'} />
+                      <Path d="M 135 45 Q 135 50 140 50 Q 135 50 135 55 Q 135 50 130 50 Q 135 50 135 45 Z" fill={isDark ? 'rgba(0,220,255,0.2)' : 'rgba(0,178,190,0.1)'} />
+                      <Path d="M 155 35 Q 155 38 158 38 Q 155 38 155 41 Q 155 38 152 38 Q 155 38 155 35 Z" fill={isDark ? 'rgba(0,220,255,0.15)' : 'rgba(0,178,190,0.08)'} />
+                    </Svg>
+                  </Animated.View>
+                </View>
+
+                <View style={styles.progressCardInner}>
+                  {/* Book icon */}
+                  <View style={[styles.progressBookIcon, { backgroundColor: isDark ? 'rgba(0,178,190,0.22)' : '#E4F7FA' }]}>
+                    <Ionicons name="book-outline" size={rs(18)} color="#00B2BE" />
+                  </View>
+
+                  {/* Stats */}
+                  <View style={styles.progressCardRight}>
+                    <Text style={[styles.progressCardLabel, { color: isDark ? '#94A3B8' : '#6B8097' }]}>Your Progress</Text>
+                    <View style={styles.progressStatsRow}>
+                      <View style={styles.progressStatItem}>
+                        <Text style={[styles.progressStatValue, { color: isDark ? '#00E5FF' : '#00B2BE' }]}>{learnedIds.length}</Text>
+                        <Text style={[styles.progressStatSub, { color: isDark ? '#94A3B8' : '#6B8097' }]}>Names Learned</Text>
+                      </View>
+                      <View style={[styles.progressStatDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : '#D6DFE7' }]} />
+                      <View style={styles.progressStatItem}>
+                        <Text style={[styles.progressStatValue, { color: isDark ? '#00E5FF' : '#00B2BE' }]}>{formattedReadingTime}</Text>
+                        <Text style={[styles.progressStatSub, { color: isDark ? '#94A3B8' : '#6B8097' }]}>Total Learning Time</Text>
+                      </View>
+                      {/* Clock icon standalone */}
+                      <View style={[styles.progressClockCircle, { backgroundColor: isDark ? 'rgba(0,178,190,0.18)' : '#E4F7FA' }]}>
+                        <Ionicons name="time-outline" size={rs(16)} color="#246991ff" />
+                      </View>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Motivation pill */}
+                <View
+                  style={[styles.motivationPill, { backgroundColor: isDark ? 'rgba(0,178,190,0.08)' : '#EAF8FA' }]}
+                >
+                  <Text style={[styles.motivationText, { color: isDark ? '#00E5FF' : '#0eb1c0ff' }]}>Keep learning, you're doing great! </Text>
+                </View>
+              </LinearGradient>
+
+              {/* ── ACTION CARDS ROW ── */}
+              <View style={styles.actionCardsRow}>
+
+                {/* FAVORITES */}
+                <TouchableOpacity
+                  style={[styles.actionCard, { backgroundColor: isDark ? '#0F2027' : '#F8FDFE', shadowColor: isDark ? '#000' : '#B2EBF2', overflow: 'hidden' }]}
+                  activeOpacity={0.85}
                   onPress={() => navigation.navigate('NamesList', { statusFilter: 'favorites' })}
                 >
-                  <Ionicons name="heart-outline" size={rs(16)} color="#F43F5E" />
-                  <Text style={[styles.actionBtnText, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]} numberOfLines={1}>Favorites</Text>
+                  <LinearGradient
+                    colors={isDark ? ['#0F2027', '#1A3A4A'] : ['#F8FDFE', '#E1F8FA']}
+                    start={{ x: 0, y: 1 }}
+                    end={{ x: 2.5, y: 0 }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  {/* Decorative bg icon
+                  <Animated.View style={[styles.actionCardDecorFav, {
+                    transform: [
+                      { translateX: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, rs(-12)] }) },
+                      { translateY: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, rs(-4)] }) }
+                    ]
+                  }]} pointerEvents="none">
+                    <Ionicons name="heart" size={rs(52)} color="rgba(244,63,94,0.09)" />
+                  </Animated.View> */}
+
+                  <Ionicons name="heart-outline" size={rs(24)} color="#F43F5E" />
+
+                  <View style={styles.actionCardText}>
+                    <Text style={[styles.actionCardTitle, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>Favorites</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={rs(16)} color="#F43F5E" />
                 </TouchableOpacity>
 
+                {/* DRAFTS */}
                 <TouchableOpacity
-                  style={[styles.actionBtn, { backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}
-                  activeOpacity={0.8}
+                  style={[styles.actionCard, { backgroundColor: isDark ? '#0F2027' : '#F8FDFE', shadowColor: isDark ? '#000' : '#B2EBF2', overflow: 'hidden' }]}
+                  activeOpacity={0.85}
                   onPress={() => navigation.navigate('NamesList', { statusFilter: 'drafts' })}
                 >
-                  <Ionicons name="document-text-outline" size={rs(16)} color="#8B5CF6" />
-                  <Text style={[styles.actionBtnText, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]} numberOfLines={1}>Drafts</Text>
+                  <LinearGradient
+                    colors={isDark ? ['#0F2027', '#1A3A4A'] : ['#F8FDFE', '#E1F8FA']}
+                    start={{ x: 0, y: 1 }}
+                    end={{ x: 2.5, y: 0 }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  {/* Decorative bg icon */}
+                  {/* <Animated.View style={[styles.actionCardDecorDraft, {
+                    transform: [
+                      { translateX: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, rs(-12)] }) },
+                      { translateY: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, rs(-4)] }) }
+                    ]
+                  }]} pointerEvents="none">
+                    <Ionicons name="document-text" size={rs(52)} color="rgba(139,92,246,0.09)" />
+                  </Animated.View> */}
+
+                  <Ionicons name="document-text-outline" size={rs(24)} color="#8B5CF6" />
+
+                  <View style={styles.actionCardText}>
+                    <Text style={[styles.actionCardTitle, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>Drafts</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={rs(16)} color="#8B5CF6" />
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[styles.actionBtn, { backgroundColor: isDark ? 'rgba(30,41,59,0.7)' : 'rgba(255,255,255,0.9)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}
-                  activeOpacity={0.8}
-                  onPress={() => navigation.navigate('NamesList', { statusFilter: 'learned' })}
-                >
-                  <Ionicons name="bookmark-outline" size={rs(16)} color="#F59E0B" />
-                  <Text style={[styles.actionBtnText, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]} numberOfLines={1}>Revision</Text>
-                </TouchableOpacity>
               </View>
 
               {/* ── LEGEND ROW ── */}
@@ -788,8 +924,7 @@ const NamesScreen = ({ navigation, route }) => {
                         {
                           translateY: scrollAnim.interpolate({
                             inputRange: [-1, 0, 1],
-                            // outputRange: offset === -1 ? [-CARD_SLOT, -CARD_SLOT, 0]
-                            outputRange: offset === -1 ? [CARD_SLOT, CARD_SLOT, 0]
+                            outputRange: offset === -1 ? [-CARD_SLOT, -CARD_SLOT, 0]
                               : offset === 0 ? [0, 0, 0]
                                 : [0, CARD_SLOT, CARD_SLOT],
                             extrapolate: 'clamp',
@@ -832,7 +967,7 @@ const NamesScreen = ({ navigation, route }) => {
                               extraParams.draftProgress = JSON.parse(saved);
                               extraParams.initialStepIndex = extraParams.draftProgress.stepIndex || 0;
                             }
-                          } catch (e) {}
+                          } catch (e) { }
 
                           navigation.navigate('NameDetail', {
                             name: item,
@@ -911,18 +1046,19 @@ const NamesScreen = ({ navigation, route }) => {
                 <View style={styles.bsContent}>
                   <Text style={styles.filterSectionTitle}>CATEGORY</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.bsChipRow}>
-                    {['All', ...(categories ? Object.keys(categories).map(k => k.charAt(0).toUpperCase() + k.slice(1)) : [])].map(cat => {
-                      const isActive = tempCat === cat;
+                    {['All', ...(categories ? Object.keys(categories) : [])].map(catId => {
+                      const isActive = tempCat === catId;
+                      const label = catId === 'All' ? 'All Categories' : categories[catId]?.name || catId;
                       return (
                         <TouchableOpacity
-                          key={cat}
-                          onPress={() => setTempCat(cat)}
+                          key={catId}
+                          onPress={() => setTempCat(catId)}
                           style={[styles.filterPill, isActive && styles.filterPillActive, { flexDirection: 'row', alignItems: 'center' }]}
                         >
-                          {cat === 'All' && (
+                          {catId === 'All' && (
                             <Ionicons name="grid-outline" size={rs(16)} color={isActive ? '#00ADC1' : '#1A1A1A'} style={{ marginRight: rs(6) }} />
                           )}
-                          <Text style={[styles.filterPillText, isActive && styles.filterPillTextActive]}>{cat}</Text>
+                          <Text style={[styles.filterPillText, isActive && styles.filterPillTextActive]}>{label}</Text>
                         </TouchableOpacity>
                       );
                     })}
@@ -984,35 +1120,90 @@ const NamesScreen = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: 'transparent' },
-  topSection: { alignItems: 'center', paddingTop: hs(15), zIndex: 30 },
-  headerContainer: {
-    alignItems: 'center',
-    marginBottom: hs(12),
-  },
+  topSection: { paddingTop: hs(14), paddingHorizontal: rs(20), zIndex: 30 },
+
+  // ── NEW HEADER ROW ──
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: hs(14) },
+  headerLeft: { flex: 1, paddingRight: rs(12) },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
   headerTitleText: {
     fontFamily: FONTS.serif || FONTS.bold,
-    fontSize: rs(20),
-    color: '#00ADC1',
-    textAlign: 'center',
+    fontSize: rs(22),
+    fontWeight: '800',
+    color: '#1A1A1A',
   },
-  headerSubtitleText: {
-    fontSize: rs(12),
-    textAlign: 'center',
-    marginTop: hs(4),
-    letterSpacing: 0.5,
+  headerSparkles: { fontSize: rs(13), color: '#00ADC1', marginLeft: rs(2) },
+  headerSubtitleText: { fontSize: rs(13), marginTop: hs(3), color: '#64748B', letterSpacing: 0.4 },
+  headerBookBtn: {
+    width: rs(36), height: rs(36), borderRadius: rs(18),
+    justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#00ADC1', shadowOpacity: 0.18, shadowRadius: rs(8), shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
-  headerDividerRow: {
-    marginTop: hs(8),
+
+  // ── PROGRESS CARD ──
+  progressCard: {
+    borderRadius: rs(18),
+    padding: rs(14),
+    paddingBottom: rs(12),
+    marginBottom: hs(10),
+    overflow: 'hidden',
+    shadowOpacity: 0.18, shadowRadius: rs(16), shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
   },
-  headerDiamond: {
-    fontSize: rs(10),
+  progressSparkles: { position: 'absolute', top: hs(8), right: rs(14), flexDirection: 'row', alignItems: 'flex-start', zIndex: 2 },
+  sparkleText: { fontWeight: '700' },
+  progressWave: { position: 'absolute', right: rs(-6), top: 0, bottom: 0, justifyContent: 'center', zIndex: 1 },
+  progressCardInner: { flexDirection: 'row', alignItems: 'center', marginBottom: hs(12), zIndex: 3 },
+  progressBookIcon: {
+    width: rs(38), height: rs(38), borderRadius: rs(18),
+    justifyContent: 'center', alignItems: 'center', marginRight: rs(12), marginBottom: hs(25)
   },
+  progressCardRight: { flex: 1 },
+  progressCardLabel: { fontSize: rs(11), fontWeight: '500', marginBottom: hs(6) },
+  progressStatsRow: { flexDirection: 'row', alignItems: 'center' },
+  progressStatItem: { flex: 1 },
+  progressClockCircle: {
+    width: rs(30), height: rs(30), borderRadius: rs(15), right: rs(10),
+    justifyContent: 'center', alignItems: 'center',
+    marginLeft: rs(3),
+  },
+  progressStatValue: { fontSize: rs(24), fontWeight: '700', lineHeight: rs(28) },
+  progressStatSub: { fontSize: rs(10), fontWeight: '500', marginTop: hs(1) },
+  progressStatDivider: { width: 1, height: hs(30), marginHorizontal: rs(12) },
+  progressTimeRow: { flexDirection: 'row', alignItems: 'center', gap: rs(5) },
+  progressTimeIcon: { width: rs(24), height: rs(24), borderRadius: rs(12), justifyContent: 'center', alignItems: 'center' },
+  motivationPill: {
+    borderRadius: rs(30),
+    paddingVertical: hs(6),
+    paddingHorizontal: rs(14),
+    alignItems: 'center',
+    alignSelf: 'center',
+  },
+  motivationText: { fontSize: rs(11), fontWeight: '500' },
+
+  // ── ACTION CARDS ROW ──
+  actionCardsRow: { flexDirection: 'row', gap: rs(10), marginBottom: hs(10) },
+  actionCard: {
+    flex: 1, flexDirection: 'row', alignItems: 'center',
+    borderRadius: rs(14), paddingVertical: rs(10), paddingHorizontal: rs(10),
+    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: rs(6), shadowOffset: { width: 0, height: 2 },
+    elevation: 3, gap: rs(8),
+  },
+  actionCardIconBg: { width: rs(34), height: rs(34), borderRadius: rs(17), justifyContent: 'center', alignItems: 'center' },
+  actionCardText: { flex: 1 },
+  actionCardTitle: { fontSize: rs(13), fontWeight: '700' },
+  actionCardSub: { fontSize: rs(10), fontWeight: '400', lineHeight: hs(14), color: '#9E9E9E' },
+  actionCardChevron: { width: rs(24), height: rs(24), borderRadius: rs(12), justifyContent: 'center', alignItems: 'center' },
+  actionCardDecorFav: { position: 'absolute', bottom: hs(-14), right: rs(-10), zIndex: 0 },
+  actionCardDecorDraft: { position: 'absolute', bottom: hs(-14), right: rs(-10), zIndex: 0 },
+
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: rs(10), marginBottom: hs(10), marginTop: hs(4) },
   searchPill: { flex: 1, height: rs(38), backgroundColor: '#FFFFFF', borderRadius: rs(19), flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(14), gap: rs(8), elevation: 2 },
   searchInput: { flex: 1, fontSize: rs(13), color: '#1A1A1A', paddingVertical: 0, height: rs(38) },
   filterCircle: { width: rs(38), height: rs(38), backgroundColor: '#FFFFFF', borderRadius: rs(19), justifyContent: 'center', alignItems: 'center', elevation: 2 },
 
-  stackEngine: { flex: 1, alignItems: 'center', position: 'relative' },
+  stackEngine: { flex: 1, alignItems: 'center', position: 'relative', overflow: 'hidden' },
 
   baseCardWrapper: {
     position: 'absolute',
@@ -1102,7 +1293,7 @@ const styles = StyleSheet.create({
   applyFilterBtn: { width: '100%', backgroundColor: '#00ADC1', borderRadius: rs(12), paddingVertical: hs(16), alignItems: 'center' },
   applyFilterBtnText: { color: '#FFFFFF', fontSize: rs(16), fontWeight: '700' },
 
-  // ── DASHBOARD CARD ──
+  // ── LEGACY (kept for filter sheet compatibility) ──
   dashboardCard: { width: SW - rs(40), borderRadius: rs(16), borderWidth: 1, padding: rs(16), marginBottom: hs(12) },
   dashboardStatsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: hs(16) },
   dashboardStatCol: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
@@ -1116,13 +1307,9 @@ const styles = StyleSheet.create({
   progressBarFill: { height: '100%', borderRadius: rs(3) },
   progressTextRow: { flexDirection: 'row', width: '100%', justifyContent: 'center' },
   progressTextValue: { fontSize: rs(11), fontWeight: '700', letterSpacing: 0.5 },
-
-  // ── ACTION BUTTONS ──
   actionButtonsRow: { flexDirection: 'row', gap: rs(8), width: SW - rs(40), marginBottom: hs(12) },
   actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: hs(12), paddingHorizontal: rs(4), borderRadius: rs(12), borderWidth: 1 },
   actionBtnText: { fontSize: rs(12), fontWeight: '600', marginLeft: rs(6) },
-
-  // ── LEGEND ROW ──
   legendRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: rs(40), marginVertical: hs(5), marginBottom: hs(15) },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: rs(6) },
   legendDot: { width: rs(8), height: rs(8), borderRadius: rs(4) },

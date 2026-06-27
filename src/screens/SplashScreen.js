@@ -16,7 +16,7 @@ const { width, height } = Dimensions.get('window');
 
 const SplashScreen = () => {
   const { colors, isDark } = useAppTheme();
-  
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const loaderFadeAnim = useRef(new Animated.Value(0)).current;
@@ -72,7 +72,7 @@ const SplashScreen = () => {
 
         <Text style={[styles.title, { color: colors.text }]}>WAHID</Text>
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-          LEARN • REFLECT • GROW
+          LEARN • REFLECT • LIVE BY
         </Text>
       </Animated.View>
 
