@@ -666,7 +666,7 @@ const NamesScreen = ({ navigation, route }) => {
               <LinearGradient
                 colors={isDark ? ['#0F2027', '#1A3A4A'] : ['#F8FDFE', '#E1F8FA']}
                 start={{ x: 0, y: 1 }}
-                end={{ x: 2.5, y: 0 }}
+                end={{ x: 6, y: 0 }}
                 style={[styles.progressCard, { shadowColor: isDark ? '#000' : '#B2EBF2' }]}
               >
                 {/* Bottom-left stars */}
@@ -1168,8 +1168,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     marginLeft: rs(3),
   },
-  progressStatValue: { fontSize: rs(24), fontWeight: '700', lineHeight: rs(28) },
-  progressStatSub: { fontSize: rs(10), fontWeight: '500', marginTop: hs(1) },
+  progressStatValue: { fontSize: rs(24), fontWeight: '400', lineHeight: rs(28) },
+  progressStatSub: { fontSize: rs(10), fontWeight: '400', marginTop: hs(1) },
   progressStatDivider: { width: 1, height: hs(30), marginHorizontal: rs(12) },
   progressTimeRow: { flexDirection: 'row', alignItems: 'center', gap: rs(5) },
   progressTimeIcon: { width: rs(24), height: rs(24), borderRadius: rs(12), justifyContent: 'center', alignItems: 'center' },

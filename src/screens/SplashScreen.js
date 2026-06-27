@@ -8,6 +8,7 @@ import {
   StatusBar,
   Image,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useAppTheme } from '../context/ThemeContext';
 import { COLORS, FONTS, SPACE } from '../theme';
@@ -70,7 +71,7 @@ const SplashScreen = () => {
           />
         </View>
 
-        <Text style={[styles.title, { color: colors.text }]}>WAHID</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Wahid</Text>
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>
           LEARN • REFLECT • LIVE BY
         </Text>
@@ -105,12 +106,12 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   title: {
-    fontFamily: FONTS.bold,
-    fontSize: 32,
-    fontWeight: '800',
-    letterSpacing: 4,
+    fontSize: 34,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginTop: 4,
     textAlign: 'center',
-    textTransform: 'uppercase',
+    fontFamily: Platform.OS === 'ios' ? 'Snell Roundhand' : 'cursive',
   },
   subtitle: {
     fontFamily: FONTS.medium,

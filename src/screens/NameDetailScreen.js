@@ -565,6 +565,7 @@ const NameDetailScreen = ({ route, navigation }) => {
   }, [currentStepIndex, steps.length, goToStep, triggerFlip]);
 
   const goPrev = useCallback(() => {
+    setIsPaused(false);
     const currentStep = steps[currentStepIndex];
     if (!currentStep) return;
 
@@ -658,6 +659,7 @@ const NameDetailScreen = ({ route, navigation }) => {
   }, []);
 
   const handleNext = useCallback(() => {
+    setIsPaused(false);
     let ans = 0;
     if (name.mcq && name.mcq.length > 0) ans = name.mcq[0].ans;
 
