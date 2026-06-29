@@ -171,6 +171,21 @@ const HomeScreen = ({ navigation }) => {
 
   const [lastReadName, setLastReadName] = React.useState(null);
   const [isNewName, setIsNewName] = React.useState(false);
+  const [lastReadTimestamp, setLastReadTimestamp] = React.useState(null);
+
+  const displayTime = useMemo(() => {
+    if (!lastReadTimestamp) return 'Just now';
+    const date = new Date(lastReadTimestamp);
+    const now = new Date();
+    const timeString = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const isToday = date.toDateString() === now.toDateString();
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+    if (isToday) return `Today, ${timeString}`;
+    if (isYesterday) return `Yesterday, ${timeString}`;
+    return `${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${timeString}`;
+  }, [lastReadTimestamp]);
 
   const [catSortOrder, setCatSortOrder] = React.useState('default');
   const [catSortModalVisible, setCatSortModalVisible] = React.useState(false);
@@ -216,12 +231,17 @@ const HomeScreen = ({ navigation }) => {
             if (nameObj) {
               setLastReadName(nameObj);
               setIsNewName(false);
+              setLastReadTimestamp(progress.timestamp || null);
               return;
             }
           }
           pickRemaining();
+          setLastReadTimestamp(null);
         })
-        .catch(() => pickRemaining());
+        .catch(() => {
+          pickRemaining();
+          setLastReadTimestamp(null);
+        });
     }, [names, learnedIds, masteredIds])
   );
 
@@ -453,38 +473,57 @@ const HomeScreen = ({ navigation }) => {
                 {/* ── Last Read Card ── */}
                 <View style={styles.lastReadCardWrapper}>
                   <LinearGradient
-                    colors={isDark ? ['#1A2332', '#0F172A'] : ['#DDF8F6', '#FFFFFF', '#FFFFFF', '#DDF8F6']}
-                    locations={isDark ? [0, 1] : [0, 0.3, 0.7, 1]}
+                    colors={isDark ? ['#0B1B29', '#08131E'] : ['#F0FCFD', '#E0F8FA']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={[styles.lastReadCard, { flexDirection: 'column', height: 'auto', minHeight: hs(180), paddingBottom: hs(16), overflow: 'hidden' }, isDark ? { borderWidth: 1, borderColor: '#334155' } : { borderWidth: 1, borderColor: 'rgba(255,255,255,0.8)' }]}
+                    style={[
+                      styles.lastReadCard,
+                      {
+                        flexDirection: 'column',
+                        height: 'auto',
+                        minHeight: hs(180),
+                        paddingBottom: hs(16),
+                        overflow: 'hidden',
+                        borderRadius: rs(16),
+                        borderColor: isDark ? '#1C3A4B' : '#BFECEF',
+                        borderWidth: 1.5,
+                        shadowColor: '#00ADC1',
+                        shadowOffset: { width: 0, height: 6 },
+                        shadowOpacity: isDark ? 0.3 : 0.15,
+                        shadowRadius: 12,
+                        elevation: 6
+                      }
+                    ]}
                   >
-                    {/* Secondary overlay gradient to color the top-right and bottom-left corners */}
-                    {!isDark && (
-                      <LinearGradient
-                        colors={['#DDF8F6', 'rgba(255,255,255,0)', 'rgba(255,255,255,0)', '#DDF8F6']}
-                        locations={[0, 0.3, 0.7, 1]}
-                        start={{ x: 1, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={[StyleSheet.absoluteFillObject, { zIndex: -1 }]}
-                      />
-                    )}
+                    {/* Shimmer/Glow effect overlay */}
+                    <LinearGradient
+                      colors={isDark ? ['rgba(0,173,193,0)', 'rgba(0,173,193,0.08)', 'rgba(0,173,193,0)'] : ['rgba(255,255,255,0)', 'rgba(255,255,255,0.6)', 'rgba(255,255,255,0)']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFillObject}
+                    />
+
                     {/* Header Row */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10, width: '100%' }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(10) }}>
-                        <View style={{ width: rs(40), height: rs(40), borderRadius: rs(20), backgroundColor: '#09B7C9', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFFFFF', shadowColor: '#09B7C9', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 2 }}>
-                          <Ionicons name="book-outline" size={rs(18)} color="#FFFFFF" />
+                        <View style={{ width: rs(40), height: rs(40), borderRadius: rs(20), backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#DDF8F6', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: isDark ? 'rgba(0,173,193,0.4)' : '#A0E4EC', shadowColor: '#00ADC1', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4 }}>
+                          <Ionicons name="book-outline" size={rs(18)} color={isDark ? '#4CD5E8' : '#00ADC1'} />
                         </View>
                         <View>
-                          <Text style={{ fontFamily: FONTS.bold, fontSize: rs(16), color: isDark ? '#E8EDF2' : '#0F172A' }}>{isDraftLimitReached ? 'Attention Required' : (isNewName ? 'New Name' : 'Last Read')}</Text>
-                          <Text style={{ fontFamily: FONTS.medium, fontSize: rs(10), color: isDark ? '#94A3B8' : '#64748B' }}>{isDraftLimitReached ? 'Focus on your progress' : 'Continue your journey'}</Text>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <Text style={{ fontFamily: FONTS.bold, fontSize: rs(14), letterSpacing: 0.5, textTransform: 'uppercase', color: isDark ? '#E8EDF2' : '#0F172A' }}>
+                              {isDraftLimitReached ? 'Attention Required' : (isNewName ? 'New Name' : 'Last Read')}
+                            </Text>
+                            <Ionicons name="sparkles" size={12} color={isDark ? '#4CD5E8' : '#00ADC1'} />
+                          </View>
+                          <Text style={{ fontFamily: FONTS.medium, fontSize: rs(10), color: isDark ? '#4CD5E8' : '#0090A8', marginTop: hs(2) }}>
+                            {isDraftLimitReached ? 'Focus on your progress' : 'Continue your journey'}
+                          </Text>
                         </View>
                       </View>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(6), backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.7)', paddingHorizontal: rs(10), paddingVertical: hs(6), borderRadius: rs(12), borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.8)' }}>
-                        <View style={{ width: rs(20), height: rs(20), borderRadius: rs(10), backgroundColor: '#09B7C9', justifyContent: 'center', alignItems: 'center' }}>
-                          <Ionicons name="time-outline" size={rs(12)} color="#FFFFFF" />
-                        </View>
-                        <Text style={{ fontFamily: FONTS.bold, fontSize: rs(11), color: '#09B7C9' }}>Today, 2:30 PM</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(6), backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : 'rgba(255,255,255,0.8)', paddingHorizontal: rs(10), paddingVertical: hs(6), borderRadius: rs(12), borderWidth: 1, borderColor: isDark ? 'rgba(0,173,193,0.2)' : '#BFECEF' }}>
+                        <Ionicons name="time-outline" size={rs(12)} color={isDark ? '#4CD5E8' : '#00ADC1'} />
+                        <Text style={{ fontFamily: FONTS.bold, fontSize: rs(11), color: isDark ? '#4CD5E8' : '#00ADC1' }}>{displayTime}</Text>
                       </View>
                     </View>
 
@@ -510,16 +549,52 @@ const HomeScreen = ({ navigation }) => {
                           )}
                         </View>
 
-                        <View style={{ width: '85%' }}>
+                        <View style={{ width: '90%' }}>
                           <TouchableOpacity
-                            style={[styles.backToReadingBtn, { backgroundColor: isDark ? '#00ADC1' : '#09B7C9', shadowColor: '#09B7C9', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 8, elevation: 6, justifyContent: 'space-between', paddingHorizontal: rs(16), paddingVertical: hs(10), borderRadius: rs(10), width: '100%' }]}
                             activeOpacity={0.8}
                             onPress={handleBackToReading}
+                            style={{
+                              shadowColor: '#00ADC1',
+                              shadowOffset: { width: 0, height: 6 },
+                              shadowOpacity: 0.4,
+                              shadowRadius: 10,
+                              elevation: 8,
+                              marginTop: hs(4),
+                            }}
                           >
-                            <Text style={[styles.backToReadingText, { color: '#ffffff', fontSize: rs(13), fontFamily: FONTS.bold }]}>
-                              {isDraftLimitReached ? 'Study Drafts' : (isNewName ? 'Start New Name' : 'Continue Reading')}
-                            </Text>
-                            <Ionicons name="arrow-forward" size={rs(16)} color="#ffffff" />
+                            <LinearGradient
+                              colors={isDark ? ['#09B7C9', '#068A99'] : ['#06E0F8', '#00ADC1']}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 1 }}
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                paddingHorizontal: rs(18),
+                                paddingVertical: hs(12),
+                                borderRadius: rs(10),
+                                width: '100%',
+                                borderWidth: 1,
+                                borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.4)',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              {/* Highlight Shimmer overlay */}
+                              <LinearGradient
+                                colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0)']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 0, y: 1 }}
+                                style={StyleSheet.absoluteFillObject}
+                              />
+                              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', zIndex: 1 }}>
+                                <Text style={{ color: '#ffffff', fontSize: rs(13), fontFamily: FONTS.bold, letterSpacing: 0.5 }}>
+                                  {isDraftLimitReached ? 'Study Drafts' : (isNewName ? 'Start New Name' : 'Continue Reading')}
+                                </Text>
+                                <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', width: rs(24), height: rs(24), borderRadius: rs(12), justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 2 }}>
+                                  <Ionicons name="arrow-forward" size={rs(14)} color="#ffffff" />
+                                </View>
+                              </View>
+                            </LinearGradient>
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -554,79 +629,222 @@ const HomeScreen = ({ navigation }) => {
                 </View>
 
                 {/* ── Progress Card ── */}
-                <View style={[
-                  styles.progressContainer,
-                  {
-                    backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff',
-                    borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9'
-                  }
-                ]}>
+                <LinearGradient
+                  colors={isDark ? ['#121F2F', '#0D1621'] : ['#F9FCFD', '#F0F8FA']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[
+                    styles.progressContainer,
+                    {
+                      borderRadius: rs(16),
+                      borderColor: isDark ? 'rgba(0,173,193,0.2)' : '#D6F2F5',
+                      borderWidth: 1.5,
+                      shadowColor: '#00ADC1',
+                      shadowOffset: { width: 0, height: 8 },
+                      shadowOpacity: isDark ? 0.2 : 0.1,
+                      shadowRadius: 15,
+                      elevation: 6,
+                      overflow: 'hidden'
+                    }
+                  ]}
+                >
+                  {/* Decorative glowing overlay */}
+                  <LinearGradient
+                    colors={isDark ? ['rgba(0,173,193,0.1)', 'rgba(0,0,0,0)'] : ['rgba(0,173,193,0.05)', 'rgba(255,255,255,0)']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+
                   <View style={styles.progressHeader}>
-                    <Text style={[styles.progressTitle, { color: isDark ? '#E8EDF2' : '#0F172A' }]}>Learning Journey</Text>
-                    <Text style={[styles.progressPercentText, { color: '#00ADC1' }]}>
-                      {Math.round(stats.progress)}%
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(8) }}>
+                      <View style={{ width: rs(28), height: rs(28), borderRadius: rs(14), backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F8FA', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: isDark ? 'rgba(0,173,193,0.3)' : '#BFECEF' }}>
+                        <Ionicons name="stats-chart" size={rs(14)} color="#00ADC1" />
+                      </View>
+                      <Text style={[styles.progressTitle, { color: isDark ? '#E8EDF2' : '#0F172A', letterSpacing: 0.5, textTransform: 'uppercase', fontSize: rs(13), fontFamily: FONTS.bold }]}>Learning Journey</Text>
+                    </View>
+                    <View style={{ backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F8FA', paddingHorizontal: rs(12), paddingVertical: hs(6), borderRadius: rs(12), borderWidth: 1, borderColor: isDark ? 'rgba(0,173,193,0.3)' : '#BFECEF' }}>
+                      <Text style={[styles.progressPercentText, { color: '#00ADC1', fontSize: rs(13), fontFamily: FONTS.bold }]}>
+                        {Math.round(stats.progress)}%
+                      </Text>
+                    </View>
                   </View>
 
+                  {/* Elegant Progress Bar */}
                   <View style={[
                     styles.progressBarBg,
-                    { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9' }
+                    {
+                      backgroundColor: isDark ? 'rgba(0,0,0,0.3)' : '#E9EFF5',
+                      height: hs(14),
+                      borderRadius: rs(7),
+                      borderWidth: 1,
+                      borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#FFFFFF',
+                      overflow: 'hidden'
+                    }
                   ]}>
-                    <View style={[styles.progressBarFill, { width: `${stats.progress}%`, backgroundColor: '#00ADC1' }]} />
+                    <LinearGradient
+                      colors={isDark ? ['#00ADC1', '#0DF2FF'] : ['#09B7C9', '#05E1FA']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={[
+                        styles.progressBarFill,
+                        {
+                          width: `${stats.progress}%`,
+                          borderRadius: rs(7),
+                          height: '100%',
+                          position: 'relative',
+                          shadowColor: '#00ADC1',
+                          shadowOffset: { width: 0, height: 0 },
+                          shadowOpacity: 0.8,
+                          shadowRadius: 8,
+                          elevation: 4
+                        }
+                      ]}
+                    >
+                      {/* Glossy top highlight */}
+                      <LinearGradient
+                        colors={['rgba(255,255,255,0.5)', 'rgba(255,255,255,0)']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={StyleSheet.absoluteFillObject}
+                      />
+                      {/* Glowing head at the tip of the progress */}
+                      {stats.progress > 5 && (
+                        <View style={{
+                          position: 'absolute',
+                          right: rs(2),
+                          top: hs(2),
+                          bottom: hs(2),
+                          width: rs(10),
+                          backgroundColor: '#FFFFFF',
+                          borderRadius: rs(5),
+                          shadowColor: '#FFFFFF',
+                          shadowOffset: { width: 0, height: 0 },
+                          shadowOpacity: 1,
+                          shadowRadius: 5,
+                        }} />
+                      )}
+                    </LinearGradient>
                   </View>
 
-                  <Text style={styles.progressSubtitleText}>
+                  <Text style={[styles.progressSubtitleText, { marginTop: hs(6) }]}>
                     <Text style={{ color: '#00ADC1', fontFamily: FONTS.bold }}>{stats.learned}</Text>
                     <Text style={{ color: isDark ? '#94A3B8' : '#64748B' }}> of 99 Names Completed</Text>
                   </Text>
 
-                  <View style={[styles.progressDivider, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9' }]} />
+                  <View style={[styles.progressDivider, { borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9', marginVertical: hs(16) }]} />
 
                   <View style={styles.metricsRow}>
-                    {/* Learned Metric Card */}
+                    {/* Learned Metric Card (Elegant Horizontal) */}
                     <TouchableOpacity
-                      style={[
-                        styles.metricCardWrapNew,
-                        { backgroundColor: isDark ? 'rgba(76, 175, 80, 0.05)' : '#F8FAF9', borderColor: isDark ? 'rgba(76, 175, 80, 0.2)' : '#E8F5E9' }
-                      ]}
-                      activeOpacity={0.75}
+                      style={{ flex: 1, marginRight: hs(6) }}
+                      activeOpacity={0.8}
                       onPress={() => navigation.navigate('Learned')}
                     >
-                      <View style={styles.metricCardLeft}>
-                        <View style={[styles.metricIconWrap, { backgroundColor: isDark ? 'rgba(76, 175, 80, 0.1)' : '#E8F5E9' }]}>
-                          <Image source={require('../../assets/home/learn_icon.png')} style={{ width: 24, height: 24, tintColor: '#4CAF50' }} resizeMode="contain" />
+                      <LinearGradient
+                        colors={isDark ? ['#0B2217', '#143628'] : ['#F2FCF5', '#E6F9EC']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{
+                          borderRadius: rs(12),
+                          paddingVertical: hs(8),
+                          paddingHorizontal: rs(10),
+                          borderWidth: 1,
+                          borderColor: isDark ? '#1C4A36' : '#BFF0D4',
+                          shadowColor: '#10B981',
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: isDark ? 0.3 : 0.15,
+                          shadowRadius: 8,
+                          elevation: 6,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        <LinearGradient
+                          colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0)']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 0, y: 1 }}
+                          style={StyleSheet.absoluteFillObject}
+                        />
+
+                        <View style={{
+                          width: rs(28),
+                          height: rs(28),
+                          borderRadius: rs(14),
+                          backgroundColor: isDark ? 'rgba(16,185,129,0.15)' : '#D1F4E0',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          borderWidth: 1,
+                          borderColor: isDark ? 'rgba(16,185,129,0.3)' : '#A7E9C4',
+                          marginRight: rs(8)
+                        }}>
+                          <Image source={require('../../assets/home/learn_icon.png')} style={{ width: rs(14), height: rs(14), tintColor: '#10B981' }} resizeMode="contain" />
                         </View>
-                      </View>
-                      <View style={styles.metricCardRight}>
-                        <Text style={[styles.metricLabelText, { color: '#4CAF50' }]}>Learned</Text>
-                        <Text style={[styles.metricValueText, { color: isDark ? '#E8EDF2' : '#0F172A' }]}>{stats.learned}</Text>
-                      </View>
+
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontFamily: FONTS.medium, fontSize: rs(9), color: '#10B981', letterSpacing: 0.5, textTransform: 'uppercase' }}>Learned</Text>
+                          <Text style={{ fontFamily: FONTS.bold, fontSize: rs(18), color: isDark ? '#A7F3D0' : '#065F46', marginTop: hs(1) }}>{stats.learned}</Text>
+                        </View>
+                      </LinearGradient>
                     </TouchableOpacity>
 
-                    <View style={[styles.metricDividerVertical, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9' }]} />
-
-                    {/* Mastered Metric Card */}
+                    {/* Mastered Metric Card (Elegant Horizontal) */}
                     <TouchableOpacity
-                      style={[
-                        styles.metricCardWrapNew,
-                        { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.05)' : '#FFFBEB', borderColor: isDark ? 'rgba(245, 158, 11, 0.2)' : '#FEF3C7' }
-                      ]}
-                      activeOpacity={0.75}
+                      style={{ flex: 1, marginLeft: hs(6) }}
+                      activeOpacity={0.8}
                       onPress={() => navigation.navigate('Mastered')}
                     >
-                      <View style={styles.metricCardLeft}>
-                        <View style={[styles.metricIconWrap, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.1)' : '#FEF3C7' }]}>
-                          <Image source={require('../../assets/home/master_icon.png')} style={{ width: 24, height: 24, tintColor: '#F59E0B' }} resizeMode="contain" />
+                      <LinearGradient
+                        colors={isDark ? ['#1F170A', '#332714'] : ['#FFFDF2', '#FFF8DD']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{
+                          borderRadius: rs(12),
+                          paddingVertical: hs(8),
+                          paddingHorizontal: rs(10),
+                          borderWidth: 1,
+                          borderColor: isDark ? '#5C4410' : '#FBE38E',
+                          shadowColor: '#F59E0B',
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: isDark ? 0.3 : 0.15,
+                          shadowRadius: 8,
+                          elevation: 6,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        <LinearGradient
+                          colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0)']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 0, y: 1 }}
+                          style={StyleSheet.absoluteFillObject}
+                        />
+
+                        <View style={{
+                          width: rs(28),
+                          height: rs(28),
+                          borderRadius: rs(14),
+                          backgroundColor: isDark ? 'rgba(245,158,11,0.15)' : '#FFF0B3',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          borderWidth: 1,
+                          borderColor: isDark ? 'rgba(245,158,11,0.3)' : '#FDE68A',
+                          marginRight: rs(8)
+                        }}>
+                          <Image source={require('../../assets/home/master_icon.png')} style={{ width: rs(14), height: rs(14), tintColor: '#F59E0B' }} resizeMode="contain" />
                         </View>
-                      </View>
-                      <View style={styles.metricCardRight}>
-                        <Text style={[styles.metricLabelText, { color: '#F59E0B' }]}>Mastered</Text>
-                        <Text style={[styles.metricValueText, { color: isDark ? '#E8EDF2' : '#0F172A' }]}>{stats.mastered}</Text>
-                      </View>
+
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontFamily: FONTS.medium, fontSize: rs(9), color: '#F59E0B', letterSpacing: 0.5, textTransform: 'uppercase' }}>Mastered</Text>
+                          <Text style={{ fontFamily: FONTS.bold, fontSize: rs(18), color: isDark ? '#FDE68A' : '#92400E', marginTop: hs(1) }}>{stats.mastered}</Text>
+                        </View>
+                      </LinearGradient>
                     </TouchableOpacity>
 
                   </View>
-                </View>
+                </LinearGradient>
 
                 {/* ── Invite Card ── */}
                 <TouchableOpacity
@@ -1092,7 +1310,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#000000',
-    borderRadius: rs(8),
+    borderRadius: rs(6),
     paddingHorizontal: rs(14),
     paddingVertical: hs(8),
     alignSelf: 'flex-start',

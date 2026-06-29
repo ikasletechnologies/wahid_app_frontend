@@ -175,8 +175,8 @@ const LoginScreen = ({ navigation, route }) => {
       Toast.show({ type: 'error', text1: 'Incomplete Fields', text2: 'Please enter your phone and password.' });
       return;
     }
-    if (digits.length !== 10) {
-      Toast.show({ type: 'error', text1: 'Invalid Number', text2: 'Phone number must be exactly 10 digits.' });
+    if (digits.length < 7 || digits.length > 15) {
+      Toast.show({ type: 'error', text1: 'Invalid Number', text2: 'Please enter a valid phone number.' });
       return;
     }
     if (!password) {
@@ -260,7 +260,7 @@ const LoginScreen = ({ navigation, route }) => {
                     onFocus={() => setFocused('phone')}
                     onBlur={() => setFocused(null)}
                     keyboardType="phone-pad"
-                    maxLength={10}
+                    maxLength={15}
                     returnKeyType="next"
                     onSubmitEditing={() => passwordInput.current?.focus()}
                     selectionColor="#03B7CE"
