@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Dimensions, Animated, Easing,
-  Image, TouchableOpacity, StatusBar, PanResponder, ScrollView, TextInput,
+  Image, TouchableOpacity, StatusBar, PanResponder, ScrollView, TextInput, TouchableWithoutFeedback,
   LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform, Keyboard,
   Share
 } from 'react-native';
@@ -47,7 +47,72 @@ const countWords = (content) => {
 
 const getMeaningSentences = (nameObj) => {
   let displayMeaning = nameObj.description || nameObj.meaning || '';
-  return [displayMeaning.trim()];
+  if (typeof displayMeaning === 'string' && displayMeaning.includes('—')) {
+    displayMeaning = displayMeaning.split('—')[1].trim();
+  }
+  let parts = displayMeaning.split(/([.?!])(?:[\s]+|$)/);
+  let sentences = [];
+  for (let i = 0; i < parts.length; i += 2) {
+    let text = parts[i];
+    let punct = parts[i + 1] || '';
+    let combined = (text + punct).trim();
+    if (combined && combined.replace(/[.?!\s]/g, '').length > 0) sentences.push(combined);
+  }
+  return sentences.length > 0 ? sentences : [displayMeaning.trim()];
+};
+
+const getReferenceSentences = (refDataArray) => {
+  const array = Array.isArray(refDataArray) ? refDataArray : [refDataArray];
+  let sentences = [];
+  array.forEach((ref) => {
+    if (typeof ref === 'string') {
+      let parts = ref.split(/([.?!])(?:[\s]+|$)/);
+      for (let i = 0; i < parts.length; i += 2) {
+        let text = parts[i];
+        let punct = parts[i + 1] || '';
+        let combined = (text + punct).trim();
+        if (combined && combined.replace(/[.?!\s]/g, '').length > 0) {
+          sentences.push({ type: 'string', text: combined, refData: ref });
+        }
+      }
+    } else {
+      const processText = (text, fieldType) => {
+        if (!text) return;
+        let parts = text.split(/([.?!])(?:[\s]+|$)/);
+        for (let i = 0; i < parts.length; i += 2) {
+          let textPart = parts[i];
+          let punct = parts[i + 1] || '';
+          let combined = (textPart + punct).trim();
+          if (combined && combined.replace(/[.?!\s]/g, '').length > 0) {
+            sentences.push({ type: fieldType, text: combined, refData: ref });
+          }
+        }
+      };
+      processText(ref.simpleMeaning, 'simpleMeaning');
+      processText(ref.significance, 'significance');
+    }
+  });
+  return sentences;
+};
+
+const flattenToSentences = (arrayOrString) => {
+  if (!arrayOrString) return [];
+  const array = Array.isArray(arrayOrString) ? arrayOrString : [arrayOrString];
+  let sentences = [];
+  array.forEach(item => {
+    if (!item) return;
+    const itemStr = typeof item === 'object' ? (item.view || '') : String(item);
+    let parts = itemStr.split(/([.?!])(?:[\s]+|$)/);
+    for (let i = 0; i < parts.length; i += 2) {
+      let text = parts[i];
+      let punct = parts[i + 1] || '';
+      let combined = (text + punct).trim();
+      if (combined && combined.replace(/[.?!\s]/g, '').length > 0) {
+        sentences.push(combined);
+      }
+    }
+  });
+  return sentences;
 };
 
 const FadeContent = ({ contentKey, children }) => {
@@ -204,6 +269,7 @@ const NameDetailScreen = ({ route, navigation }) => {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const scrollViewRef = useRef(null);
+  const readingCardScrollRef = useRef(null);
   const lastReadTimerRef = useRef(null);
   const flipAnim = useRef(new Animated.Value(0)).current;
 
@@ -273,6 +339,7 @@ const NameDetailScreen = ({ route, navigation }) => {
     AsyncStorage.setItem('last_reading_progress', JSON.stringify({
       nameNumber,
       stepIndex: currentStepIndex,
+      timestamp: Date.now(),
     })).catch(() => { });
 
     AsyncStorage.setItem(`draft_progress_${nameNumber}`, JSON.stringify({
@@ -556,6 +623,10 @@ const NameDetailScreen = ({ route, navigation }) => {
     const currentStep = steps[currentStepIndex];
     if (!currentStep) return;
 
+    if (currentStep.type !== 'mastery' && currentStep.type !== 'reflection') {
+      setIsFocusMode(true);
+    }
+
     if (currentStep.type === 'meaning' && meaningSubStep > -1) {
       if (meaningSubStep === 0) {
         triggerFlip(() => setMeaningSubStep(-1));
@@ -614,11 +685,14 @@ const NameDetailScreen = ({ route, navigation }) => {
           const refsCount = Array.isArray(prevStep.data) ? prevStep.data.length : 1;
           setRefSubStep(Math.max(0, refsCount - 1));
         } else if (prevStep?.type === 'gifts') {
-          setGiftSubStep(Math.max(0, (name.gifts?.length || 1) - 1));
+          const sents = flattenToSentences(name.gifts);
+          setGiftSubStep(Math.max(0, sents.length - 1));
         } else if (prevStep?.type === 'practical') {
-          setPracticalSubStep(Math.max(0, (name.practicalWays?.length || 1) - 1));
+          const sents = flattenToSentences(name.practicalWays);
+          setPracticalSubStep(Math.max(0, sents.length - 1));
         } else if (prevStep?.type === 'scholarly') {
-          setScholarSubStep(Math.max(0, (name.scholarlyViews?.length || 1) - 1));
+          const sents = flattenToSentences(name.scholarlyViews);
+          setScholarSubStep(Math.max(0, sents.length - 1));
         }
       });
     }
@@ -690,8 +764,8 @@ const NameDetailScreen = ({ route, navigation }) => {
         advance();
       }
     } else if (currentStep.type === 'quran' || currentStep.type === 'hadith') {
-      const refsCount = Array.isArray(currentStep.data) ? currentStep.data.length : 1;
-      if (refSubStep < refsCount - 1) {
+      const sents = getReferenceSentences(currentStep.data);
+      if (refSubStep < sents.length - 1) {
         if (refSubStep === -1) {
           triggerFlip(() => {
             setRefSubStep(prev => prev + 1);
@@ -706,8 +780,8 @@ const NameDetailScreen = ({ route, navigation }) => {
         advance();
       }
     } else if (currentStep.type === 'gifts') {
-      const maxSubSteps = name.gifts ? name.gifts.length - 1 : 0;
-      if (giftSubStep < maxSubSteps) {
+      const sents = flattenToSentences(name.gifts);
+      if (giftSubStep < sents.length - 1) {
         if (giftSubStep === -1) {
           triggerFlip(() => setGiftSubStep(prev => prev + 1));
         } else {
@@ -718,8 +792,8 @@ const NameDetailScreen = ({ route, navigation }) => {
         advance();
       }
     } else if (currentStep.type === 'practical') {
-      const maxSubSteps = name.practicalWays ? name.practicalWays.length - 1 : 0;
-      if (practicalSubStep < maxSubSteps) {
+      const sents = flattenToSentences(name.practicalWays);
+      if (practicalSubStep < sents.length - 1) {
         if (practicalSubStep === -1) {
           triggerFlip(() => setPracticalSubStep(prev => prev + 1));
         } else {
@@ -730,8 +804,8 @@ const NameDetailScreen = ({ route, navigation }) => {
         advance();
       }
     } else if (currentStep.type === 'scholarly') {
-      const maxSubSteps = name.scholarlyViews ? name.scholarlyViews.length - 1 : 0;
-      if (scholarSubStep < maxSubSteps) {
+      const sents = flattenToSentences(name.scholarlyViews);
+      if (scholarSubStep < sents.length - 1) {
         if (scholarSubStep === -1) {
           triggerFlip(() => setScholarSubStep(prev => prev + 1));
         } else {
@@ -759,7 +833,7 @@ const NameDetailScreen = ({ route, navigation }) => {
     </Svg>
   );
 
-  const renderReadingCard = ({ title, text, badgeIcon, scholarName, scholarWork, customContent }) => (
+  const renderReadingCard = ({ title, text, badgeIcon, scholarName, scholarWork, customContent, scrollEnabled = false }) => (
     <View style={styles.tabContentContainer}>
       <View style={[styles.modernCard, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', borderColor: isDark ? '#334155' : '#F0F4F8' }]}>
 
@@ -791,11 +865,13 @@ const NameDetailScreen = ({ route, navigation }) => {
         </View>
 
         {/* Main Text with Proper Fade Animation */}
-        <ScrollView
+        <ScrollView 
+          ref={readingCardScrollRef}
           style={styles.textScrollView}
           contentContainerStyle={styles.textScrollContent}
           showsVerticalScrollIndicator={true}
           nestedScrollEnabled={true}
+          scrollEnabled={scrollEnabled}
         >
           <FadeContent contentKey={text || (customContent ? 'custom' : '')}>
             {customContent ? customContent : (
@@ -898,25 +974,15 @@ const NameDetailScreen = ({ route, navigation }) => {
                   borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#F0F8FA',
                   shadowColor: isDark ? '#000000' : '#00ADC1',
                 }]}>
-                  <Ionicons name={iconName} size={rs(46)} color="#00ADC1" />
+                  <Ionicons name={iconName} size={rs(32)} color="#00ADC1" />
                 </View>
               </View>
             </View>
 
             {/* Title */}
             <FadeContent contentKey={title}>
-              <Text style={[styles.introTitleText2, { color: isDark ? '#E8EDF2' : '#0A1128' }]}>{title}</Text>
+              <Text style={[styles.introTitleText2, { color: isDark ? '#E8EDF2' : '#0A1128', marginBottom: hs(16) }]}>{title}</Text>
             </FadeContent>
-
-            {/* Ornament divider */}
-            <View style={styles.introOrnamentRow}>
-              <View style={[styles.introOrnamentLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]} />
-              <Text style={styles.introOrnamentStar}>✦</Text>
-              <View style={[styles.introOrnamentLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]} />
-            </View>
-
-            {/* Subtitle */}
-            <Text style={[styles.introSubtitleText2, { color: isDark ? '#94A3B8' : '#64748B' }]}>{subtitle || 'Tap continue to begin'}</Text>
 
             {/* Info pills */}
             <View style={styles.introInfoRow}>
@@ -960,28 +1026,28 @@ const NameDetailScreen = ({ route, navigation }) => {
   const renderReference = (refDataArray, type) => {
     const isQuran = type === 'quran';
     const title = isQuran ? "Pearls from the Qur'an" : "Pearls from the Hadith";
-    const subtitle = isQuran ? 'Divine context from the Holy Book' : 'Wisdom from the Prophet ﷺ';
+
+    const sents = getReferenceSentences(refDataArray);
 
     if (refSubStep === -1) {
-      const refCount = Array.isArray(refDataArray) ? refDataArray.length : 1;
-      const refText = (Array.isArray(refDataArray) ? refDataArray : [refDataArray])
-        .map(r => (typeof r === 'string' ? r : `${r.simpleMeaning || ''} ${r.significance || ''}`))
-        .join(' ');
+      const refText = sents.map(s => s.text).join(' ');
       const wordCount = countWords(refText);
       const readTimeSec = Math.max(20, Math.round((wordCount / 180) * 60));
       return renderIntroCard({
         title,
         iconName: 'library-outline',
-        subtitle,
-        insightsCount: refCount,
+        insightsCount: sents.length,
         readTimeSec,
       });
     }
 
-    const refData = Array.isArray(refDataArray) ? refDataArray[refSubStep] : refDataArray;
+    const currentSent = sents[refSubStep];
+    if (!currentSent) return null;
+    
+    const refData = currentSent.refData;
 
-    if (typeof refData === 'string') {
-      return renderReadingCard({ title, text: refData, badgeIcon: 'library-outline' });
+    if (currentSent.type === 'string') {
+      return renderReadingCard({ title, text: currentSent.text, badgeIcon: 'library-outline' });
     }
 
     const customContent = (
@@ -995,19 +1061,25 @@ const NameDetailScreen = ({ route, navigation }) => {
           </View>
         )}
 
-        <Text style={[styles.refSectionLabel, { color: '#00ADC1' }]}>Simple explanation</Text>
+        <Text style={[styles.refSectionLabel, { color: '#00ADC1' }]}>
+          {currentSent.type === 'simpleMeaning' ? 'Simple explanation' : 'Significance'}
+        </Text>
 
-        <Text style={[styles.readingText, { color: t.text, marginBottom: hs(20) }]}>{refData.simpleMeaning || ''}</Text>
-
-        {!!refData.significance && (
-          <Text style={[styles.readingText, { color: t.subText, fontSize: rs(16), marginBottom: hs(20) }]}>{refData.significance}</Text>
-        )}
+        <Text style={[styles.readingText, { color: t.text, marginBottom: hs(20) }]}>{currentSent.text}</Text>
 
         {!!refData.arabic && (
           <>
             <TouchableOpacity
               style={[styles.seeArabicBtn, { borderColor: isDark ? 'rgba(0,173,193,0.30)' : 'rgba(0,173,193,0.25)', backgroundColor: isDark ? '#0F2A30' : '#F0FCFD' }]}
-              onPress={() => setShowArabicVerse(prev => !prev)}
+              onPress={() => {
+                setShowArabicVerse(prev => {
+                  const nxt = !prev;
+                  if (!nxt) {
+                    setTimeout(() => readingCardScrollRef.current?.scrollTo({ y: 0, animated: true }), 150);
+                  }
+                  return nxt;
+                });
+              }}
               activeOpacity={0.75}
             >
               <Ionicons name={showArabicVerse ? 'eye-off-outline' : 'eye-outline'} size={rs(16)} color="#00ADC1" style={{ marginRight: rs(8) }} />
@@ -1024,62 +1096,56 @@ const NameDetailScreen = ({ route, navigation }) => {
       </View>
     );
 
-    return renderReadingCard({ title, customContent, badgeIcon: 'library-outline' });
+    return renderReadingCard({ title, customContent, badgeIcon: 'library-outline', scrollEnabled: showArabicVerse });
   };
 
   const renderGifts = () => {
+    const sents = flattenToSentences(name.gifts);
     if (giftSubStep === -1) {
-      const giftsList = name.gifts || [];
-      const giftsText = giftsList.join(' ');
-      const wordCount = countWords(giftsText);
+      const wordCount = countWords(sents.join(' '));
       const readTimeSec = Math.max(15, Math.round((wordCount / 180) * 60));
       return renderIntroCard({
         title: 'The Gift of This Name',
         iconName: 'gift-outline',
-        subtitle: 'What this name brings to your life',
-        insightsCount: giftsList.length,
+        insightsCount: sents.length,
         readTimeSec,
       });
     }
-    const currentGift = name.gifts?.[giftSubStep] || '';
+    const currentGift = sents[giftSubStep] || '';
     return renderReadingCard({ title: 'The Gift of This Name', text: currentGift, badgeIcon: 'gift-outline' });
   };
 
   const renderPractical = () => {
+    const sents = flattenToSentences(name.practicalWays);
     if (practicalSubStep === -1) {
-      const waysList = name.practicalWays || [];
-      const waysText = waysList.join(' ');
-      const wordCount = countWords(waysText);
+      const wordCount = countWords(sents.join(' '));
       const readTimeSec = Math.max(15, Math.round((wordCount / 180) * 60));
       return renderIntroCard({
         title: 'How To Live With This Name',
         iconName: 'compass-outline',
-        subtitle: 'Practical applications for daily life',
-        insightsCount: waysList.length,
+        insightsCount: sents.length,
         readTimeSec,
       });
     }
-    const way = name.practicalWays?.[practicalSubStep] || '';
+    const way = sents[practicalSubStep] || '';
     return renderReadingCard({ title: 'How To Live With This Name', text: way, badgeIcon: 'compass-outline' });
   };
 
   const renderScholarly = () => {
+    const sents = flattenToSentences(name.scholarlyViews);
     if (scholarSubStep === -1) {
-      const viewsList = name.scholarlyViews || [];
-      const viewsText = viewsList.map(v => v.view || '').join(' ');
-      const wordCount = countWords(viewsText);
+      const wordCount = countWords(sents.join(' '));
       const readTimeSec = Math.max(15, Math.round((wordCount / 180) * 60));
       return renderIntroCard({
         title: 'Scholarly View',
         iconName: 'school-outline',
-        subtitle: 'Wisdom from the scholars',
-        insightsCount: viewsList.length,
+        insightsCount: sents.length,
         readTimeSec,
       });
     }
-    const view = name.scholarlyViews?.[scholarSubStep];
-    if (!view) return null;
-    return renderReadingCard({ title: 'Scholarly View', text: `"${view.view}"`, badgeIcon: 'school-outline', scholarName: view.scholar, scholarWork: view.work?.replace(/\*/g, '') });
+    const viewText = sents[scholarSubStep] || '';
+    if (!viewText) return null;
+    return renderReadingCard({ title: 'Scholarly View', text: `"${viewText}"`, badgeIcon: 'school-outline' });
   };
 
   const renderReflection = () => {
@@ -1358,16 +1424,7 @@ const NameDetailScreen = ({ route, navigation }) => {
             <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
             <SafeAreaView style={{ flex: 1, backgroundColor: t.safeBg }} edges={['top']}>
               <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
-                <View 
-                  style={{ flex: 1 }}
-                  onStartShouldSetResponderCapture={() => {
-                    if (isFocusMode) {
-                      setIsFocusMode(false);
-                      return true;
-                    }
-                    return false;
-                  }}
-                >
+                <View style={{ flex: 1 }}>
                   {isFocusMode && (
                     <BlurView 
                       pointerEvents="none"
@@ -1412,7 +1469,15 @@ const NameDetailScreen = ({ route, navigation }) => {
                     showsVerticalScrollIndicator={false}
                     scrollEnabled={true}
                     bounces={false}
+                    keyboardShouldPersistTaps="handled"
                   >
+                    {isFocusMode && (
+                      <TouchableOpacity 
+                        activeOpacity={1}
+                        style={[StyleSheet.absoluteFill, { bottom: -500 }]} 
+                        onPress={() => setIsFocusMode(false)} 
+                      />
+                    )}
                     <Animated.View style={{ opacity: contentOpacity, transform: [{ translateY: contentTranslateY }, { rotateY: flipAnim.interpolate({ inputRange: [-90, 0, 90], outputRange: ['-90deg', '0deg', '90deg'] }) }] }}>
                       {currentStep.type === 'meaning' && renderMeaning()}
                       {(currentStep.type === 'quran' || currentStep.type === 'hadith') && renderReference(currentStep.data, currentStep.type)}

@@ -662,13 +662,30 @@ const NamesScreen = ({ navigation, route }) => {
                 </TouchableOpacity>
               </View>
 
-              {/* ── PROGRESS CARD ── */}
+              {/* ── PREMIUM PROGRESS CARD ── */}
               <LinearGradient
-                colors={isDark ? ['#0F2027', '#1A3A4A'] : ['#F8FDFE', '#E1F8FA']}
-                start={{ x: 0, y: 1 }}
-                end={{ x: 6, y: 0 }}
-                style={[styles.progressCard, { shadowColor: isDark ? '#000' : '#B2EBF2' }]}
+                colors={isDark ? ['#0B1B29', '#08131E'] : ['#F9FCFD', '#F0F8FA']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.progressCard, { 
+                  shadowColor: '#00ADC1',
+                  shadowOffset: { width: 0, height: 6 },
+                  shadowOpacity: isDark ? 0.3 : 0.15,
+                  shadowRadius: 12,
+                  elevation: 6,
+                  borderWidth: 1.5,
+                  borderColor: isDark ? '#1C3A4B' : '#BFECEF',
+                  overflow: 'hidden'
+                }]}
               >
+                {/* Glossy top overlay */}
+                <LinearGradient
+                  colors={isDark ? ['rgba(0,173,193,0)', 'rgba(0,173,193,0.08)', 'rgba(0,173,193,0)'] : ['rgba(255,255,255,0)', 'rgba(255,255,255,0.6)', 'rgba(255,255,255,0)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFillObject}
+                />
+                
                 {/* Bottom-left stars */}
                 <View style={{ position: 'absolute', left: 0, bottom: 0, width: rs(60), height: hs(60), opacity: 0.5 }} pointerEvents="none">
                   <Svg width="100%" height="100%" viewBox="0 0 60 60">
@@ -739,26 +756,26 @@ const NamesScreen = ({ navigation, route }) => {
 
                 <View style={styles.progressCardInner}>
                   {/* Book icon */}
-                  <View style={[styles.progressBookIcon, { backgroundColor: isDark ? 'rgba(0,178,190,0.22)' : '#E4F7FA' }]}>
-                    <Ionicons name="book-outline" size={rs(18)} color="#00B2BE" />
+                  <View style={[styles.progressBookIcon, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F8FA', borderWidth: 1, borderColor: isDark ? 'rgba(0,173,193,0.3)' : '#BFECEF', shadowColor: '#00ADC1', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 }]}>
+                    <Ionicons name="book-outline" size={rs(18)} color="#00ADC1" />
                   </View>
 
                   {/* Stats */}
                   <View style={styles.progressCardRight}>
-                    <Text style={[styles.progressCardLabel, { color: isDark ? '#94A3B8' : '#6B8097' }]}>Your Progress</Text>
+                    <Text style={[styles.progressCardLabel, { color: isDark ? '#9EAAB8' : '#64748B', fontFamily: FONTS.bold, letterSpacing: 0.5, textTransform: 'uppercase', fontSize: rs(10) }]}>Your Progress</Text>
                     <View style={styles.progressStatsRow}>
                       <View style={styles.progressStatItem}>
-                        <Text style={[styles.progressStatValue, { color: isDark ? '#00E5FF' : '#00B2BE' }]}>{learnedIds.length}</Text>
-                        <Text style={[styles.progressStatSub, { color: isDark ? '#94A3B8' : '#6B8097' }]}>Names Learned</Text>
+                        <Text style={[styles.progressStatValue, { color: isDark ? '#E8EDF2' : '#0F172A', fontFamily: FONTS.bold, fontSize: rs(20) }]}>{learnedIds.length}</Text>
+                        <Text style={[styles.progressStatSub, { color: isDark ? '#9EAAB8' : '#64748B' }]}>Names Learned</Text>
                       </View>
-                      <View style={[styles.progressStatDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : '#D6DFE7' }]} />
+                      <View style={[styles.progressStatDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : '#E2E8F0' }]} />
                       <View style={styles.progressStatItem}>
-                        <Text style={[styles.progressStatValue, { color: isDark ? '#00E5FF' : '#00B2BE' }]}>{formattedReadingTime}</Text>
-                        <Text style={[styles.progressStatSub, { color: isDark ? '#94A3B8' : '#6B8097' }]}>Total Learning Time</Text>
+                        <Text style={[styles.progressStatValue, { color: isDark ? '#E8EDF2' : '#0F172A', fontFamily: FONTS.bold, fontSize: rs(20) }]}>{formattedReadingTime}</Text>
+                        <Text style={[styles.progressStatSub, { color: isDark ? '#9EAAB8' : '#64748B' }]}>Total Learning Time</Text>
                       </View>
                       {/* Clock icon standalone */}
-                      <View style={[styles.progressClockCircle, { backgroundColor: isDark ? 'rgba(0,178,190,0.18)' : '#E4F7FA' }]}>
-                        <Ionicons name="time-outline" size={rs(16)} color="#246991ff" />
+                      <View style={[styles.progressClockCircle, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F8FA', borderWidth: 1, borderColor: isDark ? 'rgba(0,173,193,0.3)' : '#BFECEF' }]}>
+                        <Ionicons name="time-outline" size={rs(16)} color="#00ADC1" />
                       </View>
                     </View>
                   </View>
@@ -766,9 +783,10 @@ const NamesScreen = ({ navigation, route }) => {
 
                 {/* Motivation pill */}
                 <View
-                  style={[styles.motivationPill, { backgroundColor: isDark ? 'rgba(0,178,190,0.08)' : '#EAF8FA' }]}
+                  style={[styles.motivationPill, { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#EAF8FA', borderWidth: 1, borderColor: isDark ? 'rgba(0,173,193,0.2)' : '#D6F2F5', shadowColor: '#00ADC1', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3 }]}
                 >
-                  <Text style={[styles.motivationText, { color: isDark ? '#00E5FF' : '#0eb1c0ff' }]}>Keep learning, you're doing great! </Text>
+                  <Ionicons name="sparkles" size={rs(12)} color="#00ADC1" style={{ marginRight: rs(6) }} />
+                  <Text style={[styles.motivationText, { color: '#00ADC1', fontFamily: FONTS.medium, letterSpacing: 0.2 }]}>Keep learning, you're doing great!</Text>
                 </View>
               </LinearGradient>
 
