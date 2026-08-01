@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, Dimensions, Animated, PanResponder,
-  Image, ActivityIndicator, TouchableOpacity, Easing, ImageBackground,
-  Modal, ScrollView, TextInput, StatusBar, Alert
-} from 'react-native';
+import { View, StyleSheet, Dimensions, Animated, PanResponder, Image, ActivityIndicator, TouchableOpacity, Easing, ImageBackground, Modal, ScrollView, StatusBar, Alert } from 'react-native';
+import Text from '../components/AppText';
+import TextInput from '../components/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -1145,7 +1143,6 @@ const styles = StyleSheet.create({
   headerLeft: { flex: 1, paddingRight: rs(12) },
   headerTitleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
   headerTitleText: {
-    fontFamily: FONTS.serif || FONTS.bold,
     fontSize: rs(22),
     fontWeight: '800',
     color: '#1A1A1A',

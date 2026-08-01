@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import {
-  GoogleSignin,
-  statusCodes,
-} from '@react-native-google-signin/google-signin';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export const useGoogleAuth = () => {
   const [googleAccessToken, setGoogleAccessToken] =
@@ -13,50 +13,39 @@ export const useGoogleAuth = () => {
   const [error, setError] =
     useState<string | null>(null);
 
+  const [request, , promptAsync] = Google.useAuthRequest({
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+  });
+
   const signInWithGoogle = async () => {
-    setLoading(true);
     setError(null);
+    if (!request) {
+      setError('Google sign in is not ready yet');
+      return null;
+    }
+    setLoading(true);
     try {
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      
-      if (userInfo && 'type' in userInfo) {
-        if (userInfo.type === 'cancelled') {
-          setError('User cancelled the login flow');
-          setLoading(false);
+      const result = await promptAsync();
+
+      if (result.type === 'success') {
+        const accessToken = result.authentication?.accessToken;
+        if (!accessToken) {
+          setError('Google did not return an access token');
           return null;
         }
-        if (userInfo.type !== 'success') {
-          setError('Sign in was not successful');
-          setLoading(false);
-          return null;
-        }
+        setGoogleAccessToken(accessToken);
+        return { accessToken, idToken: result.authentication?.idToken ?? null };
       }
-
-      const tokens = await GoogleSignin.getTokens();
-      setGoogleAccessToken(tokens.accessToken);
-      setLoading(false);
-      
-      let idToken = null;
-      if (userInfo && 'data' in userInfo && userInfo.data) {
-        idToken = userInfo.data.idToken;
-      } else if (userInfo) {
-        idToken = (userInfo as any).idToken;
-      }
-
-      return { accessToken: tokens.accessToken, idToken };
-    } catch (err: any) {
-      setLoading(false);
-      if (err.code === statusCodes.SIGN_IN_CANCELLED) {
+      if (result.type === 'cancel' || result.type === 'dismiss') {
         setError('User cancelled the login flow');
-      } else if (err.code === statusCodes.IN_PROGRESS) {
-        setError('Sign in is in progress already');
-      } else if (err.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        setError('Play services not available or outdated');
-      } else {
-        setError(err.message || 'Something went wrong');
+      } else if (result.type === 'error') {
+        setError(result.error?.description || 'Something went wrong');
       }
       return null;
+    } finally {
+      setLoading(false);
     }
   };
 

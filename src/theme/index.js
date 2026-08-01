@@ -71,8 +71,8 @@ export const FONTS = {
   regular:    'Inter-Regular',
   medium:     'Inter-Medium',
   bold:       'Inter-Bold',
-  arabic:     'Amiri-Regular',
-  arabicBold: 'Amiri-Bold',
+  arabic:     'NotoNaskhArabic-Regular',
+  arabicBold: 'NotoNaskhArabic-Bold',
 };
 
 export const SIZES = {

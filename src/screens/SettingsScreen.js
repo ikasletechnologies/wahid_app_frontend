@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Modal, ScrollView, Dimensions } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, StatusBar, Modal, ScrollView, Dimensions } from 'react-native';
+import Text from '../components/AppText';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 
@@ -9,6 +10,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useAppTheme } from '../context/ThemeContext';
 import TimeBasedBackground from '../components/TimeBasedBackground';
 import { useAuth } from '../context/AuthContext';
+import { useFontSettings, FONT_FAMILIES, FONT_SIZES } from '../context/FontSettingsContext';
 import CircleIcon from '@hugeicons/core-free-icons/dist/esm/CircleIcon.js';
 import Logout01Icon from '@hugeicons/core-free-icons/dist/esm/Logout01Icon.js';
 import { HugeiconsIcon } from '@hugeicons/react-native';
@@ -19,6 +21,7 @@ const SettingsScreen = () => {
   const navigation = useNavigation();
   const { isDark, toggleTheme, colors } = useAppTheme();
   const { logout } = useAuth();
+  const { fontFamily, setFontFamily, fontSize, setFontSize } = useFontSettings();
   const [privacyVisible, setPrivacyVisible] = useState(false);
   const [isLogoutVisible, setIsLogoutVisible] = useState(false);
 
@@ -36,6 +39,53 @@ const SettingsScreen = () => {
             </View>
 
             <View style={styles.settingsList}>
+              {/* Font Settings */}
+              <View style={[styles.fontCard, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.05, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
+                <Text style={[styles.fontCardTitle, { color: colors.text }]}>Font Family</Text>
+                <View style={styles.optionRow}>
+                  {Object.entries(FONT_FAMILIES).map(([key, { label }]) => {
+                    const selected = fontFamily === key;
+                    return (
+                      <TouchableOpacity
+                        key={key}
+                        style={[
+                          styles.optionPill,
+                          {
+                            backgroundColor: selected ? '#06b6d4' : (isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9'),
+                            borderColor: selected ? '#06b6d4' : (isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0'),
+                          },
+                        ]}
+                        onPress={() => setFontFamily(key)}
+                      >
+                        <Text style={[styles.optionPillText, { color: selected ? '#FFFFFF' : colors.text }]}>{label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <Text style={[styles.fontCardTitle, { color: colors.text, marginTop: 20 }]}>Font Size</Text>
+                <View style={styles.optionRow}>
+                  {Object.entries(FONT_SIZES).map(([key, { label }]) => {
+                    const selected = fontSize === key;
+                    return (
+                      <TouchableOpacity
+                        key={key}
+                        style={[
+                          styles.optionPill,
+                          {
+                            backgroundColor: selected ? '#06b6d4' : (isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9'),
+                            borderColor: selected ? '#06b6d4' : (isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0'),
+                          },
+                        ]}
+                        onPress={() => setFontSize(key)}
+                      >
+                        <Text style={[styles.optionPillText, { color: selected ? '#FFFFFF' : colors.text }]}>{label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
               {/* About App */}
               <View style={[styles.settingItem, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.05, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
                 <View style={styles.settingLeft}>
@@ -285,6 +335,35 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: 14,
+    fontWeight: '600',
+  },
+  fontCard: {
+    borderRadius: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  fontCardTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  optionPill: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  optionPillText: {
+    fontSize: 13,
     fontWeight: '600',
   },
   versionText: {

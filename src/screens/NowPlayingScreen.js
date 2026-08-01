@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity,
-  Animated, PanResponder, Dimensions, StatusBar,
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Animated, PanResponder, Dimensions, StatusBar } from 'react-native';
+import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,6 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { usePlaylist } from '../context/PlaylistContext';
 import { useAppTheme } from '../context/ThemeContext';
 import TimeBasedBackground from '../components/TimeBasedBackground';
+import { FONTS } from '../theme';
 
 const { width, height } = Dimensions.get('window');
 const ARTWORK_SIZE = width - 64;
@@ -359,7 +358,7 @@ const styles = StyleSheet.create({
   artArabic: {
     color: 'rgba(255,255,255,0.9)',
     fontSize: 72,
-    fontFamily: 'Amiri-Regular',
+    fontFamily: FONTS.arabic,
     textAlign: 'center',
   },
   artNumber: {

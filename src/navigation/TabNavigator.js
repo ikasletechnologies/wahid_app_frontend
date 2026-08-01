@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, Platform, Animated, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
+import { View, Platform, Animated, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
+import Text from '../components/AppText';
 import HomeScreen from '../screens/HomeScreen';
 import NamesScreen from '../screens/NamesScreen';
 import MilestoneScreen from '../screens/MilestoneScreen';

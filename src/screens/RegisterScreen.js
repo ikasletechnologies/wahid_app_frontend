@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView,
-  ActivityIndicator, StatusBar, Dimensions, Image, Modal
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, StatusBar, Dimensions, Image, Modal } from 'react-native';
+import Text from '../components/AppText';
+import TextInput from '../components/AppTextInput';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
 import { Ionicons } from '@expo/vector-icons';

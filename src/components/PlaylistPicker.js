@@ -1,7 +1,6 @@
 import React from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList, Modal,
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, FlatList, Modal } from 'react-native';
+import Text from './AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { usePlaylist } from '../context/PlaylistContext';
 import { useAppTheme } from '../context/ThemeContext';

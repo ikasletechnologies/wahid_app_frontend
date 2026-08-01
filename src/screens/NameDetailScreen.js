@@ -1,10 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import {
-  View, Text, StyleSheet, Dimensions, Animated, Easing,
-  Image, TouchableOpacity, StatusBar, PanResponder, ScrollView, TextInput, TouchableWithoutFeedback,
-  LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform, Keyboard,
-  Share
-} from 'react-native';
+import { View, StyleSheet, Dimensions, Animated, Easing, Image, TouchableOpacity, StatusBar, PanResponder, ScrollView, TouchableWithoutFeedback, LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform, Keyboard, Share } from 'react-native';
+import Text from '../components/AppText';
+import TextInput from '../components/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -1827,7 +1824,7 @@ const styles = StyleSheet.create({
   seeArabicBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: rs(14), paddingVertical: hs(8), borderRadius: rs(20), borderWidth: 1, marginBottom: hs(12) },
   seeArabicBtnText: { fontSize: rs(13), fontWeight: '700', color: '#00ADC1' },
   arabicVerseBox: { borderRadius: rs(12), borderWidth: 1, padding: rs(16), marginTop: hs(4) },
-  modernArabicText: { fontSize: rs(20), fontWeight: '700', textAlign: 'right', lineHeight: rs(38), writingDirection: 'rtl' },
+  modernArabicText: { fontSize: rs(20), fontWeight: '700', fontFamily: FONTS.arabicBold, textAlign: 'right', lineHeight: rs(38), writingDirection: 'rtl' },
 
   // ── Gifts Card ──
   giftCardContainer: { backgroundColor: '#FFFFFF', borderRadius: rs(8), borderWidth: 1, borderColor: '#F0F4F8', marginBottom: hs(4) },
