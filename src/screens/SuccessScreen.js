@@ -1,8 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  View, Text, StyleSheet, Image, TouchableOpacity,
-  StatusBar, Dimensions, Animated, Easing,
-} from 'react-native';
+import { View, StyleSheet, Image, TouchableOpacity, StatusBar, Dimensions, Animated, Easing } from 'react-native';
+import Text from '../components/AppText';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';

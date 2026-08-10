@@ -5,7 +5,7 @@ import { API_BASE_URL, ENDPOINTS } from './api';
 // Shared Axios instance
 const http = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 8000,
 });
 
 // ── Request interceptor ────────────────────────────────────────────────────

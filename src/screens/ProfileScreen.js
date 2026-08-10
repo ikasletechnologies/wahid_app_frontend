@@ -1,15 +1,6 @@
 import React, { useState, useMemo } from "react";
-import {
-    View,
-    Text,
-    StyleSheet,
-    StatusBar,
-    TouchableOpacity,
-    ScrollView,
-    Modal,
-    useColorScheme,
-    Dimensions,
-} from "react-native";
+import { View, StyleSheet, StatusBar, TouchableOpacity, ScrollView, Modal, useColorScheme, Dimensions } from "react-native";
+import Text from '../components/AppText';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";

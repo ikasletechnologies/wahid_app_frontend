@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, StatusBar } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
+import Text from '../components/AppText';
+import TextInput from '../components/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';

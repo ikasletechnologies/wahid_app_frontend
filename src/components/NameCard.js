@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Animated, TouchableOpacity } from 'react-native';
+import Text from './AppText';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS, SHADOW } from '../theme';
 import { useLanguage } from '../context/LanguageContext';
 

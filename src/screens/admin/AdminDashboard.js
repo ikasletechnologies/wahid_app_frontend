@@ -11,9 +11,8 @@
  *   • View basic stats
  */
 import React from 'react';
-import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import Text from '../../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';

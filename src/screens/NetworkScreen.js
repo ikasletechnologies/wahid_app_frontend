@@ -1,15 +1,6 @@
 import React, { useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  Animated,
-  Easing,
-  Dimensions,
-  StatusBar,
-} from 'react-native';
+import { View, StyleSheet, Image, TouchableOpacity, Animated, Easing, Dimensions, StatusBar } from 'react-native';
+import Text from '../components/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import NetInfo from '@react-native-community/netinfo';
 import Toast from 'react-native-toast-message';

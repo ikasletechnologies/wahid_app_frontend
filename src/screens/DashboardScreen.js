@@ -1,14 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  StatusBar,
-  Animated,
-  Dimensions,
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, StatusBar, Animated, Dimensions } from 'react-native';
+import Text from '../components/AppText';
+import TextInput from '../components/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS, SHADOW } from '../theme';

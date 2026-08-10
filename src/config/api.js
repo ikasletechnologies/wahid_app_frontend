@@ -2,7 +2,7 @@
 //   Physical device (same Wi-Fi):  http://<your-PC-LAN-IP>:3000
 //   Android emulator:              http://10.0.2.2:3000
 //   Production:                    https://wahid-mobile-backend.vercel.app
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:3000';
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://wahid-mobile-backend.vercel.app';
 
 export const ENDPOINTS = {
   // Auth — OTP flow (Twilio Verify)

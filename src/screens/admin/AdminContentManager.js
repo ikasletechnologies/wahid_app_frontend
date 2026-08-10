@@ -14,10 +14,9 @@
  * and injected into the Names feed by ContentContext + NamesScreen composeFeed().
  */
 import React, { useState, useCallback, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity,
-  TextInput, Modal, ScrollView, ActivityIndicator, Alert,
-} from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, Modal, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import TextInput from '../../components/AppTextInput';
+import Text from '../../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';

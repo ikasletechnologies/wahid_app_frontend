@@ -7,11 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/configicons.png",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/configicons.png",
-      "resizeMode": "contain"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.wahid.mobile"
@@ -20,8 +15,7 @@
       "package": "com.wahid.mobile",
       "adaptiveIcon": {
         "foregroundImage": "./assets/configicons.png"
-      },
-      "edgeToEdgeEnabled": true
+      }
     },
     "web": {
       "favicon": "./assets/configicons.png"
@@ -33,18 +27,17 @@
     },
     "owner": "ikasle",
     "plugins": [
-      "@react-native-google-signin/google-signin",
+      "@react-native-community/datetimepicker",
+      "expo-web-browser",
+      "expo-status-bar",
       [
-        "react-native-fbsdk-next",
+        "expo-splash-screen",
         {
-          "appID": "1492218869325883",
-          "clientToken": "6bd7dd5ecd868aa5f9076d00672a5a56",
-          "displayName": "WAHID",
-          "scheme": "fb1492218869325883"
+          "image": "./assets/configicons.png",
+          "resizeMode": "contain"
         }
       ],
-      "@react-native-community/datetimepicker",
-      "expo-web-browser"
+      "expo-font"
     ]
   }
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Image, StyleSheet, Dimensions, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAppTheme } from '../context/ThemeContext';
 
 const { width: SW } = Dimensions.get('window');
 
@@ -65,6 +66,7 @@ const STARS = [
  * children(({ isNight, period })) — render prop exposes sky state to the screen.
  */
 const TimeBasedBackground = ({ children, showElements = true }) => {
+  const { themeMode } = useAppTheme();
   const [now, setNow] = useState(new Date());
   const starAnims = useRef(STARS.map(() => new Animated.Value(0.8))).current;
   const cloudAnim = useRef(new Animated.Value(0)).current;
@@ -77,7 +79,16 @@ const TimeBasedBackground = ({ children, showElements = true }) => {
 
   const h = now.getHours();
   const m = now.getMinutes();
-  const period = getPeriod(h);
+  const realPeriod = getPeriod(h);
+  // 'light'/'dark' modes force the sky to match the chosen theme instead of
+  // the real clock — otherwise picking Light at night (or Dark during the
+  // day) leaves this background out of sync with the rest of the UI, which
+  // is driven by ThemeContext's isDark. 'default' keeps the real time-of-day
+  // sky unchanged.
+  const period =
+    themeMode === 'dark' ? 'night' :
+    (themeMode === 'light' || themeMode === 'paper') ? (realPeriod === 'night' ? 'afternoon' : realPeriod) :
+    realPeriod;
   const isNight = period === 'night';
   const sunPos = getSunPos(h, m);
   const moonPos = getMoonPos(h, m);

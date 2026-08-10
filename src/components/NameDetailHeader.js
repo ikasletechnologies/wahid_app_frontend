@@ -1,7 +1,9 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { View, StyleSheet, Dimensions, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import Text from './AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FONTS } from '../theme';
 import { useAppTheme } from '../context/ThemeContext';
 import Svg, { Path } from 'react-native-svg';
@@ -37,9 +39,10 @@ const TrackerRightLeaf = ({ color }) => (
   </Svg>
 );
 
-const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0, isFavorite, onFavoritePress, onSharePress }) => {
+const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0, isFavorite, onFavoritePress, onSharePress, onSettingsPress }) => {
   const { isDark } = useAppTheme();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const scrollViewRef = useRef(null);
 
   const teal = '#31A7A7'; // Matching image teal
@@ -53,58 +56,46 @@ const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0, isFavorite, 
   }, [currentStepIndex]);
 
   return (
-    <View style={styles.container}>
-      {/* ── HEADER CARD ── */}
-      <View style={[styles.card, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', shadowColor: isDark ? '#000' : '#4DB6AC' }]}>
-
-        {/* Subtle left background curve */}
-        <View style={styles.cardBgWrapper}>
-          <Svg width="100%" height="100%" viewBox="0 0 160 85" preserveAspectRatio="none">
-            <Path
-              d="M0 0 L160 0 C 120 40, 100 85, 60 85 L0 85 Z"
-              fill={isDark ? 'rgba(49,167,167,0.1)' : '#EAF7F8'}
-            />
-          </Svg>
-        </View>
-
+    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
+      
+      {/* ── HEADER NAVBAR ROW (Back button & Actions safely below notch) ── */}
+      <View style={[styles.topNavRow, { paddingTop: Math.max(insets.top + hs(10), hs(24)) }]}>
         {/* Back Button */}
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
+        <TouchableOpacity 
+          style={[styles.backBtn, { backgroundColor: isDark ? '#0F172A' : '#FFFFFF' }]} 
           activeOpacity={0.8}
+          onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={rs(16)} color="#FFFFFF" />
+          <Ionicons name="chevron-back" size={rs(18)} color="#FFFFFF" />
         </TouchableOpacity>
 
-        {/* Middle Content */}
-        <View style={styles.middleArea} pointerEvents="none">
-          <View style={styles.topTextRow}>
-            <View style={styles.arabicSection}>
-              <Text style={[styles.arabicText, { color: isDark ? '#E8EDF2' : '#11323B' }]}>{name.arabic}</Text>
-            </View>
-
-            <View style={[styles.divider, { backgroundColor: isDark ? '#334155' : '#E2E8F0' }]} />
-
-            <View style={styles.englishSection}>
-              <Text style={[styles.translitText, { color: isDark ? '#E8EDF2' : '#11323B' }]}>{name.transliteration}</Text>
-            </View>
-          </View>
-
-          <Text style={[styles.meaningText, { color: isDark ? '#94A3B8' : '#7E8B99' }]} numberOfLines={1}>
-            {name.meaning || name.en}
-          </Text>
-        </View>
-
-        {/* Action Buttons */}
+        {/* Right Action Buttons */}
         <View style={styles.actionsRow}>
+          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: isDark ? '#0F172A' : '#FFFFFF' }]} activeOpacity={0.8} onPress={onSettingsPress}>
+            <Ionicons name="text-outline" size={rs(16)} color={teal} />
+          </TouchableOpacity>
           <TouchableOpacity style={[styles.actionBtn, { backgroundColor: isDark ? '#0F172A' : '#FFFFFF' }]} activeOpacity={0.8} onPress={onFavoritePress}>
-            <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={rs(14)} color={isFavorite ? "#EF4444" : teal} />
+            <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={rs(16)} color={isFavorite ? "#EF4444" : teal} />
           </TouchableOpacity>
           <TouchableOpacity style={[styles.actionBtn, { backgroundColor: isDark ? '#0F172A' : '#FFFFFF' }]} activeOpacity={0.8} onPress={onSharePress}>
-            <Ionicons name="share-social-outline" size={rs(14)} color={teal} />
+            <Ionicons name="share-social-outline" size={rs(16)} color={teal} />
           </TouchableOpacity>
         </View>
+      </View>
 
+      {/* ── NAME TITLE AREA (Cleanly separated below top navbar) ── */}
+      <View style={styles.titleArea}>
+        <View style={styles.titleRow}>
+          <Text style={[styles.arabicText, { color: isDark ? '#C5F2F7' : '#11323B' }]}>{name.arabic || name.name}</Text>
+          <View style={[styles.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)' }]} />
+          <View style={styles.englishSection}>
+            <Text style={[styles.translitText, { color: isDark ? '#E8EDF2' : '#11323B' }]}>{name.transliteration}</Text>
+          </View>
+        </View>
+
+        <Text style={[styles.meaningText, { color: isDark ? '#94A3B8' : '#7E8B99' }]} numberOfLines={1}>
+          {name.meaning || name.en}
+        </Text>
       </View>
 
       {/* ── STEP TRACKER ── */}
@@ -166,99 +157,78 @@ const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0, isFavorite, 
 };
 
 const styles = StyleSheet.create({
-  container: { width: '100%', paddingBottom: hs(6), alignItems: 'center' },
+  container: { width: '100%', paddingBottom: hs(8), alignItems: 'center' },
 
-  // Header Card
-  card: {
-    width: SW - rs(24), // slightly wider
-    height: hs(72),
-    borderRadius: rs(16),
+  // Top Navbar Row (Back button left, Actions right)
+  topNavRow: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: hs(10),
-    marginBottom: hs(24),
-    shadowOpacity: 0.12,
-    shadowRadius: rs(12),
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.9)',
-  },
-  cardBgWrapper: {
-    position: 'absolute', top: 0, bottom: 0, left: 0, width: '45%',
-    zIndex: 0,
+    justifyContent: 'space-between',
+    paddingHorizontal: rs(20),
+    marginBottom: hs(12),
+    zIndex: 10,
   },
   backBtn: {
-    position: 'absolute',
-    left: rs(10),
-    width: rs(36), height: rs(36),
+    width: rs(38), height: rs(38),
     borderRadius: rs(12),
     backgroundColor: '#3CA2A5',
     borderWidth: rs(2),
     borderColor: '#FFFFFF',
     justifyContent: 'center', alignItems: 'center',
-    zIndex: 10,
     ...Platform.select({
       ios: { shadowColor: '#3CA2A5', shadowOpacity: 0.3, shadowRadius: rs(4), shadowOffset: { width: 0, height: 2 } },
       android: { elevation: 3 },
     }),
   },
-  middleArea: {
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rs(10),
+  },
+  actionBtn: {
+    width: rs(36), height: rs(36),
+    borderRadius: rs(12),
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#8E9DAE',
+    shadowOpacity: 0.35,
+    shadowRadius: rs(6),
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+  },
+
+  // Title Area below navbar
+  titleArea: {
     width: '100%',
-    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: rs(70), // prevent overlapping with absolute buttons
-    zIndex: 1,
+    paddingHorizontal: rs(24),
+    marginBottom: hs(14),
   },
-  topTextRow: {
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  arabicSection: {
-    top: hs(3),
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
+    flexWrap: 'wrap',
   },
   arabicText: {
-    fontSize: rs(20),
+    fontSize: rs(24),
     fontFamily: FONTS.arabic,
     fontWeight: '700',
-    marginHorizontal: rs(6),
+    marginHorizontal: rs(8),
   },
   divider: {
-    width: 1,
-    height: hs(24),
+    width: 1.5,
+    height: hs(22),
     marginHorizontal: rs(10),
   },
   englishSection: {
     justifyContent: 'center',
     alignItems: 'flex-start',
   },
-  translitText: { fontSize: rs(16), fontWeight: '700', fontFamily: FONTS.semiBold },
-  meaningText: { fontSize: rs(12), fontWeight: '500', marginTop: hs(2), textAlign: 'center' },
-  actionsRow: {
-    position: 'absolute',
-    right: rs(10),
-    flexDirection: 'row',
-    gap: rs(10),
-    zIndex: 10,
-  },
-  actionBtn: {
-    width: rs(34), height: rs(34),
-    borderRadius: rs(11), // squircle
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#8E9DAE',
-    shadowOpacity: 0.45,
-    shadowRadius: rs(8),
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
-  },
+  translitText: { fontSize: rs(18), fontWeight: '700', fontFamily: FONTS.semiBold },
+  meaningText: { fontSize: rs(14), fontWeight: '500', marginTop: hs(4), textAlign: 'center' },
 
   // Step Tracker
   tracker: { width: '100%' },

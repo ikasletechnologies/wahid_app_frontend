@@ -1,8 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet,
-  Animated, PanResponder, Dimensions
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Animated, PanResponder, Dimensions } from 'react-native';
+import Text from './AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { usePlaylist } from '../context/PlaylistContext';

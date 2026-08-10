@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, Easing, StyleSheet } from 'react-native';
+import { View, Animated, Easing, StyleSheet } from 'react-native';
+import Text from './AppText';
 import MaskedView from '@react-native-masked-view/masked-view';
 import Svg, { Path } from 'react-native-svg';
 

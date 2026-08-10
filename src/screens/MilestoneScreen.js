@@ -1,8 +1,6 @@
 import React from 'react';
-import {
-  View, Text, Image, StyleSheet, TouchableOpacity,
-  Dimensions, Animated,
-} from 'react-native';
+import { View, Image, StyleSheet, TouchableOpacity, Dimensions, Animated } from 'react-native';
+import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, {

@@ -1,26 +1,31 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Modal, ScrollView, Dimensions } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, StatusBar, Modal, ScrollView, Dimensions } from 'react-native';
+import Text from '../components/AppText';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useAppTheme } from '../context/ThemeContext';
+import { useAppTheme, THEME_MODES } from '../context/ThemeContext';
 import TimeBasedBackground from '../components/TimeBasedBackground';
 import { useAuth } from '../context/AuthContext';
+import { useFontSettings, FONT_FAMILIES, FONT_SIZES, ARABIC_STYLES } from '../context/FontSettingsContext';
 import CircleIcon from '@hugeicons/core-free-icons/dist/esm/CircleIcon.js';
 import Logout01Icon from '@hugeicons/core-free-icons/dist/esm/Logout01Icon.js';
 import { HugeiconsIcon } from '@hugeicons/react-native';
+import ReadingSettingsModal from '../components/ReadingSettingsModal';
 
 const { width } = Dimensions.get('window');
 
 const SettingsScreen = () => {
   const navigation = useNavigation();
-  const { isDark, toggleTheme, colors } = useAppTheme();
+  const { isDark, themeMode, setThemeMode, colors } = useAppTheme();
   const { logout } = useAuth();
+  const { fontFamily, setFontFamily, fontSize, setFontSize, arabicFontStyle, setArabicFontStyle } = useFontSettings();
   const [privacyVisible, setPrivacyVisible] = useState(false);
   const [isLogoutVisible, setIsLogoutVisible] = useState(false);
+  const [readingSettingsVisible, setReadingSettingsVisible] = useState(false);
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: 'transparent' }]} edges={['top']}>
@@ -36,6 +41,20 @@ const SettingsScreen = () => {
             </View>
 
             <View style={styles.settingsList}>
+              {/* Reading Display & Text Settings */}
+              <TouchableOpacity
+                style={[styles.settingItem, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.05, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}
+                onPress={() => setReadingSettingsVisible(true)}
+              >
+                <View style={styles.settingLeft}>
+                  <View style={[styles.iconCircle, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.15, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#EBECF0', borderWidth: isDark ? 1 : 6 }]}>
+                    <Ionicons name="color-palette-outline" size={14} color="#06b6d4" />
+                  </View>
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>Reading & Display Settings</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"} />
+              </TouchableOpacity>
+
               {/* About App */}
               <View style={[styles.settingItem, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.05, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
                 <View style={styles.settingLeft}>
@@ -80,6 +99,11 @@ const SettingsScreen = () => {
                 </View>
               </TouchableOpacity>
             </View>
+
+            <ReadingSettingsModal
+              visible={readingSettingsVisible}
+              onClose={() => setReadingSettingsVisible(false)}
+            />
 
             {/* Privacy Policy Modal */}
             <Modal visible={privacyVisible} animationType="slide" transparent={true}>
@@ -285,6 +309,35 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: 14,
+    fontWeight: '600',
+  },
+  fontCard: {
+    borderRadius: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  fontCardTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  optionPill: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  optionPillText: {
+    fontSize: 13,
     fontWeight: '600',
   },
   versionText: {

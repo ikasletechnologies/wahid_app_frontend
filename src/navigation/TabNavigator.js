@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, Platform, Animated, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
+import { View, Platform, Animated, TouchableOpacity, StyleSheet, Dimensions, Image } from 'react-native';
+import Text from '../components/AppText';
 import HomeScreen from '../screens/HomeScreen';
 import NamesScreen from '../screens/NamesScreen';
 import MilestoneScreen from '../screens/MilestoneScreen';
@@ -27,22 +28,6 @@ const TAB_LABELS = {
   Home: 'Home',
   Milestones: 'Milestone',
 };
-
-// ── Time-based night detection — mirrors TimeBasedBackground logic ─────────
-const getIsNight = () => {
-  const h = new Date().getHours();
-  return h < 6 || h >= 18;
-};
-
-const useIsNight = () => {
-  const [isNight, setIsNight] = useState(getIsNight);
-  useEffect(() => {
-    const id = setInterval(() => setIsNight(getIsNight()), 60_000);
-    return () => clearInterval(id);
-  }, []);
-  return isNight;
-};
-// ──────────────────────────────────────────────────────────────────────────
 
 // Colour tokens — day vs night
 const DAY = {
@@ -236,7 +221,9 @@ const styles = StyleSheet.create({
 
 const TabNavigator = () => {
   const { colors, isDark } = useAppTheme();
-  const isNight = useIsNight();
+  // Reuse the theme-aware isDark (not a separate clock-based check) so the
+  // tab bar's day/night colors always match the selected theme mode.
+  const isNight = isDark;
 
   return (
     <>

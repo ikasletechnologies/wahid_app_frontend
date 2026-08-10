@@ -1,22 +1,7 @@
 import React, { useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-  StatusBar,
-  RefreshControl,
-  Image,
-  ImageBackground,
-  TextInput,
-  Modal,
-  Animated,
-  Easing,
-  FlatList,
-  Share,
-} from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions, StatusBar, RefreshControl, Image, ImageBackground, Modal, Animated, Easing, FlatList, Share } from 'react-native';
+import Text from '../components/AppText';
+import TextInput from '../components/AppTextInput';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -514,7 +499,7 @@ const HomeScreen = ({ navigation }) => {
                             <Text style={{ fontFamily: FONTS.bold, fontSize: rs(14), letterSpacing: 0.5, textTransform: 'uppercase', color: isDark ? '#E8EDF2' : '#0F172A' }}>
                               {isDraftLimitReached ? 'Attention Required' : (isNewName ? 'New Name' : 'Last Read')}
                             </Text>
-                            <Ionicons name="sparkles" size={12} color={isDark ? '#4CD5E8' : '#00ADC1'} />
+                            {/* <Ionicons name="sparkles" size={12} color={isDark ? '#4CD5E8' : '#00ADC1'} /> */}
                           </View>
                           <Text style={{ fontFamily: FONTS.medium, fontSize: rs(10), color: isDark ? '#4CD5E8' : '#0090A8', marginTop: hs(2) }}>
                             {isDraftLimitReached ? 'Focus on your progress' : 'Continue your journey'}

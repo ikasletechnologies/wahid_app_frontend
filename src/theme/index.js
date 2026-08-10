@@ -65,14 +65,33 @@ export const PALETTE = {
     primary: '#06b6d4',               // vibrant premium cyan
     playerBg: ['#06b6d4', '#0891b2'], // cyan player gradient
   },
+  paper: {
+    // ── Warm Quran Sepia/Paper Reading Theme ───────────────────────────────
+    background: '#FAF6ED',            // warm cream/sepia reading background
+    surface: '#F4ECD8',               // sepia warm surface
+    card: '#FFFDF9',                  // soft cream card background
+
+    text: '#2C221E',                  // warm dark charcoal brown text
+    textMuted: '#6B5E53',             // warm muted sepia-500
+    textDimmed: '#9C8E80',            // warm dimmed sepia-400
+
+    border: 'rgba(44, 34, 30, 0.08)',
+    borderStrong: 'rgba(5, 150, 105, 0.25)', // emerald accent border
+
+    glass: 'rgba(5, 150, 105, 0.05)',
+    overlay: 'rgba(250, 246, 237, 0.88)',
+
+    primary: '#059669',               // emerald green
+    playerBg: ['#059669', '#047857'], // emerald green player gradient
+  },
 };
 
 export const FONTS = {
   regular:    'Inter-Regular',
   medium:     'Inter-Medium',
   bold:       'Inter-Bold',
-  arabic:     'Amiri-Regular',
-  arabicBold: 'Amiri-Bold',
+  arabic:     'NotoNaskhArabic-Regular',
+  arabicBold: 'NotoNaskhArabic-Bold',
 };
 
 export const SIZES = {

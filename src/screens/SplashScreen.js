@@ -1,15 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Animated,
-  Dimensions,
-  StatusBar,
-  Image,
-  ActivityIndicator,
-  Platform,
-} from 'react-native';
+import { View, StyleSheet, Animated, Dimensions, StatusBar, Image, ActivityIndicator, Platform } from 'react-native';
+import Text from '../components/AppText';
 import { useAppTheme } from '../context/ThemeContext';
 import { COLORS, FONTS, SPACE } from '../theme';
 

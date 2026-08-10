@@ -1,10 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import {
-  View, Text, StyleSheet, Dimensions, Animated, Easing,
-  Image, TouchableOpacity, StatusBar, PanResponder, ScrollView, TextInput, TouchableWithoutFeedback,
-  LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform, Keyboard,
-  Share
-} from 'react-native';
+import { View, StyleSheet, Dimensions, Animated, Easing, Image, TouchableOpacity, StatusBar, PanResponder, ScrollView, TouchableWithoutFeedback, LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform, Keyboard, Share } from 'react-native';
+import Text from '../components/AppText';
+import TextInput from '../components/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -17,6 +14,7 @@ import { useAppTheme } from '../context/ThemeContext';
 import { useIsFocused } from '@react-navigation/native';
 import NameDetailHeader from '../components/NameDetailHeader';
 import TimeBasedBackground from '../components/TimeBasedBackground';
+import ReadingSettingsModal from '../components/ReadingSettingsModal';
 import http from '../config/http';
 import { FONTS } from '../theme';
 import LottieView from 'lottie-react-native';
@@ -140,53 +138,78 @@ const NameDetailScreen = ({ route, navigation }) => {
   const { markAsLearned, masteredIds, revisitCounts, userReflections, incrementReadingTime, markAsDraft, removeDraft, reviewLaterIds, toggleReviewLater } = useNames();
   const { favouriteIds, toggleFavourite } = usePlaylist();
   const isFocused = useIsFocused();
-  const { isDark } = useAppTheme();
+  const { isDark, themeMode } = useAppTheme();
+  const [readingSettingsVisible, setReadingSettingsVisible] = useState(false);
   const isMastered = masteredIds ? masteredIds.includes(name.id) : false;
   const isFavorite = favouriteIds ? favouriteIds.has(name.number || name.id) : false;
   const isReviewLater = reviewLaterIds ? reviewLaterIds.includes(name.number || name.id) : false;
   const revisits = revisitCounts[name.id] || 0;
   const isSaturated = isMastered || revisits >= 3;
 
-  // Night-mode themed colors
-  const t = useMemo(() => isDark ? {
-    cardBg: '#1A2332',
-    cardBorder: 'rgba(0,173,193,0.20)',
-    text: '#E8EDF2',
-    subText: '#9EAAB8',
-    dimText: '#6B7A8D',
-    inputBg: '#0F1923',
-    inputBorder: 'rgba(0,173,193,0.30)',
-    safeBg: '#0F172A',
-    progressTrack: '#1E293B',
-    pillText: '#C5F2F7',
-    optionBg: '#1A2332',
-    notebookLeft: '#142030',
-    notebookBorder: 'rgba(0,173,193,0.25)',
-    ringHole: '#0F1923',
-    pastBg: 'rgba(0,173,193,0.12)',
-    journeyCardBg: '#1A2332',
-    journeyGrad: ['#0F172A', '#1A2332'],
-    statusBg: '#1A2332',
-  } : {
-    cardBg: '#FFFFFF',
-    cardBorder: '#DFF6F8',
-    text: '#1A1A1A',
-    subText: '#3A3A3A',
-    dimText: '#7A7A7A',
-    inputBg: '#FFFFFF',
-    inputBorder: 'rgba(0,173,193,0.25)',
-    safeBg: '#F8FAFC',
-    progressTrack: '#FFFFFF',
-    pillText: '#1A1A1A',
-    optionBg: '#FFFFFF',
-    notebookLeft: '#F0FAFC',
-    notebookBorder: '#A0E4EC',
-    ringHole: '#FFFFFF',
-    pastBg: 'rgba(0,173,193,0.07)',
-    journeyCardBg: '#FFFFFF',
-    journeyGrad: ['#E8F7FB', '#FFFFFF'],
-    statusBg: '#FFFFFF',
-  }, [isDark]);
+  // Night-mode / Paper themed colors
+  const t = useMemo(() => {
+    if (themeMode === 'paper') {
+      return {
+        cardBg: '#FFFDF9',
+        cardBorder: '#E6DCB8',
+        text: '#2C221E',
+        subText: '#5A4A42',
+        dimText: '#8A7A72',
+        inputBg: '#FAF6ED',
+        inputBorder: 'rgba(5,150,105,0.30)',
+        safeBg: '#FAF6ED',
+        progressTrack: '#F4ECD8',
+        pillText: '#2C221E',
+        optionBg: '#FFFDF9',
+        notebookLeft: '#F4ECD8',
+        notebookBorder: '#D6CCB0',
+        ringHole: '#FFFDF9',
+        pastBg: 'rgba(5,150,105,0.12)',
+        journeyCardBg: '#FFFDF9',
+        journeyGrad: ['#FAF6ED', '#FFFDF9'],
+        statusBg: '#FFFDF9',
+      };
+    }
+    return isDark ? {
+      cardBg: '#1A2332',
+      cardBorder: 'rgba(0,173,193,0.20)',
+      text: '#E8EDF2',
+      subText: '#9EAAB8',
+      dimText: '#6B7A8D',
+      inputBg: '#0F1923',
+      inputBorder: 'rgba(0,173,193,0.30)',
+      safeBg: '#0F172A',
+      progressTrack: '#1E293B',
+      pillText: '#C5F2F7',
+      optionBg: '#1A2332',
+      notebookLeft: '#142030',
+      notebookBorder: 'rgba(0,173,193,0.25)',
+      ringHole: '#0F1923',
+      pastBg: 'rgba(0,173,193,0.12)',
+      journeyCardBg: '#1A2332',
+      journeyGrad: ['#0F172A', '#1A2332'],
+      statusBg: '#1A2332',
+    } : {
+      cardBg: '#FFFFFF',
+      cardBorder: '#DFF6F8',
+      text: '#1A1A1A',
+      subText: '#3A3A3A',
+      dimText: '#7A7A7A',
+      inputBg: '#FFFFFF',
+      inputBorder: 'rgba(0,173,193,0.25)',
+      safeBg: '#F8FAFC',
+      progressTrack: '#FFFFFF',
+      pillText: '#1A1A1A',
+      optionBg: '#FFFFFF',
+      notebookLeft: '#F0FAFC',
+      notebookBorder: '#A0E4EC',
+      ringHole: '#FFFFFF',
+      pastBg: 'rgba(0,173,193,0.07)',
+      journeyCardBg: '#FFFFFF',
+      journeyGrad: ['#E8F7FB', '#FFFFFF'],
+      statusBg: '#FFFFFF',
+    };
+  }, [isDark, themeMode]);
 
   // Determine if this is a Qur'anic name or Sunnah name
   // The first 81 are Qur'anic, the last 18 are Sunnah. We can also check if quranic array exists and has items.
@@ -979,9 +1002,14 @@ const NameDetailScreen = ({ route, navigation }) => {
               </View>
             </View>
 
-            {/* Title */}
+            {/* Title & Subtitle */}
             <FadeContent contentKey={title}>
-              <Text style={[styles.introTitleText2, { color: isDark ? '#E8EDF2' : '#0A1128', marginBottom: hs(16) }]}>{title}</Text>
+              <Text style={[styles.introTitleText2, { color: isDark ? '#E8EDF2' : '#0A1128', marginBottom: subtitle ? hs(8) : hs(16) }]}>{title}</Text>
+              {!!subtitle && (
+                <Text style={[styles.introSubtitleText2, { color: isDark ? '#94A3B8' : '#475569', marginTop: hs(4), marginBottom: hs(16), paddingHorizontal: rs(24) }]}>
+                  {subtitle}
+                </Text>
+              )}
             </FadeContent>
 
             {/* Info pills */}
@@ -995,6 +1023,14 @@ const NameDetailScreen = ({ route, navigation }) => {
               <View style={[styles.introInfoPill, { backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB' }]}>
                 <Ionicons name="time-outline" size={rs(14)} color="#0090A8" style={{ marginRight: rs(6) }} />
                 <Text style={styles.introInfoText}>{formatTime(activeCardTime)}</Text>
+              </View>
+            </View>
+
+            {/* Start reading indicator */}
+            <View style={{ marginTop: hs(24), alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#00ADC1', paddingHorizontal: rs(20), paddingVertical: hs(10), borderRadius: rs(20) }}>
+                <Text style={{ color: '#FFFFFF', fontSize: rs(14), fontWeight: '700', marginRight: rs(8) }}>Start Reading</Text>
+                <Ionicons name="arrow-forward" size={rs(16)} color="#FFFFFF" />
               </View>
             </View>
           </ScrollView>
@@ -1013,7 +1049,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       return renderIntroCard({
         title: 'Simple Meaning',
         iconName: 'book-outline',
-        subtitle: 'Understand the essence of ' + (name.transliteration || name.tr || ''),
+        subtitle: `Understand the essence of ${name.transliteration || name.tr || name.name}\n\n"${name.meaning || name.en || ''}"`,
         insightsCount: sentences.length,
         readTimeSec,
       });
@@ -1036,6 +1072,9 @@ const NameDetailScreen = ({ route, navigation }) => {
       return renderIntroCard({
         title,
         iconName: 'library-outline',
+        subtitle: isQuran
+          ? `Explore Holy Qur'an verses referencing ${name.transliteration || name.name}`
+          : `Explore Prophetic traditions referencing ${name.transliteration || name.name}`,
         insightsCount: sents.length,
         readTimeSec,
       });
@@ -1107,6 +1146,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       return renderIntroCard({
         title: 'The Gift of This Name',
         iconName: 'gift-outline',
+        subtitle: `Discover the spiritual gifts and blessings connected to ${name.transliteration || name.name}`,
         insightsCount: sents.length,
         readTimeSec,
       });
@@ -1123,6 +1163,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       return renderIntroCard({
         title: 'How To Live With This Name',
         iconName: 'compass-outline',
+        subtitle: `Actionable ways to embody and live by ${name.transliteration || name.name}`,
         insightsCount: sents.length,
         readTimeSec,
       });
@@ -1139,6 +1180,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       return renderIntroCard({
         title: 'Scholarly View',
         iconName: 'school-outline',
+        subtitle: `Classical scholarly wisdom and commentary on ${name.transliteration || name.name}`,
         insightsCount: sents.length,
         readTimeSec,
       });
@@ -1442,6 +1484,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                       isFavorite={isFavorite}
                       onFavoritePress={() => toggleFavourite(name.number || name.id)}
                       onSharePress={() => Share.share({ message: `Learn about the name ${name.transliteration} - ${name.meaning}` })}
+                      onSettingsPress={() => setReadingSettingsVisible(true)}
                     />
                   </View>
 
@@ -1623,6 +1666,11 @@ const NameDetailScreen = ({ route, navigation }) => {
           </>
         )}
       </TimeBasedBackground>
+
+      <ReadingSettingsModal
+        visible={readingSettingsVisible}
+        onClose={() => setReadingSettingsVisible(false)}
+      />
     </Animated.View>
   );
 };
@@ -1647,7 +1695,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: rs(18), fontWeight: '800', color: '#1A1A1A', marginBottom: hs(12) },
 
   // ── Modern Cards (Glassmorphic / Minimal) ──
-  modernCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: rs(16), borderWidth: 1, borderColor: '#F0F4F8', overflow: 'hidden', height: hs(500), paddingBottom: 0 },
+  modernCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: rs(16), borderWidth: 1, borderColor: '#F0F4F8', overflow: 'hidden', minHeight: hs(430), maxHeight: hs(560), paddingBottom: 0 },
   cardBadgesRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(24), paddingTop: hs(24), zIndex: 2 },
   badgeCircle: { width: rs(44), height: rs(44), borderRadius: rs(22), justifyContent: 'center', alignItems: 'center', marginRight: rs(12) },
   badgePill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(14), minHeight: rs(34), paddingVertical: hs(6), borderRadius: rs(17) },
@@ -1668,7 +1716,8 @@ const styles = StyleSheet.create({
     width: '100%', borderRadius: rs(16),
     borderWidth: 1, overflow: 'hidden',
     paddingBottom: 0,
-    height: hs(500),
+    minHeight: hs(430),
+    maxHeight: hs(560),
   },
   sectionBadgeRow: {
     flexDirection: 'row',
@@ -1742,19 +1791,25 @@ const styles = StyleSheet.create({
 
   // ── Bottom Navigation ──
   bottomNavWrapper: {
-    paddingHorizontal: rs(20),
-    paddingVertical: hs(12),
-    marginBottom: Platform.OS === 'ios' ? hs(20) : hs(12),
+    width: '100%',
+    paddingHorizontal: rs(24),
+    paddingTop: hs(6),
+    paddingBottom: Platform.OS === 'ios' ? hs(24) : hs(16),
   },
   bottomNavInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: rs(16),
-    paddingHorizontal: rs(10),
-    paddingVertical: hs(2),
+    borderRadius: rs(20),
+    paddingHorizontal: rs(12),
+    paddingVertical: hs(6),
     borderWidth: 1,
     borderColor: '#F0F4F8',
+    shadowColor: '#00ADC1',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: -2 },
+    elevation: 6,
   },
   squircleNavBtn: {
     width: rs(34), height: rs(34),
@@ -1825,7 +1880,7 @@ const styles = StyleSheet.create({
   seeArabicBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: rs(14), paddingVertical: hs(8), borderRadius: rs(20), borderWidth: 1, marginBottom: hs(12) },
   seeArabicBtnText: { fontSize: rs(13), fontWeight: '700', color: '#00ADC1' },
   arabicVerseBox: { borderRadius: rs(12), borderWidth: 1, padding: rs(16), marginTop: hs(4) },
-  modernArabicText: { fontSize: rs(20), fontWeight: '700', textAlign: 'right', lineHeight: rs(38), writingDirection: 'rtl' },
+  modernArabicText: { fontSize: rs(20), fontWeight: '700', fontFamily: FONTS.arabicBold, textAlign: 'right', lineHeight: rs(38), writingDirection: 'rtl' },
 
   // ── Gifts Card ──
   giftCardContainer: { backgroundColor: '#FFFFFF', borderRadius: rs(8), borderWidth: 1, borderColor: '#F0F4F8', marginBottom: hs(4) },

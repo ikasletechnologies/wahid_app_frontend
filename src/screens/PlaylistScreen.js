@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import {
-  View, Text, StyleSheet, FlatList, TextInput,
-  TouchableOpacity, Animated, Modal, ActivityIndicator, StatusBar,
-} from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, Animated, Modal, ActivityIndicator, StatusBar } from 'react-native';
+import Text from '../components/AppText';
+import TextInput from '../components/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,6 +13,7 @@ import TimeBasedBackground from '../components/TimeBasedBackground';
 import http from '../config/http';
 import Toast from 'react-native-toast-message';
 import PlaylistPicker from '../components/PlaylistPicker';
+import { FONTS } from '../theme';
 
 const TRACK_ROW_H = 72;
 
@@ -808,7 +808,7 @@ const styles = StyleSheet.create({
   trackTrans: { fontSize: 15, fontWeight: '700' },
   trackMeaning: { fontSize: 12, marginTop: 2 },
   trackRight: { alignItems: 'flex-end' },
-  trackArabic: { fontSize: 22, fontFamily: 'Amiri-Regular' },
+  trackArabic: { fontSize: 22, fontFamily: FONTS.arabic },
   row: { flexDirection: 'row', alignItems: 'center' },
 
   // Sub-view header

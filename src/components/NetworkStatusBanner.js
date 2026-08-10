@@ -8,14 +8,8 @@
  * Shows a smooth animated banner at the top of the screen.
  */
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Animated,
-  Platform,
-  StatusBar,
-} from 'react-native';
+import { View, StyleSheet, Animated, Platform, StatusBar } from 'react-native';
+import Text from './AppText';
 import NetInfo from '@react-native-community/netinfo';
 import { Ionicons } from '@expo/vector-icons';
 import { FONTS, SIZES } from '../theme';
