@@ -7,23 +7,25 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useAppTheme } from '../context/ThemeContext';
+import { useAppTheme, THEME_MODES } from '../context/ThemeContext';
 import TimeBasedBackground from '../components/TimeBasedBackground';
 import { useAuth } from '../context/AuthContext';
-import { useFontSettings, FONT_FAMILIES, FONT_SIZES } from '../context/FontSettingsContext';
+import { useFontSettings, FONT_FAMILIES, FONT_SIZES, ARABIC_STYLES } from '../context/FontSettingsContext';
 import CircleIcon from '@hugeicons/core-free-icons/dist/esm/CircleIcon.js';
 import Logout01Icon from '@hugeicons/core-free-icons/dist/esm/Logout01Icon.js';
 import { HugeiconsIcon } from '@hugeicons/react-native';
+import ReadingSettingsModal from '../components/ReadingSettingsModal';
 
 const { width } = Dimensions.get('window');
 
 const SettingsScreen = () => {
   const navigation = useNavigation();
-  const { isDark, toggleTheme, colors } = useAppTheme();
+  const { isDark, themeMode, setThemeMode, colors } = useAppTheme();
   const { logout } = useAuth();
-  const { fontFamily, setFontFamily, fontSize, setFontSize } = useFontSettings();
+  const { fontFamily, setFontFamily, fontSize, setFontSize, arabicFontStyle, setArabicFontStyle } = useFontSettings();
   const [privacyVisible, setPrivacyVisible] = useState(false);
   const [isLogoutVisible, setIsLogoutVisible] = useState(false);
+  const [readingSettingsVisible, setReadingSettingsVisible] = useState(false);
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: 'transparent' }]} edges={['top']}>
@@ -39,52 +41,19 @@ const SettingsScreen = () => {
             </View>
 
             <View style={styles.settingsList}>
-              {/* Font Settings */}
-              <View style={[styles.fontCard, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.05, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
-                <Text style={[styles.fontCardTitle, { color: colors.text }]}>Font Family</Text>
-                <View style={styles.optionRow}>
-                  {Object.entries(FONT_FAMILIES).map(([key, { label }]) => {
-                    const selected = fontFamily === key;
-                    return (
-                      <TouchableOpacity
-                        key={key}
-                        style={[
-                          styles.optionPill,
-                          {
-                            backgroundColor: selected ? '#06b6d4' : (isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9'),
-                            borderColor: selected ? '#06b6d4' : (isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0'),
-                          },
-                        ]}
-                        onPress={() => setFontFamily(key)}
-                      >
-                        <Text style={[styles.optionPillText, { color: selected ? '#FFFFFF' : colors.text }]}>{label}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+              {/* Reading Display & Text Settings */}
+              <TouchableOpacity
+                style={[styles.settingItem, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.05, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}
+                onPress={() => setReadingSettingsVisible(true)}
+              >
+                <View style={styles.settingLeft}>
+                  <View style={[styles.iconCircle, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.15, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#EBECF0', borderWidth: isDark ? 1 : 6 }]}>
+                    <Ionicons name="color-palette-outline" size={14} color="#06b6d4" />
+                  </View>
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>Reading & Display Settings</Text>
                 </View>
-
-                <Text style={[styles.fontCardTitle, { color: colors.text, marginTop: 20 }]}>Font Size</Text>
-                <View style={styles.optionRow}>
-                  {Object.entries(FONT_SIZES).map(([key, { label }]) => {
-                    const selected = fontSize === key;
-                    return (
-                      <TouchableOpacity
-                        key={key}
-                        style={[
-                          styles.optionPill,
-                          {
-                            backgroundColor: selected ? '#06b6d4' : (isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9'),
-                            borderColor: selected ? '#06b6d4' : (isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0'),
-                          },
-                        ]}
-                        onPress={() => setFontSize(key)}
-                      >
-                        <Text style={[styles.optionPillText, { color: selected ? '#FFFFFF' : colors.text }]}>{label}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
+                <Ionicons name="chevron-forward" size={18} color={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"} />
+              </TouchableOpacity>
 
               {/* About App */}
               <View style={[styles.settingItem, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.05, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}>
@@ -130,6 +99,11 @@ const SettingsScreen = () => {
                 </View>
               </TouchableOpacity>
             </View>
+
+            <ReadingSettingsModal
+              visible={readingSettingsVisible}
+              onClose={() => setReadingSettingsVisible(false)}
+            />
 
             {/* Privacy Policy Modal */}
             <Modal visible={privacyVisible} animationType="slide" transparent={true}>

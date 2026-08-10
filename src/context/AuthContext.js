@@ -11,27 +11,35 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     const loadAuth = async () => {
       const startTime = Date.now();
+      const safetyTimer = setTimeout(() => {
+        if (isMounted) setLoading(false);
+      }, 2500);
+
       try {
         const [savedUser, savedToken] = await Promise.all([
           AsyncStorage.getItem('user'),
           AsyncStorage.getItem('accessToken'),
         ]);
-        if (savedUser && savedToken) {
+        if (savedUser && savedToken && isMounted) {
           setUser(JSON.parse(savedUser));
           setToken(savedToken);
         }
       } catch (error) {
         console.error('Error loading auth:', error);
       } finally {
-        // Ensure splash screen shows for at least 2 seconds
+        clearTimeout(safetyTimer);
         const elapsedTime = Date.now() - startTime;
-        const remainingTime = Math.max(0, 2000 - elapsedTime);
-        setTimeout(() => setLoading(false), remainingTime);
+        const remainingTime = Math.max(0, 800 - elapsedTime);
+        setTimeout(() => {
+          if (isMounted) setLoading(false);
+        }, remainingTime);
       }
     };
     loadAuth();
+    return () => { isMounted = false; };
   }, []);
 
   // ── OTP flow (Handled via Twilio Verify backend) ─────────────────────────

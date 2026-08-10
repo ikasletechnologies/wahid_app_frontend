@@ -10,6 +10,7 @@ import { useNames } from '../context/NamesContext';
 import { usePlaylist } from '../context/PlaylistContext';
 import { FONTS } from '../theme';
 import TimeBasedBackground from '../components/TimeBasedBackground';
+import ReadingSettingsModal from '../components/ReadingSettingsModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import http from '../config/http';
 import { useAppTheme } from '../context/ThemeContext';
@@ -103,6 +104,7 @@ const NamesScreen = ({ navigation, route }) => {
   const isNavigatingRef = useRef(false);
 
   const [filterVisible, setFilterVisible] = useState(false);
+  const [readingSettingsVisible, setReadingSettingsVisible] = useState(false);
   const [tempCat, setTempCat] = useState('All');
   const [tempStatus, setTempStatus] = useState('All');
   const [tempNumber, setTempNumber] = useState('');
@@ -651,13 +653,22 @@ const NamesScreen = ({ navigation, route }) => {
                   </View>
                   <Text style={[styles.headerSubtitleText, { color: isDark ? '#9EAAB8' : '#64748B' }]}>Learn  Reflect  Live By</Text>
                 </View>
-                <TouchableOpacity
-                  style={[styles.headerBookBtn, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F7FA' }]}
-                  onPress={() => setFilterVisible(true)}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="list-outline" size={rs(16)} color="#00ADC1" />
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(8) }}>
+                  <TouchableOpacity
+                    style={[styles.headerBookBtn, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F7FA' }]}
+                    onPress={() => setReadingSettingsVisible(true)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="text-outline" size={rs(16)} color="#00ADC1" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.headerBookBtn, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F7FA' }]}
+                    onPress={() => setFilterVisible(true)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="list-outline" size={rs(16)} color="#00ADC1" />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               {/* ── PREMIUM PROGRESS CARD ── */}
@@ -865,7 +876,7 @@ const NamesScreen = ({ navigation, route }) => {
                 </View>
                 <View style={styles.legendItem}>
                   <View style={[styles.legendDot, { backgroundColor: '#03B7CE' }]} />
-                  <Text style={[styles.legendText, { color: isDark ? '#94A3B8' : '#64748B' }]}>Unlearned</Text>
+                  <Text style={[styles.legendText, { color: isDark ? '#94A3B8' : '#64748B' }]}>Remaining</Text>
                 </View>
               </View>
             </View>
@@ -1130,6 +1141,11 @@ const NamesScreen = ({ navigation, route }) => {
           </>
         )}
       </TimeBasedBackground>
+
+      <ReadingSettingsModal
+        visible={readingSettingsVisible}
+        onClose={() => setReadingSettingsVisible(false)}
+      />
     </SafeAreaView>
   );
 };

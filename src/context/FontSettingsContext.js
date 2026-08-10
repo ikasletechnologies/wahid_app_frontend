@@ -14,6 +14,16 @@ export const FONT_FAMILIES = {
   calibri: { label: 'Calibri', regular: 'Carlito_400Regular', bold: 'Carlito_700Bold' },
 };
 
+// Quran script styles. Each one file, no separate bold cut — boldness is
+// baked into the design of these display fonts, so the same family name
+// covers regular and bold text. Files are loaded in App.js from
+// assets/fonts/ (placeholders until the real font files are dropped in).
+export const ARABIC_STYLES = {
+  indoPak: { label: 'Indo-Pak', family: 'AlQalamQuran' },
+  uthmani: { label: 'Uthmani (Madinah)', family: 'KFGQPCUthmanic' },
+  naskh: { label: 'Naskh', family: 'AmiriQuran' },
+};
+
 // `scale` drives small text (labels, captions); `maxDelta` caps how many
 // pixels any single piece of text can grow/shrink by. The cap keeps large
 // titles/headers — which already sit close to fixed-size containers like
@@ -27,20 +37,24 @@ export const FONT_SIZES = {
 
 const STORAGE_KEY_FAMILY = 'appFontFamily';
 const STORAGE_KEY_SIZE = 'appFontSize';
+const STORAGE_KEY_ARABIC_STYLE = 'appArabicFontStyle';
 
 export const FontSettingsProvider = ({ children }) => {
   const [fontFamily, setFontFamilyState] = useState('roboto');
   const [fontSize, setFontSizeState] = useState('medium');
+  const [arabicFontStyle, setArabicFontStyleState] = useState('naskh');
 
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const [savedFamily, savedSize] = await Promise.all([
+        const [savedFamily, savedSize, savedArabicStyle] = await Promise.all([
           AsyncStorage.getItem(STORAGE_KEY_FAMILY),
           AsyncStorage.getItem(STORAGE_KEY_SIZE),
+          AsyncStorage.getItem(STORAGE_KEY_ARABIC_STYLE),
         ]);
         if (savedFamily && FONT_FAMILIES[savedFamily]) setFontFamilyState(savedFamily);
         if (savedSize && FONT_SIZES[savedSize]) setFontSizeState(savedSize);
+        if (savedArabicStyle && ARABIC_STYLES[savedArabicStyle]) setArabicFontStyleState(savedArabicStyle);
       } catch (e) {
         console.warn('Failed to load font settings', e);
       }
@@ -55,6 +69,16 @@ export const FontSettingsProvider = ({ children }) => {
       await AsyncStorage.setItem(STORAGE_KEY_FAMILY, family);
     } catch (e) {
       console.warn('Failed to persist font family', e);
+    }
+  };
+
+  const setArabicFontStyle = async (style) => {
+    if (!ARABIC_STYLES[style]) return;
+    setArabicFontStyleState(style);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_ARABIC_STYLE, style);
+    } catch (e) {
+      console.warn('Failed to persist Arabic font style', e);
     }
   };
 
@@ -79,6 +103,12 @@ export const FontSettingsProvider = ({ children }) => {
     return isBold ? family.bold : family.regular;
   };
 
+  // Resolves the loaded font-family name for the current Arabic script style.
+  const resolveArabicFontFamily = () => {
+    const style = ARABIC_STYLES[arabicFontStyle] || ARABIC_STYLES.naskh;
+    return style.family;
+  };
+
   const scaleFontSize = (size) => {
     if (typeof size !== 'number') return size;
     const { scale, maxDelta } = FONT_SIZES[fontSize];
@@ -96,7 +126,10 @@ export const FontSettingsProvider = ({ children }) => {
         setFontFamily,
         fontSize,
         setFontSize,
+        arabicFontStyle,
+        setArabicFontStyle,
         resolveFontFamily,
+        resolveArabicFontFamily,
         scaleFontSize,
       }}
     >

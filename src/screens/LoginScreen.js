@@ -215,11 +215,6 @@ const LoginScreen = ({ navigation, route }) => {
               <Text style={[styles.logoTitle, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>Wahid</Text>
               <Text style={[styles.logoSubtitle, { color: isDark ? '#A0AEC0' : '#718096' }]}>Learn • Reflect • Live By</Text>
             </View>
-            <Image
-              source={require('../../assets/signInBook.png')}
-              style={styles.illustrationImage}
-              resizeMode="contain"
-            />
           </View>
 
           <View style={styles.header}>
@@ -336,53 +331,41 @@ const LoginScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.socialContainer}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
-                styles.socialBtn,
+                styles.socialCircleBtn,
                 {
                   backgroundColor: isDark ? '#111111' : '#FFFFFF',
                   borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
                 }
-              ]} 
+              ]}
               activeOpacity={0.7}
               onPress={() => handleGoogleLogin()}
               disabled={loading || isGoogleLoading}
             >
               {isGoogleLoading ? (
-                <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-                  <ActivityIndicator size="small" color="#EA4335" />
-                  <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C', marginLeft: 8 }]}>Connecting...</Text>
-                </View>
+                <ActivityIndicator size="small" color="#EA4335" />
               ) : (
-                <>
-                  <Ionicons name="logo-google" size={20} color="#EA4335" style={styles.socialIcon} />
-                  <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>Continue with Google</Text>
-                </>
+                <Ionicons name="logo-google" size={22} color="#EA4335" />
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
-                styles.socialBtn,
+                styles.socialCircleBtn,
                 {
                   backgroundColor: isDark ? '#111111' : '#FFFFFF',
                   borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
                 }
-              ]} 
+              ]}
               activeOpacity={0.7}
               onPress={() => handleFacebookLogin()}
               disabled={loading || isFacebookLoading}
             >
               {isFacebookLoading ? (
-                <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-                  <ActivityIndicator size="small" color="#1877F2" />
-                  <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C', marginLeft: 8 }]}>Connecting...</Text>
-                </View>
+                <ActivityIndicator size="small" color="#1877F2" />
               ) : (
-                <>
-                  <Ionicons name="logo-facebook" size={20} color="#1877F2" style={styles.socialIcon} />
-                  <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>Continue with Facebook</Text>
-                </>
+                <Ionicons name="logo-facebook" size={22} color="#1877F2" />
               )}
             </TouchableOpacity>
           </View>
@@ -423,15 +406,14 @@ const styles = StyleSheet.create({
   },
   topSection: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'flex-start',
     marginBottom: 20,
     zIndex: 10,
   },
   logoContainer: {
     marginTop: 2,
-    top: 0,
-    left: 0,
+    alignItems: 'center',
   },
   logoTitle: {
     fontSize: 34,
@@ -439,25 +421,15 @@ const styles = StyleSheet.create({
     color: '#0F203C',
     letterSpacing: 1,
     marginTop: 4,
+    textAlign: 'center',
     fontFamily: Platform.OS === 'ios' ? 'Snell Roundhand' : 'cursive',
   },
   logoSubtitle: {
     fontSize: 10,
     color: '#718096',
+    textAlign: 'center',
     fontWeight: '600',
     marginTop: 1,
-  },
-  illustrationImage: {
-    width: 280,
-    height: 340,
-    position: 'absolute',
-    right: -50,
-    top: -140,
-    zIndex: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 15 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
   },
   header: {
     marginBottom: 28,
@@ -607,28 +579,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   socialContainer: {
-    gap: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 20,
     marginBottom: 32,
   },
-  socialBtn: {
-    flexDirection: 'row',
+  socialCircleBtn: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    height: 54,
-    borderRadius: 14,
     borderWidth: 1.5,
     borderColor: '#F1F5F9',
-  },
-  socialIcon: {
-    position: 'absolute',
-    left: 24,
-  },
-  socialBtnText: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1A202C',
   },
   promptRow: {
     flexDirection: 'row',

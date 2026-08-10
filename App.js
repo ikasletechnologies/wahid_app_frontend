@@ -25,8 +25,9 @@ SplashScreen.preventAutoHideAsync();
 
 export default function App() {
   const [isOffline, setIsOffline] = React.useState(false);
+  const [isReady, setIsReady] = React.useState(false);
 
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     'NotoNaskhArabic-Regular': NotoNaskhArabic_400Regular,
     'NotoNaskhArabic-Bold': NotoNaskhArabic_700Bold,
     Roboto_400Regular,
@@ -35,25 +36,39 @@ export default function App() {
     Tinos_700Bold,
     Carlito_400Regular,
     Carlito_700Bold,
+    // Quran script styles — see src/context/FontSettingsContext.js ARABIC_STYLES.
+    // Files are placeholders until the real font files are dropped into assets/fonts/.
+    AlQalamQuran: require('./assets/fonts/AlQalamQuran.ttf'),
+    KFGQPCUthmanic: require('./assets/fonts/KFGQPCUthmanic.otf'),
+    AmiriQuran: require('./assets/fonts/AmiriQuran.ttf'),
   });
 
   React.useEffect(() => {
-    if (!fontsLoaded) return;
+    if (fontsLoaded || fontError) {
+      setIsReady(true);
+      SplashScreen.hideAsync().catch(() => {});
+    }
 
-    // Hide the native splash screen as soon as the JS is ready.
-    // This allows the custom animated SplashScreen to take over.
-    SplashScreen.hideAsync();
+    // Safety timeout: ensure splash screen hides and app starts in Expo Go even if font loading hangs
+    const safetyTimer = setTimeout(() => {
+      setIsReady(true);
+      SplashScreen.hideAsync().catch(() => {});
+    }, 2500);
 
     // Listen to network status changes
     const unsubscribe = NetInfo.addEventListener((state) => {
-      const offline = state.isConnected === false || state.isInternetReachable === false;
+      // In Expo Go on local Wi-Fi, isInternetReachable can be false/null even when connected
+      const offline = state.isConnected === false;
       setIsOffline(offline);
     });
 
-    return () => unsubscribe();
-  }, [fontsLoaded]);
+    return () => {
+      clearTimeout(safetyTimer);
+      unsubscribe();
+    };
+  }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded && !isReady) {
     return null;
   }
 

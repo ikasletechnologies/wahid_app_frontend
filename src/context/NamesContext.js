@@ -50,12 +50,16 @@ export const NUMBER_TO_CATEGORY = {
   96:'exalted', 97:'exalted',
 };
 
+import { ENHANCED_NAMES } from '../data/namesData';
+
 // Helper: inject category into a name object from the API and map fields
 const withCategory = (name) => {
   const nameId = name.number || name.id;
   
   let practicalWays = [];
-  if (name.learningInsight) {
+  if (name.practicalWays && Array.isArray(name.practicalWays)) {
+    practicalWays = name.practicalWays;
+  } else if (name.learningInsight) {
     try {
       practicalWays = typeof name.learningInsight === 'string'
         ? JSON.parse(name.learningInsight)
@@ -65,13 +69,21 @@ const withCategory = (name) => {
     }
   }
 
+  const meaningObj = typeof name.meaning === 'object' ? name.meaning : null;
+
   return {
     ...name,
-    gifts: name.benefits || [],
+    number: nameId,
+    arabic: name.arabic || name.ar || '',
+    transliteration: name.transliteration || name.tr || '',
+    translation: name.translation || name.en || '',
+    meaning: meaningObj ? (meaningObj.core || meaningObj.short || '') : (name.meaning || ''),
+    shortMeaning: meaningObj ? (meaningObj.short || meaningObj.core || '') : (name.shortMeaning || name.meaning || ''),
+    gifts: name.benefits || name.gifts || [],
     practicalWays: practicalWays || [],
-    quranic: name.quran || [],
-    sunnah: name.hadith || [],
-    scholarlyViews: [],
+    quranic: name.quran || name.quranic || [],
+    sunnah: name.hadith || name.sunnah || [],
+    scholarlyViews: name.scholarlyViews || [],
     category: NUMBER_TO_CATEGORY[nameId] || 'mercy',
   };
 };
@@ -264,7 +276,7 @@ export const NamesProvider = ({ children }) => {
       loadInitialData();
     } else {
       setLoading(false);
-      setNames([]);
+      setNames(ENHANCED_NAMES.map(withCategory));
       setLearnedIds([]);
       setMasteredIds([]);
       setViewedIds([]);
@@ -294,6 +306,11 @@ export const NamesProvider = ({ children }) => {
           hasCache = true;
         }
       }
+      if (!hasCache) {
+        const fallback = ENHANCED_NAMES.map(withCategory);
+        setNames(fallback);
+        AsyncStorage.setItem('names_cache', JSON.stringify(fallback)).catch(() => {});
+      }
       if (cachedProgress) {
         const { learned, mastered, streak: s, revisits, reflections } = JSON.parse(cachedProgress);
         setLearnedIds(learned || []);
@@ -306,15 +323,13 @@ export const NamesProvider = ({ children }) => {
         setStreakDetails(JSON.parse(cachedStreak));
       }
 
-      if (hasCache) {
-        setLoading(false);
-        syncWithBackend().catch(() => {});
-      } else {
-        await syncWithBackend();
-        setLoading(false);
-      }
+      setLoading(false);
+      syncWithBackend().catch(() => {});
     } catch (error) {
       console.warn('[NamesContext] Load Error:', error.message);
+      if (!names || names.length === 0) {
+        setNames(ENHANCED_NAMES.map(withCategory));
+      }
       setLoading(false);
     }
   };
