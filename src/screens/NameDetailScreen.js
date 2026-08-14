@@ -87,7 +87,7 @@ const getReferenceSentences = (refDataArray) => {
         }
       };
       processText(ref.simpleMeaning, 'simpleMeaning');
-      processText(ref.significance, 'significance');
+      processText(ref.whyThisVerse || ref.significance, 'significance');
     }
   });
   return sentences;
@@ -234,7 +234,7 @@ const NameDetailScreen = ({ route, navigation }) => {
           arabic: ref?.ar,
           simpleMeaning: ref?.tr,
           reference: ref?.ref,
-          significance: ref?.significance
+          significance: ref?.whyThisVerse || ref?.significance
         };
       });
       s.push({ type: 'quran', data: formattedRefs });
@@ -250,7 +250,7 @@ const NameDetailScreen = ({ route, navigation }) => {
           arabic: ref?.ar,
           simpleMeaning: ref?.tr,
           reference: ref?.ref,
-          significance: ref?.significance
+          significance: ref?.whyThisVerse || ref?.significance
         };
       });
       s.push({ type: 'hadith', data: formattedRefs });
@@ -870,7 +870,7 @@ const NameDetailScreen = ({ route, navigation }) => {
           </Text>
           <View style={[styles.badgePill, { backgroundColor: isDark ? '#0F172A' : '#F0F9FA', marginLeft: 'auto', flexShrink: 0 }]}>
             <Ionicons name="time-outline" size={rs(15)} color="#16858A" style={{ marginRight: rs(4) }} />
-            <Text style={[styles.badgePillText, { color: isDark ? '#9EAAB8' : '#14363F' }]}>{formatTime(activeCardTime)}</Text>
+            <Text style={[styles.badgePillText, { color: isDark ? '#C5F2F7' : '#14363F', fontWeight: '700' }]}>{formatTime(activeCardTime)}</Text>
           </View>
         </View>
 
@@ -888,13 +888,8 @@ const NameDetailScreen = ({ route, navigation }) => {
         </View>
 
         {/* Main Text with Proper Fade Animation */}
-        <ScrollView 
-          ref={readingCardScrollRef}
+        <View
           style={styles.textScrollView}
-          contentContainerStyle={styles.textScrollContent}
-          showsVerticalScrollIndicator={true}
-          nestedScrollEnabled={true}
-          scrollEnabled={scrollEnabled}
         >
           <FadeContent contentKey={text || (customContent ? 'custom' : '')}>
             {customContent ? customContent : (
@@ -905,7 +900,7 @@ const NameDetailScreen = ({ route, navigation }) => {
               </>
             )}
           </FadeContent>
-        </ScrollView>
+        </View>
 
         {/* Bottom Graphic Overlay */}
         <View style={styles.bottomGraphicWrap}>
@@ -937,21 +932,21 @@ const NameDetailScreen = ({ route, navigation }) => {
           <ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingBottom: hs(20) }} showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
             {/* Section badge row with flanking ornaments */}
             <View style={styles.sectionBadgeRow}>
-              <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]} />
-              <Text style={[styles.badgeStar, { color: isDark ? 'rgba(0,173,193,0.4)' : '#00ADC1' }]}>✦</Text>
-              <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]} />
+              <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#A4D0CB' }]} />
+              <Text style={[styles.badgeStar, { color: isDark ? 'rgba(0,173,193,0.4)' : '#16858A' }]}>✦</Text>
+              <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#A4D0CB' }]} />
               
               <View style={[styles.sectionBadge, {
                 backgroundColor: isDark ? 'rgba(0, 173, 193, 0.08)' : '#F0FAFB',
-                borderColor: isDark ? 'rgba(0, 173, 193, 0.25)' : 'rgba(0, 173, 193, 0.18)',
+                borderColor: isDark ? 'rgba(0, 173, 193, 0.25)' : '#16858A',
                 borderWidth: 1,
               }]}>
-                <Text style={[styles.sectionBadgeText, { color: isDark ? '#4CD5E8' : '#0090A8' }]}>SECTION {sectionNum} OF {totalSections}</Text>
+                <Text style={[styles.sectionBadgeText, { color: isDark ? '#4CD5E8' : '#16858A', fontWeight: '800' }]}>SECTION {sectionNum} OF {totalSections}</Text>
               </View>
               
-              <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]} />
-              <Text style={[styles.badgeStar, { color: isDark ? 'rgba(0,173,193,0.4)' : '#00ADC1' }]}>✦</Text>
-              <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0' }]} />
+              <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#A4D0CB' }]} />
+              <Text style={[styles.badgeStar, { color: isDark ? 'rgba(0,173,193,0.4)' : '#16858A' }]}>✦</Text>
+              <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#A4D0CB' }]} />
             </View>
 
             {/* Icon area with SVG Progress Ring */}
@@ -1004,25 +999,20 @@ const NameDetailScreen = ({ route, navigation }) => {
 
             {/* Title & Subtitle */}
             <FadeContent contentKey={title}>
-              <Text style={[styles.introTitleText2, { color: isDark ? '#E8EDF2' : '#0A1128', marginBottom: subtitle ? hs(8) : hs(16) }]}>{title}</Text>
-              {!!subtitle && (
-                <Text style={[styles.introSubtitleText2, { color: isDark ? '#94A3B8' : '#475569', marginTop: hs(4), marginBottom: hs(16), paddingHorizontal: rs(24) }]}>
-                  {subtitle}
-                </Text>
-              )}
+              <Text style={[styles.introTitleText2, { color: isDark ? '#E8EDF2' : '#0A1128', marginBottom: hs(16) }]}>{title}</Text>
             </FadeContent>
 
             {/* Info pills */}
             <View style={styles.introInfoRow}>
               {insightsCount > 0 && (
-                <View style={[styles.introInfoPill, { backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB' }]}>
-                  <Ionicons name="document-text-outline" size={rs(14)} color="#0090A8" style={{ marginRight: rs(6) }} />
-                  <Text style={styles.introInfoText}>{insightsCount} Insights</Text>
+                <View style={[styles.introInfoPill, { backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB', borderColor: isDark ? '#00ADC1' : '#16858A' }]}>
+                  <Ionicons name="document-text-outline" size={rs(14)} color={isDark ? '#4CD5E8' : '#16858A'} style={{ marginRight: rs(6) }} />
+                  <Text style={[styles.introInfoText, { color: isDark ? '#C5F2F7' : '#14363F', fontWeight: '700' }]}>{insightsCount} Insights</Text>
                 </View>
               )}
-              <View style={[styles.introInfoPill, { backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB' }]}>
-                <Ionicons name="time-outline" size={rs(14)} color="#0090A8" style={{ marginRight: rs(6) }} />
-                <Text style={styles.introInfoText}>{formatTime(activeCardTime)}</Text>
+              <View style={[styles.introInfoPill, { backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB', borderColor: isDark ? '#00ADC1' : '#16858A' }]}>
+                <Ionicons name="time-outline" size={rs(14)} color={isDark ? '#4CD5E8' : '#16858A'} style={{ marginRight: rs(6) }} />
+                <Text style={[styles.introInfoText, { color: isDark ? '#C5F2F7' : '#14363F', fontWeight: '700' }]}>{formatTime(activeCardTime)}</Text>
               </View>
             </View>
 
@@ -1100,8 +1090,8 @@ const NameDetailScreen = ({ route, navigation }) => {
           </View>
         )}
 
-        <Text style={[styles.refSectionLabel, { color: '#00ADC1' }]}>
-          {currentSent.type === 'simpleMeaning' ? 'Simple explanation' : 'Significance'}
+        <Text style={[styles.refSectionLabel, { color: isDark ? '#4CD5E8' : '#16858A' }]}>
+          {currentSent.type === 'simpleMeaning' ? 'Simple explanation' : (isQuran ? 'Why this verse:' : 'Why this Hadith:')}
         </Text>
 
         <Text style={[styles.readingText, { color: t.text, marginBottom: hs(20) }]}>{currentSent.text}</Text>
@@ -1695,7 +1685,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: rs(18), fontWeight: '800', color: '#1A1A1A', marginBottom: hs(12) },
 
   // ── Modern Cards (Glassmorphic / Minimal) ──
-  modernCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: rs(16), borderWidth: 1, borderColor: '#F0F4F8', overflow: 'hidden', minHeight: hs(430), maxHeight: hs(560), paddingBottom: 0 },
+  modernCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: rs(16), borderWidth: 1, borderColor: '#F0F4F8', overflow: 'visible', minHeight: hs(430), paddingBottom: 0 },
   cardBadgesRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(24), paddingTop: hs(24), zIndex: 2 },
   badgeCircle: { width: rs(44), height: rs(44), borderRadius: rs(22), justifyContent: 'center', alignItems: 'center', marginRight: rs(12) },
   badgePill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(14), minHeight: rs(34), paddingVertical: hs(6), borderRadius: rs(17) },
@@ -1705,7 +1695,7 @@ const styles = StyleSheet.create({
   customDividerLine: { flex: 1, height: 1.5 },
   dividerDot: { width: rs(4), height: rs(4), borderRadius: rs(2) },
   textContentWrap: { flex: 1, paddingHorizontal: rs(30), paddingTop: hs(10), paddingBottom: hs(30), alignItems: 'center', justifyContent: 'center', zIndex: 2 },
-  textScrollView: { flex: 1, width: '100%', zIndex: 2 },
+  textScrollView: { flex: 1, width: '100%', zIndex: 2, paddingHorizontal: rs(24), paddingBottom: hs(95), justifyContent: 'center' },
   textScrollContent: { flexGrow: 1, paddingHorizontal: rs(40), paddingTop: hs(10), paddingBottom: hs(40), alignItems: 'center', justifyContent: 'center' },
   readingText: { fontSize: rs(22), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: '500', textAlign: 'center', lineHeight: rs(36) },
   bottomGraphicWrap: { position: 'absolute', bottom: 0, left: 0, right: 0, height: hs(80), zIndex: 1 },

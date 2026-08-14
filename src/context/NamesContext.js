@@ -71,6 +71,47 @@ const withCategory = (name) => {
 
   const meaningObj = typeof name.meaning === 'object' ? name.meaning : null;
 
+  let sunnah = name.hadith || name.sunnah || [];
+  if (nameId === 5) {
+    let containsTirmidhiCombined = false;
+    sunnah.forEach(item => {
+      if (item && item.reference === "Jāmiʿ at-Tirmidhī 3383 (Grade: Hasan)" && item.simpleMeaning && item.simpleMeaning.includes("Sahih al-Bukhari")) {
+        containsTirmidhiCombined = true;
+      }
+    });
+
+    if (containsTirmidhiCombined) {
+      const newSunnah = [];
+      sunnah.forEach(item => {
+        if (item && item.reference === "Jāmiʿ at-Tirmidhī 3383 (Grade: Hasan)") {
+          newSunnah.push({
+            reference: "Jāmiʿ at-Tirmidhī 3383 (Grade: Hasan)",
+            simpleMeaning: "The Prophet ﷺ said the best dhikr is La ilaha illallah. The best words you can say are the very words that declare Al-Ilah.",
+            arabic: ""
+          });
+          newSunnah.push({
+            reference: "Sahih al-Bukhari 6423 (Grade: Sahih)",
+            simpleMeaning: "Whoever says La ilaha illallah sincerely from the heart will enter Paradise. Sincere belief in Al-Ilah is the key to Jannah.",
+            arabic: ""
+          });
+        } else {
+          newSunnah.push(item);
+        }
+      });
+      sunnah = newSunnah;
+    } else {
+      sunnah = sunnah.map(item => {
+        if (item && item.reference === "Jāmiʿ at-Tirmidhī 3383 (Grade: Hasan)" && item.simpleMeaning && !item.simpleMeaning.includes("best dhikr")) {
+          return {
+            ...item,
+            reference: "Sahih al-Bukhari 6423 (Grade: Sahih)"
+          };
+        }
+        return item;
+      });
+    }
+  }
+
   return {
     ...name,
     number: nameId,
@@ -82,7 +123,7 @@ const withCategory = (name) => {
     gifts: name.benefits || name.gifts || [],
     practicalWays: practicalWays || [],
     quranic: name.quran || name.quranic || [],
-    sunnah: name.hadith || name.sunnah || [],
+    sunnah: sunnah,
     scholarlyViews: name.scholarlyViews || [],
     category: NUMBER_TO_CATEGORY[nameId] || 'mercy',
   };
@@ -293,7 +334,7 @@ export const NamesProvider = ({ children }) => {
     try {
       setLoading(true);
       const [cachedNames, cachedProgress, cachedStreak] = await Promise.all([
-        AsyncStorage.getItem('names_cache'),
+        AsyncStorage.getItem('names_cache_v14'),
         AsyncStorage.getItem('progress_cache'),
         AsyncStorage.getItem('streak_details_cache'),
       ]);
@@ -309,7 +350,7 @@ export const NamesProvider = ({ children }) => {
       if (!hasCache) {
         const fallback = ENHANCED_NAMES.map(withCategory);
         setNames(fallback);
-        AsyncStorage.setItem('names_cache', JSON.stringify(fallback)).catch(() => {});
+        AsyncStorage.setItem('names_cache_v14', JSON.stringify(fallback)).catch(() => {});
       }
       if (cachedProgress) {
         const { learned, mastered, streak: s, revisits, reflections } = JSON.parse(cachedProgress);
@@ -347,7 +388,7 @@ export const NamesProvider = ({ children }) => {
       if (namesRes.data?.success && Array.isArray(namesRes.data?.data)) {
         const enriched = namesRes.data.data.map(withCategory);
         setNames(enriched);
-        AsyncStorage.setItem('names_cache', JSON.stringify(enriched));
+        AsyncStorage.setItem('names_cache_v14', JSON.stringify(enriched));
       }
 
       if (progressRes.data?.success && progressRes.data?.data) {

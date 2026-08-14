@@ -584,7 +584,7 @@ const NamesScreen = ({ navigation, route }) => {
         <View style={styles.cardTextArea}>
           <Text style={[styles.arabic, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>{item.arabic}</Text>
           <Text style={[styles.trans, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>{item.transliteration}</Text>
-          <Text style={[styles.meaning, { color: isDark ? '#B0BEC5' : '#555555' }]}>{item.meaning}</Text>
+          <Text style={[styles.meaning, { color: isDark ? '#E8EDF2' : '#334155', fontWeight: '500' }]}>{item.shortMeaning || item.meaning}</Text>
         </View>
 
         {/* Book holder */}
@@ -1265,7 +1265,7 @@ const styles = StyleSheet.create({
 
   bookmarkRibbon: { position: 'absolute', top: hs(-5), left: rs(15), width: rs(50), height: hs(66), zIndex: 10 },
   flagImage: { width: '100%', height: '100%' },
-  bookmarkTextOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', paddingBottom: hs(8) },
+  bookmarkTextOverlay: { position: 'absolute', top: hs(10), left: 0, right: 0, alignItems: 'center' },
   ribbonText: { color: '#FFF', fontSize: rs(16), fontWeight: '700', fontStyle: 'italic' },
 
   categoryPill: { position: 'absolute', top: 0, right: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(14), paddingVertical: hs(8), borderTopLeftRadius: 0, borderTopRightRadius: rs(16), borderBottomLeftRadius: rs(20), borderBottomRightRadius: 0, zIndex: 10 },

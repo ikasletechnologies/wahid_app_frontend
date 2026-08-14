@@ -93,7 +93,7 @@ const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0, isFavorite, 
           </View>
         </View>
 
-        <Text style={[styles.meaningText, { color: isDark ? '#94A3B8' : '#7E8B99' }]} numberOfLines={1}>
+        <Text style={[styles.meaningText, { color: isDark ? '#C5F2F7' : '#334155', fontWeight: '500' }]} numberOfLines={1}>
           {name.meaning || name.en}
         </Text>
       </View>
