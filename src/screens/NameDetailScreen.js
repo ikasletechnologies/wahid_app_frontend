@@ -600,7 +600,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       setKeyboardHeight(e.endCoordinates.height);
       if (currentStep?.type === 'reflection') {
         setTimeout(() => {
-          scrollViewRef.current?.scrollToEnd({ animated: true });
+          scrollViewRef.current?.scrollToEnd?.({ animated: true });
         }, 50);
       }
     });
@@ -642,7 +642,6 @@ const NameDetailScreen = ({ route, navigation }) => {
   }, [currentStepIndex, steps.length, goToStep, triggerFlip]);
 
   const goPrev = useCallback(() => {
-    setIsPaused(false);
     const currentStep = steps[currentStepIndex];
     if (!currentStep) return;
 
@@ -929,7 +928,7 @@ const NameDetailScreen = ({ route, navigation }) => {
           borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#F0F4F8',
           backgroundColor: isDark ? '#162331' : '#FFFFFF',
         }]}>
-          <ScrollView style={{ flex: 1, width: '100%' }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingBottom: hs(20) }} showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
+          <View style={{ width: '100%', paddingBottom: hs(20), justifyContent: 'center' }}>
             {/* Section badge row with flanking ornaments */}
             <View style={styles.sectionBadgeRow}>
               <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#A4D0CB' }]} />
@@ -953,33 +952,33 @@ const NameDetailScreen = ({ route, navigation }) => {
             <View style={styles.introIconArea}>
               <View style={styles.svgRingWrapper}>
                 <Animated.View style={{ transform: [{ rotate: spinRotation }] }}>
-                  <Svg width={rs(154)} height={rs(154)} viewBox="0 0 154 154">
+                  <Svg width={rs(134)} height={rs(134)} viewBox="0 0 134 134">
                     {/* Background thin circle */}
                     <SvgCircle
-                      cx="77"
-                      cy="77"
-                      r="75"
+                      cx="67"
+                      cy="67"
+                      r="65"
                       stroke={isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 173, 193, 0.12)'}
                       strokeWidth="1.2"
                       fill="transparent"
                     />
                     {/* Progress arc */}
                     <SvgCircle
-                      cx="77"
-                      cy="77"
-                      r="75"
+                      cx="67"
+                      cy="67"
+                      r="65"
                       stroke="#00ADC1"
                       strokeWidth="1.5"
                       fill="transparent"
-                      strokeDasharray={`${2 * Math.PI * 75}`}
-                      strokeDashoffset={`${2 * Math.PI * 75 * (1 - ringProgress)}`}
+                      strokeDasharray={`${2 * Math.PI * 65}`}
+                      strokeDashoffset={`${2 * Math.PI * 65 * (1 - ringProgress)}`}
                       strokeLinecap="round"
-                      transform="rotate(-90 77 77)"
+                      transform="rotate(-90 67 67)"
                     />
                     {/* Progress Dot */}
                     <SvgCircle
-                      cx={`${77 + 75 * Math.cos(ringProgress * 2 * Math.PI - Math.PI / 2)}`}
-                      cy={`${77 + 75 * Math.sin(ringProgress * 2 * Math.PI - Math.PI / 2)}`}
+                      cx={`${67 + 65 * Math.cos(ringProgress * 2 * Math.PI - Math.PI / 2)}`}
+                      cy={`${67 + 65 * Math.sin(ringProgress * 2 * Math.PI - Math.PI / 2)}`}
                       r="3.5"
                       fill="#00ADC1"
                     />
@@ -1017,13 +1016,17 @@ const NameDetailScreen = ({ route, navigation }) => {
             </View>
 
             {/* Start reading indicator */}
-            <View style={{ marginTop: hs(24), alignItems: 'center' }}>
+            <TouchableOpacity 
+              style={{ marginTop: hs(24), alignItems: 'center' }} 
+              activeOpacity={0.8}
+              onPress={handleNext}
+            >
               <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#00ADC1', paddingHorizontal: rs(20), paddingVertical: hs(10), borderRadius: rs(20) }}>
                 <Text style={{ color: '#FFFFFF', fontSize: rs(14), fontWeight: '700', marginRight: rs(8) }}>Start Reading</Text>
                 <Ionicons name="arrow-forward" size={rs(16)} color="#FFFFFF" />
               </View>
-            </View>
-          </ScrollView>
+            </TouchableOpacity>
+          </View>
 
         </View>
       </View>
@@ -1238,10 +1241,10 @@ const NameDetailScreen = ({ route, navigation }) => {
                       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                       setReflectionSubStep(prev => prev + 1);
                       setTimeout(() => {
-                        scrollViewRef.current?.scrollToEnd({ animated: true });
+                        scrollViewRef.current?.scrollToEnd?.({ animated: true });
                         // Re-focus after scroll settles
                         setTimeout(() => {
-                          scrollViewRef.current?.scrollToEnd({ animated: true });
+                          scrollViewRef.current?.scrollToEnd?.({ animated: true });
                         }, 300);
                       }, 150);
                     }}
@@ -1495,14 +1498,9 @@ const NameDetailScreen = ({ route, navigation }) => {
                     );
                   })()}
 
-                  <ScrollView
+                  <View
                     ref={scrollViewRef}
-                    style={[styles.scrollArea, { zIndex: 60 }]}
-                    contentContainerStyle={styles.scrollContent}
-                    showsVerticalScrollIndicator={false}
-                    scrollEnabled={true}
-                    bounces={false}
-                    keyboardShouldPersistTaps="handled"
+                    style={[styles.scrollArea, { zIndex: 60 }, styles.scrollContent]}
                   >
                     {isFocusMode && (
                       <TouchableOpacity 
@@ -1523,7 +1521,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                     {currentStep.type === 'reflection' && (
                       <View style={{ height: hs(40) }} />
                     )}
-                  </ScrollView>
+                  </View>
 
                   {/* ── Bottom Navigation ── */}
                   <View style={[styles.bottomNavWrapper, { zIndex: 10 }]}>
@@ -1543,6 +1541,30 @@ const NameDetailScreen = ({ route, navigation }) => {
 
                     {/* Pause */}
                     <View style={styles.pauseWrap}>
+                      {!isDark && (
+                        <View style={{ position: 'absolute', top: -hs(12), width: rs(80), height: rs(80), alignItems: 'center', justifyContent: 'center', zIndex: 1 }} pointerEvents="none">
+                          <Svg width={rs(80)} height={rs(80)}>
+                            {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => {
+                              const rad = (deg * Math.PI) / 180;
+                              const r1 = rs(20);
+                              const r2 = rs(25);
+                              const center = rs(40);
+                              return (
+                                <Line
+                                  key={i}
+                                  x1={center + r1 * Math.cos(rad)}
+                                  y1={center + r1 * Math.sin(rad)}
+                                  x2={center + r2 * Math.cos(rad)}
+                                  y2={center + r2 * Math.sin(rad)}
+                                  stroke="#FACC15"
+                                  strokeWidth={rs(3.5)}
+                                  strokeLinecap="round"
+                                />
+                              );
+                            })}
+                          </Svg>
+                        </View>
+                      )}
                       <TouchableOpacity onPress={() => setIsPaused(p => !p)} activeOpacity={0.8} style={styles.pauseBtn}>
                         {isDark ? (
                           <View style={{ width: rs(58), height: rs(58), justifyContent: 'center', alignItems: 'center' }}>
@@ -1588,26 +1610,6 @@ const NameDetailScreen = ({ route, navigation }) => {
                           </View>
                         ) : (
                           <View style={{ width: rs(56), height: rs(56), justifyContent: 'center', alignItems: 'center' }}>
-                            <Svg width={rs(56)} height={rs(56)} style={StyleSheet.absoluteFillObject}>
-                              {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => {
-                                const rad = (deg * Math.PI) / 180;
-                                const r1 = rs(21);
-                                const r2 = rs(25);
-                                const center = rs(28);
-                                return (
-                                  <Line
-                                    key={i}
-                                    x1={center + r1 * Math.cos(rad)}
-                                    y1={center + r1 * Math.sin(rad)}
-                                    x2={center + r2 * Math.cos(rad)}
-                                    y2={center + r2 * Math.sin(rad)}
-                                    stroke="#FACC15"
-                                    strokeWidth={rs(2)}
-                                    strokeLinecap="round"
-                                  />
-                                );
-                              })}
-                            </Svg>
                             <View style={{ width: rs(38), height: rs(38), borderRadius: rs(19), backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', shadowColor: '#00ADC1', shadowOpacity: 0.15, shadowRadius: rs(6), shadowOffset: { width: 0, height: 3 }, elevation: 3, borderWidth: 1, borderColor: '#F4F9FA' }}>
                               {isPaused ? (
                                 <Svg width={rs(14)} height={rs(16)} viewBox="0 0 14 16" style={{ marginLeft: rs(3) }}>
@@ -1685,19 +1687,19 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: rs(18), fontWeight: '800', color: '#1A1A1A', marginBottom: hs(12) },
 
   // ── Modern Cards (Glassmorphic / Minimal) ──
-  modernCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: rs(16), borderWidth: 1, borderColor: '#F0F4F8', overflow: 'visible', minHeight: hs(430), paddingBottom: 0 },
-  cardBadgesRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(24), paddingTop: hs(24), zIndex: 2 },
+  modernCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: rs(16), borderWidth: 1, borderColor: '#F0F4F8', overflow: 'visible', minHeight: hs(360), paddingBottom: 0 },
+  cardBadgesRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(24), paddingTop: hs(16), zIndex: 2 },
   badgeCircle: { width: rs(44), height: rs(44), borderRadius: rs(22), justifyContent: 'center', alignItems: 'center', marginRight: rs(12) },
   badgePill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(14), minHeight: rs(34), paddingVertical: hs(6), borderRadius: rs(17) },
   badgePillText: { fontSize: rs(12.5), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: '700' },
   cardHeaderTitleText: { fontSize: rs(18), fontWeight: '700', flexShrink: 1, fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif' },
-  customDividerWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: rs(24), marginVertical: hs(20), zIndex: 2 },
+  customDividerWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: rs(24), marginVertical: hs(12), zIndex: 2 },
   customDividerLine: { flex: 1, height: 1.5 },
   dividerDot: { width: rs(4), height: rs(4), borderRadius: rs(2) },
   textContentWrap: { flex: 1, paddingHorizontal: rs(30), paddingTop: hs(10), paddingBottom: hs(30), alignItems: 'center', justifyContent: 'center', zIndex: 2 },
-  textScrollView: { flex: 1, width: '100%', zIndex: 2, paddingHorizontal: rs(24), paddingBottom: hs(95), justifyContent: 'center' },
+  textScrollView: { width: '100%', zIndex: 2, paddingHorizontal: rs(24), paddingBottom: hs(85), justifyContent: 'center' },
   textScrollContent: { flexGrow: 1, paddingHorizontal: rs(40), paddingTop: hs(10), paddingBottom: hs(40), alignItems: 'center', justifyContent: 'center' },
-  readingText: { fontSize: rs(22), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: '500', textAlign: 'center', lineHeight: rs(36) },
+  readingText: { fontSize: rs(18.5), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: '500', textAlign: 'center', lineHeight: rs(28) },
   bottomGraphicWrap: { position: 'absolute', bottom: 0, left: 0, right: 0, height: hs(80), zIndex: 1 },
   scatterDot: { position: 'absolute', width: rs(4.5), height: rs(4.5), borderRadius: rs(2.5) },
 
@@ -1706,15 +1708,14 @@ const styles = StyleSheet.create({
     width: '100%', borderRadius: rs(16),
     borderWidth: 1, overflow: 'hidden',
     paddingBottom: 0,
-    minHeight: hs(430),
-    maxHeight: hs(560),
+    minHeight: hs(360),
   },
   sectionBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: hs(18),
-    marginBottom: hs(12),
+    paddingTop: hs(12),
+    marginBottom: hs(8),
     width: '100%',
     paddingHorizontal: rs(20),
   },
@@ -1736,22 +1737,22 @@ const styles = StyleSheet.create({
   introIconArea: {
     alignSelf: 'center',
     justifyContent: 'center', alignItems: 'center',
-    marginBottom: hs(12),
+    marginBottom: hs(6),
   },
   svgRingWrapper: {
-    width: rs(154),
-    height: rs(154),
+    width: rs(134),
+    height: rs(134),
     justifyContent: 'center',
     alignItems: 'center',
   },
   introIconCircle: {
     position: 'absolute',
-    width: rs(114), height: rs(114), borderRadius: rs(57),
+    width: rs(94), height: rs(94), borderRadius: rs(47),
     justifyContent: 'center', alignItems: 'center',
     borderWidth: 1,
   },
   introTitleText2: {
-    fontSize: rs(28), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: 'bold',
+    fontSize: rs(23), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: 'bold',
     textAlign: 'center', paddingHorizontal: rs(20),
     letterSpacing: 0.5,
   },
@@ -1762,7 +1763,7 @@ const styles = StyleSheet.create({
   introOrnamentLine: { width: rs(80), height: 1 },
   introOrnamentStar: { fontSize: rs(14), color: '#00ADC1', marginHorizontal: rs(12) },
   introSubtitleText2: {
-    fontSize: rs(15), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: '400',
+    fontSize: rs(13.5), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: '400',
     textAlign: 'center', paddingHorizontal: rs(30),
   },
   introInfoRow: {

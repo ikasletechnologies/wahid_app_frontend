@@ -10,6 +10,7 @@ import { useNames, CATEGORIES } from '../context/NamesContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { useFocusEffect } from '@react-navigation/native';
+import { useFontSettings } from '../context/FontSettingsContext';
 import http from '../config/http';
 import LiquidText from '../components/LiquidText';
 import { COLORS, FONTS, SIZES, SPACE, RADIUS } from '../theme';
@@ -141,6 +142,7 @@ const SURAHS = [
 const HomeScreen = ({ navigation }) => {
   const { user } = useAuth();
   const { colors, isDark } = useAppTheme();
+  const { scaleFontSize } = useFontSettings();
   const { names, learnedIds, masteredIds, streak, refresh, refreshing, categories, draftIds } = useNames();
   const isDraftLimitReached = isNewName && (draftIds?.length >= 5);
 
@@ -529,12 +531,11 @@ const HomeScreen = ({ navigation }) => {
                             <>
                               <Text style={{ fontSize: rs(12), fontFamily: FONTS.arabic, color: isDark ? '#E8EDF2' : '#09B7C9', marginBottom: hs(4) }}>{lastReadName?.arabic || 'الله'}</Text>
                               <Text style={{ fontFamily: FONTS.bold, fontSize: rs(22), color: isDark ? '#E8EDF2' : '#0F172A', lineHeight: rs(26) }}>{lastReadName?.transliteration || 'Allah'}</Text>
-                              <Text style={{ fontFamily: FONTS.medium, fontSize: rs(10), color: isDark ? '#9EAAB8' : '#64748B', marginTop: hs(4) }}>{lastReadName?.meaning || 'The God'}</Text>
                             </>
                           )}
                         </View>
 
-                        <View style={{ width: '90%' }}>
+                        <View style={{ width: '95%' }}>
                           <TouchableOpacity
                             activeOpacity={0.8}
                             onPress={handleBackToReading}
@@ -572,11 +573,16 @@ const HomeScreen = ({ navigation }) => {
                                 style={StyleSheet.absoluteFillObject}
                               />
                               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', zIndex: 1 }}>
-                                <Text style={{ color: '#ffffff', fontSize: rs(13), fontFamily: FONTS.bold, letterSpacing: 0.5 }}>
+                                <Text
+                                  numberOfLines={1}
+                                  adjustsFontSizeToFit
+                                  minimumFontScale={0.75}
+                                  style={{ color: '#ffffff', fontSize: rs(13), fontFamily: FONTS.bold, letterSpacing: 0.5, flex: 1, marginRight: rs(8) }}
+                                >
                                   {isDraftLimitReached ? 'Study Drafts' : (isNewName ? 'Start New Name' : 'Continue Reading')}
                                 </Text>
-                                <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', width: rs(24), height: rs(24), borderRadius: rs(12), justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 2 }}>
-                                  <Ionicons name="arrow-forward" size={rs(14)} color="#ffffff" />
+                                <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', width: scaleFontSize(24), height: scaleFontSize(24), borderRadius: scaleFontSize(12), justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 2, flexShrink: 0 }}>
+                                  <Ionicons name="arrow-forward" size={scaleFontSize(14)} color="#ffffff" />
                                 </View>
                               </View>
                             </LinearGradient>
@@ -1245,7 +1251,7 @@ const styles = StyleSheet.create({
     borderRadius: rs(10),
     paddingVertical: hs(12),
     paddingHorizontal: rs(16),
-    height: hs(180),
+    minHeight: hs(180),
     position: 'relative',
     overflow: 'visible',
   },

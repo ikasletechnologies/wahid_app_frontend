@@ -58,15 +58,15 @@ const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0, isFavorite, 
   return (
     <View style={[styles.container, { backgroundColor: 'transparent' }]}>
       
-      {/* ── HEADER NAVBAR ROW (Back button & Actions safely below notch) ── */}
-      <View style={[styles.topNavRow, { paddingTop: Math.max(insets.top + hs(10), hs(24)) }]}>
-        {/* Back Button */}
-        <TouchableOpacity 
-          style={[styles.backBtn, { backgroundColor: isDark ? '#0F172A' : '#FFFFFF' }]} 
-          activeOpacity={0.8}
+      {/* ── HEADER NAVBAR ROW (Actions safely below notch) ── */}
+      <View style={[styles.topNavRow, { paddingTop: Math.max(insets.top + hs(10), hs(24)), justifyContent: 'space-between' }]}>
+        {/* Left Back Arrow Button (Borderless, clean, no square box) */}
+        <TouchableOpacity
+          style={styles.headerBackBtn}
+          activeOpacity={0.7}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="chevron-back" size={rs(18)} color="#FFFFFF" />
+          <Ionicons name="arrow-back" size={rs(22)} color={isDark ? '#E8EDF2' : teal} />
         </TouchableOpacity>
 
         {/* Right Action Buttons */}
@@ -180,6 +180,12 @@ const styles = StyleSheet.create({
       ios: { shadowColor: '#3CA2A5', shadowOpacity: 0.3, shadowRadius: rs(4), shadowOffset: { width: 0, height: 2 } },
       android: { elevation: 3 },
     }),
+  },
+  headerBackBtn: {
+    width: rs(36),
+    height: rs(36),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   actionsRow: {
     flexDirection: 'row',

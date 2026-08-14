@@ -227,13 +227,17 @@ const NamesListScreen = ({ navigation, route }) => {
         {/* Transliteration + meaning */}
         <View style={styles.textCol}>
           <Text style={[styles.transText, { color: colors.text }]}>{item.transliteration}</Text>
-          <Text style={[styles.meaningText, { color: isDark ? '#64748B' : '#94A3B8' }]}>{item.meaning}</Text>
+          {statusFilter !== 'drafts' && (
+            <Text style={[styles.meaningText, { color: isDark ? '#64748B' : '#94A3B8' }]}>{item.meaning}</Text>
+          )}
         </View>
 
         {/* Arabic */}
-        <Text style={[styles.arabicText, { color: isDark ? '#CBD5E1' : '#334155' }]}>
-          {item.arabic}
-        </Text>
+        {statusFilter !== 'drafts' && (
+          <Text style={[styles.arabicText, { color: isDark ? '#CBD5E1' : '#334155' }]}>
+            {item.arabic}
+          </Text>
+        )}
 
         <Ionicons
           name="chevron-forward"
