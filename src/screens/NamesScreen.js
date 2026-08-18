@@ -1,20 +1,23 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
-import { View, StyleSheet, Dimensions, Animated, PanResponder, Image, ActivityIndicator, TouchableOpacity, Easing, ImageBackground, Modal, ScrollView, StatusBar, Alert } from 'react-native';
+import { View, StyleSheet, Dimensions, Animated, PanResponder, Image, ActivityIndicator, TouchableOpacity, Easing, ImageBackground, Modal, ScrollView, StatusBar, Alert, LayoutAnimation, UIManager, Platform } from 'react-native';
 import Text from '../components/AppText';
 import TextInput from '../components/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, ClipPath, G, Circle } from 'react-native-svg';
-import { useNames } from '../context/NamesContext';
+import { useNames, CATEGORIES } from '../context/NamesContext';
 import { usePlaylist } from '../context/PlaylistContext';
 import { FONTS } from '../theme';
 import TimeBasedBackground from '../components/TimeBasedBackground';
 import ReadingSettingsModal from '../components/ReadingSettingsModal';
+import LiquidText from '../components/LiquidText';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import http from '../config/http';
 import { useAppTheme } from '../context/ThemeContext';
 import { useFocusEffect } from '@react-navigation/native';
+
+// Removed UIManager.setLayoutAnimationEnabledExperimental as it's a no-op in the New Architecture
 
 const { width: SW, height: SH } = Dimensions.get('window');
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
@@ -105,11 +108,17 @@ const NamesScreen = ({ navigation, route }) => {
 
   const [filterVisible, setFilterVisible] = useState(false);
   const [readingSettingsVisible, setReadingSettingsVisible] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState({});
   const [tempCat, setTempCat] = useState('All');
   const [tempStatus, setTempStatus] = useState('All');
   const [tempNumber, setTempNumber] = useState('');
 
   const [totalReadingSeconds, setTotalReadingSeconds] = useState(0);
+
+  const toggleCategory = (id) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedCategories(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -671,133 +680,48 @@ const NamesScreen = ({ navigation, route }) => {
                 </View>
               </View>
 
-              {/* ── PREMIUM PROGRESS CARD ── */}
-              <LinearGradient
-                colors={isDark ? ['#0B1B29', '#08131E'] : ['#F9FCFD', '#F0F8FA']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.progressCard, { 
-                  shadowColor: '#00ADC1',
-                  shadowOffset: { width: 0, height: 6 },
-                  shadowOpacity: isDark ? 0.3 : 0.15,
-                  shadowRadius: 12,
-                  elevation: 6,
-                  borderWidth: 1.5,
-                  borderColor: isDark ? '#1C3A4B' : '#BFECEF',
-                  overflow: 'hidden'
-                }]}
-              >
-                {/* Glossy top overlay */}
-                <LinearGradient
-                  colors={isDark ? ['rgba(0,173,193,0)', 'rgba(0,173,193,0.08)', 'rgba(0,173,193,0)'] : ['rgba(255,255,255,0)', 'rgba(255,255,255,0.6)', 'rgba(255,255,255,0)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={StyleSheet.absoluteFillObject}
-                />
-                
-                {/* Bottom-left stars */}
-                <View style={{ position: 'absolute', left: 0, bottom: 0, width: rs(60), height: hs(60), opacity: 0.5 }} pointerEvents="none">
-                  <Svg width="100%" height="100%" viewBox="0 0 60 60">
-                    <Path d="M 20 28 Q 20 40 32 40 Q 20 40 20 52 Q 20 40 8 40 Q 20 40 20 28 Z" fill={isDark ? 'rgba(0,220,255,0.15)' : 'rgba(0,178,190,0.06)'} />
-                    <Path d="M 45 42 Q 45 48 51 48 Q 45 48 45 54 Q 45 48 39 48 Q 45 48 45 42 Z" fill={isDark ? 'rgba(0,220,255,0.1)' : 'rgba(0,178,190,0.04)'} />
-                  </Svg>
-                </View>
-
-                {/* Right side waves and stars */}
-                <View style={{ position: 'absolute', right: rs(-10), top: 0, bottom: 0, width: rs(160), opacity: 0.2 }} pointerEvents="none">
-                  {/* Outer stroked wave (slowest) */}
-                  <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%' }, {
-                    transform: [
-                      { translateX: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, rs(-2)] }) },
-                      { translateY: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, hs(1)] }) }
-                    ]
-                  }]}>
-                    <Svg width="100%" height="100%" viewBox="0 0 160 150" preserveAspectRatio="none">
-                      <Path d="M 20 150 C 20 110 50 100 70 80 C 90 60 100 40 125 30 C 145 22 155 10 160 0" stroke={isDark ? 'rgba(0,220,255,0.2)' : 'rgba(0,178,190,0.15)'} strokeWidth="3" fill="none" />
-                    </Svg>
-                  </Animated.View>
-
-                  {/* Middle stroked wave (medium) */}
-                  <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%' }, {
-                    transform: [
-                      { translateX: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, rs(-5)] }) },
-                      { translateY: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, hs(-2)] }) }
-                    ]
-                  }]}>
-                    <Svg width="100%" height="100%" viewBox="0 0 160 150" preserveAspectRatio="none">
-                      <Path d="M 45 150 C 45 120 70 110 85 95 C 100 80 115 65 135 55 C 150 48 158 35 160 25" stroke={isDark ? 'rgba(0,220,255,0.15)' : 'rgba(0,178,190,0.1)'} strokeWidth="3" fill="none" />
-                    </Svg>
-                  </Animated.View>
-
-                  {/* Inner filled wave (fastest & stretches) */}
-                  <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%' }, {
-                    transform: [
-                      { scaleX: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }) },
-                      { translateX: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, rs(-8)] }) }
-                    ]
-                  }]}>
-                    <Svg width="100%" height="100%" viewBox="0 0 160 150" preserveAspectRatio="none">
-                      <Defs>
-                        <SvgLinearGradient id="waveGrad" x1="0" y1="0" x2="1" y2="1">
-                          <Stop offset="0" stopColor={isDark ? '#00DCFF' : '#00B2BE'} stopOpacity={isDark ? "0.15" : "0.12"} />
-                          <Stop offset="1" stopColor={isDark ? '#00DCFF' : '#00B2BE'} stopOpacity={isDark ? "0.05" : "0.03"} />
-                        </SvgLinearGradient>
-                      </Defs>
-                      <Path d="M 70 150 C 70 130 90 120 105 105 C 120 90 130 80 145 75 C 155 71 160 60 160 55 L 160 150 Z" fill="url(#waveGrad)" />
-                    </Svg>
-                  </Animated.View>
-
-                  {/* Stars (twinkling) */}
-                  <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%' }, {
-                    opacity: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
-                    transform: [
-                      { scale: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }
-                    ]
-                  }]}>
-                    <Svg width="100%" height="100%" viewBox="0 0 160 150" preserveAspectRatio="none">
-                      <Path d="M 115 20 Q 115 35 130 35 Q 115 35 115 50 Q 115 35 100 35 Q 115 35 115 20 Z" fill={isDark ? 'rgba(0,220,255,0.4)' : 'rgba(0,178,190,0.2)'} />
-                      <Path d="M 145 10 Q 145 20 155 20 Q 145 20 145 30 Q 145 20 135 20 Q 145 20 145 10 Z" fill={isDark ? 'rgba(0,220,255,0.3)' : 'rgba(0,178,190,0.15)'} />
-                      <Path d="M 135 45 Q 135 50 140 50 Q 135 50 135 55 Q 135 50 130 50 Q 135 50 135 45 Z" fill={isDark ? 'rgba(0,220,255,0.2)' : 'rgba(0,178,190,0.1)'} />
-                      <Path d="M 155 35 Q 155 38 158 38 Q 155 38 155 41 Q 155 38 152 38 Q 155 38 155 35 Z" fill={isDark ? 'rgba(0,220,255,0.15)' : 'rgba(0,178,190,0.08)'} />
-                    </Svg>
-                  </Animated.View>
-                </View>
-
-                <View style={styles.progressCardInner}>
-                  {/* Book icon */}
-                  <View style={[styles.progressBookIcon, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F8FA', borderWidth: 1, borderColor: isDark ? 'rgba(0,173,193,0.3)' : '#BFECEF', shadowColor: '#00ADC1', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 }]}>
-                    <Ionicons name="book-outline" size={rs(18)} color="#00ADC1" />
+              {/* ── LEARNING JOURNEY CARD ── */}
+              <View style={{
+                backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF',
+                borderRadius: rs(16),
+                padding: rs(12),
+                marginBottom: rs(20),
+                borderWidth: 1,
+                borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9',
+                shadowColor: '#00ADC1', shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.05, shadowRadius: 10, elevation: 2,
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: rs(12) }}>
+                  <View style={{ width: rs(30), height: rs(30), borderRadius: rs(15), backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#EAF8FA', justifyContent: 'center', alignItems: 'center', marginRight: rs(10) }}>
+                    <Ionicons name="stats-chart" size={rs(16)} color="#00ADC1" />
                   </View>
+                  <Text style={{ color: '#00ADC1', fontFamily: FONTS.bold, fontSize: rs(13), letterSpacing: 0.5, textTransform: 'uppercase' }}>Learning Journey</Text>
+                </View>
 
-                  {/* Stats */}
-                  <View style={styles.progressCardRight}>
-                    <Text style={[styles.progressCardLabel, { color: isDark ? '#9EAAB8' : '#64748B', fontFamily: FONTS.bold, letterSpacing: 0.5, textTransform: 'uppercase', fontSize: rs(10) }]}>Your Progress</Text>
-                    <View style={styles.progressStatsRow}>
-                      <View style={styles.progressStatItem}>
-                        <Text style={[styles.progressStatValue, { color: isDark ? '#E8EDF2' : '#0F172A', fontFamily: FONTS.bold, fontSize: rs(20) }]}>{learnedIds.length}</Text>
-                        <Text style={[styles.progressStatSub, { color: isDark ? '#9EAAB8' : '#64748B' }]}>Names Learned</Text>
-                      </View>
-                      <View style={[styles.progressStatDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : '#E2E8F0' }]} />
-                      <View style={styles.progressStatItem}>
-                        <Text style={[styles.progressStatValue, { color: isDark ? '#E8EDF2' : '#0F172A', fontFamily: FONTS.bold, fontSize: rs(20) }]}>{formattedReadingTime}</Text>
-                        <Text style={[styles.progressStatSub, { color: isDark ? '#9EAAB8' : '#64748B' }]}>Total Learning Time</Text>
-                      </View>
-                      {/* Clock icon standalone */}
-                      <View style={[styles.progressClockCircle, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F8FA', borderWidth: 1, borderColor: isDark ? 'rgba(0,173,193,0.3)' : '#BFECEF' }]}>
-                        <Ionicons name="time-outline" size={rs(16)} color="#00ADC1" />
-                      </View>
-                    </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: rs(12) }}>
+                  <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: rs(2) }}>
+                    <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: isDark ? '#E8EDF2' : '#0F172A', fontFamily: FONTS.bold, fontSize: rs(20), marginBottom: rs(2), textAlign: 'center' }}>{learnedIds.length}</Text>
+                    <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: isDark ? '#94A3B8' : '#64748B', fontFamily: FONTS.medium, fontSize: rs(11), textAlign: 'center' }}>Names Learned</Text>
+                  </View>
+                  <View style={{ width: 1, height: rs(20), backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9' }} />
+                  <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: rs(2) }}>
+                    <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: isDark ? '#E8EDF2' : '#0F172A', fontFamily: FONTS.bold, fontSize: rs(20), marginBottom: rs(2), textAlign: 'center' }}>{formattedReadingTime}</Text>
+                    <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: isDark ? '#94A3B8' : '#64748B', fontFamily: FONTS.medium, fontSize: rs(11), textAlign: 'center' }}>Total Learning Time</Text>
+                  </View>
+                  <View style={{ width: 1, height: rs(20), backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9' }} />
+                  <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: rs(2) }}>
+                    <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: isDark ? '#E8EDF2' : '#0F172A', fontFamily: FONTS.bold, fontSize: rs(20), marginBottom: rs(2), textAlign: 'center' }}>{99 - learnedIds.length}</Text>
+                    <Text numberOfLines={1} adjustsFontSizeToFit style={{ color: isDark ? '#94A3B8' : '#64748B', fontFamily: FONTS.medium, fontSize: rs(11), textAlign: 'center' }}>To Go</Text>
                   </View>
                 </View>
 
-                {/* Motivation pill */}
-                <View
-                  style={[styles.motivationPill, { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#EAF8FA', borderWidth: 1, borderColor: isDark ? 'rgba(0,173,193,0.2)' : '#D6F2F5', shadowColor: '#00ADC1', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3 }]}
-                >
-                  <Ionicons name="sparkles" size={rs(12)} color="#00ADC1" style={{ marginRight: rs(6) }} />
-                  <Text style={[styles.motivationText, { color: '#00ADC1', fontFamily: FONTS.medium, letterSpacing: 0.2 }]}>Keep learning, you're doing great!</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ flex: 1, height: rs(8), backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9', borderRadius: rs(4), overflow: 'hidden', marginRight: rs(12) }}>
+                    <View style={{ height: '100%', width: `${(learnedIds.length / 99) * 100}%`, backgroundColor: '#00ADC1', borderRadius: rs(4) }} />
+                  </View>
+                  <Text style={{ color: '#00ADC1', fontFamily: FONTS.bold, fontSize: rs(14) }}>{Math.round((learnedIds.length / 99) * 100)}%</Text>
                 </View>
-              </LinearGradient>
+              </View>
 
               {/* ── ACTION CARDS ROW ── */}
               <View style={styles.actionCardsRow}>
@@ -832,53 +756,88 @@ const NamesScreen = ({ navigation, route }) => {
                   <Ionicons name="chevron-forward" size={rs(16)} color="#F43F5E" />
                 </TouchableOpacity>
 
-                {/* DRAFTS */}
-                <TouchableOpacity
-                  style={[styles.actionCard, { backgroundColor: isDark ? '#0F2027' : '#F8FDFE', shadowColor: isDark ? '#000' : '#B2EBF2', overflow: 'hidden' }]}
-                  activeOpacity={0.85}
-                  onPress={() => navigation.navigate('NamesList', { statusFilter: 'drafts' })}
-                >
-                  <LinearGradient
-                    colors={isDark ? ['#0F2027', '#1A3A4A'] : ['#F8FDFE', '#E1F8FA']}
-                    start={{ x: 0, y: 1 }}
-                    end={{ x: 2.5, y: 0 }}
-                    style={StyleSheet.absoluteFillObject}
-                  />
-                  {/* Decorative bg icon */}
-                  {/* <Animated.View style={[styles.actionCardDecorDraft, {
-                    transform: [
-                      { translateX: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, rs(-12)] }) },
-                      { translateY: waveAnim.interpolate({ inputRange: [0, 1], outputRange: [0, rs(-4)] }) }
-                    ]
-                  }]} pointerEvents="none">
-                    <Ionicons name="document-text" size={rs(52)} color="rgba(139,92,246,0.09)" />
-                  </Animated.View> */}
+              </View>
+            </View>
 
-                  <Ionicons name="document-text-outline" size={rs(24)} color="#8B5CF6" />
-
-                  <View style={styles.actionCardText}>
-                    <Text style={[styles.actionCardTitle, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>Drafts</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={rs(16)} color="#8B5CF6" />
+            {/* ── CATEGORIES SECTION ── */}
+            <View style={{ flex: 1, paddingHorizontal: rs(20), marginTop: rs(16), paddingBottom: rs(80) }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: rs(12) }}>
+                <Text style={{ color: isDark ? '#F0F4F8' : '#0F172A', fontFamily: FONTS.bold, fontSize: rs(18) }}>Categories</Text>
+                <TouchableOpacity onPress={() => setFilterVisible(true)}>
+                  <Ionicons name="filter" size={rs(20)} color="#00ADC1" />
                 </TouchableOpacity>
-
               </View>
+              <ScrollView 
+                style={{ flex: 1 }} 
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: rs(20) }}
+              >
+                {Object.values(CATEGORIES).map((cat) => {
+                  const catNames = names.filter(n => n.category === cat.id);
+                  const learnedInCat = catNames.filter(n => learnedIds.includes(n.number)).length;
+                  const catTotal = catNames.length || 1;
+                  const percent = (learnedInCat / catTotal) * 100;
 
-              {/* ── LEGEND ROW ── */}
-              <View style={styles.legendRow}>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#FFC107' }]} />
-                  <Text style={[styles.legendText, { color: isDark ? '#94A3B8' : '#64748B' }]}>Mastered</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#4CAF50' }]} />
-                  <Text style={[styles.legendText, { color: isDark ? '#94A3B8' : '#64748B' }]}>Learned</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#03B7CE' }]} />
-                  <Text style={[styles.legendText, { color: isDark ? '#94A3B8' : '#64748B' }]}>Remaining</Text>
-                </View>
-              </View>
+                  return (
+                    <TouchableOpacity 
+                      key={cat.id} 
+                      activeOpacity={0.8}
+                      onPress={() => toggleCategory(cat.id)}
+                      style={{
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#F6FCFD',
+                        borderRadius: rs(12),
+                        padding: rs(16),
+                        marginBottom: rs(12),
+                        borderWidth: 1,
+                        borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#E6F4F6',
+                      }}
+                    >
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: rs(12) }}>
+                        <View>
+                          <Text style={{ color: isDark ? '#E8EDF2' : '#0F172A', fontFamily: FONTS.bold, fontSize: rs(14), marginBottom: rs(6) }}>{cat.name}</Text>
+                          <Text style={{ color: isDark ? '#00ADC1' : '#00ADC1', fontSize: rs(13), fontFamily: FONTS.bold }}>{learnedInCat} <Text style={{ color: isDark ? '#94A3B8' : '#94A3B8', fontFamily: FONTS.medium }}>/ {catTotal}</Text></Text>
+                        </View>
+                        <View style={{ width: rs(64), alignItems: 'flex-end' }}>
+                          <LiquidText 
+                            text={`${Math.round(percent)}%`}
+                            percentage={percent}
+                            baseColor={isDark ? 'rgba(255,255,255,0.15)' : '#CBD5E1'}
+                            fillColor="#00ADC1"
+                            textStyle={{ fontFamily: FONTS.bold, fontSize: rs(24) }}
+                          />
+                        </View>
+                      </View>
+                      <View style={{ height: rs(4), backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#E2EEF0', borderRadius: rs(2), overflow: 'hidden' }}>
+                        <View style={{ height: '100%', width: `${percent}%`, backgroundColor: isDark ? '#00ADC1' : '#A0DCE9', borderRadius: rs(2) }} />
+                      </View>
+
+                      {expandedCategories[cat.id] && (
+                        <View style={{ marginTop: rs(16), paddingTop: rs(12), borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : '#E6F4F6' }}>
+                          {catNames.map((item) => (
+                            <TouchableOpacity 
+                              key={item.number} 
+                              activeOpacity={0.7}
+                              onPress={() => navigation.navigate('NameDetail', { name: item, initialStepIndex: 0 })}
+                              style={{ flexDirection: 'row', alignItems: 'center', marginBottom: rs(12) }}
+                            >
+                              <View style={{ flex: 1 }}>
+                                <Text style={{ color: isDark ? '#00ADC1' : '#00ADC1', fontFamily: FONTS.bold, fontSize: rs(18), marginBottom: rs(2) }}>{item.arabic}</Text>
+                                <Text style={{ color: isDark ? '#E8EDF2' : '#0F172A', fontFamily: FONTS.medium, fontSize: rs(14), marginBottom: rs(2) }}>{item.transliteration}</Text>
+                                <Text style={{ color: isDark ? '#94A3B8' : '#64748B', fontFamily: FONTS.regular, fontSize: rs(12) }}>{item.meaning}</Text>
+                              </View>
+                              {masteredIds.includes(item.number) ? (
+                                <Ionicons name="trophy" size={rs(16)} color="#F59E0B" />
+                              ) : learnedIds.includes(item.number) ? (
+                                <Ionicons name="checkmark-circle" size={rs(16)} color="#4CAF50" />
+                              ) : null}
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
             </View>
 
             {/* ── CARD STACK ENGINE ── */}
@@ -1234,7 +1193,7 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: rs(13), color: '#1A1A1A', paddingVertical: 0, height: rs(38) },
   filterCircle: { width: rs(38), height: rs(38), backgroundColor: '#FFFFFF', borderRadius: rs(19), justifyContent: 'center', alignItems: 'center', elevation: 2 },
 
-  stackEngine: { flex: 1, alignItems: 'center', position: 'relative', overflow: 'hidden' },
+  stackEngine: { flex: 1, alignItems: 'center', position: 'relative', overflow: 'hidden', display: 'none' },
 
   baseCardWrapper: {
     position: 'absolute',

@@ -145,9 +145,9 @@ const ReadingSettingsModal = ({ visible, onClose }) => {
             </TouchableOpacity>
           </View>
 
-          {/* Top Category Tabs (Display, Text, Audio) */}
+          {/* Top Category Tabs (Display, Text) */}
           <View style={styles.tabsRow}>
-            {['Display', 'Text', 'Audio'].map((tab) => {
+            {['Display', 'Text'].map((tab) => {
               const selected = activeTab === tab;
               return (
                 <TouchableOpacity
@@ -288,21 +288,6 @@ const ReadingSettingsModal = ({ visible, onClose }) => {
                       </TouchableOpacity>
                     );
                   })}
-                </View>
-              </>
-            )}
-
-            {activeTab === 'Audio' && (
-              <>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Audio & Recitation</Text>
-                <View style={[styles.audioInfoCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : '#F8FAFC', borderColor: isDark ? '#334155' : '#E2E8F0' }]}>
-                  <Ionicons name="volume-medium-outline" size={rs(24)} color={emerald} />
-                  <View style={{ flex: 1, marginLeft: rs(12) }}>
-                    <Text style={[styles.audioTitle, { color: colors.text }]}>High Quality Recitation</Text>
-                    <Text style={[styles.audioDesc, { color: isDark ? '#94A3B8' : '#64748B' }]}>
-                      Enjoy crystal clear pronunciations and melodic recitations for all 99 Names of Allah.
-                    </Text>
-                  </View>
                 </View>
               </>
             )}

@@ -21,6 +21,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import LearnedScreen from '../screens/LearnedScreen';
 import MasteredScreen from '../screens/MasteredScreen';
+import SuggestedNamesScreen from '../screens/SuggestedNamesScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -78,6 +79,11 @@ const AppNavigator = () => {
           <Stack.Screen
             name="NamesList"
             component={NamesListScreen}
+            options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: 'transparent' } }}
+          />
+          <Stack.Screen
+            name="SuggestedNames"
+            component={SuggestedNamesScreen}
             options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: 'transparent' } }}
           />
           <Stack.Screen

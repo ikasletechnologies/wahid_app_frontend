@@ -1498,9 +1498,12 @@ const NameDetailScreen = ({ route, navigation }) => {
                     );
                   })()}
 
-                  <View
+                  <ScrollView
                     ref={scrollViewRef}
-                    style={[styles.scrollArea, { zIndex: 60 }, styles.scrollContent]}
+                    style={[styles.scrollArea, { zIndex: 60 }]}
+                    contentContainerStyle={[styles.scrollContent, { paddingBottom: hs(160) }]}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
                   >
                     {isFocusMode && (
                       <TouchableOpacity 
@@ -1521,7 +1524,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                     {currentStep.type === 'reflection' && (
                       <View style={{ height: hs(40) }} />
                     )}
-                  </View>
+                  </ScrollView>
 
                   {/* ── Bottom Navigation ── */}
                   <View style={[styles.bottomNavWrapper, { zIndex: 10 }]}>

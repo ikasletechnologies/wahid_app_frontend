@@ -11,25 +11,41 @@ const LiquidText = ({ text, percentage, baseColor, fillColor, textStyle }) => {
     Animated.loop(
       Animated.timing(animatedValue, {
         toValue: 1,
-        duration: 1500,
+        duration: 400,
         easing: Easing.linear,
         useNativeDriver: true,
       })
     ).start();
   }, [animatedValue]);
 
-  // The wave SVG has a cycle of 200px. We translate exactly 200px to make it seamless.
+  // The wave SVG has a cycle of 200px. We stretch it horizontally by 2x (so width is 1200).
+  // A 200px cycle becomes 400px wide. We translate exactly 400px to make it seamless.
   const translateX = animatedValue.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, -200],
+    outputRange: [0, -300], // positive value moves it left-to-right
   });
 
   // Calculate height based on font size or line height. We default to 48 (the giantPercentage size).
-  const height = textStyle?.lineHeight || textStyle?.fontSize || 48;
+  // We multiply by 1.3 to ensure the text container is tall enough so the text isn't vertically clipped.
+  const baseHeight = textStyle?.lineHeight || textStyle?.fontSize || 48;
+  const height = baseHeight * 1.3;
   const width = '100%';
   
-  // If completed, fill it completely. If 0, don't show water.
-  const fillHeight = (percentage / 100) * height;
+  // Calculate the vertical bounds of the actual text
+  const textBottomOffset = (height - baseHeight) / 2;
+  
+  // Map percentage strictly to the text's bounding box
+  const targetWaterLevel = textBottomOffset + (percentage / 100) * baseHeight;
+  
+  // Make the wave height 20% for visibility, but since it's stretched horizontally, it won't bounce sharply
+  const waveHeight = baseHeight * 0.20;
+  const waveAverageOffset = waveHeight / 2;
+  
+  // Position the wave so its average height hits the target level
+  const waveBottom = targetWaterLevel - waveAverageOffset;
+  
+  // Solid block fills up to the bottom of the wave
+  const solidBlockHeight = Math.max(0, waveBottom);
 
   return (
     <MaskedView
@@ -50,14 +66,14 @@ const LiquidText = ({ text, percentage, baseColor, fillColor, textStyle }) => {
             <Animated.View
               style={{
                 position: 'absolute',
-                left: 0,
-                bottom: fillHeight - 1, // Subtracted 1 to avoid subpixel gaps between wave and solid block
-                width: 600, // 3 wave cycles
-                height: 12,
+                left: -800, // Start far left to accommodate the stretched width
+                bottom: waveBottom,
+                width: 1200, // Stretched horizontally by 2x to make the wave wider and smoother
+                height: Math.max(0.1, waveHeight),
                 transform: [{ translateX }],
               }}
             >
-              <Svg width="600" height="12" viewBox="0 0 600 12">
+              <Svg width="100%" height="100%" viewBox="0 0 600 12" preserveAspectRatio="none">
                 <Path
                   d="M0,6 Q50,0 100,6 T200,6 T300,6 T400,6 T500,6 T600,6 V12 H0 Z"
                   fill={fillColor}
@@ -72,7 +88,7 @@ const LiquidText = ({ text, percentage, baseColor, fillColor, textStyle }) => {
               left: 0,
               right: 0,
               bottom: 0,
-              height: fillHeight,
+              height: solidBlockHeight,
               backgroundColor: fillColor,
             }}
           />
