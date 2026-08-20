@@ -11,18 +11,19 @@ const LiquidText = ({ text, percentage, baseColor, fillColor, textStyle }) => {
     Animated.loop(
       Animated.timing(animatedValue, {
         toValue: 1,
-        duration: 400,
+        duration: 2200,
         easing: Easing.linear,
         useNativeDriver: true,
       })
     ).start();
   }, [animatedValue]);
 
-  // The wave SVG has a cycle of 200px. We stretch it horizontally by 2x (so width is 1200).
-  // A 200px cycle becomes 400px wide. We translate exactly 400px to make it seamless.
+  // The path repeats every 100 viewBox units. The container renders at 1200px against a
+  // 600-unit viewBox (2x scale), so one repeat = 200px on screen. Translating by an exact
+  // multiple of that keeps the loop seamless — no jump/reset when it restarts.
   const translateX = animatedValue.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, -300], // positive value moves it left-to-right
+    outputRange: [0, -200], // positive value moves it left-to-right
   });
 
   // Calculate height based on font size or line height. We default to 48 (the giantPercentage size).
@@ -37,8 +38,8 @@ const LiquidText = ({ text, percentage, baseColor, fillColor, textStyle }) => {
   // Map percentage strictly to the text's bounding box
   const targetWaterLevel = textBottomOffset + (percentage / 100) * baseHeight;
   
-  // Make the wave height 20% for visibility, but since it's stretched horizontally, it won't bounce sharply
-  const waveHeight = baseHeight * 0.20;
+  // Make the wave height 40% so the ripple actually reads at small text sizes
+  const waveHeight = baseHeight * 0.40;
   const waveAverageOffset = waveHeight / 2;
   
   // Position the wave so its average height hits the target level

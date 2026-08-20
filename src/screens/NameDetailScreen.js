@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { View, StyleSheet, Dimensions, Animated, Easing, Image, TouchableOpacity, StatusBar, PanResponder, ScrollView, TouchableWithoutFeedback, LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform, Keyboard, Share } from 'react-native';
+import { View, StyleSheet, Dimensions, Animated, Easing, Image, TouchableOpacity, StatusBar, PanResponder, ScrollView, TouchableWithoutFeedback, LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform, Keyboard, Share, AppState } from 'react-native';
 import Text from '../components/AppText';
 import TextInput from '../components/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,7 +17,6 @@ import TimeBasedBackground from '../components/TimeBasedBackground';
 import ReadingSettingsModal from '../components/ReadingSettingsModal';
 import http from '../config/http';
 import { FONTS } from '../theme';
-import LottieView from 'lottie-react-native';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 const BASE_W = 393;
@@ -315,9 +314,18 @@ const NameDetailScreen = ({ route, navigation }) => {
   }, [flipAnim]);
 
   const [activeCardTime, setActiveCardTime] = useState(0);
-  const [showCelebration, setShowCelebration] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [appState, setAppState] = useState(AppState.currentState);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      setAppState(nextAppState);
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     const loadTime = async () => {
@@ -332,7 +340,7 @@ const NameDetailScreen = ({ route, navigation }) => {
   }, [name]);
 
   useEffect(() => {
-    if (!isFocused || phase !== 'content' || isPaused) return;
+    if (!isFocused || phase !== 'content' || isPaused || appState !== 'active') return;
     const interval = setInterval(() => {
       setActiveCardTime(prev => {
         const next = prev + 1;
@@ -344,7 +352,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isFocused, name, phase, isPaused]);
+  }, [isFocused, name, phase, isPaused, appState]);
 
   const formatTime = (seconds) => {
     if (seconds < 60) return `${seconds} sec`;
@@ -392,10 +400,9 @@ const NameDetailScreen = ({ route, navigation }) => {
   }, [currentStepIndex, meaningSubStep, giftSubStep, refSubStep, practicalSubStep, scholarSubStep, reflectionSubStep, name, phase, markAsDraft]);
 
   const isBackDisabled = useMemo(() => {
-    if (showCelebration) return true;
     if (currentStepIndex === 0 && meaningSubStep === -1) return true;
     return false;
-  }, [currentStepIndex, meaningSubStep, showCelebration]);
+  }, [currentStepIndex, meaningSubStep]);
 
   // Active reading timer
   useEffect(() => {
@@ -542,7 +549,6 @@ const NameDetailScreen = ({ route, navigation }) => {
   }, [currentStepIndex, safeStepIndex]);
 
   const isSlideDisabled = useMemo(() => {
-    if (showCelebration) return true;
     if (!currentStep) return false;
     if (currentStep.type === 'mastery') {
       const correctAns = name.mcq && name.mcq.length > 0 ? name.mcq[0].ans : 0;
@@ -553,7 +559,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       return countWords(reflection1) < 4 || countWords(reflection2) < 4 || countWords(reflection3) < 4;
     }
     return false;
-  }, [showCelebration, currentStep, masteryDone, masteryAnswer, name.mcq, reflection1, reflection2, reflection3]);
+  }, [currentStep, masteryDone, masteryAnswer, name.mcq, reflection1, reflection2, reflection3]);
 
   // Animations
   const exitAnim = useRef(new Animated.Value(0)).current;
@@ -724,7 +730,7 @@ const NameDetailScreen = ({ route, navigation }) => {
     const nameNumber = name.number || name.id;
     markAsLearned(name.id, reflectionData);
     removeDraft(nameNumber);
-    AsyncStorage.removeItem('last_reading_progress').catch(() => { });
+    // Keep last_reading_progress so HomeScreen can detect completion and automatically promote the next draft
     AsyncStorage.removeItem(`draft_progress_${nameNumber}`).catch(() => { });
     setPhase('journey');
     Animated.parallel([
@@ -732,14 +738,6 @@ const NameDetailScreen = ({ route, navigation }) => {
       Animated.timing(journeyTranslate, { toValue: 0, duration: 400, easing: Easing.out(Easing.ease), useNativeDriver: true }),
     ]).start();
   }, [markAsLearned, name.id, name.number, journeyOpacity, journeyTranslate, removeDraft]);
-
-  const triggerSectionCelebration = useCallback((callback) => {
-    setShowCelebration(true);
-    setTimeout(() => {
-      setShowCelebration(false);
-      callback();
-    }, 1800);
-  }, []);
 
   const handleNext = useCallback(() => {
     setIsPaused(false);
@@ -749,15 +747,6 @@ const NameDetailScreen = ({ route, navigation }) => {
     if (currentStep.type !== 'mastery' && currentStep.type !== 'reflection') {
       setIsFocusMode(true);
     }
-
-    // Celebration only fires when the NEXT step is reflection or mastery
-    const isLastContentStep = () => {
-      const nextIdx = currentStepIndex + 1;
-      if (nextIdx >= steps.length) return false;
-      const t = steps[nextIdx]?.type;
-      return t === 'reflection' || t === 'mastery';
-    };
-    const advance = () => isLastContentStep() ? triggerSectionCelebration(goNext) : goNext();
 
     if (currentStep.type === 'mastery') {
       if (masteryDone && masteryAnswer === ans) {
@@ -783,7 +772,7 @@ const NameDetailScreen = ({ route, navigation }) => {
           setMeaningSubStep(nextStep);
         }
       } else {
-        advance();
+        goNext();
       }
     } else if (currentStep.type === 'quran' || currentStep.type === 'hadith') {
       const sents = getReferenceSentences(currentStep.data);
@@ -799,7 +788,7 @@ const NameDetailScreen = ({ route, navigation }) => {
           setShowArabicVerse(false);
         }
       } else {
-        advance();
+        goNext();
       }
     } else if (currentStep.type === 'gifts') {
       const sents = flattenToSentences(name.gifts);
@@ -811,7 +800,7 @@ const NameDetailScreen = ({ route, navigation }) => {
           setGiftSubStep(prev => prev + 1);
         }
       } else {
-        advance();
+        goNext();
       }
     } else if (currentStep.type === 'practical') {
       const sents = flattenToSentences(name.practicalWays);
@@ -823,7 +812,7 @@ const NameDetailScreen = ({ route, navigation }) => {
           setPracticalSubStep(prev => prev + 1);
         }
       } else {
-        advance();
+        goNext();
       }
     } else if (currentStep.type === 'scholarly') {
       const sents = flattenToSentences(name.scholarlyViews);
@@ -835,12 +824,12 @@ const NameDetailScreen = ({ route, navigation }) => {
           setScholarSubStep(prev => prev + 1);
         }
       } else {
-        advance();
+        goNext();
       }
     } else {
       goNext();
     }
-  }, [goJourney, currentStep.type, masteryDone, masteryAnswer, name.mcq, triggerSectionCelebration, goNext, currentStepIndex, steps, refSubStep, giftSubStep, practicalSubStep, scholarSubStep, name.gifts, name.practicalWays, name.scholarlyViews, reflection1, reflection2, reflection3, meaningSubStep, name, currentStep.data, triggerFlip]);
+  }, [goJourney, currentStep.type, masteryDone, masteryAnswer, name.mcq, goNext, refSubStep, giftSubStep, practicalSubStep, scholarSubStep, name.gifts, name.practicalWays, name.scholarlyViews, reflection1, reflection2, reflection3, meaningSubStep, name, currentStep.data, triggerFlip]);
 
 
 
@@ -855,7 +844,7 @@ const NameDetailScreen = ({ route, navigation }) => {
     </Svg>
   );
 
-  const renderReadingCard = ({ title, text, badgeIcon, scholarName, scholarWork, customContent, scrollEnabled = false }) => (
+  const renderReadingCard = ({ title, text, badgeIcon, scholarName, scholarWork, customContent, scrollEnabled = false, currentPage = 1, totalPages = 1 }) => (
     <View style={styles.tabContentContainer}>
       <View style={[styles.modernCard, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', borderColor: isDark ? '#334155' : '#F0F4F8' }]}>
 
@@ -879,7 +868,20 @@ const NameDetailScreen = ({ route, navigation }) => {
           <View style={[styles.dividerDot, { backgroundColor: '#16858A', marginLeft: rs(4) }]} />
           <View style={[styles.customDividerLine, { backgroundColor: isDark ? '#334155' : '#D1E8E6', marginLeft: rs(6), marginRight: rs(12) }]} />
           
-          <DecorativeFlower color="#16858A" />
+          <View style={{
+            backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB',
+            borderColor: '#B2E8EE',
+            borderWidth: 1,
+            borderRadius: rs(10),
+            paddingHorizontal: rs(10),
+            paddingVertical: hs(2),
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+            <Text style={{ fontFamily: FONTS.bold, fontSize: rs(11), color: '#00ADC1' }}>
+              {currentPage} / {totalPages}
+            </Text>
+          </View>
           
           <View style={[styles.customDividerLine, { backgroundColor: isDark ? '#334155' : '#D1E8E6', marginLeft: rs(12), marginRight: rs(6) }]} />
           <View style={[styles.dividerDot, { backgroundColor: '#16858A', marginRight: rs(4) }]} />
@@ -928,26 +930,21 @@ const NameDetailScreen = ({ route, navigation }) => {
           borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#F0F4F8',
           backgroundColor: isDark ? '#162331' : '#FFFFFF',
         }]}>
-          <View style={{ width: '100%', paddingBottom: hs(20), justifyContent: 'center' }}>
-            {/* Section badge row with flanking ornaments */}
-            <View style={styles.sectionBadgeRow}>
-              <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#A4D0CB' }]} />
-              <Text style={[styles.badgeStar, { color: isDark ? 'rgba(0,173,193,0.4)' : '#16858A' }]}>✦</Text>
-              <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#A4D0CB' }]} />
-              
-              <View style={[styles.sectionBadge, {
-                backgroundColor: isDark ? 'rgba(0, 173, 193, 0.08)' : '#F0FAFB',
-                borderColor: isDark ? 'rgba(0, 173, 193, 0.25)' : '#16858A',
-                borderWidth: 1,
-              }]}>
-                <Text style={[styles.sectionBadgeText, { color: isDark ? '#4CD5E8' : '#16858A', fontWeight: '800' }]}>SECTION {sectionNum} OF {totalSections}</Text>
-              </View>
-              
-              <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#A4D0CB' }]} />
-              <Text style={[styles.badgeStar, { color: isDark ? 'rgba(0,173,193,0.4)' : '#16858A' }]}>✦</Text>
-              <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#A4D0CB' }]} />
-            </View>
+          {/* Section badge row with flanking ornaments - ALWAYS FIXED ON TOP */}
+          <View style={[styles.sectionBadgeRow, { paddingTop: hs(16) }]}>
+            <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#A4D0CB' }]} />
+            <Text style={[styles.badgeStar, { color: isDark ? 'rgba(0,173,193,0.4)' : '#16858A' }]}>✦</Text>
+            <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#A4D0CB' }]} />
+            
+            <Text style={[styles.sectionBadgeText, { color: isDark ? '#4CD5E8' : '#16858A', fontWeight: '800', marginHorizontal: rs(10) }]}>SECTION {sectionNum} OF {totalSections}</Text>
+            
+            <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#A4D0CB' }]} />
+            <Text style={[styles.badgeStar, { color: isDark ? 'rgba(0,173,193,0.4)' : '#16858A' }]}>✦</Text>
+            <View style={[styles.badgeLine, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#A4D0CB' }]} />
+          </View>
 
+          {/* Centered Cover Content */}
+          <View style={{ flex: 1, width: '100%', justifyContent: 'center', paddingBottom: hs(24) }}>
             {/* Icon area with SVG Progress Ring */}
             <View style={styles.introIconArea}>
               <View style={styles.svgRingWrapper}>
@@ -1049,7 +1046,7 @@ const NameDetailScreen = ({ route, navigation }) => {
     }
     const sentences = getMeaningSentences(name);
     const currentSentence = sentences[meaningSubStep] || '';
-    return renderReadingCard({ title: 'Simple Meaning', text: currentSentence, badgeIcon: 'book-outline' });
+    return renderReadingCard({ title: 'Simple Meaning', text: currentSentence, badgeIcon: 'book-outline', currentPage: meaningSubStep + 1, totalPages: sentences.length });
   };
 
   const renderReference = (refDataArray, type) => {
@@ -1079,7 +1076,7 @@ const NameDetailScreen = ({ route, navigation }) => {
     const refData = currentSent.refData;
 
     if (currentSent.type === 'string') {
-      return renderReadingCard({ title, text: currentSent.text, badgeIcon: 'library-outline' });
+      return renderReadingCard({ title, text: currentSent.text, badgeIcon: 'library-outline', currentPage: refSubStep + 1, totalPages: sents.length });
     }
 
     const customContent = (
@@ -1128,7 +1125,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       </View>
     );
 
-    return renderReadingCard({ title, customContent, badgeIcon: 'library-outline', scrollEnabled: showArabicVerse });
+    return renderReadingCard({ title, customContent, badgeIcon: 'library-outline', scrollEnabled: showArabicVerse, currentPage: refSubStep + 1, totalPages: sents.length });
   };
 
   const renderGifts = () => {
@@ -1145,7 +1142,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       });
     }
     const currentGift = sents[giftSubStep] || '';
-    return renderReadingCard({ title: 'The Gift of This Name', text: currentGift, badgeIcon: 'gift-outline' });
+    return renderReadingCard({ title: 'The Gift of This Name', text: currentGift, badgeIcon: 'gift-outline', currentPage: giftSubStep + 1, totalPages: sents.length });
   };
 
   const renderPractical = () => {
@@ -1162,7 +1159,7 @@ const NameDetailScreen = ({ route, navigation }) => {
       });
     }
     const way = sents[practicalSubStep] || '';
-    return renderReadingCard({ title: 'How To Live With This Name', text: way, badgeIcon: 'compass-outline' });
+    return renderReadingCard({ title: 'How To Live With This Name', text: way, badgeIcon: 'compass-outline', currentPage: practicalSubStep + 1, totalPages: sents.length });
   };
 
   const renderScholarly = () => {
@@ -1180,7 +1177,7 @@ const NameDetailScreen = ({ route, navigation }) => {
     }
     const viewText = sents[scholarSubStep] || '';
     if (!viewText) return null;
-    return renderReadingCard({ title: 'Scholarly View', text: `"${viewText}"`, badgeIcon: 'school-outline' });
+    return renderReadingCard({ title: 'Scholarly View', text: `"${viewText}"`, badgeIcon: 'school-outline', currentPage: scholarSubStep + 1, totalPages: sents.length });
   };
 
   const renderReflection = () => {
@@ -1501,7 +1498,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                   <ScrollView
                     ref={scrollViewRef}
                     style={[styles.scrollArea, { zIndex: 60 }]}
-                    contentContainerStyle={[styles.scrollContent, { paddingBottom: hs(160) }]}
+                    contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                   >
@@ -1512,7 +1509,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                         onPress={() => setIsFocusMode(false)} 
                       />
                     )}
-                    <Animated.View style={{ opacity: contentOpacity, transform: [{ translateY: contentTranslateY }, { rotateY: flipAnim.interpolate({ inputRange: [-90, 0, 90], outputRange: ['-90deg', '0deg', '90deg'] }) }] }}>
+                    <Animated.View style={{ flex: 1, opacity: contentOpacity, transform: [{ translateY: contentTranslateY }, { rotateY: flipAnim.interpolate({ inputRange: [-90, 0, 90], outputRange: ['-90deg', '0deg', '90deg'] }) }] }}>
                       {currentStep.type === 'meaning' && renderMeaning()}
                       {(currentStep.type === 'quran' || currentStep.type === 'hadith') && renderReference(currentStep.data, currentStep.type)}
                       {currentStep.type === 'gifts' && renderGifts()}
@@ -1529,8 +1526,9 @@ const NameDetailScreen = ({ route, navigation }) => {
                   {/* ── Bottom Navigation ── */}
                   <View style={[styles.bottomNavWrapper, { zIndex: 10 }]}>
                   <View style={[styles.bottomNavInner, { 
-                    backgroundColor: isDark ? '#141D2B' : '#FFFFFF',
-                    shadowColor: isDark ? '#000000' : '#00ADC1',
+                    backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+                    borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#DCEFF2',
+                    shadowColor: '#000000',
                   }]}>
                     {/* Previous */}
                     <TouchableOpacity
@@ -1545,13 +1543,13 @@ const NameDetailScreen = ({ route, navigation }) => {
                     {/* Pause */}
                     <View style={styles.pauseWrap}>
                       {!isDark && (
-                        <View style={{ position: 'absolute', top: -hs(12), width: rs(80), height: rs(80), alignItems: 'center', justifyContent: 'center', zIndex: 1 }} pointerEvents="none">
-                          <Svg width={rs(80)} height={rs(80)}>
+                        <View style={{ position: 'absolute', top: -hs(6), width: rs(70), height: rs(70), alignItems: 'center', justifyContent: 'center', zIndex: 1 }} pointerEvents="none">
+                          <Svg width={rs(70)} height={rs(70)}>
                             {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => {
                               const rad = (deg * Math.PI) / 180;
-                              const r1 = rs(20);
-                              const r2 = rs(25);
-                              const center = rs(40);
+                              const r1 = rs(17);
+                              const r2 = rs(22);
+                              const center = rs(35);
                               return (
                                 <Line
                                   key={i}
@@ -1646,18 +1644,6 @@ const NameDetailScreen = ({ route, navigation }) => {
               </KeyboardAvoidingView>
             </SafeAreaView>
 
-            {/* Section Celebration Overlay */}
-            {showCelebration && (
-              <View style={[StyleSheet.absoluteFillObject, { zIndex: 9999, elevation: 9999 }]} pointerEvents="none">
-                <LottieView
-                  source={require('../../assets/animation/celebration.json')}
-                  autoPlay
-                  loop={false}
-                  style={{ width: '100%', height: '100%' }}
-                  resizeMode="cover"
-                />
-              </View>
-            )}
           </>
         )}
       </TimeBasedBackground>
@@ -1671,7 +1657,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'transparent', borderTopLeftRadius: rs(36), borderTopRightRadius: rs(36), overflow: 'hidden' },
+  root: { flex: 1, minHeight: SH, backgroundColor: 'transparent', borderTopLeftRadius: rs(36), borderTopRightRadius: rs(36), overflow: 'hidden' },
 
   // ── Navigation ──
   navSection: { marginTop: hs(16), marginBottom: hs(24), alignItems: 'center' },
@@ -1684,13 +1670,13 @@ const styles = StyleSheet.create({
 
   // ── Content ──
   scrollArea: { flex: 1 },
-  scrollContent: { paddingHorizontal: rs(20), paddingTop: hs(10) },
-  tabContentContainer: { width: '100%' },
+  scrollContent: { flexGrow: 1, paddingHorizontal: rs(16), paddingTop: hs(6), paddingBottom: hs(40) },
+  tabContentContainer: { width: '100%', flex: 1 },
   mainTitle: { fontSize: rs(20), fontWeight: '800', color: '#1A1A1A', marginBottom: hs(24) },
   sectionTitle: { fontSize: rs(18), fontWeight: '800', color: '#1A1A1A', marginBottom: hs(12) },
 
   // ── Modern Cards (Glassmorphic / Minimal) ──
-  modernCard: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: rs(16), borderWidth: 1, borderColor: '#F0F4F8', overflow: 'visible', minHeight: hs(360), paddingBottom: 0 },
+  modernCard: { flex: 1, width: '100%', backgroundColor: '#FFFFFF', borderRadius: rs(16), borderWidth: 1, borderColor: '#F0F4F8', overflow: 'visible', paddingBottom: 0 },
   cardBadgesRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(24), paddingTop: hs(16), zIndex: 2 },
   badgeCircle: { width: rs(44), height: rs(44), borderRadius: rs(22), justifyContent: 'center', alignItems: 'center', marginRight: rs(12) },
   badgePill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(14), minHeight: rs(34), paddingVertical: hs(6), borderRadius: rs(17) },
@@ -1700,7 +1686,7 @@ const styles = StyleSheet.create({
   customDividerLine: { flex: 1, height: 1.5 },
   dividerDot: { width: rs(4), height: rs(4), borderRadius: rs(2) },
   textContentWrap: { flex: 1, paddingHorizontal: rs(30), paddingTop: hs(10), paddingBottom: hs(30), alignItems: 'center', justifyContent: 'center', zIndex: 2 },
-  textScrollView: { width: '100%', zIndex: 2, paddingHorizontal: rs(24), paddingBottom: hs(85), justifyContent: 'center' },
+  textScrollView: { flex: 1, width: '100%', zIndex: 2, paddingHorizontal: rs(24), paddingBottom: hs(30), justifyContent: 'center' },
   textScrollContent: { flexGrow: 1, paddingHorizontal: rs(40), paddingTop: hs(10), paddingBottom: hs(40), alignItems: 'center', justifyContent: 'center' },
   readingText: { fontSize: rs(18.5), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: '500', textAlign: 'center', lineHeight: rs(28) },
   bottomGraphicWrap: { position: 'absolute', bottom: 0, left: 0, right: 0, height: hs(80), zIndex: 1 },
@@ -1708,10 +1694,10 @@ const styles = StyleSheet.create({
 
   // ── Intro Cards (Section Covers) ──
   introCard2: {
+    flex: 1,
     width: '100%', borderRadius: rs(16),
     borderWidth: 1, overflow: 'hidden',
     paddingBottom: 0,
-    minHeight: hs(360),
   },
   sectionBadgeRow: {
     flexDirection: 'row',
@@ -1786,7 +1772,7 @@ const styles = StyleSheet.create({
   // ── Bottom Navigation ──
   bottomNavWrapper: {
     width: '100%',
-    paddingHorizontal: rs(24),
+    paddingHorizontal: rs(16),
     paddingTop: hs(6),
     paddingBottom: Platform.OS === 'ios' ? hs(24) : hs(16),
   },
@@ -1794,16 +1780,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: rs(20),
-    paddingHorizontal: rs(12),
-    paddingVertical: hs(6),
+    borderRadius: rs(14),
+    paddingHorizontal: rs(10),
+    height: hs(78),
     borderWidth: 1,
-    borderColor: '#F0F4F8',
-    shadowColor: '#00ADC1',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: -2 },
-    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   squircleNavBtn: {
     width: rs(34), height: rs(34),
@@ -1867,11 +1852,11 @@ const styles = StyleSheet.create({
   refDividerWrap: { alignItems: 'center', marginVertical: hs(20) },
   goldDivider: { width: rs(140), height: hs(12), opacity: 0.9 },
   fadeInBlock: { width: '100%' },
-  refBadgeRow: { marginBottom: hs(14) },
-  refBadgePill: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: rs(12), paddingVertical: hs(5), borderRadius: rs(20), borderWidth: 1 },
+  refBadgeRow: { marginBottom: hs(24), width: '100%', alignItems: 'center' },
+  refBadgePill: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', paddingHorizontal: rs(12), paddingVertical: hs(5), borderRadius: rs(20), borderWidth: 1 },
   refBadgeText: { fontSize: rs(12), fontWeight: '700' },
-  refSectionLabel: { fontSize: rs(11), fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: hs(10), color: '#00ADC1' },
-  seeArabicBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: rs(14), paddingVertical: hs(8), borderRadius: rs(20), borderWidth: 1, marginBottom: hs(12) },
+  refSectionLabel: { fontSize: rs(11), fontWeight: '800', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: hs(10), color: '#00ADC1', textAlign: 'center', alignSelf: 'center' },
+  seeArabicBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', paddingHorizontal: rs(14), paddingVertical: hs(8), borderRadius: rs(20), borderWidth: 1, marginTop: hs(24), marginBottom: hs(12) },
   seeArabicBtnText: { fontSize: rs(13), fontWeight: '700', color: '#00ADC1' },
   arabicVerseBox: { borderRadius: rs(12), borderWidth: 1, padding: rs(16), marginTop: hs(4) },
   modernArabicText: { fontSize: rs(20), fontWeight: '700', fontFamily: FONTS.arabicBold, textAlign: 'right', lineHeight: rs(38), writingDirection: 'rtl' },

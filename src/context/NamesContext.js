@@ -406,8 +406,27 @@ export const NamesProvider = ({ children }) => {
           setReadingTimeToday(readingTimeToday);
           AsyncStorage.setItem(`reading_time_${todayStr}`, String(readingTimeToday)).catch(() => {});
         }
-        if (lastReadName !== undefined && lastReadStep !== undefined) {
-           AsyncStorage.setItem('last_reading_progress', JSON.stringify({ nameNumber: lastReadName, stepIndex: lastReadStep })).catch(() => {});
+        if (lastReadName !== undefined && lastReadName !== null && lastReadStep !== undefined && lastReadStep !== null) {
+          AsyncStorage.getItem('last_reading_progress').then(saved => {
+            let timestamp = Date.now();
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              if (parsed.nameNumber === lastReadName && parsed.timestamp) {
+                timestamp = parsed.timestamp;
+              }
+            }
+            AsyncStorage.setItem('last_reading_progress', JSON.stringify({
+              nameNumber: lastReadName,
+              stepIndex: lastReadStep,
+              timestamp: timestamp
+            })).catch(() => {});
+          }).catch(() => {
+            AsyncStorage.setItem('last_reading_progress', JSON.stringify({
+              nameNumber: lastReadName,
+              stepIndex: lastReadStep,
+              timestamp: Date.now()
+            })).catch(() => {});
+          });
         }
         AsyncStorage.setItem('progress_cache', JSON.stringify({
           learned: learned || [],

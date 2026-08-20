@@ -26,16 +26,16 @@ const STEP_META = {
 const TrackerLeftLeaf = ({ color }) => (
   <Svg width={rs(12)} height={rs(24)} viewBox="0 0 12 24" style={{ position: 'absolute', left: -rs(16) }}>
     <Path d="M10 2 Q2 12 10 22" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
-    <Path d="M8 6 Q2 4 2 10 Q6 8 8 6" fill={color} opacity={0.8}/>
-    <Path d="M7 13 Q1 11 1 17 Q5 15 7 13" fill={color} opacity={0.8}/>
+    <Path d="M8 6 Q2 4 2 10 Q6 8 8 6" fill={color} opacity={0.8} />
+    <Path d="M7 13 Q1 11 1 17 Q5 15 7 13" fill={color} opacity={0.8} />
   </Svg>
 );
 
 const TrackerRightLeaf = ({ color }) => (
   <Svg width={rs(12)} height={rs(24)} viewBox="0 0 12 24" style={{ position: 'absolute', right: -rs(16) }}>
     <Path d="M2 2 Q10 12 2 22" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
-    <Path d="M4 6 Q10 4 10 10 Q6 8 4 6" fill={color} opacity={0.8}/>
-    <Path d="M5 13 Q11 11 11 17 Q7 15 5 13" fill={color} opacity={0.8}/>
+    <Path d="M4 6 Q10 4 10 10 Q6 8 4 6" fill={color} opacity={0.8} />
+    <Path d="M5 13 Q11 11 11 17 Q7 15 5 13" fill={color} opacity={0.8} />
   </Svg>
 );
 
@@ -56,46 +56,47 @@ const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0, isFavorite, 
   }, [currentStepIndex]);
 
   return (
-    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
-      
-      {/* ── HEADER NAVBAR ROW (Actions safely below notch) ── */}
-      <View style={[styles.topNavRow, { paddingTop: Math.max(insets.top + hs(10), hs(24)), justifyContent: 'space-between' }]}>
-        {/* Left Back Arrow Button (Borderless, clean, no square box) */}
+    <View style={[styles.container, { backgroundColor: 'transparent', paddingTop: hs(10), paddingHorizontal: rs(16) }]}>
+
+      {/* ── UNIFIED HEADER CARD ── */}
+      <View style={[styles.headerCard, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#DCEFF2', overflow: 'hidden' }]}>
+        {/* Curved diagonal background shape on the left */}
+        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+          <Svg width="100%" height="100%" viewBox="0 0 350 54" preserveAspectRatio="none">
+            <Path d="M0 0 L 120 0 Q 80 54 0 54 Z" fill={isDark ? 'rgba(0,173,193,0.1)' : '#EAF8FA'} />
+          </Svg>
+        </View>
+
+        {/* Left: Back button (Squircle style with thick white border) */}
         <TouchableOpacity
-          style={styles.headerBackBtn}
-          activeOpacity={0.7}
+          style={[styles.backBtn, { backgroundColor: '#00ADC1', borderColor: '#FFFFFF' }]}
+          activeOpacity={0.8}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={rs(22)} color={isDark ? '#E8EDF2' : teal} />
+          <Ionicons name="arrow-back" size={rs(18)} color="#FFFFFF" />
         </TouchableOpacity>
 
-        {/* Right Action Buttons */}
-        <View style={styles.actionsRow}>
-          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: isDark ? '#0F172A' : '#FFFFFF' }]} activeOpacity={0.8} onPress={onSettingsPress}>
-            <Ionicons name="text-outline" size={rs(16)} color={teal} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: isDark ? '#0F172A' : '#FFFFFF' }]} activeOpacity={0.8} onPress={onFavoritePress}>
-            <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={rs(16)} color={isFavorite ? "#EF4444" : teal} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: isDark ? '#0F172A' : '#FFFFFF' }]} activeOpacity={0.8} onPress={onSharePress}>
-            <Ionicons name="share-social-outline" size={rs(16)} color={teal} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* ── NAME TITLE AREA (Cleanly separated below top navbar) ── */}
-      <View style={styles.titleArea}>
-        <View style={styles.titleRow}>
-          <Text style={[styles.arabicText, { color: isDark ? '#C5F2F7' : '#11323B' }]}>{name.arabic || name.name}</Text>
-          <View style={[styles.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)' }]} />
-          <View style={styles.englishSection}>
-            <Text style={[styles.translitText, { color: isDark ? '#E8EDF2' : '#11323B' }]}>{name.transliteration}</Text>
+        {/* Center: Name details */}
+        <View style={styles.centerInfo}>
+          <View style={styles.titleTextRow}>
+            <Text style={[styles.arabicHeader, { color: '#00ADC1' }]}>{name.arabic || name.name}</Text>
+            <View style={[styles.headerDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : '#E2E8F0' }]} />
+            <Text style={[styles.translitHeader, { color: isDark ? '#E8EDF2' : '#0F172A' }]}>{name.transliteration}</Text>
           </View>
+          <Text style={[styles.meaningHeader, { color: isDark ? '#94A3B8' : '#64748B' }]} numberOfLines={1}>
+            {name.meaning || name.en}
+          </Text>
         </View>
 
-        <Text style={[styles.meaningText, { color: isDark ? '#C5F2F7' : '#334155', fontWeight: '500' }]} numberOfLines={1}>
-          {name.meaning || name.en}
-        </Text>
+        {/* Right: Actions (Squircle style with light border and shadow) */}
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#F1F5F9' }]} activeOpacity={0.8} onPress={onFavoritePress}>
+            <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={rs(16)} color={isFavorite ? "#EF4444" : '#00ADC1'} />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#F1F5F9' }]} activeOpacity={0.8} onPress={onSharePress}>
+            <Ionicons name="share-social-outline" size={rs(16)} color='#00ADC1' />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* ── STEP TRACKER ── */}
@@ -113,7 +114,7 @@ const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0, isFavorite, 
           {steps.map((step, i) => {
             const meta = STEP_META[step.type] || { label: step.type, icon: 'ellipse-outline' };
             const isActive = i === currentStepIndex;
-            
+
             return (
               <React.Fragment key={i}>
                 <View style={styles.stepItem}>
@@ -125,7 +126,7 @@ const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0, isFavorite, 
                       </View>
                     </View>
                   ) : (
-                    <View style={[styles.inactiveCircle, { 
+                    <View style={[styles.inactiveCircle, {
                       borderColor: isDark ? '#334155' : '#E2E8F0',
                       backgroundColor: isDark ? '#1E293B' : '#FFFFFF'
                     }]}>
@@ -133,9 +134,9 @@ const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0, isFavorite, 
                     </View>
                   )}
                   <Text
-                    style={[styles.stepLabel, { 
-                      color: isActive ? teal : (isDark ? '#64748B' : '#7E8B99'), 
-                      fontWeight: isActive ? '600' : '500' 
+                    style={[styles.stepLabel, {
+                      color: isActive ? teal : (isDark ? '#64748B' : '#7E8B99'),
+                      fontWeight: isActive ? '600' : '500'
                     }]}
                   >
                     {meta.label}
@@ -159,92 +160,93 @@ const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0, isFavorite, 
 const styles = StyleSheet.create({
   container: { width: '100%', paddingBottom: hs(8), alignItems: 'center' },
 
-  // Top Navbar Row (Back button left, Actions right)
-  topNavRow: {
-    width: '100%',
+  headerCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: rs(20),
-    marginBottom: hs(12),
-    zIndex: 10,
+    borderRadius: rs(14),
+    borderWidth: 1,
+    paddingHorizontal: rs(10),
+    height: hs(78),
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: hs(28),
   },
   backBtn: {
-    width: rs(38), height: rs(38),
+    width: rs(38),
+    height: rs(38),
     borderRadius: rs(12),
-    backgroundColor: '#3CA2A5',
-    borderWidth: rs(2),
-    borderColor: '#FFFFFF',
-    justifyContent: 'center', alignItems: 'center',
-    ...Platform.select({
-      ios: { shadowColor: '#3CA2A5', shadowOpacity: 0.3, shadowRadius: rs(4), shadowOffset: { width: 0, height: 2 } },
-      android: { elevation: 3 },
-    }),
-  },
-  headerBackBtn: {
-    width: rs(36),
-    height: rs(36),
+    borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  actionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: rs(10),
-  },
-  actionBtn: {
-    width: rs(36), height: rs(36),
-    borderRadius: rs(12),
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#8E9DAE',
-    shadowOpacity: 0.35,
-    shadowRadius: rs(6),
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 4,
-  },
-
-  // Title Area below navbar
-  titleArea: {
-    width: '100%',
+  centerInfo: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: rs(24),
-    marginBottom: hs(14),
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-  },
-  arabicText: {
-    fontSize: rs(24),
-    fontFamily: FONTS.arabic,
-    fontWeight: '700',
     marginHorizontal: rs(8),
   },
-  divider: {
-    width: 1.5,
-    height: hs(22),
-    marginHorizontal: rs(10),
-  },
-  englishSection: {
+  titleTextRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'flex-start',
   },
-  translitText: { fontSize: rs(18), fontWeight: '700', fontFamily: FONTS.semiBold },
-  meaningText: { fontSize: rs(14), fontWeight: '500', marginTop: hs(4), textAlign: 'center' },
+  arabicHeader: {
+    fontFamily: FONTS.arabic,
+    fontSize: rs(17),
+    fontWeight: '700',
+  },
+  headerDivider: {
+    width: 1,
+    height: hs(14),
+    marginHorizontal: rs(8),
+  },
+  translitHeader: {
+    fontFamily: FONTS.bold,
+    fontSize: rs(14),
+  },
+  meaningHeader: {
+    fontFamily: FONTS.medium,
+    fontSize: rs(11),
+    marginTop: hs(2),
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: rs(8),
+  },
+  actionBtn: {
+    width: rs(34),
+    height: rs(34),
+    borderRadius: rs(10),
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#8E9DAE',
+    shadowOpacity: 0.25,
+    shadowRadius: rs(4),
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
 
   // Step Tracker
   tracker: { width: '100%' },
   trackerContent: {
-    paddingHorizontal: rs(16),
+    paddingHorizontal: rs(-10),
     flexDirection: 'row',
     alignItems: 'flex-start',
+    marginBottom: rs(6),
   },
   stepItem: { alignItems: 'center', width: rs(68) },
-  
+
   inactiveCircle: {
     width: rs(36), height: rs(36),
     borderRadius: rs(18),
@@ -252,7 +254,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     marginBottom: hs(14),
   },
-  
+
   activeOuterRing: {
     width: rs(46), height: rs(46),
     justifyContent: 'center', alignItems: 'center',
@@ -271,13 +273,13 @@ const styles = StyleSheet.create({
     borderRadius: rs(18),
     justifyContent: 'center', alignItems: 'center',
   },
-  
+
   stepLabel: {
     fontSize: rs(9.5),
     textAlign: 'center',
     lineHeight: hs(13),
   },
-  
+
   dashConnectorContainer: {
     width: rs(22),
     alignItems: 'center',

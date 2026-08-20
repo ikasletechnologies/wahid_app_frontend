@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import http from '../config/http';
 import { useAppTheme } from '../context/ThemeContext';
 import { useFocusEffect } from '@react-navigation/native';
+import { useAuth } from '../context/AuthContext';
 
 // Removed UIManager.setLayoutAnimationEnabledExperimental as it's a no-op in the New Architecture
 
@@ -100,6 +101,23 @@ const NamesScreen = ({ navigation, route }) => {
   const { names, loading, learnedIds, masteredIds, revisitCounts, categories, markAsViewed, readingTimeToday, draftIds } = useNames();
   const { favouriteIds } = usePlaylist();
   const { isDark, colors } = useAppTheme();
+  const { user } = useAuth();
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const lastNotifFetchRef = useRef(0);
+
+  const initial = React.useMemo(() => (user?.name || 'Wahid').charAt(0).toUpperCase(), [user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const now = Date.now();
+      if (now - lastNotifFetchRef.current < 30_000) return;
+      lastNotifFetchRef.current = now;
+      http.get('/api/notifications')
+        .then(res => { if (res.data?.success) setUnreadNotifications(res.data.data.unreadCount || 0); })
+        .catch(() => { });
+    }, [])
+  );
+
   const [activeIndex, setActiveIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   // Ref that signals the filteredNames effect to skip card-preservation and
@@ -646,39 +664,42 @@ const NamesScreen = ({ navigation, route }) => {
     { dataIdx: nextIdx, offset: +1 },
   ];
 
+  const bg = isDark ? '#0F172A' : '#F0FBFC';
+  const cardBg = isDark ? '#1E293B' : '#FFFFFF';
+  const borderColor = isDark ? 'rgba(255,255,255,0.08)' : '#E2EEF0';
+
   return (
-    <SafeAreaView style={styles.root} edges={['top']}>
-      <TimeBasedBackground showElements={false}>
-        {({ isNight }) => (
-          <>
-            <StatusBar barStyle={isNight ? "light-content" : "dark-content"} />
-            {/* ── TOP SECTION ── */}
-            <View style={styles.topSection}>
-              {/* ── HEADER ROW ── */}
-              <View style={styles.headerRow}>
-                <View style={styles.headerLeft}>
-                  <View style={styles.headerTitleRow}>
-                    <Text style={[styles.headerTitleText, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>Beautiful Names of Allah</Text>
-                  </View>
-                  <Text style={[styles.headerSubtitleText, { color: isDark ? '#9EAAB8' : '#64748B' }]}>Learn  Reflect  Live By</Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(8) }}>
-                  <TouchableOpacity
-                    style={[styles.headerBookBtn, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F7FA' }]}
-                    onPress={() => setReadingSettingsVisible(true)}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="text-outline" size={rs(16)} color="#00ADC1" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.headerBookBtn, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F7FA' }]}
-                    onPress={() => setFilterVisible(true)}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="list-outline" size={rs(16)} color="#00ADC1" />
-                  </TouchableOpacity>
-                </View>
+    <SafeAreaView style={[styles.root, { backgroundColor: bg }]} edges={['top']}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      {/* ── TOP SECTION ── */}
+      <View style={styles.topSection}>
+        {/* ── HEADER ROW ── */}
+        <View style={styles.headerRow}>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity
+              style={[styles.avatar, { backgroundColor: isDark ? 'rgba(0,173,193,0.15)' : '#E0F8FA' }]}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('Profile')}
+            >
+              <Text style={[styles.avatarText, { color: '#00ADC1' }]}>{initial}</Text>
+            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <View style={styles.headerTitleRow}>
+                <Text style={[styles.headerTitleText, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>Beautiful Names of Allah</Text>
               </View>
+              <Text style={[styles.headerSubtitleText, { color: isDark ? '#9EAAB8' : '#64748B' }]}>Learn  Reflect  Live By</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.bellBtn, { backgroundColor: cardBg, borderColor }]}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('Notifications')}
+          >
+            <Ionicons name="notifications" size={rs(20)} color="#00ADC1" />
+            {unreadNotifications > 0 && <View style={styles.notifDot} />}
+          </TouchableOpacity>
+        </View>
 
               {/* ── LEARNING JOURNEY CARD ── */}
               <View style={{
@@ -728,12 +749,20 @@ const NamesScreen = ({ navigation, route }) => {
 
                 {/* FAVORITES */}
                 <TouchableOpacity
-                  style={[styles.actionCard, { backgroundColor: isDark ? '#0F2027' : '#F8FDFE', shadowColor: isDark ? '#000' : '#B2EBF2', overflow: 'hidden' }]}
+                  style={[
+                    styles.actionCard,
+                    {
+                      backgroundColor: isDark ? '#0B2027' : '#E6F9FA',
+                      borderColor: isDark ? 'rgba(0,173,193,0.2)' : '#B2E8EE',
+                      borderWidth: 1,
+                      overflow: 'hidden'
+                    }
+                  ]}
                   activeOpacity={0.85}
                   onPress={() => navigation.navigate('NamesList', { statusFilter: 'favorites' })}
                 >
                   <LinearGradient
-                    colors={isDark ? ['#0F2027', '#1A3A4A'] : ['#F8FDFE', '#E1F8FA']}
+                    colors={isDark ? ['#0B2027', '#112D37'] : ['#E6F9FA', '#CCF0F5']}
                     start={{ x: 0, y: 1 }}
                     end={{ x: 2.5, y: 0 }}
                     style={StyleSheet.absoluteFillObject}
@@ -748,12 +777,12 @@ const NamesScreen = ({ navigation, route }) => {
                     <Ionicons name="heart" size={rs(52)} color="rgba(244,63,94,0.09)" />
                   </Animated.View> */}
 
-                  <Ionicons name="heart-outline" size={rs(24)} color="#F43F5E" />
+                  <Ionicons name="heart-outline" size={rs(24)} color="#00ADC1" />
 
                   <View style={styles.actionCardText}>
                     <Text style={[styles.actionCardTitle, { color: isDark ? '#E8EDF2' : '#1A1A1A' }]}>Favorites</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={rs(16)} color="#F43F5E" />
+                  <Ionicons name="chevron-forward" size={rs(16)} color="#00ADC1" />
                 </TouchableOpacity>
 
               </View>
@@ -812,25 +841,37 @@ const NamesScreen = ({ navigation, route }) => {
                       </View>
 
                       {expandedCategories[cat.id] && (
-                        <View style={{ marginTop: rs(16), paddingTop: rs(12), borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : '#E6F4F6' }}>
-                          {catNames.map((item) => (
-                            <TouchableOpacity 
-                              key={item.number} 
-                              activeOpacity={0.7}
-                              onPress={() => navigation.navigate('NameDetail', { name: item, initialStepIndex: 0 })}
-                              style={{ flexDirection: 'row', alignItems: 'center', marginBottom: rs(12) }}
-                            >
-                              <View style={{ flex: 1 }}>
-                                <Text style={{ color: isDark ? '#00ADC1' : '#00ADC1', fontFamily: FONTS.bold, fontSize: rs(18), marginBottom: rs(2) }}>{item.arabic}</Text>
-                                <Text style={{ color: isDark ? '#E8EDF2' : '#0F172A', fontFamily: FONTS.medium, fontSize: rs(14), marginBottom: rs(2) }}>{item.transliteration}</Text>
-                                <Text style={{ color: isDark ? '#94A3B8' : '#64748B', fontFamily: FONTS.regular, fontSize: rs(12) }}>{item.meaning}</Text>
+                        <View style={{ marginTop: rs(16), paddingTop: rs(4), borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : '#E6F4F6' }}>
+                          {catNames.map((item, idx) => (
+                            <View key={item.number}>
+                              <View 
+                                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: rs(12) }}
+                              >
+                                <View style={{ width: rs(65), marginRight: rs(12) }}>
+                                  <Text style={{ color: '#00ADC1', fontFamily: FONTS.bold, fontSize: rs(22) }}>
+                                    {item.arabic}
+                                  </Text>
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                  <Text style={{ color: isDark ? '#E8EDF2' : '#0F172A', fontFamily: FONTS.bold, fontSize: rs(15), marginBottom: rs(2) }}>
+                                    {item.transliteration}
+                                  </Text>
+                                  <Text style={{ color: isDark ? '#94A3B8' : '#64748B', fontFamily: FONTS.regular, fontSize: rs(12) }}>
+                                    {item.meaning}
+                                  </Text>
+                                </View>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                  {masteredIds.includes(item.number) ? (
+                                    <Ionicons name="trophy" size={rs(16)} color="#F59E0B" />
+                                  ) : learnedIds.includes(item.number) ? (
+                                    <Ionicons name="checkmark-circle" size={rs(16)} color="#4CAF50" />
+                                  ) : null}
+                                </View>
                               </View>
-                              {masteredIds.includes(item.number) ? (
-                                <Ionicons name="trophy" size={rs(16)} color="#F59E0B" />
-                              ) : learnedIds.includes(item.number) ? (
-                                <Ionicons name="checkmark-circle" size={rs(16)} color="#4CAF50" />
-                              ) : null}
-                            </TouchableOpacity>
+                              {idx < catNames.length - 1 && (
+                                <View style={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#E6F4F6' }} />
+                              )}
+                            </View>
                           ))}
                         </View>
                       )}
@@ -1097,9 +1138,6 @@ const NamesScreen = ({ navigation, route }) => {
                 </View>
               </Animated.View>
             </Modal>
-          </>
-        )}
-      </TimeBasedBackground>
 
       <ReadingSettingsModal
         visible={readingSettingsVisible}
@@ -1110,15 +1148,15 @@ const NamesScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: 'transparent' },
+  root: { flex: 1 },
   topSection: { paddingTop: hs(14), paddingHorizontal: rs(20), zIndex: 30 },
 
   // ── NEW HEADER ROW ──
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: hs(14) },
-  headerLeft: { flex: 1, paddingRight: rs(12) },
-  headerTitleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: hs(14) },
+  headerLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: rs(12) },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center' },
   headerTitleText: {
-    fontSize: rs(22),
+    fontSize: rs(17),
     fontWeight: '800',
     color: '#1A1A1A',
   },
@@ -1325,6 +1363,20 @@ const styles = StyleSheet.create({
     fontSize: rs(10),
     fontWeight: '500',
     marginTop: hs(2),
+  },
+
+  avatar: { width: rs(36), height: rs(36), borderRadius: rs(18), justifyContent: 'center', alignItems: 'center' },
+  avatarText: { fontFamily: FONTS.bold, fontSize: rs(15) },
+  bellBtn: {
+    width: rs(36), height: rs(36), borderRadius: rs(18),
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
+  },
+  notifDot: {
+    position: 'absolute', top: rs(6), right: rs(6),
+    width: rs(6), height: rs(6), borderRadius: rs(3),
+    backgroundColor: '#00ADC1', borderWidth: 1, borderColor: '#FFFFFF',
   },
 
 });

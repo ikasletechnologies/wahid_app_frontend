@@ -81,6 +81,14 @@ const CustomTabBar = ({ state, descriptors, navigation, isNight }) => {
 
   return (
     <View style={styles.tabBarContainer}>
+      <View style={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: Platform.OS === 'ios' ? 35 : 25,
+        backgroundColor: isNight ? '#0F172A' : '#F8FAFC',
+      }} />
       <View
         style={[
           styles.tabBar,
@@ -158,9 +166,11 @@ const CustomTabBar = ({ state, descriptors, navigation, isNight }) => {
 const styles = StyleSheet.create({
   tabBarContainer: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 35 : 25,
-    left:  BAR_MARGIN,
-    right: BAR_MARGIN,
+    bottom: 0,
+    left:  0,
+    right: 0,
+    paddingBottom: Platform.OS === 'ios' ? 35 : 25,
+    paddingHorizontal: BAR_MARGIN,
     zIndex: 1000,
   },
   tabBar: {

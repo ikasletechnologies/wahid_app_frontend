@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, Dimensions, Alert, Modal } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Text from '../components/AppText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,11 +16,34 @@ const SuggestedNamesScreen = ({ navigation }) => {
   const { isDark } = useAppTheme();
   
   const [draftLimitModalVisible, setDraftLimitModalVisible] = useState(false);
+  const [lastReadNameId, setLastReadNameId] = useState(null);
+
+  React.useEffect(() => {
+    AsyncStorage.getItem('last_reading_progress')
+      .then(saved => {
+        if (saved) {
+          const progress = JSON.parse(saved);
+          const isCompleted = learnedIds.includes(progress.nameNumber) || masteredIds.includes(progress.nameNumber);
+          if (!isCompleted) {
+            setLastReadNameId(progress.nameNumber);
+          }
+        }
+      })
+      .catch(() => {});
+  }, [learnedIds, masteredIds]);
 
   // Compute activeDraftIds the same way as HomeScreen
   const activeDraftIds = React.useMemo(() => {
     return (draftIds || []).filter(id => !learnedIds.includes(id) && !masteredIds.includes(id));
   }, [draftIds, learnedIds, masteredIds]);
+
+  const visibleDraftsCount = React.useMemo(() => {
+    let count = activeDraftIds.length;
+    if (lastReadNameId && activeDraftIds.includes(lastReadNameId)) {
+      count -= 1;
+    }
+    return count;
+  }, [activeDraftIds, lastReadNameId]);
 
   const bg = isDark ? '#0F172A' : '#F0FBFC';
   const cardBg = isDark ? '#1E293B' : '#FFFFFF';
@@ -49,7 +73,7 @@ const SuggestedNamesScreen = ({ navigation }) => {
               if (isDraft) {
                 removeDraft(item.number);
               } else {
-                if (activeDraftIds.length >= 4) {
+                if (visibleDraftsCount >= 4) {
                   setDraftLimitModalVisible(true);
                 } else {
                   markAsDraft(item.number);
