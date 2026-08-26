@@ -1640,8 +1640,7 @@ export const ENHANCED_NAMES = [
     "practicalWays": [
       "Make dua sure that As-Sami hears every word. You need not raise your voice or despair if the answer is delayed. Yaqub made dua for years, and As-Sami heard every one.",
       "When rising from ruku, say Samiallahu liman hamidah with awareness. You are affirming that As-Sami hears your praise and responds.",
-      "Guard your words. As-Sami hears not only your dua but every word you speak, in anger, in gossip, in honesty, and in kindness. Speak as one who is always heard. </USER_REQUEST> <ADDITIONAL_METADATA> The current local time is: 2026-08-10T15:01:07+05:30. The user's current state is as follows: Active Document: c:\\Users\\acer\\OneDrive\\Documents\\Project\\wahid_frontend\\Wahid_Mobile_FrontEnd\\src\\data\\namesData.js (LANGUAGE_JAVASCRIPT) Cursor is on line: 4 Other open documents:",
-      "c:\\Users\\acer\\OneDrive\\Documents\\Project\\wahid_frontend\\Wahid_Mobile_FrontEnd\\src\\context\\NamesContext.js (LANGUAGE_JAVASCRIPT) </ADDITIONAL_METADATA>"
+      "Guard your words. As-Sami hears not only your dua but every word you speak, in anger, in gossip, in honesty, and in kindness. Speak as one who is always heard."
     ],
     "quranic": [
       {
@@ -3275,9 +3274,7 @@ export const ENHANCED_NAMES = [
     "practicalWays": [
       "Recite the dhikr above after witr (Subḥāna al-Malikil Quddūs) connecting your night prayer directly to His kingship.",
       "Hold any authority you have over others: at work, at home with the awareness that you are answerable to Al-Malik for how you use it.",
-      "When worldly power or status intimidates you, remember the Day Al-Malik will ask: where are the kings of the earth now? Their power was always on loan. </USER_REQUEST> <ADDITIONAL_METADATA> The current local time is: 2026-08-10T15:17:20+05:30. The user's current state is as follows: Active Document: c:\\Users\\acer\\OneDrive\\Documents\\Project\\wahid_frontend\\Wahid_Mobile_FrontEnd\\src\\data\\namesData.js (LANGUAGE_JAVASCRIPT) Cursor is on line: 4 Other open documents:",
-      "c:\\Users\\acer\\OneDrive\\Documents\\Project\\wahid_frontend\\Wahid_Mobile_FrontEnd\\scripts\\update_cards_51_to_65.js (LANGUAGE_JAVASCRIPT)",
-      "c:\\Users\\acer\\OneDrive\\Documents\\Project\\wahid_frontend\\Wahid_Mobile_FrontEnd\\src\\context\\NamesContext.js (LANGUAGE_JAVASCRIPT) </ADDITIONAL_METADATA>"
+      "When worldly power or status intimidates you, remember the Day Al-Malik will ask: where are the kings of the earth now? Their power was always on loan."
     ],
     "quranic": [
       {
@@ -3687,8 +3684,7 @@ export const ENHANCED_NAMES = [
     "practicalWays": [
       "Follow the path described in the hadith above. Start with what is obligatory, then increase in voluntary acts of worship to draw closer to Al-Walī as your protecting friend.",
       "Recite Yūsuf's ﷺ duʿāʾ in moments of hardship: \"You are my Walī in this world and the Hereafter.\" It is a complete declaration of trust through trial.",
-      "Choose your true allegiance carefully. Qur'an 2:257 makes clear there are only two directions - toward Al-Walī and into light, or toward false guardians and into darkness </USER_REQUEST> <ADDITIONAL_METADATA> The current local time is: 2026-08-10T15:21:30+05:30. The user's current state is as follows: Active Document: c:\\Users\\acer\\OneDrive\\Documents\\Project\\wahid_frontend\\Wahid_Mobile_FrontEnd\\src\\data\\namesData.js (LANGUAGE_JAVASCRIPT) Cursor is on line: 4 Other open documents:",
-      "c:\\Users\\acer\\OneDrive\\Documents\\Project\\wahid_frontend\\Wahid_Mobile_FrontEnd\\scripts\\update_cards_71_to_80.js (LANGUAGE_JAVASCRIPT) </ADDITIONAL_METADATA>"
+      "Choose your true allegiance carefully. Qur'an 2:257 makes clear there are only two directions - toward Al-Walī and into light, or toward false guardians and into darkness"
     ],
     "quranic": [
       {
@@ -4029,9 +4025,7 @@ export const ENHANCED_NAMES = [
     "practicalWays": [
       "Use the Prophet’s ﷺ duʿāʾ when you or someone you love is ill, placing your hand on the place of pain as he did, and asking Ash-Shāfī for a full cure.",
       "Take medicine and see the doctor as a means, while keeping your heart’s trust on Ash-Shāfī as the real Healer.",
-      "Ask Him to heal your heart, grief, worry and inner wounds are just as much within His power </USER_REQUEST> <ADDITIONAL_METADATA> The current local time is: 2026-08-10T15:25:46+05:30. The user's current state is as follows: Active Document: c:\\Users\\acer\\OneDrive\\Documents\\Project\\wahid_frontend\\Wahid_Mobile_FrontEnd\\src\\data\\namesData.js (LANGUAGE_JAVASCRIPT) Cursor is on line: 4 Other open documents:",
-      "c:\\Users\\acer\\OneDrive\\Documents\\Project\\wahid_frontend\\Wahid_Mobile_FrontEnd\\src\\context\\NamesContext.js (LANGUAGE_JAVASCRIPT)",
-      "c:\\Users\\acer\\OneDrive\\Documents\\Project\\wahid_frontend\\Wahid_Mobile_FrontEnd\\scripts\\update_cards_81_to_90.js (LANGUAGE_JAVASCRIPT) </ADDITIONAL_METADATA>"
+      "Ask Him to heal your heart, grief, worry and inner wounds are just as much within His power"
     ],
     "quranic": [],
     "sunnah": [
@@ -4319,8 +4313,7 @@ export const ENHANCED_NAMES = [
     "practicalWays": [
       "Never miss witr prayer, understanding it as a direct, physical reflection of Al-Witr's oneness woven into your nightly worship.",
       "Let this final Name draw together everything learned from the previous ninety-eight: every attribute of greatness, mercy, power, and beauty belongs to a single, undivided, peerless Being.",
-      "End each day's reflection on the Names with the same affirmation that opened it (lā ilāha illallāh) recognising Al-Witr as the truth every other Name ultimately serves. </USER_REQUEST> <ADDITIONAL_METADATA> The current local time is: 2026-08-10T15:28:56+05:30. The user's current state is as follows: Active Document: c:\\Users\\acer\\OneDrive\\Documents\\Project\\wahid_frontend\\Wahid_Mobile_FrontEnd\\src\\data\\namesData.js (LANGUAGE_JAVASCRIPT) Cursor is on line: 4 Other open documents:",
-      "c:\\Users\\acer\\OneDrive\\Documents\\Project\\wahid_frontend\\Wahid_Mobile_FrontEnd\\src\\context\\NamesContext.js (LANGUAGE_JAVASCRIPT) </ADDITIONAL_METADATA>"
+      "End each day's reflection on the Names with the same affirmation that opened it (lā ilāha illallāh) recognising Al-Witr as the truth every other Name ultimately serves."
     ],
     "quranic": [],
     "sunnah": [],

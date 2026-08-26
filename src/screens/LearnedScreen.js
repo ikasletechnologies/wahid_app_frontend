@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, StatusBar, Animated, Dimensions, Easing, Modal } from 'react-native';
 import Text from '../components/AppText';
 import TextInput from '../components/AppTextInput';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNames } from '../context/NamesContext';
@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const { height: SH } = Dimensions.get('window');
 
 const LearnedScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const { names, learnedIds, masteredIds } = useNames();
   const { isDark, colors } = useAppTheme();
 
@@ -149,7 +150,7 @@ const LearnedScreen = ({ navigation }) => {
     <Animated.View style={[styles.root, { transform: [{ translateY: exitAnim }] }]}>
       <SafeAreaView
         style={[styles.root, { backgroundColor: isDark ? '#0F172A' : '#F8FAFF' }]}
-        edges={['top']}
+        edges={['top', 'left', 'right']}
       >
         <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
@@ -249,7 +250,7 @@ const LearnedScreen = ({ navigation }) => {
           keyExtractor={item => item.number.toString()}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: Math.max(insets.bottom + 16, 30) }]}
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <View style={[styles.emptyIconWrap, { backgroundColor: isDark ? '#1E293B' : '#F1F5F9' }]}>

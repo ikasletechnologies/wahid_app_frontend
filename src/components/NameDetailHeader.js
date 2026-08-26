@@ -39,7 +39,7 @@ const TrackerRightLeaf = ({ color }) => (
   </Svg>
 );
 
-const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0, isFavorite, onFavoritePress, onSharePress, onSettingsPress }) => {
+const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0, isFavorite, isFocusMode, onFavoritePress, onSharePress, onSettingsPress }) => {
   const { isDark } = useAppTheme();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -59,17 +59,37 @@ const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0, isFavorite, 
     <View style={[styles.container, { backgroundColor: 'transparent', paddingTop: hs(10), paddingHorizontal: rs(16) }]}>
 
       {/* ── UNIFIED HEADER CARD ── */}
-      <View style={[styles.headerCard, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#DCEFF2', overflow: 'hidden' }]}>
+      <View style={[
+        styles.headerCard,
+        {
+          backgroundColor: isFocusMode ? 'transparent' : (isDark ? '#1E293B' : '#FFFFFF'),
+          borderColor: isFocusMode ? 'transparent' : (isDark ? 'rgba(255,255,255,0.08)' : '#DCEFF2'),
+          borderWidth: isFocusMode ? 0 : 1,
+          shadowOpacity: isFocusMode ? 0 : 0.03,
+          elevation: isFocusMode ? 0 : 2,
+          overflow: 'hidden',
+        }
+      ]}>
         {/* Curved diagonal background shape on the left */}
-        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-          <Svg width="100%" height="100%" viewBox="0 0 350 54" preserveAspectRatio="none">
-            <Path d="M0 0 L 120 0 Q 80 54 0 54 Z" fill={isDark ? 'rgba(0,173,193,0.1)' : '#EAF8FA'} />
-          </Svg>
-        </View>
+        {!isFocusMode && (
+          <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+            <Svg width="100%" height="100%" viewBox="0 0 350 54" preserveAspectRatio="none">
+              <Path d="M0 0 L 120 0 Q 80 54 0 54 Z" fill={isDark ? 'rgba(0,173,193,0.1)' : '#EAF8FA'} />
+            </Svg>
+          </View>
+        )}
 
         {/* Left: Back button (Squircle style with thick white border) */}
         <TouchableOpacity
-          style={[styles.backBtn, { backgroundColor: '#00ADC1', borderColor: '#FFFFFF' }]}
+          style={[
+            styles.backBtn,
+            {
+              backgroundColor: '#00ADC1',
+              borderColor: isFocusMode ? 'transparent' : '#FFFFFF',
+              shadowOpacity: isFocusMode ? 0 : 0.08,
+              elevation: isFocusMode ? 0 : 2,
+            }
+          ]}
           activeOpacity={0.8}
           onPress={() => navigation.goBack()}
         >
@@ -88,12 +108,38 @@ const NameDetailHeader = ({ name, steps = [], currentStepIndex = 0, isFavorite, 
           </Text>
         </View>
 
-        {/* Right: Actions (Squircle style with light border and shadow) */}
+        {/* Right: Actions */}
         <View style={styles.headerActions}>
-          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#F1F5F9' }]} activeOpacity={0.8} onPress={onFavoritePress}>
+          <TouchableOpacity
+            style={[
+              styles.actionBtn,
+              {
+                backgroundColor: isFocusMode ? 'transparent' : (isDark ? '#1E293B' : '#FFFFFF'),
+                borderColor: isFocusMode ? 'transparent' : (isDark ? 'rgba(255,255,255,0.15)' : '#F1F5F9'),
+                borderWidth: isFocusMode ? 0 : 1,
+                shadowOpacity: isFocusMode ? 0 : 0.25,
+                elevation: isFocusMode ? 0 : 3,
+              }
+            ]}
+            activeOpacity={0.8}
+            onPress={onFavoritePress}
+          >
             <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={rs(16)} color={isFavorite ? "#EF4444" : '#00ADC1'} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#F1F5F9' }]} activeOpacity={0.8} onPress={onSharePress}>
+          <TouchableOpacity
+            style={[
+              styles.actionBtn,
+              {
+                backgroundColor: isFocusMode ? 'transparent' : (isDark ? '#1E293B' : '#FFFFFF'),
+                borderColor: isFocusMode ? 'transparent' : (isDark ? 'rgba(255,255,255,0.15)' : '#F1F5F9'),
+                borderWidth: isFocusMode ? 0 : 1,
+                shadowOpacity: isFocusMode ? 0 : 0.25,
+                elevation: isFocusMode ? 0 : 3,
+              }
+            ]}
+            activeOpacity={0.8}
+            onPress={onSharePress}
+          >
             <Ionicons name="share-social-outline" size={rs(16)} color='#00ADC1' />
           </TouchableOpacity>
         </View>
@@ -291,6 +337,14 @@ const styles = StyleSheet.create({
     height: 1,
     borderWidth: 1,
     borderStyle: 'dashed',
+  },
+  redDot: {
+    width: rs(8),
+    height: rs(8),
+    borderRadius: rs(4),
+    backgroundColor: '#EF4444',
+    marginLeft: rs(8),
+    marginRight: rs(4),
   }
 });
 

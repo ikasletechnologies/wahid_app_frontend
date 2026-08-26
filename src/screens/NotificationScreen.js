@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, StatusBar, Animated, Dimensions, Easing } from 'react-native';
 import Text from '../components/AppText';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../context/ThemeContext';
 import { FONTS } from '../theme';
 import http from '../config/http';
 
 const NotificationScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const { isDark, colors } = useAppTheme();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -76,7 +77,7 @@ const NotificationScreen = ({ navigation }) => {
 
   return (
     <Animated.View style={[styles.root, { transform: [{ translateY: exitAnim }] }]}>
-      <SafeAreaView style={[styles.root, { backgroundColor: isDark ? '#0F172A' : '#F0F0FF' }]} edges={['top']}>
+      <SafeAreaView style={[styles.root, { backgroundColor: isDark ? '#0F172A' : '#F0F0FF' }]} edges={['top', 'left', 'right']}>
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={handleClose}>
@@ -100,9 +101,9 @@ const NotificationScreen = ({ navigation }) => {
             ) : (
               <FlatList
                 data={notifications}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item.id.toString()}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.listContent}
+                contentContainerStyle={[styles.listContent, { paddingBottom: Math.max(insets.bottom + 20, 40) }]}
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
                 renderItem={({ item }) => {

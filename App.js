@@ -15,6 +15,7 @@ import { Roboto_400Regular, Roboto_700Bold } from '@expo-google-fonts/roboto';
 import { Tinos_400Regular, Tinos_700Bold } from '@expo-google-fonts/tinos';
 import { Carlito_400Regular, Carlito_700Bold } from '@expo-google-fonts/carlito';
 import { FontSettingsProvider } from './src/context/FontSettingsContext';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
 import ThemedToast from './src/components/ThemedToast';
 import NetworkScreen from './src/screens/NetworkScreen';
@@ -75,38 +76,42 @@ export default function App() {
   if (isOffline) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <FontSettingsProvider>
-          <ThemeProvider>
-            <NetworkScreen onConnectionRestored={() => setIsOffline(false)} />
-            <ThemedToast />
-          </ThemeProvider>
-        </FontSettingsProvider>
+        <SafeAreaProvider>
+          <FontSettingsProvider>
+            <ThemeProvider>
+              <NetworkScreen onConnectionRestored={() => setIsOffline(false)} />
+              <ThemedToast />
+            </ThemeProvider>
+          </FontSettingsProvider>
+        </SafeAreaProvider>
       </GestureHandlerRootView>
     );
   }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <FontSettingsProvider>
-        <NavigationContainer>
-          <ThemeProvider>
-            <AuthProvider>
-              <LanguageProvider>
-                <NamesProvider>
-                  <MilestoneProvider>
-                    <ContentProvider>
-                      <PlaylistProvider>
-                        <AppNavigator />
-                        <ThemedToast />
-                      </PlaylistProvider>
-                    </ContentProvider>
-                  </MilestoneProvider>
-                </NamesProvider>
-              </LanguageProvider>
-            </AuthProvider>
-          </ThemeProvider>
-        </NavigationContainer>
-      </FontSettingsProvider>
+      <SafeAreaProvider>
+        <FontSettingsProvider>
+          <NavigationContainer>
+            <ThemeProvider>
+              <AuthProvider>
+                <LanguageProvider>
+                  <NamesProvider>
+                    <MilestoneProvider>
+                      <ContentProvider>
+                        <PlaylistProvider>
+                          <AppNavigator />
+                          <ThemedToast />
+                        </PlaylistProvider>
+                      </ContentProvider>
+                    </MilestoneProvider>
+                  </NamesProvider>
+                </LanguageProvider>
+              </AuthProvider>
+            </ThemeProvider>
+          </NavigationContainer>
+        </FontSettingsProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

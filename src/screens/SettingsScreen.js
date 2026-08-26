@@ -4,7 +4,7 @@ import Text from '../components/AppText';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaskedView from '@react-native-masked-view/masked-view';
 
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAppTheme, THEME_MODES } from '../context/ThemeContext';
@@ -19,6 +19,7 @@ import ReadingSettingsModal from '../components/ReadingSettingsModal';
 const { width } = Dimensions.get('window');
 
 const SettingsScreen = () => {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { isDark, themeMode, setThemeMode, colors } = useAppTheme();
   const { logout } = useAuth();
@@ -28,7 +29,7 @@ const SettingsScreen = () => {
   const [readingSettingsVisible, setReadingSettingsVisible] = useState(false);
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: 'transparent' }]} edges={['top']}>
+    <SafeAreaView style={[styles.root, { backgroundColor: 'transparent', paddingBottom: insets.bottom }]} edges={['top', 'left', 'right']}>
       <TimeBasedBackground showElements={false}>
         {({ isNight }) => (
           <>

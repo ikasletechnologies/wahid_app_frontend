@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { View, StyleSheet, FlatList, TouchableOpacity, Animated, Modal, ActivityIndicator, StatusBar } from 'react-native';
 import Text from '../components/AppText';
 import TextInput from '../components/AppTextInput';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
@@ -156,6 +156,7 @@ const OptionCard = ({ icon, label, count, colors: cardColors, isActive, onPress 
 // Main Screen
 // ──────────────────────────────────────────
 export default function PlaylistScreen() {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { colors, isDark } = useAppTheme();
   const { names, getMoodPlaylist } = useNames();
@@ -594,7 +595,7 @@ export default function PlaylistScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: 'transparent' }]} edges={['top']}>
+    <SafeAreaView style={[styles.root, { backgroundColor: 'transparent', paddingBottom: insets.bottom }]} edges={['top', 'left', 'right']}>
       <TimeBasedBackground showElements={false}>
         {({ isNight }) => (
           <>

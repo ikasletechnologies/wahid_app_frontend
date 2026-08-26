@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import Text from '../components/AppText';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNames } from '../context/NamesContext';
@@ -58,6 +58,7 @@ const getRelativeTime = (timestamp) => {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 const HomeScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { isDark } = useAppTheme();
   const { scaleFontSize } = useFontSettings();
@@ -396,7 +397,7 @@ const HomeScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: bg }]} edges={['top']}>
+    <SafeAreaView style={[styles.root, { backgroundColor: bg, paddingBottom: insets.bottom }]} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* ── HEADER ── */}
@@ -437,7 +438,7 @@ const HomeScreen = ({ navigation }) => {
       {/* ── SCROLL BODY ── */}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingBottom: Math.max(insets.bottom + rs(20), rs(40)) }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={teal} colors={[teal]} />

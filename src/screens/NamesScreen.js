@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from
 import { View, StyleSheet, Dimensions, Animated, PanResponder, Image, ActivityIndicator, TouchableOpacity, Easing, ImageBackground, Modal, ScrollView, StatusBar, Alert, LayoutAnimation, UIManager, Platform } from 'react-native';
 import Text from '../components/AppText';
 import TextInput from '../components/AppTextInput';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop, ClipPath, G, Circle } from 'react-native-svg';
@@ -98,6 +98,7 @@ const NameCardBackground = ({ width, height, style, gradEnd = '#BCECF7', strokeC
 };
 
 const NamesScreen = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
   const { names, loading, learnedIds, masteredIds, revisitCounts, categories, markAsViewed, readingTimeToday, draftIds } = useNames();
   const { favouriteIds } = usePlaylist();
   const { isDark, colors } = useAppTheme();
@@ -669,7 +670,7 @@ const NamesScreen = ({ navigation, route }) => {
   const borderColor = isDark ? 'rgba(255,255,255,0.08)' : '#E2EEF0';
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: bg }]} edges={['top']}>
+    <SafeAreaView style={[styles.root, { backgroundColor: bg, paddingBottom: insets.bottom }]} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       {/* ── TOP SECTION ── */}
       <View style={styles.topSection}>
@@ -1056,7 +1057,7 @@ const NamesScreen = ({ navigation, route }) => {
 
               {/* Sheet panel — 'top' is animated so bottom:0 always anchors Apply to screen edge */}
               <Animated.View
-                style={[styles.bsSheet, { top: sheetAnim }]}
+                style={[styles.bsSheet, { top: sheetAnim, paddingBottom: Math.max(insets.bottom, hs(16)) }]}
                 {...sheetPanResponder.panHandlers}
               >
                 {/* Drag handle */}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Image, StyleSheet, TouchableOpacity, Dimensions, Animated } from 'react-native';
 import Text from '../components/AppText';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, {
   Polygon, Circle, Defs,
@@ -136,6 +136,7 @@ const ProgressRing = ({ progress, size }) => {
 };
 
 const MilestoneScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const scrollY = React.useRef(new Animated.Value(0)).current;
   const { milestones, allCompleted } = useMilestones();
 
@@ -150,7 +151,7 @@ const MilestoneScreen = ({ navigation }) => {
   }, [milestones]);
 
   return (
-    <SafeAreaView style={s.root} edges={['top']}>
+    <SafeAreaView style={[s.root, { paddingBottom: insets.bottom }]} edges={['top', 'left', 'right']}>
       <TimeBasedBackground>
         {({ isNight }) => (
           <>
