@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { View, StyleSheet, Dimensions, Animated, Easing, Image, TouchableOpacity, StatusBar, PanResponder, ScrollView, TouchableWithoutFeedback, LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform, Keyboard, Share, AppState } from 'react-native';
+import { View, StyleSheet, Dimensions, Animated, Easing, Image, TouchableOpacity, StatusBar, PanResponder, ScrollView, TouchableWithoutFeedback, LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform, Keyboard, Share } from 'react-native';
 import Text from '../components/AppText';
 import TextInput from '../components/AppTextInput';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import Svg, { Circle as SvgCircle, Line, Path } from 'react-native-svg';
+import Svg, { Circle as SvgCircle, Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNames } from '../context/NamesContext';
@@ -313,52 +312,8 @@ const NameDetailScreen = ({ route, navigation }) => {
     });
   }, [flipAnim]);
 
-  const [activeCardTime, setActiveCardTime] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const [isFocusMode, setIsFocusMode] = useState(false);
-  const [appState, setAppState] = useState(AppState.currentState);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', nextAppState => {
-      setAppState(nextAppState);
-    });
-    return () => {
-      subscription.remove();
-    };
-  }, []);
-
-  useEffect(() => {
-    const loadTime = async () => {
-      try {
-        const nameKey = name.number || name.id;
-        if (!nameKey) return;
-        const stored = await AsyncStorage.getItem(`reading_time_name_${nameKey}`);
-        if (stored) setActiveCardTime(parseInt(stored, 10));
-      } catch (e) { }
-    };
-    loadTime();
-  }, [name]);
-
-  useEffect(() => {
-    if (!isFocused || phase !== 'content' || isPaused || appState !== 'active') return;
-    const interval = setInterval(() => {
-      setActiveCardTime(prev => {
-        const next = prev + 1;
-        const nameKey = name.number || name.id;
-        if (nameKey) {
-          AsyncStorage.setItem(`reading_time_name_${nameKey}`, String(next)).catch(() => { });
-        }
-        return next;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isFocused, name, phase, isPaused, appState]);
-
-  const formatTime = (seconds) => {
-    if (seconds < 60) return `${seconds} sec`;
-    const m = Math.floor(seconds / 60);
-    return `${m} min`;
-  };
+  const chromeOpacity = useRef(new Animated.Value(1)).current;
+  const [isChromeVisible, setIsChromeVisible] = useState(true);
 
   // Persist reading position and mark as draft
   useEffect(() => {
@@ -406,15 +361,30 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   // Active reading timer
   useEffect(() => {
-    if (!isFocused || isPaused) return;
+    if (!isFocused) return;
     const interval = setInterval(() => {
       incrementReadingTime(5);
     }, 5000);
     return () => clearInterval(interval);
-  }, [isFocused, incrementReadingTime, isPaused]);
+  }, [isFocused, incrementReadingTime]);
 
   const safeStepIndex = Math.max(0, Math.min(currentStepIndex, steps.length - 1));
   const currentStep = steps[safeStepIndex];
+
+  // The name header + step tracker start visible on each card, then fade
+  // fully away after a few seconds so the reading card gets the full screen.
+  // Bottom nav (Previous/Continue) is never affected — swipe navigation
+  // must always stay reachable.
+  useEffect(() => {
+    chromeOpacity.setValue(1);
+    setIsChromeVisible(true);
+    const timer = setTimeout(() => {
+      Animated.timing(chromeOpacity, { toValue: 0, duration: 350, useNativeDriver: true }).start(() => {
+        setIsChromeVisible(false);
+      });
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [safeStepIndex, chromeOpacity]);
 
   // Circle progress ring animation state and effect
   const [ringProgress, setRingProgress] = useState(0);
@@ -651,10 +621,6 @@ const NameDetailScreen = ({ route, navigation }) => {
     const currentStep = steps[currentStepIndex];
     if (!currentStep) return;
 
-    if (currentStep.type !== 'mastery' && currentStep.type !== 'reflection') {
-      setIsFocusMode(true);
-    }
-
     if (currentStep.type === 'meaning' && meaningSubStep > -1) {
       if (meaningSubStep === 0) {
         triggerFlip(() => setMeaningSubStep(-1));
@@ -740,13 +706,8 @@ const NameDetailScreen = ({ route, navigation }) => {
   }, [markAsLearned, name.id, name.number, journeyOpacity, journeyTranslate, removeDraft]);
 
   const handleNext = useCallback(() => {
-    setIsPaused(false);
     let ans = 0;
     if (name.mcq && name.mcq.length > 0) ans = name.mcq[0].ans;
-
-    if (currentStep.type !== 'mastery' && currentStep.type !== 'reflection') {
-      setIsFocusMode(true);
-    }
 
     if (currentStep.type === 'mastery') {
       if (masteryDone && masteryAnswer === ans) {
@@ -856,10 +817,6 @@ const NameDetailScreen = ({ route, navigation }) => {
           <Text style={[styles.cardHeaderTitleText, { color: isDark ? '#E8EDF2' : '#14363F', marginLeft: rs(14) }]}>
             {title}
           </Text>
-          <View style={[styles.badgePill, { backgroundColor: isDark ? '#0F172A' : '#F0F9FA', marginLeft: 'auto', flexShrink: 0 }]}>
-            <Ionicons name="time-outline" size={rs(15)} color="#16858A" style={{ marginRight: rs(4) }} />
-            <Text style={[styles.badgePillText, { color: isDark ? '#C5F2F7' : '#14363F', fontWeight: '700' }]}>{formatTime(activeCardTime)}</Text>
-          </View>
         </View>
 
         {/* Custom Divider */}
@@ -1006,10 +963,6 @@ const NameDetailScreen = ({ route, navigation }) => {
                   <Text style={[styles.introInfoText, { color: isDark ? '#C5F2F7' : '#14363F', fontWeight: '700' }]}>{insightsCount} Insights</Text>
                 </View>
               )}
-              <View style={[styles.introInfoPill, { backgroundColor: isDark ? 'rgba(0,173,193,0.1)' : '#F0FAFB', borderColor: isDark ? '#00ADC1' : '#16858A' }]}>
-                <Ionicons name="time-outline" size={rs(14)} color={isDark ? '#4CD5E8' : '#16858A'} style={{ marginRight: rs(6) }} />
-                <Text style={[styles.introInfoText, { color: isDark ? '#C5F2F7' : '#14363F', fontWeight: '700' }]}>{formatTime(activeCardTime)}</Text>
-              </View>
             </View>
 
             {/* Start reading indicator */}
@@ -1457,16 +1410,19 @@ const NameDetailScreen = ({ route, navigation }) => {
             <SafeAreaView style={{ flex: 1, backgroundColor: t.safeBg }} edges={['top']}>
               <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
                 <View style={{ flex: 1 }}>
-                  {isFocusMode && (
-                    <BlurView 
-                      pointerEvents="none"
-                      tint="dark"
-                      intensity={40}
-                      style={[StyleSheet.absoluteFillObject, { top: -200, bottom: -200, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 50 }]}
-                    />
-                  )}
+                  <Animated.View
+                    pointerEvents="none"
+                    style={[
+                      StyleSheet.absoluteFillObject,
+                      {
+                        zIndex: 5,
+                        backgroundColor: '#000000',
+                        opacity: chromeOpacity.interpolate({ inputRange: [0, 1], outputRange: [0.88, 0] }),
+                      },
+                    ]}
+                  />
 
-                  <View style={{ zIndex: 10 }}>
+                  <Animated.View style={{ opacity: chromeOpacity, zIndex: 10 }} pointerEvents={isChromeVisible ? 'auto' : 'none'}>
                     <NameDetailHeader
                       name={name}
                       steps={steps}
@@ -1476,7 +1432,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                       onSharePress={() => Share.share({ message: `Learn about the name ${name.transliteration} - ${name.meaning}` })}
                       onSettingsPress={() => setReadingSettingsVisible(true)}
                     />
-                  </View>
+                  </Animated.View>
 
                   {/* ── Fixed Main Title ── */}
                   {(() => {
@@ -1502,21 +1458,26 @@ const NameDetailScreen = ({ route, navigation }) => {
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                   >
-                    {isFocusMode && (
-                      <TouchableOpacity 
-                        activeOpacity={1}
-                        style={[StyleSheet.absoluteFill, { bottom: -500 }]} 
-                        onPress={() => setIsFocusMode(false)} 
-                      />
-                    )}
-                    <Animated.View style={{ flex: 1, opacity: contentOpacity, transform: [{ translateY: contentTranslateY }, { rotateY: flipAnim.interpolate({ inputRange: [-90, 0, 90], outputRange: ['-90deg', '0deg', '90deg'] }) }] }}>
-                      {currentStep.type === 'meaning' && renderMeaning()}
-                      {(currentStep.type === 'quran' || currentStep.type === 'hadith') && renderReference(currentStep.data, currentStep.type)}
-                      {currentStep.type === 'gifts' && renderGifts()}
-                      {currentStep.type === 'practical' && renderPractical()}
-                      {currentStep.type === 'scholarly' && renderScholarly()}
-                      {currentStep.type === 'reflection' && renderReflection()}
-                      {currentStep.type === 'mastery' && renderMastery()}
+                    {/* Shrinks as focus deepens, revealing the dark backdrop around it.
+                        Only transform is animated here — opacity must stay untouched
+                        so the actual step content inside never gets hidden. */}
+                    <Animated.View
+                      style={[
+                        styles.focusGlow,
+                        {
+                          transform: [{ scale: chromeOpacity.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) }],
+                        },
+                      ]}
+                    >
+                      <Animated.View style={{ flex: 1, opacity: contentOpacity, transform: [{ translateY: contentTranslateY }, { rotateY: flipAnim.interpolate({ inputRange: [-90, 0, 90], outputRange: ['-90deg', '0deg', '90deg'] }) }] }}>
+                        {currentStep.type === 'meaning' && renderMeaning()}
+                        {(currentStep.type === 'quran' || currentStep.type === 'hadith') && renderReference(currentStep.data, currentStep.type)}
+                        {currentStep.type === 'gifts' && renderGifts()}
+                        {currentStep.type === 'practical' && renderPractical()}
+                        {currentStep.type === 'scholarly' && renderScholarly()}
+                        {currentStep.type === 'reflection' && renderReflection()}
+                        {currentStep.type === 'mastery' && renderMastery()}
+                      </Animated.View>
                     </Animated.View>
                     {currentStep.type === 'reflection' && (
                       <View style={{ height: hs(40) }} />
@@ -1525,7 +1486,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
                   {/* ── Bottom Navigation ── */}
                   <View style={[styles.bottomNavWrapper, { zIndex: 10 }]}>
-                  <View style={[styles.bottomNavInner, { 
+                  <View style={[styles.bottomNavInner, {
                     backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
                     borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#DCEFF2',
                     shadowColor: '#000000',
@@ -1540,95 +1501,6 @@ const NameDetailScreen = ({ route, navigation }) => {
                       <Ionicons name="arrow-back" size={rs(20)} color="#FFFFFF" />
                     </TouchableOpacity>
 
-                    {/* Pause */}
-                    <View style={styles.pauseWrap}>
-                      {!isDark && (
-                        <View style={{ position: 'absolute', top: -hs(6), width: rs(70), height: rs(70), alignItems: 'center', justifyContent: 'center', zIndex: 1 }} pointerEvents="none">
-                          <Svg width={rs(70)} height={rs(70)}>
-                            {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => {
-                              const rad = (deg * Math.PI) / 180;
-                              const r1 = rs(17);
-                              const r2 = rs(22);
-                              const center = rs(35);
-                              return (
-                                <Line
-                                  key={i}
-                                  x1={center + r1 * Math.cos(rad)}
-                                  y1={center + r1 * Math.sin(rad)}
-                                  x2={center + r2 * Math.cos(rad)}
-                                  y2={center + r2 * Math.sin(rad)}
-                                  stroke="#FACC15"
-                                  strokeWidth={rs(3.5)}
-                                  strokeLinecap="round"
-                                />
-                              );
-                            })}
-                          </Svg>
-                        </View>
-                      )}
-                      <TouchableOpacity onPress={() => setIsPaused(p => !p)} activeOpacity={0.8} style={styles.pauseBtn}>
-                        {isDark ? (
-                          <View style={{ width: rs(58), height: rs(58), justifyContent: 'center', alignItems: 'center' }}>
-                            <Svg width={rs(58)} height={rs(58)} style={StyleSheet.absoluteFillObject}>
-                              <SvgCircle cx={rs(29)} cy={rs(29)} r={rs(28)} fill="#141E30" stroke="rgba(255,255,255,0.08)" strokeWidth={1} />
-                              {/* Stars */}
-                              {/* Top Left Four-Pointed Star */}
-                              <Path d={`M${rs(15)},${rs(12)} Q${rs(15)},${rs(15)} ${rs(18)},${rs(15)} Q${rs(15)},${rs(15)} ${rs(15)},${rs(18)} Q${rs(15)},${rs(15)} ${rs(12)},${rs(15)} Q${rs(15)},${rs(15)} ${rs(15)},${rs(12)} Z`} fill="#FFFFFF" opacity={0.9} />
-
-                              {/* Top Dot */}
-                              <SvgCircle cx={rs(29)} cy={rs(7)} r={rs(1)} fill="#FFFFFF" opacity={0.6} />
-
-                              {/* Top Right Dot */}
-                              <SvgCircle cx={rs(45)} cy={rs(14)} r={rs(1.2)} fill="#FFFFFF" opacity={0.8} />
-
-                              {/* Right Dot */}
-                              <SvgCircle cx={rs(52)} cy={rs(29)} r={rs(1)} fill="#FFFFFF" opacity={0.5} />
-
-                              {/* Bottom Right Four-Pointed Star */}
-                              <Path d={`M${rs(44)},${rs(42)} Q${rs(44)},${rs(44)} ${rs(46)},${rs(44)} Q${rs(44)},${rs(44)} ${rs(44)},${rs(46)} Q${rs(44)},${rs(44)} ${rs(42)},${rs(44)} Q${rs(44)},${rs(44)} ${rs(44)},${rs(42)} Z`} fill="#FFFFFF" opacity={0.7} />
-
-                              {/* Bottom Dot */}
-                              <SvgCircle cx={rs(29)} cy={rs(51)} r={rs(1.5)} fill="#FFFFFF" opacity={0.9} />
-
-                              {/* Bottom Left Dot */}
-                              <SvgCircle cx={rs(14)} cy={rs(43)} r={rs(1.2)} fill="#FFFFFF" opacity={0.6} />
-
-                              {/* Left Dot */}
-                              <SvgCircle cx={rs(7)} cy={rs(29)} r={rs(1)} fill="#FFFFFF" opacity={0.7} />
-                            </Svg>
-                            <View style={{ width: rs(36), height: rs(36), borderRadius: rs(18), backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: rs(6), elevation: 4 }}>
-                              {isPaused ? (
-                                <Svg width={rs(12)} height={rs(14)} viewBox="0 0 14 16" style={{ marginLeft: rs(3) }}>
-                                  <Path d="M0 0L14 8L0 16V0Z" fill="#1E293B" />
-                                </Svg>
-                              ) : (
-                                <View style={{ flexDirection: 'row', gap: rs(4) }}>
-                                  <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#1E293B', borderRadius: rs(2) }} />
-                                  <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#1E293B', borderRadius: rs(2) }} />
-                                </View>
-                              )}
-                            </View>
-                          </View>
-                        ) : (
-                          <View style={{ width: rs(56), height: rs(56), justifyContent: 'center', alignItems: 'center' }}>
-                            <View style={{ width: rs(38), height: rs(38), borderRadius: rs(19), backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', shadowColor: '#00ADC1', shadowOpacity: 0.15, shadowRadius: rs(6), shadowOffset: { width: 0, height: 3 }, elevation: 3, borderWidth: 1, borderColor: '#F4F9FA' }}>
-                              {isPaused ? (
-                                <Svg width={rs(14)} height={rs(16)} viewBox="0 0 14 16" style={{ marginLeft: rs(3) }}>
-                                  <Path d="M0 0L14 8L0 16V0Z" fill="#FACC15" />
-                                </Svg>
-                              ) : (
-                                <View style={{ flexDirection: 'row', gap: rs(4) }}>
-                                  <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#FACC15', borderRadius: rs(2) }} />
-                                  <View style={{ width: rs(3.5), height: rs(12), backgroundColor: '#FACC15', borderRadius: rs(2) }} />
-                                </View>
-                              )}
-                            </View>
-                          </View>
-                        )}
-                      </TouchableOpacity>
-                      <Text style={[styles.pauseText, { color: isDark ? '#94A3B8' : '#112F33' }]}>{isPaused ? 'Resume' : 'Pause'}</Text>
-                    </View>
-
                     {/* Continue */}
                     <TouchableOpacity
                       style={[styles.squircleNavBtn, { opacity: isSlideDisabled ? 0.4 : 1 }]}
@@ -1639,7 +1511,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                       <Ionicons name="arrow-forward" size={rs(20)} color="#FFFFFF" />
                     </TouchableOpacity>
                   </View>
-                </View>
+                  </View>
                 </View>
               </KeyboardAvoidingView>
             </SafeAreaView>
@@ -1671,6 +1543,17 @@ const styles = StyleSheet.create({
   // ── Content ──
   scrollArea: { flex: 1 },
   scrollContent: { flexGrow: 1, paddingHorizontal: rs(16), paddingTop: hs(6), paddingBottom: hs(40) },
+  focusGlow: {
+    flex: 1,
+    borderRadius: rs(18),
+    borderWidth: 1.5,
+    borderColor: 'rgba(77,220,235,0.65)',
+    shadowColor: '#00ADC1',
+    shadowOpacity: 0.9,
+    shadowRadius: 26,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 14,
+  },
   tabContentContainer: { width: '100%', flex: 1 },
   mainTitle: { fontSize: rs(20), fontWeight: '800', color: '#1A1A1A', marginBottom: hs(24) },
   sectionTitle: { fontSize: rs(18), fontWeight: '800', color: '#1A1A1A', marginBottom: hs(12) },
@@ -1679,8 +1562,6 @@ const styles = StyleSheet.create({
   modernCard: { flex: 1, width: '100%', backgroundColor: '#FFFFFF', borderRadius: rs(16), borderWidth: 1, borderColor: '#F0F4F8', overflow: 'visible', paddingBottom: 0 },
   cardBadgesRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(24), paddingTop: hs(16), zIndex: 2 },
   badgeCircle: { width: rs(44), height: rs(44), borderRadius: rs(22), justifyContent: 'center', alignItems: 'center', marginRight: rs(12) },
-  badgePill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: rs(14), minHeight: rs(34), paddingVertical: hs(6), borderRadius: rs(17) },
-  badgePillText: { fontSize: rs(12.5), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: '700' },
   cardHeaderTitleText: { fontSize: rs(18), fontWeight: '700', flexShrink: 1, fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif' },
   customDividerWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: rs(24), marginVertical: hs(12), zIndex: 2 },
   customDividerLine: { flex: 1, height: 1.5 },
@@ -1813,20 +1694,6 @@ const styles = StyleSheet.create({
   navBtnText: {
     fontSize: rs(14),
     fontWeight: '600',
-  },
-  pauseWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pauseBtn: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    transform: [{ scale: 0.85 }],
-  },
-  pauseText: {
-    fontSize: rs(11),
-    fontWeight: '600',
-    marginTop: hs(-4),
   },
   navCardTexts: {
     flex: 1,

@@ -13,7 +13,6 @@ import NameDetailScreen from '../screens/NameDetailScreen';
 import NowPlayingScreen from '../screens/NowPlayingScreen';
 import SuccessScreen from '../screens/SuccessScreen';
 import StreakScreen from '../screens/StreakScreen';
-import MilestoneScreen from '../screens/MilestoneScreen';
 import PersonalDetailsScreen from '../screens/PersonalDetailsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import NamesListScreen from '../screens/NamesListScreen';
@@ -22,6 +21,7 @@ import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import LearnedScreen from '../screens/LearnedScreen';
 import MasteredScreen from '../screens/MasteredScreen';
 import SuggestedNamesScreen from '../screens/SuggestedNamesScreen';
+import CategoriesScreen from '../screens/CategoriesScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -52,11 +52,6 @@ const AppNavigator = () => {
             options={{ animation: 'slide_from_right' }}
           />
           <Stack.Screen
-            name="Milestones"
-            component={MilestoneScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-          <Stack.Screen
             name="PersonalDetails"
             component={PersonalDetailsScreen}
             options={{ animation: 'slide_from_right' }}
@@ -84,6 +79,11 @@ const AppNavigator = () => {
           <Stack.Screen
             name="SuggestedNames"
             component={SuggestedNamesScreen}
+            options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: 'transparent' } }}
+          />
+          <Stack.Screen
+            name="Categories"
+            component={CategoriesScreen}
             options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: 'transparent' } }}
           />
           <Stack.Screen

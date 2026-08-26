@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNames } from '../context/NamesContext';
+import { usePlaylist } from '../context/PlaylistContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { useFocusEffect } from '@react-navigation/native';
@@ -61,6 +62,7 @@ const HomeScreen = ({ navigation }) => {
   const { isDark } = useAppTheme();
   const { scaleFontSize } = useFontSettings();
   const { names, learnedIds, masteredIds, refresh, refreshing, draftIds, markAsDraft, removeDraft } = useNames();
+  const { favouriteIds } = usePlaylist();
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [lastReadName, setLastReadName] = React.useState(null);
@@ -412,14 +414,24 @@ const HomeScreen = ({ navigation }) => {
             <Text style={[styles.greetingText, { color: textPrimary }]}>{greeting}</Text>
           </View>
         </View>
-        <TouchableOpacity
-          style={[styles.bellBtn, { backgroundColor: cardBg, borderColor }]}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate('Notifications')}
-        >
-          <Ionicons name="notifications" size={rs(20)} color={teal} />
-          {unreadNotifications > 0 && <View style={styles.notifDot} />}
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={[styles.bellBtn, { backgroundColor: cardBg, borderColor }]}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('NamesList', { statusFilter: 'favorites' })}
+          >
+            <Ionicons name="heart-outline" size={rs(20)} color={teal} />
+            {favouriteIds && favouriteIds.size > 0 && <View style={styles.notifDot} />}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.bellBtn, { backgroundColor: cardBg, borderColor }]}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('Notifications')}
+          >
+            <Ionicons name="notifications" size={rs(20)} color={teal} />
+            {unreadNotifications > 0 && <View style={styles.notifDot} />}
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* ── SCROLL BODY ── */}
@@ -607,7 +619,7 @@ const HomeScreen = ({ navigation }) => {
                 <Ionicons name="refresh" size={rs(16)} color={teal} />
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => navigation.navigate('SuggestedNames')}
+                onPress={() => navigation.navigate('Categories')}
                 activeOpacity={0.7}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: rs(2) }}
               >
@@ -703,6 +715,7 @@ const styles = StyleSheet.create({
     paddingVertical: rs(14),
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: rs(12) },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: rs(10) },
   avatar: { width: rs(44), height: rs(44), borderRadius: rs(22), justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontFamily: FONTS.bold, fontSize: rs(18) },
   helloText: { fontFamily: FONTS.regular, fontSize: rs(12), lineHeight: rs(16) },
