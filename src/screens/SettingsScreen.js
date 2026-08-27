@@ -42,6 +42,20 @@ const SettingsScreen = () => {
             </View>
 
             <View style={styles.settingsList}>
+              {/* Subscription & Full Access Pass */}
+              <TouchableOpacity
+                style={[styles.settingItem, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.05, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}
+                onPress={() => navigation.navigate('Subscription')}
+              >
+                <View style={styles.settingLeft}>
+                  <View style={[styles.iconCircle, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.15, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#EBECF0', borderWidth: isDark ? 1 : 6 }]}>
+                    <Ionicons name="sparkles" size={14} color="#10B981" />
+                  </View>
+                  <Text style={[styles.settingLabel, { color: colors.text }]}>Subscription & Access Pass</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"} />
+              </TouchableOpacity>
+
               {/* Reading Display & Text Settings */}
               <TouchableOpacity
                 style={[styles.settingItem, { backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#ffffff', shadowOpacity: isDark ? 0 : 0.05, borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'transparent', borderWidth: isDark ? 1 : 0 }]}

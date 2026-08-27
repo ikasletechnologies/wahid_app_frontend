@@ -12,7 +12,7 @@ const { width: SW } = Dimensions.get('window');
 const rs = (size) => Math.round(size * (SW / 393));
 
 const SuggestedNamesScreen = ({ navigation }) => {
-  const { names, draftIds, learnedIds, masteredIds, markAsDraft, removeDraft } = useNames();
+  const { names, draftIds, learnedIds, masteredIds, markAsDraft, removeDraft, isSubscribed } = useNames();
   const { isDark } = useAppTheme();
   
   const [draftLimitModalVisible, setDraftLimitModalVisible] = useState(false);
@@ -67,9 +67,14 @@ const SuggestedNamesScreen = ({ navigation }) => {
         <View style={styles.suggestRight}>
           <TouchableOpacity
             style={[styles.checkBtn, { backgroundColor: teal, opacity: isLearned ? 0.7 : 1 }]}
+            disabled={isLearned}
             activeOpacity={isLearned ? 1 : 0.8}
             onPress={() => {
               if (isLearned) return;
+              if (!isSubscribed) {
+                navigation.navigate('Subscription');
+                return;
+              }
               if (isDraft) {
                 removeDraft(item.number);
               } else {
@@ -81,7 +86,11 @@ const SuggestedNamesScreen = ({ navigation }) => {
               }
             }}
           >
-            <Ionicons name={showTick ? 'checkmark' : 'add'} size={rs(16)} color="#FFFFFF" />
+            <Ionicons
+              name={showTick ? 'checkmark' : 'add'}
+              size={rs(16)}
+              color="#FFFFFF"
+            />
           </TouchableOpacity>
         </View>
       </View>

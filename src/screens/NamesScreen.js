@@ -99,7 +99,7 @@ const NameCardBackground = ({ width, height, style, gradEnd = '#BCECF7', strokeC
 
 const NamesScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const { names, loading, learnedIds, masteredIds, revisitCounts, categories, markAsViewed, readingTimeToday, draftIds } = useNames();
+  const { names, loading, learnedIds, masteredIds, revisitCounts, categories, markAsViewed, readingTimeToday, draftIds, isSubscribed, checkCardAccess, fetchSubscriptionStatus } = useNames();
   const { favouriteIds } = usePlaylist();
   const { isDark, colors } = useAppTheme();
   const { user } = useAuth();
@@ -110,13 +110,14 @@ const NamesScreen = ({ navigation, route }) => {
 
   useFocusEffect(
     useCallback(() => {
+      if (fetchSubscriptionStatus) fetchSubscriptionStatus();
       const now = Date.now();
       if (now - lastNotifFetchRef.current < 30_000) return;
       lastNotifFetchRef.current = now;
       http.get('/api/notifications')
         .then(res => { if (res.data?.success) setUnreadNotifications(res.data.data.unreadCount || 0); })
         .catch(() => { });
-    }, [])
+    }, [fetchSubscriptionStatus])
   );
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -982,6 +983,10 @@ const NamesScreen = ({ navigation, route }) => {
                                 { text: "Study Drafts", onPress: () => navigation.navigate('NamesList', { statusFilter: 'drafts' }) }
                               ]
                             );
+                            return;
+                          }
+
+                          if (checkCardAccess && !checkCardAccess(item, navigation)) {
                             return;
                           }
 

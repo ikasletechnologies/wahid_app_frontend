@@ -10,19 +10,30 @@ import {
   TouchableWithoutFeedback,
   ScrollView,
   Platform,
+  useWindowDimensions,
+  Easing,
+  LayoutAnimation,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import Text from './AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme, THEME_MODES } from '../context/ThemeContext';
 import { useFontSettings, FONT_FAMILIES, FONT_SIZES, ARABIC_STYLES } from '../context/FontSettingsContext';
-import { FONTS } from '../theme';
+import { FONTS, COLORS } from '../theme';
 
-const { width: SW } = Dimensions.get('window');
-const rs = (n) => Math.round(n * (SW / 393));
+const RiAiGenerateText = ({ size = 16, color = 'currentColor', style }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill={color} style={style}>
+    <Path d="M21 6V8H3V6H21ZM3 11H14V13H3V11ZM3 16H10V18H3V16ZM18.5 10L19.25 12.25L21.5 13L19.25 13.75L18.5 16L17.75 13.75L15.5 13L17.75 12.25L18.5 10ZM14.5 16.5L15 18L16.5 18.5L15 19L14.5 20.5L14 19L12.5 18.5L14 18L14.5 16.5Z" />
+  </Svg>
+);
 
 const FONT_SIZE_KEYS = ['small', 'medium', 'large', 'extralarge'];
 
-const CustomTextSizeSlider = ({ currentSizeKey, onSizeChange, isDark }) => {
+const CustomTextSizeSlider = ({ currentSizeKey, onSizeChange, isDark, accentColor }) => {
+  const { width: windowWidth } = useWindowDimensions();
+  const scale = Math.min(windowWidth / 393, 1.25);
+  const rs = (n) => Math.round(n * scale);
+
   const [trackWidth, setTrackWidth] = useState(0);
   const activeIndex = FONT_SIZE_KEYS.indexOf(currentSizeKey) >= 0 ? FONT_SIZE_KEYS.indexOf(currentSizeKey) : 1;
   const thumbAnim = useRef(new Animated.Value(activeIndex / (FONT_SIZE_KEYS.length - 1))).current;
@@ -85,11 +96,11 @@ const CustomTextSizeSlider = ({ currentSizeKey, onSizeChange, isDark }) => {
           onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
           {...panResponder.panHandlers}
         >
-          {/* Background gray track */}
+          {/* Background track */}
           <View style={[styles.sliderTrackBg, { backgroundColor: isDark ? '#334155' : '#E2E8F0' }]} />
 
-          {/* Active emerald fill */}
-          <Animated.View style={[styles.sliderTrackActive, { width: activeTrackWidth }]} />
+          {/* Active fill */}
+          <Animated.View style={[styles.sliderTrackActive, { backgroundColor: accentColor, width: activeTrackWidth }]} />
 
           {/* Snap dots */}
           {FONT_SIZE_KEYS.map((key, index) => {
@@ -102,7 +113,7 @@ const CustomTextSizeSlider = ({ currentSizeKey, onSizeChange, isDark }) => {
                   styles.snapDot,
                   {
                     left: `${pct}%`,
-                    backgroundColor: isSelected ? '#059669' : (isDark ? '#475569' : '#CBD5E1'),
+                    backgroundColor: isSelected ? accentColor : (isDark ? '#475569' : '#CBD5E1'),
                   },
                 ]}
               />
@@ -110,7 +121,7 @@ const CustomTextSizeSlider = ({ currentSizeKey, onSizeChange, isDark }) => {
           })}
 
           {/* Draggable Circle Thumb */}
-          <Animated.View style={[styles.sliderThumb, { left: thumbLeft }]} />
+          <Animated.View style={[styles.sliderThumb, { borderColor: accentColor, left: thumbLeft }]} />
         </View>
       </TouchableWithoutFeedback>
 
@@ -124,141 +135,274 @@ const ReadingSettingsModal = ({ visible, onClose }) => {
   const { fontFamily, setFontFamily, fontSize, setFontSize, arabicFontStyle, setArabicFontStyle } = useFontSettings();
   const [activeTab, setActiveTab] = useState('Display');
 
-  const emerald = '#059669';
+  const { width: windowWidth } = useWindowDimensions();
+  const scale = Math.min(windowWidth / 393, 1.25);
+  const rs = (n) => Math.round(n * scale);
+  const isTabletOrDesktop = windowWidth >= 600;
+
+  const primaryColor = colors?.primary || COLORS.primary || '#06b6d4';
+  const primaryTint = primaryColor.startsWith('#') ? primaryColor + '1A' : 'rgba(6, 182, 212, 0.15)';
+  const primaryBgLight = primaryColor.startsWith('#') ? primaryColor + '12' : 'rgba(6, 182, 212, 0.1)';
+
+  const tabAnim = useRef(new Animated.Value(activeTab === 'Display' ? 0 : 1)).current;
+
+  useEffect(() => {
+    Animated.timing(tabAnim, {
+      toValue: activeTab === 'Display' ? 0 : 1,
+      duration: 220,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: false,
+    }).start();
+  }, [activeTab]);
+
+  const handleTabChange = (tab) => {
+    if (tab === activeTab) return;
+    LayoutAnimation.configureNext({
+      duration: 200,
+      create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
+      update: { type: LayoutAnimation.Types.easeInEaseOut },
+    });
+    setActiveTab(tab);
+  };
+
+  const handleThemeChange = (mode) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setThemeMode(mode);
+  };
+
+  const handleFontFamilyChange = (key) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setFontFamily(key);
+  };
+
+  const handleArabicStyleChange = (key) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setArabicFontStyle(key);
+  };
 
   if (!visible) return null;
 
   return (
     <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, isTabletOrDesktop && styles.overlayCentered]}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
-        <View style={[styles.modalCard, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', shadowColor: '#000' }]}>
+        <View
+          style={[
+            styles.modalCard,
+            { backgroundColor: isDark ? '#1E293B' : '#FFFFFF' },
+            isTabletOrDesktop && styles.modalCardDesktop,
+          ]}
+        >
           {/* Top Handle */}
           <View style={[styles.handleBar, { backgroundColor: isDark ? '#334155' : '#E2E8F0' }]} />
 
-          {/* Header */}
+          {/* Top Header */}
           <View style={styles.headerRow}>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Settings</Text>
+            <Text style={[styles.headerTitle, { color: isDark ? '#F8FAFC' : '#0F172A' }]}>Settings</Text>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.7}>
-              <Ionicons name="close" size={rs(22)} color={isDark ? '#94A3B8' : '#64748B'} />
+              <Ionicons name="close" size={rs(20)} color={isDark ? '#94A3B8' : '#64748B'} />
             </TouchableOpacity>
           </View>
 
           {/* Top Category Tabs (Display, Text) */}
-          <View style={styles.tabsRow}>
-            {['Display', 'Text'].map((tab) => {
-              const selected = activeTab === tab;
-              return (
-                <TouchableOpacity
-                  key={tab}
-                  style={[
-                    styles.tabPill,
-                    selected
-                      ? { backgroundColor: emerald }
-                      : { backgroundColor: isDark ? '#334155' : '#F1F5F9' },
-                  ]}
-                  onPress={() => setActiveTab(tab)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.tabPillText,
-                      { color: selected ? '#FFFFFF' : (isDark ? '#E8EDF2' : '#475569') },
-                      selected && { fontWeight: '700' },
-                    ]}
+          <View
+            style={[
+              styles.tabsOuterContainer,
+              { backgroundColor: isDark ? '#0F172A' : '#FFFFFF', borderColor: isDark ? '#334155' : '#F1F5F9' },
+            ]}
+          >
+            <View style={[styles.tabsRow, { backgroundColor: isDark ? '#0F172A' : '#FFFFFF' }]}>
+              {/* Animated Sliding Background Pill */}
+              <Animated.View
+                style={[
+                  styles.activeTabIndicator,
+                  {
+                    backgroundColor: primaryColor,
+                    left: tabAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0%', '50%'],
+                    }),
+                  },
+                ]}
+              />
+
+              {['Display', 'Text'].map((tab) => {
+                const selected = activeTab === tab;
+                return (
+                  <TouchableOpacity
+                    key={tab}
+                    style={styles.tabPill}
+                    onPress={() => handleTabChange(tab)}
+                    activeOpacity={0.85}
                   >
-                    {tab}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+                    {tab === 'Display' ? (
+                      <Ionicons
+                        name="desktop-outline"
+                        size={rs(16)}
+                        color={selected ? '#FFFFFF' : (isDark ? '#94A3B8' : '#64748B')}
+                        style={{ marginRight: rs(6) }}
+                      />
+                    ) : (
+                      <RiAiGenerateText
+                        size={rs(16)}
+                        color={selected ? '#FFFFFF' : (isDark ? '#94A3B8' : '#64748B')}
+                        style={{ marginRight: rs(6) }}
+                      />
+                    )}
+                    <Text
+                      style={[
+                        styles.tabPillText,
+                        { color: selected ? '#FFFFFF' : (isDark ? '#94A3B8' : '#64748B') },
+                        selected && { fontWeight: '600' },
+                      ]}
+                    >
+                      {tab}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
 
           <ScrollView style={styles.scrollContent} contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
             {activeTab === 'Display' && (
               <>
                 {/* THEMES SECTION */}
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Themes</Text>
-                <View style={styles.themesRow}>
+                <View style={styles.sectionHeaderRow}>
+                  <View style={[styles.sectionBadge, { backgroundColor: primaryTint }]}>
+                    <Ionicons name="color-palette-outline" size={rs(14)} color={primaryColor} />
+                  </View>
+                  <Text style={[styles.sectionTitle, { color: isDark ? '#F8FAFC' : '#0F172A' }]}>Themes</Text>
+                </View>
+
+                <View style={styles.cardsRow}>
                   {/* Modern (Light) */}
                   <TouchableOpacity
                     style={[
-                      styles.themeCard,
-                      { backgroundColor: '#F3F4F6' },
-                      (themeMode === 'light' || themeMode === 'default' && !isDark) && styles.themeCardSelected,
+                      styles.optionCard,
+                      (themeMode === 'light' || (themeMode === 'default' && !isDark))
+                        ? { backgroundColor: isDark ? primaryTint : primaryBgLight, borderColor: primaryColor }
+                        : { backgroundColor: '#FAFAFC', borderColor: isDark ? '#475569' : '#EBF0F5' },
                     ]}
-                    onPress={() => setThemeMode('light')}
+                    onPress={() => handleThemeChange('light')}
                     activeOpacity={0.85}
                   >
+                    {(themeMode === 'light' || (themeMode === 'default' && !isDark)) && (
+                      <View style={styles.checkBadge}>
+                        <Ionicons name="checkmark-circle" size={rs(18)} color={primaryColor} />
+                      </View>
+                    )}
                     <View style={styles.themeArabicWrap}>
                       <Text style={[styles.arabicPreviewText, { color: '#0F172A' }]}>بِسْمِ ٱللَّهِ</Text>
                     </View>
-                    <Text style={[styles.themeLabel, { color: '#0F172A' }]}>Modern</Text>
-                  </TouchableOpacity>
-
-                  {/* Paper (Cream / Sepia) */}
-                  <TouchableOpacity
-                    style={[
-                      styles.themeCard,
-                      { backgroundColor: '#FFFBEB' },
-                      themeMode === 'paper' && styles.themeCardSelected,
-                    ]}
-                    onPress={() => setThemeMode('paper')}
-                    activeOpacity={0.85}
-                  >
-                    <View style={styles.themeArabicWrap}>
-                      <Text style={[styles.arabicPreviewText, { color: '#2C221E' }]}>بِسْمِ ٱللَّهِ</Text>
-                    </View>
-                    <Text style={[styles.themeLabelPaper, { color: '#2C221E' }]}>Paper</Text>
+                    <Text
+                      style={[
+                        styles.fontCardLabel,
+                        { color: (themeMode === 'light' || (themeMode === 'default' && !isDark)) ? primaryColor : '#0F172A' },
+                        (themeMode === 'light' || (themeMode === 'default' && !isDark)) && { fontWeight: '700' },
+                      ]}
+                    >
+                      Modern
+                    </Text>
                   </TouchableOpacity>
 
                   {/* Dark */}
                   <TouchableOpacity
                     style={[
-                      styles.themeCard,
-                      { backgroundColor: '#1E293B' },
-                      (themeMode === 'dark' || (themeMode === 'default' && isDark)) && styles.themeCardSelected,
+                      styles.optionCard,
+                      (themeMode === 'dark' || (themeMode === 'default' && isDark))
+                        ? { backgroundColor: '#1E293B', borderColor: primaryColor }
+                        : { backgroundColor: '#1E293B', borderColor: '#334155' },
                     ]}
-                    onPress={() => setThemeMode('dark')}
+                    onPress={() => handleThemeChange('dark')}
                     activeOpacity={0.85}
                   >
+                    {(themeMode === 'dark' || (themeMode === 'default' && isDark)) && (
+                      <View style={styles.checkBadge}>
+                        <Ionicons name="checkmark-circle" size={rs(18)} color={primaryColor} />
+                      </View>
+                    )}
                     <View style={styles.themeArabicWrap}>
                       <Text style={[styles.arabicPreviewText, { color: '#FFFFFF' }]}>بِسْمِ ٱللَّهِ</Text>
                     </View>
-                    <Text style={[styles.themeLabel, { color: '#FFFFFF' }]}>Dark</Text>
+                    <Text
+                      style={[
+                        styles.fontCardLabel,
+                        { color: (themeMode === 'dark' || (themeMode === 'default' && isDark)) ? primaryColor : '#FFFFFF' },
+                        (themeMode === 'dark' || (themeMode === 'default' && isDark)) && { fontWeight: '700' },
+                      ]}
+                    >
+                      Dark
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
                 {/* TEXT SIZE SECTION */}
-                <Text style={[styles.sectionTitle, { color: colors.text, marginTop: rs(24) }]}>Text Size</Text>
+                <View style={[styles.sectionHeaderRow, { marginTop: rs(24) }]}>
+                  <View style={[styles.sectionBadge, { backgroundColor: primaryTint }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+                      <Text style={{ fontSize: rs(12), fontWeight: '700', color: primaryColor, lineHeight: rs(14) }}>A</Text>
+                      <Text style={{ fontSize: rs(9), fontWeight: '700', color: primaryColor, lineHeight: rs(10), marginBottom: 0.5 }}>A</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.sectionTitle, { color: isDark ? '#F8FAFC' : '#0F172A' }]}>Text Size</Text>
+                </View>
                 <CustomTextSizeSlider
                   currentSizeKey={fontSize}
                   onSizeChange={(newSize) => setFontSize(newSize)}
                   isDark={isDark}
+                  accentColor={primaryColor}
                 />
               </>
             )}
 
             {activeTab === 'Text' && (
               <>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Font Family</Text>
-                <View style={styles.pillsRow}>
+                {/* FONT FAMILY SECTION */}
+                <View style={styles.sectionHeaderRow}>
+                  <View style={[styles.sectionBadge, { backgroundColor: primaryTint }]}>
+                    <Text style={{ fontSize: rs(12), fontWeight: '700', color: primaryColor }}>Aa</Text>
+                  </View>
+                  <Text style={[styles.sectionTitle, { color: isDark ? '#F8FAFC' : '#0F172A' }]}>Font Family</Text>
+                </View>
+                <View style={styles.cardsRow}>
                   {Object.entries(FONT_FAMILIES).map(([key, { label }]) => {
                     const selected = fontFamily === key;
                     return (
                       <TouchableOpacity
                         key={key}
                         style={[
-                          styles.optionPill,
+                          styles.optionCard,
                           selected
-                            ? { backgroundColor: emerald, borderColor: emerald }
-                            : { backgroundColor: isDark ? '#334155' : '#F1F5F9', borderColor: isDark ? '#475569' : '#E2E8F0' },
+                            ? { backgroundColor: isDark ? primaryTint : primaryBgLight, borderColor: primaryColor }
+                            : { backgroundColor: isDark ? '#334155' : '#FAFAFC', borderColor: isDark ? '#475569' : '#EBF0F5' },
                         ]}
-                        onPress={() => setFontFamily(key)}
-                        activeOpacity={0.8}
+                        onPress={() => handleFontFamilyChange(key)}
+                        activeOpacity={0.85}
                       >
-                        <Text style={[styles.optionPillText, { color: selected ? '#FFFFFF' : colors.text }]}>
+                        {selected && (
+                          <View style={styles.checkBadge}>
+                            <Ionicons name="checkmark-circle" size={rs(18)} color={primaryColor} />
+                          </View>
+                        )}
+                        <Text
+                          style={[
+                            styles.fontCardPreview,
+                            { color: selected ? primaryColor : (isDark ? '#F1F5F9' : '#0F172A') },
+                            key === 'times' && { fontFamily: 'serif' },
+                          ]}
+                        >
+                          Aa
+                        </Text>
+                        <Text
+                          style={[
+                            styles.fontCardLabel,
+                            { color: selected ? primaryColor : (isDark ? '#94A3B8' : '#475569') },
+                            selected && { fontWeight: '600' },
+                          ]}
+                          numberOfLines={1}
+                        >
                           {label}
                         </Text>
                       </TouchableOpacity>
@@ -266,23 +410,50 @@ const ReadingSettingsModal = ({ visible, onClose }) => {
                   })}
                 </View>
 
-                <Text style={[styles.sectionTitle, { color: colors.text, marginTop: rs(24) }]}>Arabic Script Style</Text>
-                <View style={styles.pillsRow}>
-                  {Object.entries(ARABIC_STYLES).map(([key, { label }]) => {
+                {/* ARABIC SCRIPT STYLE SECTION */}
+                <View style={[styles.sectionHeaderRow, { marginTop: rs(24) }]}>
+                  <View style={[styles.sectionBadge, { backgroundColor: primaryTint }]}>
+                    <Ionicons name="pencil" size={rs(13)} color={primaryColor} />
+                  </View>
+                  <Text style={[styles.sectionTitle, { color: isDark ? '#F8FAFC' : '#0F172A' }]}>Arabic Script Style</Text>
+                </View>
+                <View style={styles.cardsRow}>
+                  {Object.entries(ARABIC_STYLES).map(([key, { label, family }]) => {
                     const selected = arabicFontStyle === key;
                     return (
                       <TouchableOpacity
                         key={key}
                         style={[
-                          styles.optionPill,
+                          styles.optionCard,
                           selected
-                            ? { backgroundColor: emerald, borderColor: emerald }
-                            : { backgroundColor: isDark ? '#334155' : '#F1F5F9', borderColor: isDark ? '#475569' : '#E2E8F0' },
+                            ? { backgroundColor: isDark ? primaryTint : primaryBgLight, borderColor: primaryColor }
+                            : { backgroundColor: isDark ? '#334155' : '#FAFAFC', borderColor: isDark ? '#475569' : '#EBF0F5' },
                         ]}
-                        onPress={() => setArabicFontStyle(key)}
-                        activeOpacity={0.8}
+                        onPress={() => handleArabicStyleChange(key)}
+                        activeOpacity={0.85}
                       >
-                        <Text style={[styles.optionPillText, { color: selected ? '#FFFFFF' : colors.text }]}>
+                        {selected && (
+                          <View style={styles.checkBadge}>
+                            <Ionicons name="checkmark-circle" size={rs(18)} color={primaryColor} />
+                          </View>
+                        )}
+                        <Text
+                          style={[
+                            styles.arabicCardPreview,
+                            { color: isDark ? '#F1F5F9' : '#0F172A' },
+                            family ? { fontFamily: family } : null,
+                          ]}
+                        >
+                          ابجد
+                        </Text>
+                        <Text
+                          style={[
+                            styles.fontCardLabel,
+                            { color: selected ? primaryColor : (isDark ? '#94A3B8' : '#475569') },
+                            selected && { fontWeight: '600' },
+                          ]}
+                          numberOfLines={2}
+                        >
                           {label}
                         </Text>
                       </TouchableOpacity>
@@ -303,98 +474,165 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
+  overlayCentered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.45)',
   },
   modalCard: {
     width: '100%',
-    borderTopLeftRadius: rs(28),
-    borderTopRightRadius: rs(28),
-    paddingHorizontal: rs(20),
-    paddingTop: rs(12),
-    paddingBottom: Platform.OS === 'ios' ? rs(36) : rs(24),
+    maxWidth: 600,
+    alignSelf: 'center',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 36 : 24,
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.15,
     shadowRadius: 16,
     elevation: 20,
+    maxHeight: '85%',
+  },
+  modalCardDesktop: {
+    borderRadius: 24,
     maxHeight: '80%',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
   },
   handleBar: {
-    width: rs(40),
-    height: rs(4),
-    borderRadius: rs(2),
+    width: 40,
+    height: 4,
+    borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: rs(14),
+    marginBottom: 12,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: rs(16),
+    marginBottom: 14,
   },
   headerTitle: {
-    fontSize: rs(20),
+    fontSize: 18,
     fontWeight: '700',
     fontFamily: FONTS.bold,
   },
   closeBtn: {
-    width: rs(32),
-    height: rs(32),
-    borderRadius: rs(16),
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  tabsOuterContainer: {
+    borderRadius: 30,
+    padding: 4,
+    marginBottom: 20,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   tabsRow: {
     flexDirection: 'row',
-    gap: rs(8),
-    marginBottom: rs(22),
+    borderRadius: 26,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  activeTabIndicator: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: '50%',
+    borderRadius: 22,
+    zIndex: 0,
   },
   tabPill: {
-    paddingVertical: rs(8),
-    paddingHorizontal: rs(16),
-    borderRadius: rs(20),
+    flex: 1,
+    height: 42,
+    borderRadius: 22,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 1,
   },
   tabPillText: {
-    fontSize: rs(14),
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '500',
   },
   scrollContent: {
-    maxHeight: rs(360),
+    height: 320,
+    minHeight: 320,
   },
   scrollContainer: {
-    paddingBottom: rs(16),
+    paddingBottom: 16,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  sectionBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
   },
   sectionTitle: {
-    fontSize: rs(16),
+    fontSize: 16,
     fontWeight: '700',
     fontFamily: FONTS.bold,
-    marginBottom: rs(12),
   },
-  themesRow: {
+  cardsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: rs(10),
+    gap: 10,
   },
-  themeCard: {
+  optionCard: {
     flex: 1,
-    height: rs(105),
-    borderRadius: rs(18),
-    padding: rs(10),
-    justifyContent: 'space-between',
+    height: 100,
+    borderRadius: 16,
+    padding: 8,
+    justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    position: 'relative',
+    borderWidth: 1.5,
   },
-  themeCardSelected: {
-    borderColor: '#059669',
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 4,
+  checkBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    zIndex: 2,
+  },
+  fontCardPreview: {
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '500',
+    marginBottom: 4,
+    marginTop: 4,
+  },
+  arabicCardPreview: {
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '500',
+    marginBottom: 4,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  fontCardLabel: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   themeArabicWrap: {
     flex: 1,
@@ -402,112 +640,77 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   arabicPreviewText: {
-    fontSize: rs(20),
+    fontSize: 18,
     fontFamily: FONTS.arabic,
     fontWeight: '700',
   },
-  themeLabel: {
-    fontSize: rs(13),
-    fontWeight: '600',
-  },
   themeLabelPaper: {
-    fontSize: rs(13),
-    fontWeight: '700',
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '600',
     fontFamily: 'serif',
   },
   sliderContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: rs(8),
-    paddingHorizontal: rs(4),
+    marginVertical: 8,
+    paddingHorizontal: 4,
   },
   sliderLabelSmall: {
-    fontSize: rs(14),
+    fontSize: 14,
     fontWeight: '600',
-    width: rs(24),
+    width: 24,
     textAlign: 'center',
   },
   sliderLabelLarge: {
-    fontSize: rs(22),
+    fontSize: 22,
     fontWeight: '700',
-    width: rs(28),
+    width: 28,
     textAlign: 'center',
   },
   sliderTrackArea: {
     flex: 1,
-    height: rs(40),
+    height: 40,
     justifyContent: 'center',
-    marginHorizontal: rs(8),
+    marginHorizontal: 8,
   },
   sliderTrackBg: {
     width: '100%',
-    height: rs(4),
-    borderRadius: rs(2),
+    height: 4,
+    borderRadius: 2,
     position: 'absolute',
   },
   sliderTrackActive: {
-    height: rs(4),
-    borderRadius: rs(2),
-    backgroundColor: '#059669',
+    height: 4,
+    borderRadius: 2,
     position: 'absolute',
     left: 0,
   },
   snapDot: {
-    width: rs(8),
-    height: rs(8),
-    borderRadius: rs(4),
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     position: 'absolute',
     top: '50%',
-    marginTop: rs(-4),
-    marginLeft: rs(-4),
+    marginTop: -4,
+    marginLeft: -4,
   },
   sliderThumb: {
-    width: rs(26),
-    height: rs(26),
-    borderRadius: rs(13),
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: '#FFFFFF',
     borderWidth: 2.5,
-    borderColor: '#059669',
     position: 'absolute',
     top: '50%',
-    marginTop: rs(-13),
+    marginTop: -13,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
   },
-  pillsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: rs(10),
-  },
-  optionPill: {
-    paddingVertical: rs(10),
-    paddingHorizontal: rs(16),
-    borderRadius: rs(20),
-    borderWidth: 1,
-  },
-  optionPillText: {
-    fontSize: rs(14),
-    fontWeight: '600',
-  },
-  audioInfoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: rs(16),
-    borderRadius: rs(16),
-    borderWidth: 1,
-  },
-  audioTitle: {
-    fontSize: rs(15),
-    fontWeight: '700',
-    marginBottom: rs(4),
-  },
-  audioDesc: {
-    fontSize: rs(13),
-    lineHeight: rs(18),
-  },
 });
 
 export default ReadingSettingsModal;
+

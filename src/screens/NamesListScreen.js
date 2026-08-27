@@ -87,7 +87,7 @@ const THEME_COLORS = {
 
 const NamesListScreen = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
-  const { names, learnedIds, masteredIds, draftIds, reviewLaterIds } = useNames();
+  const { names, learnedIds, masteredIds, draftIds, reviewLaterIds, checkCardAccess } = useNames();
   const { favouriteIds } = usePlaylist();
   const { isDark, colors } = useAppTheme();
 
@@ -196,6 +196,11 @@ const NamesListScreen = ({ navigation, route }) => {
                 { text: "Study Drafts", onPress: () => navigation.navigate('NamesList', { statusFilter: 'drafts' }) }
               ]
             );
+            return;
+          }
+
+          const num = item.number ?? item.id;
+          if (checkCardAccess && !checkCardAccess(num, navigation)) {
             return;
           }
 

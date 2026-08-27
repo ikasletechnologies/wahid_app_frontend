@@ -13,7 +13,7 @@ const { width: SW } = Dimensions.get('window');
 const rs = (size) => Math.round(size * (SW / 393));
 
 const CategoriesScreen = ({ navigation }) => {
-  const { names, learnedIds, masteredIds, draftIds, markAsDraft, removeDraft } = useNames();
+  const { names, learnedIds, masteredIds, draftIds, markAsDraft, removeDraft, isSubscribed } = useNames();
   const { isDark } = useAppTheme();
 
   const [expandedCategories, setExpandedCategories] = useState({});
@@ -56,6 +56,10 @@ const CategoriesScreen = ({ navigation }) => {
     if (isDraft) {
       removeDraft(item.number);
     } else {
+      if (!isSubscribed) {
+        navigation.navigate('Subscription');
+        return;
+      }
       if (visibleDraftsCount >= 4) {
         setDraftLimitModalVisible(true);
       } else {
@@ -149,10 +153,15 @@ const CategoriesScreen = ({ navigation }) => {
                             ) : (
                               <TouchableOpacity
                                 style={[styles.draftToggleBtn, { backgroundColor: teal }]}
-                                activeOpacity={0.8}
+                                disabled={isPlusDisabled}
+                                activeOpacity={isPlusDisabled ? 1 : 0.8}
                                 onPress={() => handleAddToDraft(item)}
                               >
-                                <Ionicons name={isDraft ? 'checkmark' : 'add'} size={rs(16)} color="#FFFFFF" />
+                                <Ionicons
+                                  name={isDraft ? 'checkmark' : 'add'}
+                                  size={rs(16)}
+                                  color="#FFFFFF"
+                                />
                               </TouchableOpacity>
                             )}
                           </View>

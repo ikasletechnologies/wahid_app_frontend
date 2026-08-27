@@ -1,5 +1,5 @@
-import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
-import { AppState } from 'react-native';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef, useMemo } from 'react';
+import { AppState, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import http from '../config/http';
 import { ENDPOINTS } from '../config/api';
@@ -209,6 +209,59 @@ export const NamesProvider = ({ children }) => {
   const [readingTimeToday, setReadingTimeToday] = useState(0);
   const [draftIds, setDraftIds] = useState([]);
   const [reviewLaterIds, setReviewLaterIds] = useState([]);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  const fetchSubscriptionStatus = useCallback(async () => {
+    try {
+      const res = await http.get(ENDPOINTS.subscriptionStatus);
+      if (res.data?.success) {
+        setIsSubscribed(!!res.data.data?.isSubscribed);
+      }
+    } catch (e) {
+      console.warn('[SUBSCRIPTION STATUS CHECK ERROR]', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSubscriptionStatus();
+  }, [fetchSubscriptionStatus, user, token]);
+
+  const totalReadCards = useMemo(() => {
+    return new Set([
+      ...(viewedIds || []),
+      ...(learnedIds || []),
+      ...(masteredIds || []),
+    ]).size;
+  }, [viewedIds, learnedIds, masteredIds]);
+
+  const isSuggestedPlusDisabled = useMemo(() => {
+    return totalReadCards >= 5 && !isSubscribed;
+  }, [totalReadCards, isSubscribed]);
+
+  const checkCardAccess = useCallback((nameOrNumber, navigation) => {
+    const num = typeof nameOrNumber === 'object' ? (nameOrNumber.number || nameOrNumber.id) : nameOrNumber;
+    const cardNumber = Number(num);
+
+    if (cardNumber >= 1 && cardNumber <= 5) {
+      return true; // Cards 1-5 free
+    }
+
+    if (isSubscribed) {
+      return true; // Subscribed user
+    }
+
+    if (navigation) {
+      Alert.alert(
+        "Full Access Pass Required",
+        "Cards 6 to 99 require an active 30-Day Full Access Pass. Unlock all 99 cards to continue learning!",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Get Access Pass", onPress: () => navigation.navigate('Subscription') }
+        ]
+      );
+    }
+    return false;
+  }, [isSubscribed]);
 
   // Load today's reading time, drafts, and review later IDs
   useEffect(() => {
@@ -626,6 +679,11 @@ export const NamesProvider = ({ children }) => {
       getMoodPlaylist,
       getDailyPlaylist,
       getNameOfDay,
+      isSubscribed,
+      totalReadCards,
+      isSuggestedPlusDisabled,
+      fetchSubscriptionStatus,
+      checkCardAccess,
       categories: CATEGORIES,
       moods: MOODS,
     }}>

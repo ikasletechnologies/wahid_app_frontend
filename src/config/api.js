@@ -49,4 +49,10 @@ export const ENDPOINTS = {
 
   // Insights & analytics
   userInsights:       `${API_BASE_URL}/api/insights`,             // GET → user stats
+
+  // Subscription & Payment
+  subscriptionPlans:  `${API_BASE_URL}/api/subscription/plans`,     // GET ?region=IN|AE|GB
+  subscriptionStatus: `${API_BASE_URL}/api/subscription/status`,    // GET → subscription status
+  createOrder:        `${API_BASE_URL}/api/subscription/create-order`, // POST { region }
+  verifyPayment:      `${API_BASE_URL}/api/subscription/verify-payment`,// POST { razorpay_order_id, razorpay_payment_id, razorpay_signature }
 };

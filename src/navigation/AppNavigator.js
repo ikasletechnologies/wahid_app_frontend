@@ -15,6 +15,7 @@ import SuccessScreen from '../screens/SuccessScreen';
 import StreakScreen from '../screens/StreakScreen';
 import PersonalDetailsScreen from '../screens/PersonalDetailsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import SubscriptionScreen from '../screens/SubscriptionScreen';
 import NamesListScreen from '../screens/NamesListScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
@@ -59,6 +60,11 @@ const AppNavigator = () => {
           <Stack.Screen
             name="Settings"
             component={SettingsScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name="Subscription"
+            component={SubscriptionScreen}
             options={{ animation: 'slide_from_right' }}
           />
           <Stack.Screen

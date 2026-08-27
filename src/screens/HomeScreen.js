@@ -62,7 +62,7 @@ const HomeScreen = ({ navigation }) => {
   const { user } = useAuth();
   const { isDark } = useAppTheme();
   const { scaleFontSize } = useFontSettings();
-  const { names, learnedIds, masteredIds, refresh, refreshing, draftIds, markAsDraft, removeDraft } = useNames();
+  const { names, learnedIds, masteredIds, refresh, refreshing, draftIds, markAsDraft, removeDraft, checkCardAccess, fetchSubscriptionStatus, isSubscribed } = useNames();
   const { favouriteIds } = usePlaylist();
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -104,13 +104,14 @@ const HomeScreen = ({ navigation }) => {
   // ── Notifications ──────────────────────────────────────────────────────────
   useFocusEffect(
     React.useCallback(() => {
+      if (fetchSubscriptionStatus) fetchSubscriptionStatus();
       const now = Date.now();
       if (now - lastNotifFetchRef.current < 30_000) return;
       lastNotifFetchRef.current = now;
       http.get('/api/notifications')
         .then(res => { if (res.data?.success) setUnreadNotifications(res.data.data.unreadCount || 0); })
         .catch(() => { });
-    }, [])
+    }, [fetchSubscriptionStatus])
   );
 
   // ── Last read name ─────────────────────────────────────────────────────────
@@ -291,9 +292,13 @@ const HomeScreen = ({ navigation }) => {
   const handleContinueReading = async () => {
     if (!lastReadName) {
       const def = names.find(n => n.number === 1) || names[0];
-      if (def) navigation.navigate('NameDetail', { name: def, initialStepIndex: 0 });
+      if (def) {
+        if (checkCardAccess && !checkCardAccess(def, navigation)) return;
+        navigation.navigate('NameDetail', { name: def, initialStepIndex: 0 });
+      }
       return;
     }
+    if (checkCardAccess && !checkCardAccess(lastReadName, navigation)) return;
     const nameNumber = lastReadName.number || lastReadName.id;
     try {
       const [savedProgress, savedDraft] = await Promise.all([
@@ -338,6 +343,7 @@ const HomeScreen = ({ navigation }) => {
         activeOpacity={0.8}
         onPress={async () => {
           if (item.number > 0) {
+            if (checkCardAccess && !checkCardAccess(item, navigation)) return;
             const now = Date.now();
             const draftStepIndex = progressMap[item.number] || 0;
             await AsyncStorage.setItem('last_reading_progress', JSON.stringify({
@@ -378,6 +384,10 @@ const HomeScreen = ({ navigation }) => {
             style={[styles.checkBtn, { backgroundColor: teal }]}
             activeOpacity={0.8}
             onPress={() => {
+              if (!isSubscribed) {
+                navigation.navigate('Subscription');
+                return;
+              }
               if (isSelected) {
                 removeDraft(item.number);
               } else {
@@ -389,7 +399,11 @@ const HomeScreen = ({ navigation }) => {
               }
             }}
           >
-            <Ionicons name={isSelected ? 'checkmark' : 'add'} size={rs(16)} color="#FFFFFF" />
+            <Ionicons
+              name={isSelected ? 'checkmark' : 'add'}
+              size={rs(16)}
+              color="#FFFFFF"
+            />
           </TouchableOpacity>
         </View>
       </View>

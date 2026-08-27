@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { View, StyleSheet, Dimensions, Animated, Easing, Image, TouchableOpacity, StatusBar, PanResponder, ScrollView, TouchableWithoutFeedback, LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform, Keyboard, Share } from 'react-native';
+import { View, StyleSheet, Dimensions, Animated, Easing, Image, TouchableOpacity, StatusBar, PanResponder, ScrollView, TouchableWithoutFeedback, LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform, Keyboard, Share, Alert } from 'react-native';
 import Text from '../components/AppText';
 import TextInput from '../components/AppTextInput';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -640,10 +640,24 @@ const getReflectionAnswers = (nameObj) => {
 const NameDetailScreen = ({ route, navigation }) => {
   const insets = useSafeAreaInsets();
   const { name, initialStepIndex = 0, draftProgress } = route.params;
-  const { markAsLearned, masteredIds, revisitCounts, userReflections, incrementReadingTime, markAsDraft, removeDraft, reviewLaterIds, toggleReviewLater } = useNames();
+  const { markAsLearned, masteredIds, revisitCounts, userReflections, incrementReadingTime, markAsDraft, removeDraft, reviewLaterIds, toggleReviewLater, isSubscribed } = useNames();
   const { favouriteIds, toggleFavourite } = usePlaylist();
   const isFocused = useIsFocused();
   const { isDark, themeMode } = useAppTheme();
+
+  useEffect(() => {
+    const cardNumber = Number(name?.number || name?.id);
+    if (cardNumber > 5 && !isSubscribed) {
+      Alert.alert(
+        "Full Access Pass Required",
+        "Cards 6 to 99 require an active 30-Day Full Access Pass. Unlock all 99 cards to continue learning!",
+        [
+          { text: "Cancel", onPress: () => navigation.goBack(), style: "cancel" },
+          { text: "Get Access Pass", onPress: () => navigation.replace('Subscription') }
+        ]
+      );
+    }
+  }, [name, isSubscribed]);
   const [readingSettingsVisible, setReadingSettingsVisible] = useState(false);
   const isMastered = masteredIds ? masteredIds.includes(name.id) : false;
   const isFavorite = favouriteIds ? favouriteIds.has(name.number || name.id) : false;
