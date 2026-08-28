@@ -242,8 +242,14 @@ export const NamesProvider = ({ children }) => {
     const num = typeof nameOrNumber === 'object' ? (nameOrNumber.number || nameOrNumber.id) : nameOrNumber;
     const cardNumber = Number(num);
 
-    if (cardNumber >= 1 && cardNumber <= 5) {
-      return true; // Cards 1-5 free
+    const uniqueLearnedCount = new Set(learnedIds.map(String)).size;
+
+    if (uniqueLearnedCount < 5) {
+      return true;
+    }
+
+    if (learnedIds.includes(cardNumber) || learnedIds.includes(String(cardNumber))) {
+      return true;
     }
 
     if (isSubscribed) {
@@ -251,17 +257,10 @@ export const NamesProvider = ({ children }) => {
     }
 
     if (navigation) {
-      Alert.alert(
-        "Full Access Pass Required",
-        "Cards 6 to 99 require an active 30-Day Full Access Pass. Unlock all 99 cards to continue learning!",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Get Access Pass", onPress: () => navigation.navigate('Subscription') }
-        ]
-      );
+      navigation.navigate('Subscription');
     }
     return false;
-  }, [isSubscribed]);
+  }, [isSubscribed, learnedIds]);
 
   // Load today's reading time, drafts, and review later IDs
   useEffect(() => {
