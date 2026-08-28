@@ -242,13 +242,13 @@ export const NamesProvider = ({ children }) => {
     const num = typeof nameOrNumber === 'object' ? (nameOrNumber.number || nameOrNumber.id) : nameOrNumber;
     const cardNumber = Number(num);
 
-    const uniqueLearnedCount = new Set(learnedIds.map(String)).size;
+    const uniqueLearnedCount = new Set([...learnedIds.map(String), ...draftIds.map(String)]).size;
 
     if (uniqueLearnedCount < 5) {
       return true;
     }
 
-    if (learnedIds.includes(cardNumber) || learnedIds.includes(String(cardNumber))) {
+    if (learnedIds.includes(cardNumber) || learnedIds.includes(String(cardNumber)) || draftIds.includes(cardNumber) || draftIds.includes(String(cardNumber))) {
       return true;
     }
 
@@ -260,7 +260,7 @@ export const NamesProvider = ({ children }) => {
       navigation.navigate('Subscription');
     }
     return false;
-  }, [isSubscribed, learnedIds]);
+  }, [isSubscribed, learnedIds, draftIds]);
 
   // Load today's reading time, drafts, and review later IDs
   useEffect(() => {

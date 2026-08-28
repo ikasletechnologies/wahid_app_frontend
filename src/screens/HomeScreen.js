@@ -74,6 +74,7 @@ const HomeScreen = ({ navigation }) => {
   const [suggestedNames, setSuggestedNames] = React.useState([]);
   const [suggestedOffset, setSuggestedOffset] = React.useState(0);
   const [draftLimitModalVisible, setDraftLimitModalVisible] = React.useState(false);
+  const [pendingDraft, setPendingDraft] = React.useState(null);
   const [progressMap, setProgressMap] = React.useState({});
   const lastNotifFetchRef = React.useRef(0);
 
@@ -148,12 +149,11 @@ const HomeScreen = ({ navigation }) => {
                 if (nameObj) {
                   setLastReadName(nameObj);
                   setIsNewName(false);
-                  const now = Date.now();
-                  setLastReadTimestamp(now);
+                  setLastReadTimestamp(null);
                   AsyncStorage.setItem('last_reading_progress', JSON.stringify({
                     nameNumber: firstDraftId,
                     stepIndex: 0,
-                    timestamp: now,
+                    timestamp: null,
                   })).catch(() => {});
                   return;
                 }
@@ -171,6 +171,8 @@ const HomeScreen = ({ navigation }) => {
   const activeDraftIds = React.useMemo(() => {
     return (draftIds || []).filter(id => !learnedIds.includes(id) && !masteredIds.includes(id));
   }, [draftIds, learnedIds, masteredIds]);
+
+  const isFreshUser = learnedIds.length === 0 && masteredIds.length === 0 && (draftIds || []).length === 0;
 
   const visibleDraftsCount = React.useMemo(() => {
     let count = activeDraftIds.length;
@@ -365,7 +367,9 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const renderSuggestRow = (item, idx) => {
-    const isSelected = activeDraftIds.includes(item.number);
+    const isDraft = activeDraftIds.includes(item.number);
+    const isLearned = learnedIds.includes(item.number) || masteredIds.includes(item.number);
+    const showTick = isDraft || isLearned;
     const matchPercent = item.matchPercent ?? getMatchPercent(item, idx);
 
     return (
@@ -381,17 +385,20 @@ const HomeScreen = ({ navigation }) => {
             <Text style={[styles.matchLabelText, { color: teal }]}>Match</Text>
           </View>
           <TouchableOpacity
-            style={[styles.checkBtn, { backgroundColor: teal }]}
-            activeOpacity={0.8}
+            style={[styles.checkBtn, { backgroundColor: showTick ? '#4CAF50' : teal, opacity: isLearned ? 0.7 : 1 }]}
+            disabled={isLearned}
+            activeOpacity={isLearned ? 1 : 0.8}
             onPress={() => {
-              if (!isSubscribed) {
-                navigation.navigate('Subscription');
-                return;
-              }
-              if (isSelected) {
+              if (isLearned) return;
+              if (isDraft) {
                 removeDraft(item.number);
               } else {
-                if (visibleDraftsCount >= 4) {
+                if (checkCardAccess && !checkCardAccess(item, navigation)) {
+                  return;
+                }
+                
+                if (visibleDraftsCount === 4) {
+                  setPendingDraft(item.number);
                   setDraftLimitModalVisible(true);
                 } else {
                   markAsDraft(item.number);
@@ -400,7 +407,7 @@ const HomeScreen = ({ navigation }) => {
             }}
           >
             <Ionicons
-              name={isSelected ? 'checkmark' : 'add'}
+              name={showTick ? 'checkmark' : 'add'}
               size={rs(16)}
               color="#FFFFFF"
             />
@@ -469,19 +476,17 @@ const HomeScreen = ({ navigation }) => {
               </View>
               <View>
                 <Text style={[styles.cardBadgeText, { color: teal }]}>
-                  {lastReadTimestamp ? 'IN PROGRESS' : 'START YOUR JOURNEY'}
+                  {isFreshUser ? 'NEW' : 'IN PROGRESS'}
                 </Text>
                 <Text style={[styles.cardSubText, { color: textSec }]}>
-                  {lastReadTimestamp ? 'Continue your journey' : 'Discover the Names'}
+                  {isFreshUser ? 'Start Your Journey' : 'Continue your journey'}
                 </Text>
               </View>
             </View>
-            {timeAgo && (
-              <View style={[styles.timeBadge, { borderWidth: 1, borderColor: teal, borderRadius: rs(20), paddingHorizontal: rs(10), paddingVertical: rs(5) }]}>
-                <Ionicons name="time-outline" size={rs(12)} color={teal} />
-                <Text style={[styles.timeText, { color: teal }]}>{timeAgo}</Text>
-              </View>
-            )}
+            <View style={[styles.timeBadge, { borderWidth: 1, borderColor: teal, borderRadius: rs(20), paddingHorizontal: timeAgo ? rs(10) : rs(5), paddingVertical: rs(5) }]}>
+              <Ionicons name="time-outline" size={rs(12)} color={teal} style={{ fontWeight: '600' }} />
+              {!isFreshUser && timeAgo ? <Text style={[styles.timeText, { color: teal }]}>{timeAgo}</Text> : null}
+            </View>
           </View>
 
           {/* Name + book image */}
@@ -498,7 +503,7 @@ const HomeScreen = ({ navigation }) => {
               </View>
               <TouchableOpacity activeOpacity={0.85} onPress={handleContinueReading} style={[styles.continueBtn, { backgroundColor: teal }]}>
                 <Text style={styles.continueBtnText}>
-                  {lastReadTimestamp ? 'Continue Reading' : 'Start Reading'}
+                  {isFreshUser ? 'Start Journey' : 'Continue Reading'}
                 </Text>
                 <View style={[styles.continueBtnIconWrap, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
                   <Ionicons name="arrow-forward" size={rs(14)} color="#FFFFFF" />
@@ -700,11 +705,17 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContainer, { backgroundColor: cardBg, borderColor }]}>
             <Text style={[styles.modalText, { color: textPrimary }]}>
-              Please read the existing Draft cards before adding the next card.
+              Draft Complete
             </Text>
             <TouchableOpacity
               style={[styles.modalButton, { backgroundColor: teal }]}
-              onPress={() => setDraftLimitModalVisible(false)}
+              onPress={() => {
+                setDraftLimitModalVisible(false);
+                if (pendingDraft) {
+                  markAsDraft(pendingDraft);
+                  setPendingDraft(null);
+                }
+              }}
               activeOpacity={0.8}
             >
               <Text style={styles.modalButtonText}>OK</Text>

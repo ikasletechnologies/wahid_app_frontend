@@ -12,10 +12,11 @@ const { width: SW } = Dimensions.get('window');
 const rs = (size) => Math.round(size * (SW / 393));
 
 const SuggestedNamesScreen = ({ navigation }) => {
-  const { names, draftIds, learnedIds, masteredIds, markAsDraft, removeDraft, isSubscribed } = useNames();
+  const { names, draftIds, learnedIds, masteredIds, markAsDraft, removeDraft, isSubscribed, checkCardAccess } = useNames();
   const { isDark } = useAppTheme();
   
   const [draftLimitModalVisible, setDraftLimitModalVisible] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState(null);
   const [lastReadNameId, setLastReadNameId] = useState(null);
 
   React.useEffect(() => {
@@ -66,19 +67,20 @@ const SuggestedNamesScreen = ({ navigation }) => {
         </View>
         <View style={styles.suggestRight}>
           <TouchableOpacity
-            style={[styles.checkBtn, { backgroundColor: teal, opacity: isLearned ? 0.7 : 1 }]}
+            style={[styles.checkBtn, { backgroundColor: showTick ? '#4CAF50' : teal, opacity: isLearned ? 0.7 : 1 }]}
             disabled={isLearned}
             activeOpacity={isLearned ? 1 : 0.8}
             onPress={() => {
               if (isLearned) return;
-              if (!isSubscribed) {
-                navigation.navigate('Subscription');
-                return;
-              }
               if (isDraft) {
                 removeDraft(item.number);
               } else {
-                if (visibleDraftsCount >= 4) {
+                if (checkCardAccess && !checkCardAccess(item, navigation)) {
+                  return;
+                }
+                
+                if (visibleDraftsCount === 4) {
+                  setPendingDraft(item.number);
                   setDraftLimitModalVisible(true);
                 } else {
                   markAsDraft(item.number);
@@ -126,11 +128,17 @@ const SuggestedNamesScreen = ({ navigation }) => {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContainer, { backgroundColor: cardBg, borderColor }]}>
             <Text style={[styles.modalText, { color: textPrimary }]}>
-              Please read the existing Draft cards before adding the next card.
+              Draft Complete
             </Text>
             <TouchableOpacity
               style={[styles.modalButton, { backgroundColor: teal }]}
-              onPress={() => setDraftLimitModalVisible(false)}
+              onPress={() => {
+                setDraftLimitModalVisible(false);
+                if (pendingDraft) {
+                  markAsDraft(pendingDraft);
+                  setPendingDraft(null);
+                }
+              }}
               activeOpacity={0.8}
             >
               <Text style={styles.modalButtonText}>OK</Text>

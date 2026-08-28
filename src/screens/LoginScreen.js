@@ -222,53 +222,56 @@ const LoginScreen = ({ navigation, route }) => {
 
           <View style={styles.form}>
             {/* Phone Input */}
-            <View style={[
-              styles.inputContainer,
-              {
-                backgroundColor: isDark ? '#111111' : '#FFFFFF',
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
-              },
-              focused === 'phone' && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#151515' } : styles.inputFocused)
-            ]}>
-              <View style={[styles.iconBox, isDark && { backgroundColor: 'rgba(3, 183, 206, 0.15)' }]}>
-                <Ionicons name="phone-portrait-outline" size={18} color="#03B7CE" />
-              </View>
-              <View style={styles.inputContentWrapper}>
-                <Text style={[styles.inputLabel, { color: isDark ? '#E2E8F0' : '#1A202C' }]}>Mobile Number</Text>
-                <View style={styles.phoneInputContent}>
-                  <TouchableOpacity style={styles.countryBtn} onPress={() => setShowPicker(v => !v)}>
-                    <Text style={[styles.countryCode, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>{country.code}</Text>
-                    <Ionicons name="chevron-down" size={14} color={isDark ? '#E2E8F0' : '#1A202C'} />
-                  </TouchableOpacity>
-                  <View style={[styles.divider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.12)' }]} />
-                  <TextInput
-                    style={[styles.input, { color: isDark ? '#FFFFFF' : '#1A202C' }]}
-                    placeholder="Enter mobile number"
-                    placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
-                    value={identifier}
-                    onChangeText={(text) => setIdentifier(text.replace(/\D/g, ''))}
-                    onFocus={() => setFocused('phone')}
-                    onBlur={() => setFocused(null)}
-                    keyboardType="phone-pad"
-                    maxLength={expectedLength}
-                    returnKeyType="next"
-                    onSubmitEditing={() => passwordInput.current?.focus()}
-                    selectionColor="#03B7CE"
-                  />
+            <View style={{ zIndex: 20 }}>
+              <View style={[
+                styles.inputContainer,
+                {
+                  backgroundColor: isDark ? '#111111' : '#FFFFFF',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9',
+                  marginBottom: showPicker ? 16 : 16 // keep margin consistent
+                },
+                focused === 'phone' && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#151515' } : styles.inputFocused)
+              ]}>
+                <View style={[styles.iconBox, isDark && { backgroundColor: 'rgba(3, 183, 206, 0.15)' }]}>
+                  <Ionicons name="phone-portrait-outline" size={18} color="#03B7CE" />
+                </View>
+                <View style={styles.inputContentWrapper}>
+                  <Text style={[styles.inputLabel, { color: isDark ? '#E2E8F0' : '#1A202C' }]}>Mobile Number</Text>
+                  <View style={styles.phoneInputContent}>
+                    <TouchableOpacity style={styles.countryBtn} onPress={() => setShowPicker(v => !v)}>
+                      <Text style={[styles.countryCode, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>{country.code}</Text>
+                      <Ionicons name="chevron-down" size={14} color={isDark ? '#E2E8F0' : '#1A202C'} />
+                    </TouchableOpacity>
+                    <View style={[styles.divider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.12)' }]} />
+                    <TextInput
+                      style={[styles.input, { color: isDark ? '#FFFFFF' : '#1A202C' }]}
+                      placeholder="Enter mobile number"
+                      placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
+                      value={identifier}
+                      onChangeText={(text) => setIdentifier(text.replace(/\D/g, ''))}
+                      onFocus={() => setFocused('phone')}
+                      onBlur={() => setFocused(null)}
+                      keyboardType="phone-pad"
+                      maxLength={expectedLength}
+                      returnKeyType="next"
+                      onSubmitEditing={() => passwordInput.current?.focus()}
+                      selectionColor="#03B7CE"
+                    />
+                  </View>
                 </View>
               </View>
-            </View>
 
-            {showPicker && (
-              <View style={[styles.picker, isDark && { backgroundColor: '#161616', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
-                {COUNTRIES.map(c => (
-                  <TouchableOpacity key={c.code} style={styles.pickerItem} onPress={() => { setCountry(c); setShowPicker(false); }}>
-                    <Text style={[styles.pickerCode, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>{c.code}</Text>
-                    <Text style={[styles.pickerName, { color: isDark ? '#A0AEC0' : '#718096' }]}>{c.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
+              {showPicker && (
+                <View style={[styles.picker, isDark && { backgroundColor: '#161616', borderColor: 'rgba(255, 255, 255, 0.1)' }, { position: 'absolute', top: 72, left: 0, right: 0 }]}>
+                  {COUNTRIES.map(c => (
+                    <TouchableOpacity key={c.code} style={styles.pickerItem} onPress={() => { setCountry(c); setShowPicker(false); }}>
+                      <Text style={[styles.pickerCode, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>{c.code}</Text>
+                      <Text style={[styles.pickerName, { color: isDark ? '#A0AEC0' : '#718096' }]}>{c.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
 
             {/* Password Input */}
             <View style={[
@@ -404,7 +407,7 @@ const styles = StyleSheet.create({
   },
   topSection: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
     alignItems: 'flex-start',
     marginBottom: 20,
     zIndex: 10,

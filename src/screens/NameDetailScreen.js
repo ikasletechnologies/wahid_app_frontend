@@ -645,19 +645,7 @@ const NameDetailScreen = ({ route, navigation }) => {
   const isFocused = useIsFocused();
   const { isDark, themeMode } = useAppTheme();
 
-  useEffect(() => {
-    const cardNumber = Number(name?.number || name?.id);
-    if (cardNumber > 5 && !isSubscribed) {
-      Alert.alert(
-        "Full Access Pass Required",
-        "Cards 6 to 99 require an active 30-Day Full Access Pass. Unlock all 99 cards to continue learning!",
-        [
-          { text: "Cancel", onPress: () => navigation.goBack(), style: "cancel" },
-          { text: "Get Access Pass", onPress: () => navigation.replace('Subscription') }
-        ]
-      );
-    }
-  }, [name, isSubscribed]);
+  // Subscription access check is now handled globally via checkCardAccess in NamesContext
   const [readingSettingsVisible, setReadingSettingsVisible] = useState(false);
   const isMastered = masteredIds ? masteredIds.includes(name.id) : false;
   const isFavorite = favouriteIds ? favouriteIds.has(name.number || name.id) : false;

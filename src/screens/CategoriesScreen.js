@@ -153,8 +153,7 @@ const CategoriesScreen = ({ navigation }) => {
                             ) : (
                               <TouchableOpacity
                                 style={[styles.draftToggleBtn, { backgroundColor: teal }]}
-                                disabled={isPlusDisabled}
-                                activeOpacity={isPlusDisabled ? 1 : 0.8}
+                                activeOpacity={0.8}
                                 onPress={() => handleAddToDraft(item)}
                               >
                                 <Ionicons

@@ -191,13 +191,8 @@ const PhoneScreen = ({ navigation }) => {
                 resizeMode="contain"
               />
               <Text style={[styles.logoTitle, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>Wahid</Text>
-              <Text style={[styles.logoSubtitle, { color: isDark ? '#A0AEC0' : '#718096' }]}>Learn • Reflect • Grow</Text>
+              <Text style={[styles.logoSubtitle, { color: isDark ? '#A0AEC0' : '#718096' }]}>Learn • Reflect • Live By</Text>
             </View>
-            <Image
-              source={require('../../assets/signInBook.png')}
-              style={styles.illustrationImage}
-              resizeMode="contain"
-            />
           </View>
 
           <View style={styles.header}>
@@ -360,15 +355,14 @@ const styles = StyleSheet.create({
   },
   topSection: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'flex-start',
     marginBottom: 20,
     zIndex: 10,
   },
   logoContainer: {
     marginTop: 2,
-    top: 0,
-    left: 0,
+    alignItems: 'center',
   },
   logoTitle: {
     fontSize: 34,
@@ -376,11 +370,13 @@ const styles = StyleSheet.create({
     color: '#0F203C',
     letterSpacing: 1,
     marginTop: 4,
+    textAlign: 'center',
     fontFamily: Platform.OS === 'ios' ? 'Snell Roundhand' : 'cursive',
   },
   logoSubtitle: {
     fontSize: 10,
     color: '#718096',
+    textAlign: 'center',
     fontWeight: '600',
     marginTop: 1,
   },
