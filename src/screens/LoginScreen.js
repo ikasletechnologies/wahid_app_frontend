@@ -17,12 +17,8 @@ const { width, height } = Dimensions.get('window');
 
 const COUNTRIES = [
   { code: '+91', name: 'India' },
-  { code: '+1', name: 'USA/CA' },
-  { code: '+44', name: 'UK' },
   { code: '+971', name: 'UAE' },
-  { code: '+92', name: 'Pakistan' },
-  { code: '+60', name: 'Malaysia' },
-  { code: '+966', name: 'Saudi Arabia' },
+  { code: '+44', name: 'UK' },
 ];
 
 const WahidLogo = () => (
@@ -166,14 +162,16 @@ const LoginScreen = ({ navigation, route }) => {
 
   const passwordInput = useRef(null);
 
+  const expectedLength = country.code === '+971' ? 9 : 10;
+
   const handleLogin = async () => {
     const digits = identifier.replace(/\D/g, '');
     if (!identifier.trim() || digits.length === 0) {
       Toast.show({ type: 'error', text1: 'Incomplete Fields', text2: 'Please enter your phone and password.' });
       return;
     }
-    if (digits.length < 7 || digits.length > 15) {
-      Toast.show({ type: 'error', text1: 'Invalid Number', text2: 'Please enter a valid phone number.' });
+    if (digits.length !== expectedLength) {
+      Toast.show({ type: 'error', text1: 'Invalid Number', text2: `Please enter a valid ${expectedLength}-digit phone number.` });
       return;
     }
     if (!password) {
@@ -248,11 +246,11 @@ const LoginScreen = ({ navigation, route }) => {
                     placeholder="Enter mobile number"
                     placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
                     value={identifier}
-                    onChangeText={setIdentifier}
+                    onChangeText={(text) => setIdentifier(text.replace(/\D/g, ''))}
                     onFocus={() => setFocused('phone')}
                     onBlur={() => setFocused(null)}
                     keyboardType="phone-pad"
-                    maxLength={15}
+                    maxLength={expectedLength}
                     returnKeyType="next"
                     onSubmitEditing={() => passwordInput.current?.focus()}
                     selectionColor="#03B7CE"

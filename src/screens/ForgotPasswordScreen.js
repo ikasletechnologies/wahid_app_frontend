@@ -12,13 +12,9 @@ import { useAppTheme } from '../context/ThemeContext';
 const { width, height } = Dimensions.get('window');
 
 const COUNTRIES = [
-  { code: '+91',  name: 'India' },
-  { code: '+1',   name: 'USA/CA' },
-  { code: '+44',  name: 'UK' },
+  { code: '+91', name: 'India' },
   { code: '+971', name: 'UAE' },
-  { code: '+92',  name: 'Pakistan' },
-  { code: '+60',  name: 'Malaysia' },
-  { code: '+966', name: 'Saudi Arabia' },
+  { code: '+44', name: 'UK' },
 ];
 
 const OTP_LENGTH = 6;

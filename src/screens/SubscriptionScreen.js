@@ -251,7 +251,7 @@ const SubscriptionScreen = () => {
               </View>
 
               {/* Region Selector */}
-              <View style={{ marginBottom: rs(16) }}>
+              <View style={{ marginBottom: rs(16), display: 'none' }}>
                 <Text style={[styles.sectionHeading, { color: colors.text, fontSize: rs(15), marginBottom: rs(8) }]}>
                   Select Your Country / Region
                 </Text>
