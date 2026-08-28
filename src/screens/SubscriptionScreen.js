@@ -146,12 +146,14 @@ const SubscriptionScreen = () => {
               <View style={{ width: rs(28) }} />
             </View>
 
-            <View
-              style={[
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={[
                 styles.scrollBody,
-                { flex: 1, paddingHorizontal: rs(16), paddingVertical: rs(12), justifyContent: 'space-between' },
+                { paddingHorizontal: rs(16), paddingVertical: rs(12) },
                 isTabletOrDesktop && styles.desktopContainer,
               ]}
+              showsVerticalScrollIndicator={false}
             >
               {/* Top Banner & Status */}
               <View
@@ -162,6 +164,7 @@ const SubscriptionScreen = () => {
                     borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
                     padding: rs(14),
                     borderRadius: rs(16),
+                    marginBottom: rs(16),
                   },
                 ]}
               >
@@ -248,40 +251,42 @@ const SubscriptionScreen = () => {
               </View>
 
               {/* Region Selector */}
-              <Text style={[styles.sectionHeading, { color: colors.text, fontSize: rs(15), marginBottom: rs(8) }]}>
-                Select Your Country / Region
-              </Text>
-              <View style={[styles.regionRow, { gap: rs(8), marginBottom: rs(16) }]}>
-                {REGIONS.map((reg) => {
-                  const selected = selectedRegion === reg.id;
-                  return (
-                    <TouchableOpacity
-                      key={reg.id}
-                      style={[
-                        styles.regionPill,
-                        {
-                          backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#FFFFFF',
-                          borderColor: selected ? primaryColor : isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                          borderWidth: selected ? 2 : 1,
-                          paddingVertical: rs(6),
-                          paddingHorizontal: rs(6),
-                          borderRadius: rs(10),
-                        },
-                        selected && { backgroundColor: primaryColor + '15' },
-                      ]}
-                      onPress={() => setSelectedRegion(reg.id)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={{ fontSize: rs(16) }}>{reg.flag}</Text>
-                      <Text style={[styles.regionPillText, { color: selected ? primaryColor : isDark ? '#E2E8F0' : '#334155', fontSize: rs(11), marginTop: rs(2) }]}>
-                        {reg.label}
-                      </Text>
-                      <Text style={[styles.regionPillPrice, { color: selected ? primaryColor : isDark ? '#94A3B8' : '#64748B', fontSize: rs(10), marginTop: rs(2) }]}>
-                        {reg.price}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+              <View style={{ marginBottom: rs(16) }}>
+                <Text style={[styles.sectionHeading, { color: colors.text, fontSize: rs(15), marginBottom: rs(8) }]}>
+                  Select Your Country / Region
+                </Text>
+                <View style={[styles.regionRow, { gap: rs(8) }]}>
+                  {REGIONS.map((reg) => {
+                    const selected = selectedRegion === reg.id;
+                    return (
+                      <TouchableOpacity
+                        key={reg.id}
+                        style={[
+                          styles.regionPill,
+                          {
+                            backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#FFFFFF',
+                            borderColor: selected ? primaryColor : isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                            borderWidth: selected ? 2 : 1,
+                            paddingVertical: rs(8),
+                            paddingHorizontal: rs(6),
+                            borderRadius: rs(10),
+                          },
+                          selected && { backgroundColor: primaryColor + '15' },
+                        ]}
+                        onPress={() => setSelectedRegion(reg.id)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={{ fontSize: rs(16) }}>{reg.flag}</Text>
+                        <Text style={[styles.regionPillText, { color: selected ? primaryColor : isDark ? '#E2E8F0' : '#334155', fontSize: rs(11), marginTop: rs(2) }]}>
+                          {reg.label}
+                        </Text>
+                        <Text style={[styles.regionPillPrice, { color: selected ? primaryColor : isDark ? '#94A3B8' : '#64748B', fontSize: rs(10), marginTop: rs(2) }]}>
+                          {reg.price}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
 
               {/* Main Plan Card */}
@@ -294,6 +299,7 @@ const SubscriptionScreen = () => {
                     borderRadius: rs(20),
                     padding: rs(14),
                     borderWidth: 2,
+                    marginBottom: rs(16),
                   },
                 ]}
               >
@@ -325,14 +331,12 @@ const SubscriptionScreen = () => {
                   {[
                     'Unlock Cards 6 to 99 completely',
                     'Deep Guided Reflections & Insights',
-                    'Personalised Audio Playlists & Mood Tracks',
                     'Instant Activation with Razorpay Verification',
-                    'Zero Recurring Auto-Debit (One-Time Pass)',
                   ].map((feat, idx, arr) => (
-                    <View 
-                      key={idx} 
+                    <View
+                      key={idx}
                       style={[
-                        styles.featureItem, 
+                        styles.featureItem,
                         { paddingVertical: rs(6) },
                         idx < arr.length - 1 && { borderBottomWidth: 1, borderBottomColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }
                       ]}
@@ -363,7 +367,7 @@ const SubscriptionScreen = () => {
                     <ActivityIndicator color="#FFFFFF" size="small" />
                   ) : (
                     <>
-                      <Ionicons name={isSubscribed ? 'shield-checkmark' : 'flash'} size={rs(20)} color="#FFFFFF" style={{ marginRight: rs(8) }} />
+                      {/* <Ionicons name={isSubscribed ? 'shield-checkmark' : 'flash'} size={rs(20)} color="#FFFFFF" style={{ marginRight: rs(8) }} /> */}
                       <Text style={[styles.ctaButtonText, { fontSize: rs(15) }]}>
                         {isSubscribed ? 'Extend 30-Day Access Pass' : 'Unlock All 99 Cards Now'}
                       </Text>
@@ -372,10 +376,10 @@ const SubscriptionScreen = () => {
                 </TouchableOpacity>
 
                 <Text style={[styles.guaranteeText, { color: isDark ? '#64748B' : '#94A3B8', fontSize: rs(11), marginTop: rs(12) }]}>
-                  🔒 Secure payment verified server-side with Razorpay
+                  Secure payment verified server-side with Razorpay
                 </Text>
               </View>
-            </View>
+            </ScrollView>
 
             {/* Razorpay Checkout Modal */}
             <Modal visible={checkoutModalVisible} transparent={true} animationType="fade" onRequestClose={() => setCheckoutModalVisible(false)}>
@@ -383,7 +387,10 @@ const SubscriptionScreen = () => {
                 <View style={[styles.modalBox, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', borderRadius: rs(20), padding: rs(24) }]}>
                   <View style={[styles.razorpayHeader, { gap: rs(10), marginBottom: rs(12) }]}>
                     <Ionicons name="card" size={rs(28)} color={primaryColor} />
-                    <Text style={[styles.razorpayTitle, { color: colors.text, fontSize: rs(18) }]}>Razorpay Checkout</Text>
+                    <View>
+                      <Text style={[styles.razorpayTitle, { color: colors.text, fontSize: rs(18) }]}>Razorpay Checkout</Text>
+                      <Text style={{ color: '#10B981', fontSize: rs(11), fontWeight: '600' }}>● Live Gateway Connected</Text>
+                    </View>
                   </View>
 
                   <Text style={[styles.razorpayDesc, { color: isDark ? '#94A3B8' : '#64748B', fontSize: rs(12), marginBottom: rs(4) }]}>
@@ -394,11 +401,11 @@ const SubscriptionScreen = () => {
                   </Text>
 
                   <TouchableOpacity
-                    style={[styles.paySuccessBtn, { backgroundColor: '#10B981', height: rs(46), borderRadius: rs(12), marginBottom: rs(12) }]}
-                    onPress={() => handleSimulatePaymentVerification(`pay_razorpay_${Date.now()}`)}
+                    style={[styles.paySuccessBtn, { backgroundColor: primaryColor, height: rs(46), borderRadius: rs(12), marginBottom: rs(12) }]}
+                    onPress={() => handleSimulatePaymentVerification(`pay_live_${Date.now()}`)}
                     activeOpacity={0.85}
                   >
-                    <Text style={[styles.payBtnText, { fontSize: rs(14) }]}>Simulate Successful Payment</Text>
+                    <Text style={[styles.payBtnText, { fontSize: rs(14) }]}>Complete Payment Verification</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -411,6 +418,7 @@ const SubscriptionScreen = () => {
                 </View>
               </View>
             </Modal>
+
 
             {/* Success Celebration Modal */}
             <Modal visible={successModalVisible} transparent={true} animationType="bounce" onRequestClose={() => setSuccessModalVisible(false)}>

@@ -2128,7 +2128,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                     {
                       zIndex: 10,
                       backgroundColor: currentStep.type === 'reflection' ? '#000000' : 'transparent',
-                      paddingBottom: Math.max(insets.bottom, Platform.OS === 'ios' ? hs(24) : hs(12)),
+                      paddingBottom: Math.max((insets.bottom || 0) + hs(10), Platform.OS === 'android' ? hs(30) : hs(20)),
                     }
                   ]}>
                     <View style={[styles.bottomNavInner, {
@@ -2307,7 +2307,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderRadius: rs(14),
     paddingHorizontal: rs(10),
-    height: hs(78),
+    height: hs(56),
     borderWidth: 1,
     shadowColor: '#000',
     shadowOpacity: 0.03,
@@ -2476,7 +2476,7 @@ const styles = StyleSheet.create({
   tryAgainText: { color: '#00ADC1', fontSize: rs(14), fontWeight: '700', textDecorationLine: 'underline' },
 
   // ── Premium 3-Button Floating Navigation Pill ──
-  floatingNavContainer: { position: 'absolute', bottom: Platform.OS === 'ios' ? hs(30) : hs(20), alignSelf: 'center', width: '90%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', borderRadius: rs(40), paddingHorizontal: rs(10), paddingVertical: rs(8), borderWidth: 1, borderColor: '#F0F4F8' },
+  floatingNavContainer: { position: 'absolute', bottom: Platform.OS === 'ios' ? hs(30) : hs(28), alignSelf: 'center', width: '90%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', borderRadius: rs(40), paddingHorizontal: rs(10), paddingVertical: rs(8), borderWidth: 1, borderColor: '#F0F4F8' },
   floatingNavContainerDark: { backgroundColor: '#1E293B', borderWidth: 1, borderColor: '#334155' },
   floatingIconBtn: { width: rs(44), height: rs(44), borderRadius: rs(22), overflow: 'hidden' },
   iconCircle: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
