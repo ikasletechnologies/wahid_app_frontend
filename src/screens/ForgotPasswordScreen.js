@@ -8,14 +8,10 @@ import Toast from 'react-native-toast-message';
 import Svg, { Circle } from 'react-native-svg';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
+import { COUNTRIES, MAX_PHONE_INPUT_LENGTH } from '../config/countries';
+import { normalizePhoneNumber, phoneErrorMessage } from '../utils/phone';
 
 const { width, height } = Dimensions.get('window');
-
-const COUNTRIES = [
-  { code: '+91', name: 'India' },
-  { code: '+971', name: 'UAE' },
-  { code: '+44', name: 'UK' },
-];
 
 const OTP_LENGTH = 6;
 
@@ -118,12 +114,11 @@ const ForgotPasswordScreen = ({ navigation }) => {
   // ── Step 1: send OTP ─────────────────────────────────────────────────────
 
   const handleSendOTP = async () => {
-    const digits = phone.replace(/\D/g, '');
-    if (digits.length < 7) {
-      Toast.show({ type: 'error', text1: 'Invalid Number', text2: 'Please enter a valid phone number.' });
+    const { e164: fp, valid, reason } = normalizePhoneNumber(phone, country);
+    if (!valid) {
+      Toast.show({ type: 'error', text1: 'Invalid Number', text2: phoneErrorMessage(reason, country) });
       return;
     }
-    const fp = `${country.code}${digits}`;
 
     setLoading(true);
     const check = await checkPhone(fp);
@@ -265,6 +260,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
             onFocus={() => setPhoneFocused(true)}
             onBlur={() => setPhoneFocused(false)}
             keyboardType="phone-pad"
+            maxLength={MAX_PHONE_INPUT_LENGTH}
             returnKeyType="done"
             onSubmitEditing={handleSendOTP}
             selectionColor="#03B7CE"

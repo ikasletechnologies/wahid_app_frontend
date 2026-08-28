@@ -12,14 +12,10 @@ import { useGoogleAuth } from '../hooks/useGoogleAuth';
 import { authenticateWithGoogle } from '../services/auth/googleAuth';
 import { useFacebookAuth } from '../hooks/useFacebookAuth';
 import { loginWithFacebook } from '../services/auth/facebookAuth';
+import { COUNTRIES, findCountryByPrefix, MAX_PHONE_INPUT_LENGTH } from '../config/countries';
+import { normalizePhoneNumber, phoneErrorMessage } from '../utils/phone';
 
 const { width, height } = Dimensions.get('window');
-
-const COUNTRIES = [
-  { code: '+91', name: 'India' },
-  { code: '+971', name: 'UAE' },
-  { code: '+44', name: 'UK' },
-];
 
 const WahidLogo = () => (
   <View style={styles.logoContainer}>
@@ -115,15 +111,13 @@ const PhoneScreen = ({ navigation }) => {
     }
   };
 
-  const expectedLength = country.code === '+971' ? 9 : 10;
-
   const handlePhoneChange = (text) => {
     if (accountExists) setAccountExists(false);
     if (text.startsWith('+')) {
-      const matched = COUNTRIES.find(c => text.startsWith(c.code));
+      const matched = findCountryByPrefix(text, COUNTRIES);
       if (matched) {
         setCountry(matched);
-        setPhone(text.slice(matched.code.length));
+        setPhone(text.slice(matched.code.length).replace(/\D/g, ''));
         return;
       }
     }
@@ -131,12 +125,11 @@ const PhoneScreen = ({ navigation }) => {
   };
 
   const handleSend = async () => {
-    const digits = phone.replace(/\D/g, '');
-    if (digits.length !== expectedLength) {
-      Toast.show({ type: 'error', text1: 'Invalid Number', text2: `Please enter a valid ${expectedLength}-digit phone number.` });
+    const { e164: fullPhone, valid, reason } = normalizePhoneNumber(phone, country);
+    if (!valid) {
+      Toast.show({ type: 'error', text1: 'Invalid Number', text2: phoneErrorMessage(reason, country) });
       return;
     }
-    const fullPhone = `${country.code}${digits}`;
 
     setLoading(true);
     const check = await checkPhone(fullPhone);
@@ -240,7 +233,7 @@ const PhoneScreen = ({ navigation }) => {
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
                     keyboardType="phone-pad"
-                    maxLength={expectedLength}
+                    maxLength={MAX_PHONE_INPUT_LENGTH}
                     returnKeyType="done"
                     onSubmitEditing={handleSend}
                     selectionColor="#03B7CE"

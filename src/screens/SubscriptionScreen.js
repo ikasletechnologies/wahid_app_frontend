@@ -20,6 +20,8 @@ import TimeBasedBackground from '../components/TimeBasedBackground';
 import http from '../config/http';
 import { ENDPOINTS } from '../config/api';
 import { useNames } from '../context/NamesContext';
+import { useAuth } from '../context/AuthContext';
+import RazorpayCheckout from 'react-native-razorpay';
 
 const REGIONS = [
   { id: 'IN', label: 'India', flag: '🇮🇳', price: '₹120', currency: 'INR' },
@@ -32,7 +34,8 @@ const SubscriptionScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { isDark, colors } = useAppTheme();
-  const { fetchSubscriptionStatus } = useNames();
+  const { fetchSubscriptionStatus, refresh: refreshNames } = useNames();
+  const { user } = useAuth();
   const { width: windowWidth } = useWindowDimensions();
 
   const scale = Math.min(Math.max(windowWidth / 393, 0.85), 1.25);
@@ -44,8 +47,6 @@ const SubscriptionScreen = () => {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [subStatus, setSubStatus] = useState(null);
   const [plans, setPlans] = useState(null);
-  const [checkoutModalVisible, setCheckoutModalVisible] = useState(false);
-  const [pendingOrder, setPendingOrder] = useState(null);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
 
   useEffect(() => {
@@ -78,39 +79,71 @@ const SubscriptionScreen = () => {
       setProcessingPayment(true);
       const response = await http.post(ENDPOINTS.createOrder, { region: selectedRegion });
 
-      if (response.data?.success) {
-        const orderData = response.data.data;
-        setPendingOrder(orderData);
-        setCheckoutModalVisible(true);
-      } else {
+      if (!response.data?.success) {
         Alert.alert('Payment Error', response.data?.message || 'Failed to create payment order.');
+        setProcessingPayment(false);
+        return;
       }
+
+      const orderData = response.data.data;
+
+      const checkoutOptions = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        order_id: orderData.orderId,
+        name: 'Wahid — 99 Names',
+        description: '30-Day Full Access Pass',
+        prefill: {
+          contact: user?.phone || '',
+          email: user?.email || '',
+        },
+        theme: { color: colors?.primary || '#06b6d4' },
+      };
+
+      if (!RazorpayCheckout || typeof RazorpayCheckout.open !== 'function') {
+        setProcessingPayment(false);
+        Alert.alert(
+          'Payment Unavailable',
+          'The payment module is not available in this build. Rebuild the app (expo run:android / run:ios) after installing react-native-razorpay.'
+        );
+        return;
+      }
+
+      let checkoutResult;
+      try {
+        checkoutResult = await RazorpayCheckout.open(checkoutOptions);
+      } catch (checkoutErr) {
+        // User cancelled or the gateway rejected the payment — nothing to verify.
+        setProcessingPayment(false);
+        if (checkoutErr?.code !== 'PAYMENT_CANCELLED') {
+          console.error('[RAZORPAY CHECKOUT ERROR]', checkoutErr);
+          Alert.alert('Payment Cancelled', checkoutErr?.description || checkoutErr?.message || 'Payment was not completed.');
+        }
+        return;
+      }
+
+      await verifyAndActivate({
+        razorpay_order_id: checkoutResult.razorpay_order_id,
+        razorpay_payment_id: checkoutResult.razorpay_payment_id,
+        razorpay_signature: checkoutResult.razorpay_signature,
+      });
     } catch (err) {
       console.error('[CREATE ORDER ERROR]', err);
       Alert.alert('Payment Error', err.response?.data?.message || 'Network error initializing checkout.');
-    } finally {
       setProcessingPayment(false);
     }
   };
 
-  const handleSimulatePaymentVerification = async (simulatedPaymentId) => {
-    if (!pendingOrder) return;
+  const verifyAndActivate = async (payload) => {
     try {
-      setProcessingPayment(true);
-      setCheckoutModalVisible(false);
-
-      const payload = {
-        razorpay_order_id: pendingOrder.orderId,
-        razorpay_payment_id: simulatedPaymentId || `pay_${Date.now()}`,
-        razorpay_signature: `sig_verified_${Date.now()}`,
-      };
-
       const res = await http.post(ENDPOINTS.verifyPayment, payload);
 
       if (res.data?.success) {
         setSuccessModalVisible(true);
         await fetchSubscriptionData();
         if (fetchSubscriptionStatus) await fetchSubscriptionStatus();
+        if (refreshNames) await refreshNames();
       } else {
         Alert.alert('Verification Failed', res.data?.message || 'Payment verification could not be completed.');
       }
@@ -381,45 +414,6 @@ const SubscriptionScreen = () => {
               </View>
             </ScrollView>
 
-            {/* Razorpay Checkout Modal */}
-            <Modal visible={checkoutModalVisible} transparent={true} animationType="fade" onRequestClose={() => setCheckoutModalVisible(false)}>
-              <View style={styles.modalOverlay}>
-                <View style={[styles.modalBox, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', borderRadius: rs(20), padding: rs(24) }]}>
-                  <View style={[styles.razorpayHeader, { gap: rs(10), marginBottom: rs(12) }]}>
-                    <Ionicons name="card" size={rs(28)} color={primaryColor} />
-                    <View>
-                      <Text style={[styles.razorpayTitle, { color: colors.text, fontSize: rs(18) }]}>Razorpay Checkout</Text>
-                      <Text style={{ color: '#10B981', fontSize: rs(11), fontWeight: '600' }}>● Live Gateway Connected</Text>
-                    </View>
-                  </View>
-
-                  <Text style={[styles.razorpayDesc, { color: isDark ? '#94A3B8' : '#64748B', fontSize: rs(12), marginBottom: rs(4) }]}>
-                    Order ID: {pendingOrder?.orderId}
-                  </Text>
-                  <Text style={[styles.razorpayPrice, { color: primaryColor, fontSize: rs(16), marginBottom: rs(20) }]}>
-                    Total Amount: {activePricing.display}
-                  </Text>
-
-                  <TouchableOpacity
-                    style={[styles.paySuccessBtn, { backgroundColor: primaryColor, height: rs(46), borderRadius: rs(12), marginBottom: rs(12) }]}
-                    onPress={() => handleSimulatePaymentVerification(`pay_live_${Date.now()}`)}
-                    activeOpacity={0.85}
-                  >
-                    <Text style={[styles.payBtnText, { fontSize: rs(14) }]}>Complete Payment Verification</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.cancelBtn}
-                    onPress={() => setCheckoutModalVisible(false)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.cancelBtnText, { color: isDark ? '#94A3B8' : '#64748B', fontSize: rs(13) }]}>Cancel</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Modal>
-
-
             {/* Success Celebration Modal */}
             <Modal visible={successModalVisible} transparent={true} animationType="bounce" onRequestClose={() => setSuccessModalVisible(false)}>
               <View style={styles.modalOverlay}>
@@ -534,18 +528,6 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalBox: { width: '100%', maxWidth: 440 },
-  razorpayHeader: { flexDirection: 'row', alignItems: 'center' },
-  razorpayTitle: { fontWeight: '700' },
-  razorpayDesc: { fontWeight: '400' },
-  razorpayPrice: { fontWeight: '800' },
-
-  paySuccessBtn: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  payBtnText: { color: '#FFFFFF', fontWeight: '700' },
-  cancelBtn: { paddingVertical: 10, alignItems: 'center' },
-  cancelBtnText: { fontWeight: '600' },
 
   successIconCircle: {
     backgroundColor: '#10B981',
