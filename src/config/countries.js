@@ -8,7 +8,7 @@ export const COUNTRIES = [
   { code: '+91', name: 'India', nsn: 10 },
   { code: '+971', name: 'UAE', nsn: 9 },
   { code: '+44', name: 'UK', nsn: 10 },
-];
+]; // 
 
 export const DEFAULT_COUNTRY = COUNTRIES[0];
 
