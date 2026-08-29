@@ -147,9 +147,9 @@ const CategoriesScreen = ({ navigation }) => {
                           </View>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: rs(8) }}>
                             {isMastered ? (
-                              <Ionicons name="trophy" size={rs(16)} color="#F59E0B" />
+                              <Ionicons name="trophy" size={rs(30)} color="#F59E0B" />
                             ) : isLearned ? (
-                              <Ionicons name="checkmark-circle" size={rs(16)} color="#4CAF50" />
+                              <Ionicons name="checkmark-circle" size={rs(30)} color="#4CAF50" />
                             ) : (
                               <TouchableOpacity
                                 style={[styles.draftToggleBtn, { backgroundColor: teal }]}

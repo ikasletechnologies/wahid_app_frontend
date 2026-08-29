@@ -294,7 +294,7 @@ const ReadingSettingsModal = ({ visible, onClose }) => {
                       </View>
                     )}
                     <View style={styles.themeArabicWrap}>
-                      <Text style={[styles.arabicPreviewText, { color: '#0F172A' }]}>بِسْمِ ٱللَّهِ</Text>
+                      <Text style={[styles.arabicPreviewText, { color: isDark ? primaryColor : '#0F172A' }]}>بِسْمِ ٱللَّهِ</Text>
                     </View>
                     <Text
                       style={[
@@ -324,7 +324,7 @@ const ReadingSettingsModal = ({ visible, onClose }) => {
                       </View>
                     )}
                     <View style={styles.themeArabicWrap}>
-                      <Text style={[styles.arabicPreviewText, { color: '#FFFFFF' }]}>بِسْمِ ٱللَّهِ</Text>
+                      <Text style={[styles.arabicPreviewText, { color: isDark ? primaryColor : '#FFFFFF' }]}>بِسْمِ ٱللَّهِ</Text>
                     </View>
                     <Text
                       style={[
@@ -440,7 +440,7 @@ const ReadingSettingsModal = ({ visible, onClose }) => {
                         <Text
                           style={[
                             styles.arabicCardPreview,
-                            { color: isDark ? '#F1F5F9' : '#0F172A' },
+                            { color: isDark ? primaryColor : '#0F172A' },
                             family ? { fontFamily: family } : null,
                           ]}
                         >

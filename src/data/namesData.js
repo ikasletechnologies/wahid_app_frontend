@@ -2243,7 +2243,7 @@ export const ENHANCED_NAMES = [
   },
   {
     "id": 48,
-    "ar": "Al-Ghaniyy",
+    "ar": "الْغَنِيُّ",
     "tr": "Al-Ghaniyy",
     "en": "The Self-Sufficient",
     "meaning": {

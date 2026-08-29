@@ -22,7 +22,7 @@ export const ARABIC_STYLES = {
   indoPak: { label: 'Indo-Pak', family: 'AlQalamQuran' },
   uthmani: { label: 'Uthmani (Madinah)', family: 'KFGQPCUthmanic' },
   naskh: { label: 'Naskh', family: 'AmiriQuran' },
-};
+}; 
 
 // `scale` drives small text (labels, captions); `maxDelta` caps how many
 // pixels any single piece of text can grow/shrink by. The cap keeps large

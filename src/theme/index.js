@@ -1,7 +1,7 @@
 export const COLORS = {
   // Brand
-  primary: '#c9a84c', // Gold
-  primaryDark: '#B8963D', // Slightly darker gold for light mode text contrast
+  primary: '#06b6d4', // Blue/Cyan
+  primaryDark: '#0891b2', // Darker blue/cyan for contrast
   neon: '#00FF88', // Legacy neon green if needed
   
   // Base
@@ -43,8 +43,8 @@ export const PALETTE = {
     glass: 'rgba(255, 255, 255, 0.03)',
     overlay: COLORS.overlayDark,
 
-    primary: COLORS.primary,          // gold
-    playerBg: ['#0A1F14', '#0D2B1A'], // dark-mode player header
+    primary: '#06b6d4',               // blue/cyan
+    playerBg: ['#06b6d4', '#0891b2'], // cyan player gradient
   },
   light: {
     // ── Premium Pastel Lavender-Blue Theme ──────────────────────────────────

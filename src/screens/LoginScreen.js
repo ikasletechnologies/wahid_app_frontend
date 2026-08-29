@@ -236,10 +236,11 @@ const LoginScreen = ({ navigation, route }) => {
                     </TouchableOpacity>
                     <View style={[styles.divider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.12)' }]} />
                     <TextInput
-                      style={[styles.input, { color: isDark ? '#FFFFFF' : '#1A202C' }]}
-                      placeholder="Enter mobile number"
+                      style={[styles.input, { color: isDark ? '#FFFFFF' : '#1A202C', fontSize: identifier.length > 0 ? 18 : 14 }]}
+                      placeholder="Enter Mobile Number"
                       placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
                       value={identifier}
+                      numberOfLines={1}
                       onChangeText={(text) => setIdentifier(text.replace(/\D/g, ''))}
                       onFocus={() => setFocused('phone')}
                       onBlur={() => setFocused(null)}
@@ -407,6 +408,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     marginTop: 2,
     alignItems: 'center',
+    transform: [{ translateY: -40 }],
   },
   logoTitle: {
     fontSize: 34,
@@ -430,7 +432,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   title: {
-    fontSize: 32,
+    fontSize: 20,
     fontWeight: '800',
     color: '#0F203C',
     marginBottom: 6,
@@ -473,12 +475,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   inputLabel: {
-    fontSize: 11,
+    fontSize: 13,
     color: '#1A202C',
     fontWeight: '700',
     marginBottom: 4,
   },
   phoneInputContent: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -488,7 +491,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   countryCode: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: '700',
     color: '#1A202C',
   },
@@ -500,11 +503,11 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 16,
     color: '#1A202C',
     padding: 0,
     margin: 0,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   eyeBtn: {
     padding: 4,

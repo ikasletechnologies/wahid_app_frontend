@@ -342,57 +342,71 @@ const RegisterScreen = ({ navigation, route }) => {
             </View>
 
             {/* Password */}
-            <Text style={[styles.label, { color: isDark ? '#E2E8F0' : '#0F203C' }]}>Password</Text>
             <View style={[
-              styles.inputRow,
+              styles.pwdInputContainer,
               {
                 backgroundColor: isDark ? '#111111' : '#FFFFFF',
                 borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
               },
-              focused === 'password' && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#161616' } : styles.inputRowFocused)
+              focused === 'password' && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#151515' } : styles.pwdInputFocused)
             ]}>
-              <Ionicons name="lock-closed-outline" size={20} color="#03B7CE" style={styles.inputIcon} />
-              <TextInput
-                style={[styles.input, { color: isDark ? '#FFFFFF' : '#0F203C' }]}
-                placeholder="Create a password"
-                placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
-                value={password}
-                onChangeText={setPassword}
-                onFocus={() => setFocused('password')}
-                onBlur={() => setFocused(null)}
-                secureTextEntry={!showPassword}
-                selectionColor="#03B7CE"
-              />
-              <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn}>
-                <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={isDark ? '#64748B' : '#A0AEC0'} />
-              </TouchableOpacity>
+              <View style={[styles.pwdIconBox, isDark && { backgroundColor: 'rgba(3, 183, 206, 0.15)' }]}>
+                <Ionicons name="lock-closed-outline" size={18} color="#03B7CE" />
+              </View>
+              <View style={styles.pwdInputContentWrapper}>
+                <Text style={[styles.pwdInputLabel, { color: isDark ? '#E2E8F0' : '#1A202C' }]}>Password</Text>
+                <View style={styles.pwdInputContent}>
+                  <TextInput
+                    style={[styles.pwdInput, { color: isDark ? '#FFFFFF' : '#1A202C' }]}
+                    placeholder="Create a password"
+                    placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
+                    value={password}
+                    onChangeText={setPassword}
+                    onFocus={() => setFocused('password')}
+                    onBlur={() => setFocused(null)}
+                    secureTextEntry={!showPassword}
+                    returnKeyType="next"
+                    selectionColor="#03B7CE"
+                  />
+                  <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn}>
+                    <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={isDark ? '#64748B' : '#A0AEC0'} />
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
 
             {/* Confirm Password */}
-            <Text style={[styles.label, { color: isDark ? '#E2E8F0' : '#0F203C' }]}>Confirm Password</Text>
             <View style={[
-              styles.inputRow,
+              styles.pwdInputContainer,
               {
                 backgroundColor: isDark ? '#111111' : '#FFFFFF',
                 borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
               },
-              focused === 'confirm' && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#161616' } : styles.inputRowFocused)
+              focused === 'confirm' && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#151515' } : styles.pwdInputFocused)
             ]}>
-              <Ionicons name="lock-closed-outline" size={20} color="#03B7CE" style={styles.inputIcon} />
-              <TextInput
-                style={[styles.input, { color: isDark ? '#FFFFFF' : '#0F203C' }]}
-                placeholder="Confirm your password"
-                placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                onFocus={() => setFocused('confirm')}
-                onBlur={() => setFocused(null)}
-                secureTextEntry={!showConfirmPassword}
-                selectionColor="#03B7CE"
-              />
-              <TouchableOpacity onPress={() => setShowConfirmPassword(v => !v)} style={styles.eyeBtn}>
-                <Ionicons name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={isDark ? '#64748B' : '#A0AEC0'} />
-              </TouchableOpacity>
+              <View style={[styles.pwdIconBox, isDark && { backgroundColor: 'rgba(3, 183, 206, 0.15)' }]}>
+                <Ionicons name="lock-closed-outline" size={18} color="#03B7CE" />
+              </View>
+              <View style={styles.pwdInputContentWrapper}>
+                <Text style={[styles.pwdInputLabel, { color: isDark ? '#E2E8F0' : '#1A202C' }]}>Confirm Password</Text>
+                <View style={styles.pwdInputContent}>
+                  <TextInput
+                    style={[styles.pwdInput, { color: isDark ? '#FFFFFF' : '#1A202C' }]}
+                    placeholder="Confirm your password"
+                    placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    onFocus={() => setFocused('confirm')}
+                    onBlur={() => setFocused(null)}
+                    secureTextEntry={!showConfirmPassword}
+                    returnKeyType="done"
+                    selectionColor="#03B7CE"
+                  />
+                  <TouchableOpacity onPress={() => setShowConfirmPassword(v => !v)} style={styles.eyeBtn}>
+                    <Ionicons name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={isDark ? '#64748B' : '#A0AEC0'} />
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
 
             {/* Password Strength Section */}
@@ -554,7 +568,7 @@ const styles = StyleSheet.create({
     width: '65%', // restrict width to avoid overlapping graphic if needed
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '900',
     color: '#0F203C',
     marginBottom: 8,
@@ -616,6 +630,53 @@ const styles = StyleSheet.create({
   },
   eyeBtn: {
     padding: 4,
+  },
+  pwdInputContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#F1F5F9',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    marginBottom: 16,
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  pwdInputFocused: {
+    borderColor: '#03B7CE',
+    backgroundColor: '#FAFDFF',
+  },
+  pwdIconBox: {
+    width: 36,
+    height: 46,
+    borderRadius: 10,
+    backgroundColor: '#E6F8FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  pwdInputContentWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  pwdInputLabel: {
+    fontSize: 13,
+    color: '#1A202C',
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  pwdInputContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pwdInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1A202C',
+    padding: 0,
+    margin: 0,
+    fontWeight: '600',
   },
   usernameAvailableBox: {
     flexDirection: 'row',

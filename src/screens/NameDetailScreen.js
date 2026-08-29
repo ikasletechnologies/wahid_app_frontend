@@ -1608,7 +1608,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
             {showArabicVerse && (
               <View style={[styles.arabicVerseBox, { backgroundColor: isDark ? '#0D1F29' : '#F8FDFE', borderColor: isDark ? 'rgba(0,173,193,0.20)' : '#C8F0F5' }]}>
-                <Text style={[styles.modernArabicText, { color: t.text }]}>{refData.arabic}</Text>
+                <Text style={[styles.modernArabicText, { color: isDark ? '#00ADC1' : t.text }]}>{refData.arabic}</Text>
               </View>
             )}
           </>

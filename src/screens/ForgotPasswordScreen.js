@@ -237,49 +237,57 @@ const ForgotPasswordScreen = ({ navigation }) => {
           borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
         }
       ]}>
-        <Text style={[styles.label, { color: isDark ? '#E2E8F0' : '#0F203C' }]}>Mobile Number</Text>
-        <View style={[
-          styles.inputRow,
-          {
-            backgroundColor: isDark ? '#161616' : '#FFFFFF',
-            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0'
-          },
-          phoneFocused && (isDark ? { borderColor: '#00ACC1', backgroundColor: '#191919' } : styles.inputRowFocused)
-        ]}>
-          <TouchableOpacity style={styles.countryBtn} onPress={() => setShowPicker(v => !v)} activeOpacity={0.7}>
-            <Text style={[styles.countryCode, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>{country.code}</Text>
-            <Ionicons name="chevron-down" size={14} color="#00ACC1" style={{ marginLeft: 4 }} />
-          </TouchableOpacity>
-          <View style={[styles.inputDivider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.12)' }]} />
-          <TextInput
-            style={[styles.input, { color: isDark ? '#FFFFFF' : '#0F203C' }]}
-            placeholder="Enter mobile number"
-            placeholderTextColor={isDark ? '#64748B' : '#94A3B8'}
-            value={phone}
-            onChangeText={setPhone}
-            onFocus={() => setPhoneFocused(true)}
-            onBlur={() => setPhoneFocused(false)}
-            keyboardType="phone-pad"
-            maxLength={MAX_PHONE_INPUT_LENGTH}
-            returnKeyType="done"
-            onSubmitEditing={handleSendOTP}
-            selectionColor="#03B7CE"
-          />
-          <Ionicons name="phone-portrait-outline" size={20} color="#00ACC1" style={styles.inputIcon} />
-        </View>
+        <View style={{ zIndex: 20 }}>
+          <View style={[
+            styles.inputContainer,
+            {
+              backgroundColor: isDark ? '#111111' : '#FFFFFF',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9',
+              marginBottom: showPicker ? 24 : 24
+            },
+            phoneFocused && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#151515' } : styles.inputFocused)
+          ]}>
+            <View style={[styles.iconBox, isDark && { backgroundColor: 'rgba(3, 183, 206, 0.15)' }]}>
+              <Ionicons name="phone-portrait-outline" size={18} color="#03B7CE" />
+            </View>
+            <View style={styles.inputContentWrapper}>
+              <Text style={[styles.inputLabel, { color: isDark ? '#E2E8F0' : '#1A202C' }]}>Mobile Number</Text>
+              <View style={styles.phoneInputContent}>
+                <TouchableOpacity style={styles.countryBtn} onPress={() => setShowPicker(v => !v)}>
+                  <Text style={[styles.countryCode, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>{country.code}</Text>
+                  <Ionicons name="chevron-down" size={14} color={isDark ? '#E2E8F0' : '#1A202C'} />
+                </TouchableOpacity>
+                <View style={[styles.divider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.12)' }]} />
+                <TextInput
+                  style={[styles.input, { color: isDark ? '#FFFFFF' : '#1A202C', fontSize: phone.length > 0 ? 18 : 14 }]}
+                  placeholder="Enter Mobile Number"
+                  placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
+                  value={phone}
+                  numberOfLines={1}
+                  onChangeText={setPhone}
+                  onFocus={() => setPhoneFocused(true)}
+                  onBlur={() => setPhoneFocused(false)}
+                  keyboardType="phone-pad"
+                  maxLength={MAX_PHONE_INPUT_LENGTH}
+                  returnKeyType="done"
+                  onSubmitEditing={handleSendOTP}
+                  selectionColor="#03B7CE"
+                />
+              </View>
+            </View>
+          </View>
 
-        {showPicker && (
-          <View style={[styles.picker, isDark && { backgroundColor: '#161616', borderColor: 'rgba(255, 255, 255, 0.1)' }]}>
-            <ScrollView style={styles.pickerScroll} nestedScrollEnabled={true}>
+          {showPicker && (
+            <View style={[styles.picker, isDark && { backgroundColor: '#161616', borderColor: 'rgba(255, 255, 255, 0.1)' }, { position: 'absolute', top: 72, left: 0, right: 0 }]}>
               {COUNTRIES.map(c => (
                 <TouchableOpacity key={c.code} style={styles.pickerItem} onPress={() => { setCountry(c); setShowPicker(false); }}>
-                  <Text style={[styles.pickerCode, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>{c.code}</Text>
+                  <Text style={[styles.pickerCode, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>{c.code}</Text>
                   <Text style={[styles.pickerName, { color: isDark ? '#A0AEC0' : '#718096' }]}>{c.name}</Text>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
-          </View>
-        )}
+            </View>
+          )}
+        </View>
 
         <TouchableOpacity onPress={handleSendOTP} disabled={loading} activeOpacity={0.85} style={styles.buttonWrapper}>
           <LinearGradient
@@ -478,66 +486,73 @@ const ForgotPasswordScreen = ({ navigation }) => {
         ]}>
           {/* New Password Input */}
           <View style={[
-            styles.inputRowCard,
+            styles.inputContainer,
             {
-              backgroundColor: isDark ? '#161616' : '#FFFFFF',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0'
+              backgroundColor: isDark ? '#111111' : '#FFFFFF',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
             },
-            pwFocused === 'new' && { borderColor: '#00ACC1', borderWidth: 1.5 }
+            pwFocused === 'new' && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#151515' } : styles.inputFocused)
           ]}>
-            <Ionicons name="lock-closed-outline" size={20} color={isDark ? '#64748B' : '#7A8FA6'} style={styles.inputCardIcon} />
-            <View style={styles.inputCardContent}>
-              <Text style={[styles.inputCardLabel, { color: isDark ? '#64748B' : '#718096' }]}>New Password</Text>
-              <TextInput
-                style={[styles.inputCardField, { color: isDark ? '#FFFFFF' : '#0F203C' }]}
-                placeholder="••••••••"
-                placeholderTextColor={isDark ? '#4A5568' : '#A0AEC0'}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                onFocus={() => setPwFocused('new')}
-                onBlur={() => setPwFocused(null)}
-                secureTextEntry={!showNewPassword}
-                returnKeyType="next"
-                onSubmitEditing={() => confirmRef.current?.focus()}
-                selectionColor="#03B7CE"
-              />
+            <View style={[styles.iconBox, isDark && { backgroundColor: 'rgba(3, 183, 206, 0.15)' }]}>
+              <Ionicons name="lock-closed-outline" size={18} color="#03B7CE" />
             </View>
-            <TouchableOpacity onPress={() => setShowNewPassword(v => !v)} style={styles.eyeBtn} activeOpacity={0.7}>
-              <Ionicons name={showNewPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={isDark ? '#64748B' : '#7A8FA6'} />
-            </TouchableOpacity>
+            <View style={styles.inputContentWrapper}>
+              <Text style={[styles.inputLabel, { color: isDark ? '#E2E8F0' : '#1A202C' }]}>New Password</Text>
+              <View style={styles.phoneInputContent}>
+                <TextInput
+                  style={[styles.input, { color: isDark ? '#FFFFFF' : '#1A202C' }]}
+                  placeholder="••••••••"
+                  placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  onFocus={() => setPwFocused('new')}
+                  onBlur={() => setPwFocused(null)}
+                  secureTextEntry={!showNewPassword}
+                  returnKeyType="next"
+                  onSubmitEditing={() => confirmRef.current?.focus()}
+                  selectionColor="#03B7CE"
+                />
+                <TouchableOpacity onPress={() => setShowNewPassword(v => !v)} style={styles.eyeBtn}>
+                  <Ionicons name={showNewPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={isDark ? '#64748B' : '#A0AEC0'} />
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
 
           {/* Confirm Password Input */}
           <View style={[
-            styles.inputRowCard,
+            styles.inputContainer,
             {
-              backgroundColor: isDark ? '#161616' : '#FFFFFF',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#E2E8F0',
-              marginTop: 16
+              backgroundColor: isDark ? '#111111' : '#FFFFFF',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
             },
-            pwFocused === 'confirm' && { borderColor: '#00ACC1', borderWidth: 1.5 }
+            pwFocused === 'confirm' && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#151515' } : styles.inputFocused)
           ]}>
-            <Ionicons name="lock-closed-outline" size={20} color={isDark ? '#64748B' : '#7A8FA6'} style={styles.inputCardIcon} />
-            <View style={styles.inputCardContent}>
-              <Text style={[styles.inputCardLabel, { color: isDark ? '#64748B' : '#718096' }]}>Confirm Password</Text>
-              <TextInput
-                ref={confirmRef}
-                style={[styles.inputCardField, { color: isDark ? '#FFFFFF' : '#0F203C' }]}
-                placeholder="••••••••"
-                placeholderTextColor={isDark ? '#4A5568' : '#A0AEC0'}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                onFocus={() => setPwFocused('confirm')}
-                onBlur={() => setPwFocused(null)}
-                secureTextEntry={!showConfirmPassword}
-                returnKeyType="done"
-                onSubmitEditing={handleResetPassword}
-                selectionColor="#03B7CE"
-              />
+            <View style={[styles.iconBox, isDark && { backgroundColor: 'rgba(3, 183, 206, 0.15)' }]}>
+              <Ionicons name="lock-closed-outline" size={18} color="#03B7CE" />
             </View>
-            <TouchableOpacity onPress={() => setShowConfirmPassword(v => !v)} style={styles.eyeBtn} activeOpacity={0.7}>
-              <Ionicons name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={isDark ? '#64748B' : '#7A8FA6'} />
-            </TouchableOpacity>
+            <View style={styles.inputContentWrapper}>
+              <Text style={[styles.inputLabel, { color: isDark ? '#E2E8F0' : '#1A202C' }]}>Confirm Password</Text>
+              <View style={styles.phoneInputContent}>
+                <TextInput
+                  ref={confirmRef}
+                  style={[styles.input, { color: isDark ? '#FFFFFF' : '#1A202C' }]}
+                  placeholder="••••••••"
+                  placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  onFocus={() => setPwFocused('confirm')}
+                  onBlur={() => setPwFocused(null)}
+                  secureTextEntry={!showConfirmPassword}
+                  returnKeyType="done"
+                  onSubmitEditing={handleResetPassword}
+                  selectionColor="#03B7CE"
+                />
+                <TouchableOpacity onPress={() => setShowConfirmPassword(v => !v)} style={styles.eyeBtn}>
+                  <Ionicons name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={isDark ? '#64748B' : '#A0AEC0'} />
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
 
           {/* Password Strength Indicator */}
@@ -829,70 +844,92 @@ const styles = StyleSheet.create({
     color: '#0F203C',
     marginBottom: 10,
   },
-  inputRow: {
+  inputContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#F1F5F9',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  inputFocused: {
+    borderColor: '#03B7CE',
+    backgroundColor: '#FAFDFF',
+  },
+  iconBox: {
+    width: 36,
+    height: 46,
+    borderRadius: 10,
+    backgroundColor: '#E6F8FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  inputContentWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  inputLabel: {
+    fontSize: 13,
+    color: '#1A202C',
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  phoneInputContent: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    height: 52,
-    paddingHorizontal: 14,
-    position: 'relative',
-  },
-  inputRowFocused: {
-    borderColor: '#00ACC1',
   },
   countryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingRight: 8,
+    gap: 4,
   },
   countryCode: {
-    color: '#0F203C',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1A202C',
   },
-  inputDivider: {
+  divider: {
     width: 1,
-    height: 20,
+    height: 14,
     backgroundColor: '#E2E8F0',
-    marginRight: 12,
+    marginHorizontal: 12,
   },
   input: {
     flex: 1,
-    color: '#0F203C',
-    fontSize: 14,
-    height: '100%',
+    fontSize: 16,
+    color: '#1A202C',
+    padding: 0,
+    margin: 0,
+    fontWeight: '600',
   },
-  inputIcon: {
-    marginLeft: 6,
-  },
-  eyeBtn: {
-    padding: 6,
-  },
-
-  // Picker
   picker: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    marginTop: 6,
+    marginTop: -10,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    maxHeight: 150,
-    zIndex: 100,
-  },
-  pickerScroll: {
+    borderColor: '#F1F5F9',
     paddingVertical: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    zIndex: 20,
   },
   pickerItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 16,
-    gap: 10,
+    gap: 12,
   },
-  pickerCode: { color: '#0F203C', fontSize: 13, fontWeight: '600', width: 44 },
+  pickerCode: { color: '#1A202C', fontSize: 13, fontWeight: '600', width: 40 },
   pickerName: { color: '#718096', fontSize: 13 },
 
   // OTP Styles

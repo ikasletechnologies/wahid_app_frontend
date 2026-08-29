@@ -8,6 +8,7 @@ import Text from '../components/AppText';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useNames } from '../context/NamesContext';
 import { usePlaylist } from '../context/PlaylistContext';
@@ -37,7 +38,7 @@ const getRelativeTime = (timestamp) => {
   if (diffHr < 24) {
     return `${diffHr} ${diffHr === 1 ? 'hour' : 'hours'} ago`;
   }
-  
+
   // Calculate if it was yesterday
   const today = new Date(now);
   const targetDate = new Date(timestamp);
@@ -45,11 +46,11 @@ const getRelativeTime = (timestamp) => {
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
   targetDate.setHours(0, 0, 0, 0);
-  
+
   if (targetDate.getTime() === yesterday.getTime()) {
     return 'Yesterday';
   }
-  
+
   // Older -> Date formatted manually (e.g. Aug 20)
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const d = new Date(timestamp);
@@ -154,11 +155,11 @@ const HomeScreen = ({ navigation }) => {
                     nameNumber: firstDraftId,
                     stepIndex: 0,
                     timestamp: null,
-                  })).catch(() => {});
+                  })).catch(() => { });
                   return;
                 }
               }
-              AsyncStorage.removeItem('last_reading_progress').catch(() => {});
+              AsyncStorage.removeItem('last_reading_progress').catch(() => { });
             }
           }
           pickRemaining(); setLastReadTimestamp(null);
@@ -352,7 +353,7 @@ const HomeScreen = ({ navigation }) => {
               nameNumber: item.number,
               stepIndex: draftStepIndex,
               timestamp: now,
-            })).catch(() => {});
+            })).catch(() => { });
             navigation.navigate('NameDetail', { name: item, initialStepIndex: draftStepIndex });
           }
         }}
@@ -396,7 +397,7 @@ const HomeScreen = ({ navigation }) => {
                 if (checkCardAccess && !checkCardAccess(item, navigation)) {
                   return;
                 }
-                
+
                 if (visibleDraftsCount === 4) {
                   setPendingDraft(item.number);
                   setDraftLimitModalVisible(true);
@@ -561,16 +562,16 @@ const HomeScreen = ({ navigation }) => {
                         styles.draftCard,
                         {
                           backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#F6F9FA',
-                          borderColor: isDark ? 'rgba(255,255,255,0.05)' : '#E2E8F0',
-                          borderStyle: 'solid',
+                          borderColor: teal,
+                          borderStyle: 'dashed',
                           justifyContent: 'center',
                           alignItems: 'center',
                           opacity: 0.6,
                         }
                       ]}
                     >
-                      <Ionicons name="lock-closed-outline" size={rs(16)} color={isDark ? '#475569' : '#94A3B8'} />
-                      <Text style={{ fontSize: rs(9), color: isDark ? '#475569' : '#94A3B8', fontFamily: FONTS.medium, marginTop: rs(2) }}>Locked</Text>
+                      <Ionicons name="lock-closed-outline" size={rs(16)} color={isDark ? '#94A3B8' : '#94A3B8'} />
+                      <Text style={{ fontSize: rs(9), color: isDark ? '#94A3B8' : '#94A3B8', fontFamily: FONTS.medium, marginTop: rs(2) }}>Locked</Text>
                     </View>
                   );
                 } else {
@@ -665,34 +666,67 @@ const HomeScreen = ({ navigation }) => {
         </View>
 
         {/* ── STATS ROW ── */}
-        <View style={[styles.statsRow, { backgroundColor: cardBg, borderColor }]}>
-          {/* Learned */}
-          <TouchableOpacity style={styles.statItem} onPress={() => navigation.navigate('Learned')} activeOpacity={0.8}>
-            <Ionicons name="book-outline" size={rs(22)} color={isDark ? '#94A3B8' : '#475569'} />
-            <Text style={[styles.statValue, { color: textPrimary }]}>{stats.learned}</Text>
-            <Text style={styles.statLabel}>Learned</Text>
+        <View style={[styles.dualStatsContainer, { borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', backgroundColor: isDark ? '#0F172A' : '#F8FAFC' }]}>
+          <Svg style={{ position: 'absolute', width: '100%', height: '100%' }} viewBox="0 0 100 100" preserveAspectRatio="none">
+            <Defs>
+              <SvgLinearGradient id="gradLeft" x1="0" y1="0" x2="1" y2="1">
+                <Stop offset="0" stopColor={cardBg} stopOpacity="1" />
+                <Stop offset="1" stopColor={cardBg} stopOpacity="1" />
+              </SvgLinearGradient>
+              <SvgLinearGradient id="gradRight" x1="0" y1="0" x2="1" y2="1">
+                <Stop offset="0" stopColor={isDark ? "#3F3B36" : "#FFFBEA"} stopOpacity="0.9" />
+                <Stop offset="0" stopColor={isDark ? "#2E2C31" : "#FFF3C4"} stopOpacity="0.9" />
+              </SvgLinearGradient>
+            </Defs>
+            <Path d="M0,0 L53,0 L47,100 L0,100 Z" fill="url(#gradLeft)" />
+            <Path d="M53,0 L100,0 L100,100 L47,100 Z" fill="url(#gradRight)" />
+            <Path d="M53,0 L47,100" stroke={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} strokeWidth="0.5" />
+          </Svg>
+
+          {/* Left Panel: Learned */}
+          <TouchableOpacity style={styles.dualStatPanel} onPress={() => navigation.navigate('Learned')} activeOpacity={0.8}>
+            <View style={styles.dualStatRow}>
+              <View style={styles.neonRingGreen}>
+                <Ionicons name="book-outline" size={rs(24)} color="#10B981" />
+              </View>
+              <View style={styles.dualStatTextWrapper}>
+                <Text style={styles.dualStatValueGreen}>{stats.learned}</Text>
+                <Text style={[styles.dualStatLabelLeft, { color: textPrimary }]}>Learned</Text>
+                {/* <View style={styles.dualStatDashGreen} /> */}
+                <Text style={[styles.dualStatSubtitleLeft, { color: textSec }]}>Keep learning{"\n"}every day</Text>
+              </View>
+            </View>
+            <View style={[styles.sparkDotGreen, { top: -rs(4), left: rs(10) }]} />
+            <View style={[styles.sparkDotGreen, { top: rs(6), left: -rs(4), width: rs(3), height: rs(3) }]} />
+            <View style={[styles.sparkDotGreen, { bottom: rs(10), right: -rs(4), width: rs(2), height: rs(2) }]} />
           </TouchableOpacity>
 
-          <View style={[styles.statDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0' }]} />
-
-          {/* Mastered */}
-          <TouchableOpacity style={styles.statItem} onPress={() => navigation.navigate('Mastered')} activeOpacity={0.8}>
-            <Ionicons name="trophy-outline" size={rs(22)} color="#F59E0B" />
-            <Text style={[styles.statValue, { color: textPrimary }]}>{stats.mastered}</Text>
-            <Text style={styles.statLabel}>Mastered</Text>
+          {/* Right Panel: Mastered */}
+          <TouchableOpacity style={styles.dualStatPanel} onPress={() => navigation.navigate('Mastered')} activeOpacity={0.8}>
+            <View style={[styles.dualStatRow, { justifyContent: 'flex-end' }]}>
+              <View style={styles.dualStatTextWrapperRight}>
+                <Text style={styles.dualStatValueGold}>{stats.mastered}</Text>
+                <Text style={[styles.dualStatLabelRight, { color: textPrimary }]}>Mastered</Text>
+                {/* <View style={styles.dualStatDashGold} /> */}
+                <Text style={[styles.dualStatSubtitleRight, { color: textSec }]}>You're on your{"\n"}way!</Text>
+              </View>
+              <View style={styles.neonRingGold}>
+                <Ionicons name="trophy-outline" size={rs(24)} color="#F59E0B" />
+              </View>
+            </View>
+            <View style={[styles.sparkDotGold, { top: -rs(2), right: rs(14) }]} />
+            <View style={[styles.sparkDotGold, { top: rs(10), right: -rs(6), width: rs(2), height: rs(2) }]} />
+            <View style={[styles.sparkDotGold, { bottom: rs(6), left: -rs(2), width: rs(3), height: rs(3) }]} />
           </TouchableOpacity>
 
-          <View style={[styles.statDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0' }]} />
-
-          {/* Progress */}
-          <TouchableOpacity style={styles.statItem} activeOpacity={0.8}>
-            <Ionicons name="stats-chart-outline" size={rs(22)} color={isDark ? '#94A3B8' : '#475569'} />
-            <Text style={[styles.statValue, { color: textPrimary }]}>{stats.progress}%</Text>
-            <Text style={styles.statLabel}>Progress</Text>
-          </TouchableOpacity>
+          {/* Center >> Button */}
+          <View style={[styles.centerSlantBtn, { backgroundColor: isDark ? '#0F172A' : '#FFFFFF', borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+            <Ionicons name="chevron-forward" size={rs(16)} color={isDark ? '#FFFFFF' : '#0F172A'} style={{ marginLeft: rs(2) }} />
+            <Ionicons name="chevron-forward" size={rs(16)} color={isDark ? '#FFFFFF' : '#0F172A'} style={{ marginLeft: rs(-10) }} />
+          </View>
         </View>
 
-        <View style={{ height: rs(40) }} />
+        <View style={{ height: rs(2) }} />
       </ScrollView>
 
       {/* --- Custom Modal for Draft Limit --- */}
@@ -842,17 +876,71 @@ const styles = StyleSheet.create({
   draftNoteText: { fontFamily: FONTS.medium, fontSize: rs(12) },
 
   // STATS
-  statsRow: {
-    flexDirection: 'row', borderRadius: rs(16), borderWidth: 1,
-    paddingVertical: rs(16), paddingHorizontal: rs(8),
-    marginBottom: rs(8),
-    shadowColor: '#000000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03, shadowRadius: 8, elevation: 1,
+  dualStatsContainer: {
+    height: rs(110),
+    borderRadius: rs(20),
+    borderWidth: 1,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    marginBottom: rs(2),
+    marginTop: rs(2),
   },
-  statItem: { flex: 1, alignItems: 'center', gap: rs(4) },
-  statValue: { fontFamily: FONTS.bold, fontSize: rs(20), lineHeight: rs(24) },
-  statLabel: { fontFamily: FONTS.medium, fontSize: rs(12), color: '#64748B' },
-  statDivider: { width: 1, height: '60%', alignSelf: 'center' },
+  dualStatPanel: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: rs(16),
+  },
+  dualStatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  neonRingGreen: {
+    width: rs(48),
+    height: rs(48),
+    borderRadius: rs(24),
+    borderWidth: 2,
+    borderColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16,185,129,0.1)',
+  },
+  neonRingGold: {
+    width: rs(48),
+    height: rs(48),
+    borderRadius: rs(24),
+    borderWidth: 2,
+    borderColor: '#F59E0B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(245,158,11,0.1)',
+    marginLeft: rs(12),
+  },
+  dualStatTextWrapper: { marginLeft: rs(12), alignItems: 'center' },
+  dualStatTextWrapperRight: { alignItems: 'center' },
+  dualStatValueGreen: { fontSize: rs(26), fontFamily: FONTS.bold, color: '#10B981', includeFontPadding: false },
+  dualStatValueGold: { fontSize: rs(26), fontFamily: FONTS.bold, color: '#F59E0B', includeFontPadding: false },
+  dualStatLabelLeft: { fontSize: rs(13), fontFamily: FONTS.bold, marginTop: rs(-2), textAlign: 'center' },
+  dualStatLabelRight: { fontSize: rs(13), fontFamily: FONTS.bold, marginTop: rs(-2), textAlign: 'center' },
+  dualStatDashGreen: { width: rs(12), height: rs(3), backgroundColor: '#10B981', borderRadius: rs(2), marginTop: rs(2), marginBottom: rs(2) },
+  dualStatDashGold: { width: rs(12), height: rs(3), backgroundColor: '#F59E0B', borderRadius: rs(2), marginTop: rs(2), marginBottom: rs(2) },
+  dualStatSubtitleLeft: { fontSize: rs(9), fontFamily: FONTS.regular, textAlign: 'center' },
+  dualStatSubtitleRight: { fontSize: rs(9), fontFamily: FONTS.regular, textAlign: 'center' },
+  sparkDotGreen: { position: 'absolute', width: rs(4), height: rs(4), borderRadius: rs(2), backgroundColor: '#10B981', shadowColor: '#10B981', shadowOpacity: 1, shadowRadius: 4 },
+  sparkDotGold: { position: 'absolute', width: rs(4), height: rs(4), borderRadius: rs(2), backgroundColor: '#F59E0B', shadowColor: '#F59E0B', shadowOpacity: 1, shadowRadius: 4 },
+  centerSlantBtn: {
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    transform: [{ translateX: -rs(16) }, { translateY: -rs(16) }],
+    width: rs(32),
+    height: rs(32),
+    borderRadius: rs(16),
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    zIndex: 10,
+  },
 
   // MODAL
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: rs(24) },

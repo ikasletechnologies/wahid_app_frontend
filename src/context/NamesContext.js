@@ -112,6 +112,11 @@ const withCategory = (name) => {
     }
   }
 
+  if (Number(nameId) === 48) {
+    name.ar = 'الْغَنِيُّ';
+    name.arabic = 'الْغَنِيُّ';
+  }
+
   return {
     ...name,
     number: nameId,
