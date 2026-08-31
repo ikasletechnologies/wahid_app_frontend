@@ -882,12 +882,13 @@ const NameDetailScreen = ({ route, navigation }) => {
   useEffect(() => {
     chromeOpacity.setValue(1);
     setIsChromeVisible(true);
+    if (currentStep?.type === 'reflection') return;
     const timer = setTimeout(() => {
       setIsChromeVisible(false);
       Animated.timing(chromeOpacity, { toValue: 0, duration: 350, useNativeDriver: true }).start();
     }, 3000);
     return () => clearTimeout(timer);
-  }, [safeStepIndex, chromeOpacity]);
+  }, [safeStepIndex, chromeOpacity, currentStep?.type]);
 
   // Circle progress ring animation state and effect
   const [ringProgress, setRingProgress] = useState(0);
@@ -1384,8 +1385,13 @@ const NameDetailScreen = ({ route, navigation }) => {
         </View>
 
         {/* Main Text with Proper Fade Animation */}
-        <View
+        <ScrollView
+          ref={readingCardScrollRef}
           style={styles.textScrollView}
+          contentContainerStyle={styles.textScrollViewContent}
+          nestedScrollEnabled
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={scrollEnabled}
         >
           <FadeContent contentKey={text || (customContent ? 'custom' : '')}>
             {customContent ? customContent : (
@@ -1396,7 +1402,7 @@ const NameDetailScreen = ({ route, navigation }) => {
               </>
             )}
           </FadeContent>
-        </View>
+        </ScrollView>
 
         {/* Bottom Graphic Overlay */}
         <View style={styles.bottomGraphicWrap}>
@@ -2029,8 +2035,8 @@ const NameDetailScreen = ({ route, navigation }) => {
     <Animated.View style={[styles.root, { transform: [{ translateY: exitAnim }] }]}>
       <TimeBasedBackground showElements={false}>
         {({ isNight }) => (
-          <View style={{ flex: 1, backgroundColor: (currentStep.type === 'reflection' || !isChromeVisible) ? '#000000' : (isDark ? '#0F172A' : '#FFFFFF') }}>
-            <StatusBar barStyle={(currentStep.type === 'reflection' || !isChromeVisible) ? "light-content" : (isNight ? "light-content" : "dark-content")} />
+          <View style={{ flex: 1, backgroundColor: !isChromeVisible ? '#000000' : (isDark ? '#0F172A' : '#FFFFFF') }}>
+            <StatusBar barStyle={!isChromeVisible ? "light-content" : (isNight ? "light-content" : "dark-content")} />
             <Animated.View
               pointerEvents="none"
               style={[
@@ -2077,7 +2083,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                     if (!stepTitle) return null;
                     return (
                       <Animated.View style={{ opacity: contentOpacity, paddingHorizontal: rs(20), marginBottom: hs(12), zIndex: 10 }}>
-                        <Text style={[styles.mainTitle, { marginBottom: 0, color: t.text }]}>{stepTitle}</Text>
+                        <Text style={[styles.mainTitle, { marginBottom: 0, color: !isChromeVisible ? '#FFFFFF' : t.text }]}>{stepTitle}</Text>
                       </Animated.View>
                     );
                   })()}
@@ -2087,7 +2093,6 @@ const NameDetailScreen = ({ route, navigation }) => {
                     <Animated.View
                       style={[
                         styles.focusGlow,
-                        currentStep.type === 'reflection' && { backgroundColor: '#00ADC1', borderRadius: rs(20), padding: rs(3) },
                         {
                           opacity: contentOpacity,
                           transform: [
@@ -2115,16 +2120,16 @@ const NameDetailScreen = ({ route, navigation }) => {
                     styles.bottomNavWrapper,
                     {
                       zIndex: 10,
-                      backgroundColor: currentStep.type === 'reflection' ? '#000000' : 'transparent',
+                      backgroundColor: 'transparent',
                       paddingBottom: Math.max((insets.bottom || 0) + hs(10), Platform.OS === 'android' ? hs(30) : hs(20)),
                     }
                   ]}>
                     <View style={[styles.bottomNavInner, {
-                      backgroundColor: (currentStep.type === 'reflection' || !isChromeVisible) ? '#000000' : (isDark ? '#1E293B' : '#FFFFFF'),
-                      borderColor: (currentStep.type === 'reflection' || !isChromeVisible) ? '#000000' : (isDark ? 'rgba(255,255,255,0.08)' : '#DCEFF2'),
-                      borderWidth: (currentStep.type === 'reflection' || !isChromeVisible) ? 0 : 1,
-                      shadowOpacity: (currentStep.type === 'reflection' || !isChromeVisible) ? 0 : 0.05,
-                      elevation: (currentStep.type === 'reflection' || !isChromeVisible) ? 0 : 2,
+                      backgroundColor: !isChromeVisible ? '#000000' : (isDark ? '#1E293B' : '#FFFFFF'),
+                      borderColor: !isChromeVisible ? '#000000' : (isDark ? 'rgba(255,255,255,0.08)' : '#DCEFF2'),
+                      borderWidth: !isChromeVisible ? 0 : 1,
+                      shadowOpacity: !isChromeVisible ? 0 : 0.05,
+                      elevation: !isChromeVisible ? 0 : 2,
                       shadowColor: '#000000',
                     }]}>
                       {/* Previous */}
@@ -2199,7 +2204,8 @@ const styles = StyleSheet.create({
   customDividerLine: { flex: 1, height: 1.5 },
   dividerDot: { width: rs(4), height: rs(4), borderRadius: rs(2) },
   textContentWrap: { flex: 1, paddingHorizontal: rs(30), paddingTop: hs(10), paddingBottom: hs(30), alignItems: 'center', justifyContent: 'center', zIndex: 2 },
-  textScrollView: { flex: 1, width: '100%', zIndex: 2, paddingHorizontal: rs(24), paddingBottom: hs(30), justifyContent: 'center' },
+  textScrollView: { flex: 1, width: '100%', zIndex: 2 },
+  textScrollViewContent: { flexGrow: 1, paddingHorizontal: rs(24), paddingBottom: hs(30), justifyContent: 'center' },
   textScrollContent: { flexGrow: 1, paddingHorizontal: rs(40), paddingTop: hs(10), paddingBottom: hs(40), alignItems: 'center', justifyContent: 'center' },
   readingText: { fontSize: rs(18.5), fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif', fontWeight: '500', textAlign: 'center', lineHeight: rs(28) },
   bottomGraphicWrap: { position: 'absolute', bottom: 0, left: 0, right: 0, height: hs(80), zIndex: 1, borderBottomLeftRadius: rs(20), borderBottomRightRadius: rs(20), overflow: 'hidden' },
