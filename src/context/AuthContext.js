@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import http from '../config/http';
 import { ENDPOINTS } from '../config/api';
+import { getAccessToken, getRefreshToken, setTokens, clearTokens } from '../utils/secureTokenStorage';
 
 const AuthContext = createContext();
 
@@ -21,7 +22,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const [savedUser, savedToken] = await Promise.all([
           AsyncStorage.getItem('user'),
-          AsyncStorage.getItem('accessToken'),
+          getAccessToken(),
         ]);
         if (savedUser && savedToken && isMounted) {
           setUser(JSON.parse(savedUser));
@@ -121,8 +122,7 @@ export const AuthProvider = ({ children }) => {
     setToken(accessToken);
     await Promise.all([
       AsyncStorage.setItem('user', JSON.stringify(userData)),
-      AsyncStorage.setItem('accessToken', accessToken),
-      AsyncStorage.setItem('refreshToken', refreshToken),
+      setTokens(accessToken, refreshToken),
     ]);
   };
 
@@ -138,8 +138,7 @@ export const AuthProvider = ({ children }) => {
 
       await Promise.all([
         AsyncStorage.setItem('user', JSON.stringify(u)),
-        AsyncStorage.setItem('accessToken', accessToken),
-        AsyncStorage.setItem('refreshToken', refreshToken),
+        setTokens(accessToken, refreshToken),
       ]);
 
       return { success: true };
@@ -165,7 +164,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      const refreshToken = await AsyncStorage.getItem('refreshToken');
+      const refreshToken = await getRefreshToken();
       if (refreshToken) {
         // Notify backend to revoke token (best effort)
         await http.post(ENDPOINTS.logout, { refreshToken }).catch(() => null);
@@ -173,13 +172,12 @@ export const AuthProvider = ({ children }) => {
 
       setUser(null);
       setToken(null);
-      
+
       await Promise.all([
         AsyncStorage.removeItem('user'),
-        AsyncStorage.removeItem('accessToken'),
-        AsyncStorage.removeItem('refreshToken'),
         AsyncStorage.removeItem('names_cache'),
         AsyncStorage.removeItem('progress_cache'),
+        clearTokens(),
       ]);
     } catch (error) {
       console.error('Error logging out:', error);

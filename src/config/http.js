@@ -1,6 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL, ENDPOINTS } from './api';
+import { getAccessToken, getRefreshToken, setAccessToken, clearTokens } from '../utils/secureTokenStorage';
 
 // Shared Axios instance
 const http = axios.create({
@@ -12,7 +13,7 @@ const http = axios.create({
 // Automatically inject the accessToken if available
 http.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem('accessToken');
+    const token = await getAccessToken();
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
@@ -48,20 +49,20 @@ http.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = await AsyncStorage.getItem('refreshToken');
+        const refreshToken = await getRefreshToken();
         if (!refreshToken) throw new Error('No refresh token available');
 
         console.log('[AUTH] Token expired, attempting refresh...');
-        
+
         // Use a clean axios instance to avoid infinite loops
         const refreshResponse = await axios.post(ENDPOINTS.refresh, { refreshToken });
-        
+
         if (refreshResponse.data?.success) {
           const { accessToken } = refreshResponse.data;
-          
+
           // Save new token
-          await AsyncStorage.setItem('accessToken', accessToken);
-          
+          await setAccessToken(accessToken);
+
           // Update the original request header and retry
           originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
           console.log('[AUTH] Token refreshed successfully. Retrying request.');
@@ -70,7 +71,7 @@ http.interceptors.response.use(
       } catch (refreshError) {
         console.warn('[AUTH] Session expired. Logging out.');
         // Optional: Trigger a logout by clearing storage
-        await AsyncStorage.multiRemove(['user', 'accessToken', 'refreshToken']);
+        await Promise.all([AsyncStorage.removeItem('user'), clearTokens()]);
         // The app will naturally redirect if AuthContext state is updated via a listener (or manual check)
       }
     }

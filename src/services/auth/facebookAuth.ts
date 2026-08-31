@@ -2,6 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ENDPOINTS } from '../../config/api';
 import { FacebookAuthResponse } from '../../types/auth';
+import { setTokens } from '../../utils/secureTokenStorage';
 
 /**
  * Authenticates with the backend API using the Facebook OAuth Access Token.
@@ -22,13 +23,7 @@ export const loginWithFacebook = async (
   if (data && data.success) {
     const { token, refreshToken, user } = data;
 
-    // Save tokens under user requested keys (access_token, refresh_token)
-    await AsyncStorage.setItem('access_token', token);
-    await AsyncStorage.setItem('refresh_token', refreshToken);
-
-    // Save tokens under existing app keys for compatibility
-    await AsyncStorage.setItem('accessToken', token);
-    await AsyncStorage.setItem('refreshToken', refreshToken);
+    await setTokens(token, refreshToken);
     await AsyncStorage.setItem('user', JSON.stringify(user));
   }
 
