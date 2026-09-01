@@ -72,10 +72,10 @@ const withCategory = (name) => {
   const meaningObj = typeof name.meaning === 'object' ? name.meaning : null;
 
   let sunnah = name.hadith || name.sunnah || [];
-  if (nameId === 5) {
+  if (Number(nameId) === 5) {
     let containsTirmidhiCombined = false;
     sunnah.forEach(item => {
-      if (item && item.reference === "Jāmiʿ at-Tirmidhī 3383 (Grade: Hasan)" && item.simpleMeaning && item.simpleMeaning.includes("Sahih al-Bukhari")) {
+      if (item && item.reference && item.reference.includes("3383 (Grade: Hasan)") && item.simpleMeaning && item.simpleMeaning.includes("Sahih al-Bukhari") && item.simpleMeaning.includes("best dhikr")) {
         containsTirmidhiCombined = true;
       }
     });
@@ -83,14 +83,14 @@ const withCategory = (name) => {
     if (containsTirmidhiCombined) {
       const newSunnah = [];
       sunnah.forEach(item => {
-        if (item && item.reference === "Jāmiʿ at-Tirmidhī 3383 (Grade: Hasan)") {
+        if (item && item.reference && item.reference.includes("3383 (Grade: Hasan)")) {
           newSunnah.push({
             reference: "Jāmiʿ at-Tirmidhī 3383 (Grade: Hasan)",
             simpleMeaning: "The Prophet ﷺ said the best dhikr is La ilaha illallah. The best words you can say are the very words that declare Al-Ilah.",
             arabic: ""
           });
           newSunnah.push({
-            reference: "Sahih al-Bukhari 6423 (Grade: Sahih)",
+            reference: "Sahih al-Bukhari 6423\nGrade: Sahih",
             simpleMeaning: "Whoever says La ilaha illallah sincerely from the heart will enter Paradise. Sincere belief in Al-Ilah is the key to Jannah.",
             arabic: ""
           });
@@ -101,10 +101,13 @@ const withCategory = (name) => {
       sunnah = newSunnah;
     } else {
       sunnah = sunnah.map(item => {
-        if (item && item.reference === "Jāmiʿ at-Tirmidhī 3383 (Grade: Hasan)" && item.simpleMeaning && !item.simpleMeaning.includes("best dhikr")) {
+        if (item && item.reference && item.reference.includes("3383 (Grade: Hasan)") && item.simpleMeaning && !item.simpleMeaning.includes("best dhikr")) {
+          let text = item.simpleMeaning;
+          text = text.replace(/^Sahih al-Bukhari 6423 \(Grade: Sahih\)\s*/i, '');
           return {
             ...item,
-            reference: "Sahih al-Bukhari 6423 (Grade: Sahih)"
+            reference: "Sahih al-Bukhari 6423\nGrade: Sahih",
+            simpleMeaning: text
           };
         }
         return item;
@@ -117,17 +120,32 @@ const withCategory = (name) => {
     name.arabic = 'الْغَنِيُّ';
   }
 
-  return {
-    ...name,
-    number: nameId,
-    arabic: name.arabic || name.ar || '',
-    transliteration: name.transliteration || name.tr || '',
-    translation: name.translation || name.en || '',
-    meaning: meaningObj ? (meaningObj.core || meaningObj.short || '') : (name.meaning || ''),
-    shortMeaning: meaningObj ? (meaningObj.short || meaningObj.core || '') : (name.shortMeaning || name.meaning || ''),
-    gifts: name.benefits || name.gifts || [],
-    practicalWays: practicalWays || [],
-    quranic: name.quran || name.quranic || [],
+    let quranic = name.quran || name.quranic || [];
+    quranic = quranic.map(item => {
+      if (item && item.simpleMeaning && item.simpleMeaning.includes("Why this verse:")) {
+        const parts = item.simpleMeaning.split(/["']?\s*Why this verse:\s*/i);
+        if (parts.length > 1) {
+          return {
+            ...item,
+            simpleMeaning: parts[0].trim(),
+            whyThisVerse: parts[1].trim()
+          };
+        }
+      }
+      return item;
+    });
+
+    return {
+      ...name,
+      number: nameId,
+      arabic: name.arabic || name.ar || '',
+      transliteration: name.transliteration || name.tr || '',
+      translation: name.translation || name.en || '',
+      meaning: meaningObj ? (meaningObj.core || meaningObj.short || '') : (name.meaning || ''),
+      shortMeaning: meaningObj ? (meaningObj.short || meaningObj.core || '') : (name.shortMeaning || name.meaning || ''),
+      gifts: name.benefits || name.gifts || [],
+      practicalWays: practicalWays || [],
+      quranic: quranic,
     sunnah: sunnah,
     scholarlyViews: name.scholarlyViews || [],
     category: NUMBER_TO_CATEGORY[nameId] || 'mercy',

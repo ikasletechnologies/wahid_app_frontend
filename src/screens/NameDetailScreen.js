@@ -62,24 +62,34 @@ const getReferenceSentences = (refDataArray) => {
   let sentences = [];
   array.forEach((ref) => {
     if (typeof ref === 'string') {
-      let parts = ref.split(/([.?!])(?:[\s]+|$)/);
+      let parts = ref.split(/([.?!]["']?)(?:[\s]+|$)/);
       for (let i = 0; i < parts.length; i += 2) {
         let text = parts[i];
         let punct = parts[i + 1] || '';
         let combined = (text + punct).trim();
-        if (combined && combined.replace(/[.?!\s]/g, '').length > 0) {
+        if (combined && combined.replace(/[.?!\s"']/g, '').length > 0) {
           sentences.push({ type: 'string', text: combined, refData: ref });
         }
       }
     } else {
       const processText = (text, fieldType) => {
         if (!text) return;
-        let parts = text.split(/([.?!])(?:[\s]+|$)/);
+
+        if (fieldType === 'simpleMeaning' && text.includes("Why this verse:")) {
+          const splitMatch = text.split(/["']?\s*Why this verse:\s*/i);
+          if (splitMatch.length > 1) {
+            processText(splitMatch[0].replace(/["']\s*$/, ''), 'simpleMeaning');
+            processText(splitMatch[1], 'significance');
+            return;
+          }
+        }
+
+        let parts = text.split(/([.?!]["']?)(?:[\s]+|$)/);
         for (let i = 0; i < parts.length; i += 2) {
           let textPart = parts[i];
           let punct = parts[i + 1] || '';
           let combined = (textPart + punct).trim();
-          if (combined && combined.replace(/[.?!\s]/g, '').length > 0) {
+          if (combined && combined.replace(/[.?!\s"']/g, '').length > 0) {
             sentences.push({ type: fieldType, text: combined, refData: ref });
           }
         }
@@ -98,12 +108,12 @@ const flattenToSentences = (arrayOrString) => {
   array.forEach(item => {
     if (!item) return;
     const itemStr = typeof item === 'object' ? (item.view || '') : String(item);
-    let parts = itemStr.split(/([.?!])(?:[\s]+|$)/);
+    let parts = itemStr.split(/([.?!]["']?)(?:[\s]+|$)/);
     for (let i = 0; i < parts.length; i += 2) {
       let text = parts[i];
       let punct = parts[i + 1] || '';
       let combined = (text + punct).trim();
-      if (combined && combined.replace(/[.?!\s]/g, '').length > 0) {
+      if (combined && combined.replace(/[.?!\s"']/g, '').length > 0) {
         sentences.push(combined);
       }
     }
@@ -1580,9 +1590,13 @@ const NameDetailScreen = ({ route, navigation }) => {
       <View style={{ width: '100%' }}>
         {!!refData.reference && (
           <View style={styles.refBadgeRow}>
-            <View style={[styles.refBadgePill, { backgroundColor: isDark ? '#0F2A30' : '#E8F9FB', borderColor: isDark ? '#1E4A55' : '#A0E4EC' }]}>
+            <View style={[styles.refBadgePill, { backgroundColor: isDark ? '#0F2A30' : '#E8F9FB', borderColor: isDark ? '#1E4A55' : '#A0E4EC', textAlign: 'center' }]}>
               <Ionicons name="book-outline" size={rs(13)} color="#00ADC1" style={{ marginRight: rs(6) }} />
-              <Text style={[styles.refBadgeText, { color: isDark ? '#9EAAB8' : '#1A4A55' }]}>{refData.reference}</Text>
+              <Text style={[styles.refBadgeText, { color: isDark ? '#9EAAB8' : '#1A4A55', textAlign: 'center' }]}>
+                {(refData.reference.includes("3383 (Grade: Hasan)") && (currentSent.text.includes("Whoever says La ilaha") || currentSent.text.includes("Sincere belief in Al-Ilah"))) 
+                  ? "Sahih al-Bukhari 6423\nGrade: Sahih" 
+                  : refData.reference}
+              </Text>
             </View>
           </View>
         )}
@@ -1591,7 +1605,9 @@ const NameDetailScreen = ({ route, navigation }) => {
           {currentSent.type === 'simpleMeaning' ? 'Simple explanation' : (isQuran ? 'Why this verse:' : 'Why this Hadith:')}
         </Text>
 
-        <Text style={[styles.readingText, { color: t.text, marginBottom: hs(20) }]}>{currentSent.text}</Text>
+        <Text style={[styles.readingText, { color: t.text, marginBottom: hs(20) }]}>
+          {currentSent.text.replace(/^Sahih al-Bukhari 6423 \(Grade: Sahih\)\s*/i, '')}
+        </Text>
 
         {!!refData.arabic && (
           <>
@@ -1688,16 +1704,32 @@ const NameDetailScreen = ({ route, navigation }) => {
       <View style={[styles.tabContentContainer, { flex: 1 }]}>
         {questions.map((q) => (
           <View key={q.key} style={{ flex: 1 }}>
-            <View style={[styles.reflectionCard, { backgroundColor: t.cardBg, borderColor: t.cardBorder, flex: 1 }]}>
-              <View style={styles.reflectionCardHeader}>
-                <Text style={[styles.reflectionQuestion, { color: t.text }]}>{q.label}</Text>
+            <View style={[styles.modernCard, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', borderColor: isDark ? '#334155' : '#F0F4F8', flex: 1 }]}>
+              
+              {/* Top Badges Row */}
+              <View style={styles.cardBadgesRow}>
+                <View style={[styles.badgeCircle, { backgroundColor: isDark ? '#0F172A' : '#F0F9FA', flexShrink: 0 }]}>
+                  <Ionicons name="pencil-outline" size={rs(20)} color="#16858A" />
+                </View>
+                <Text style={[styles.cardHeaderTitleText, { color: isDark ? '#E8EDF2' : '#14363F', marginLeft: rs(14) }]}>
+                  {q.label}
+                </Text>
+              </View>
+
+              {/* Custom Divider */}
+              <View style={styles.customDividerWrap}>
+                <View style={[styles.dividerDot, { backgroundColor: isDark ? '#4CD5E8' : '#A4D0CB' }]} />
+                <View style={[styles.dividerDot, { backgroundColor: '#16858A', marginLeft: rs(4) }]} />
+                <View style={[styles.customDividerLine, { backgroundColor: isDark ? '#334155' : '#D1E8E6', marginLeft: rs(6), marginRight: rs(6) }]} />
+                <View style={[styles.dividerDot, { backgroundColor: '#16858A', marginRight: rs(4) }]} />
+                <View style={[styles.dividerDot, { backgroundColor: isDark ? '#4CD5E8' : '#A4D0CB' }]} />
               </View>
 
               <ScrollView
+                style={styles.textScrollView}
+                contentContainerStyle={styles.textScrollViewContent}
                 nestedScrollEnabled
                 showsVerticalScrollIndicator={false}
-                style={{ flex: 1, marginTop: hs(8) }}
-                contentContainerStyle={{ gap: hs(12), paddingBottom: hs(8) }}
               >
                 {cardAnswers.map((ans, idx) => {
                   const isSelected = reflection1 === ans;
@@ -1707,8 +1739,10 @@ const NameDetailScreen = ({ route, navigation }) => {
                       style={[
                         styles.reflectionOptionRow,
                         {
+                          marginBottom: hs(12),
                           backgroundColor: isSelected ? (isDark ? 'rgba(76, 175, 80, 0.10)' : '#F0FBF2') : (isDark ? '#142030' : '#FAFAFA'),
                           borderColor: isSelected ? '#4CAF50' : (isDark ? 'rgba(255,255,255,0.08)' : '#ECECEC'),
+                          zIndex: 1, // Ensure options are above graphic overlay
                         }
                       ]}
                       activeOpacity={0.8}
@@ -1725,6 +1759,20 @@ const NameDetailScreen = ({ route, navigation }) => {
                   );
                 })}
               </ScrollView>
+
+              {/* Bottom Graphic Overlay */}
+              <View style={[styles.bottomGraphicWrap, { pointerEvents: 'none' }]}>
+                <Svg width="100%" height={hs(80)} viewBox="0 0 300 80" preserveAspectRatio="none">
+                  <Path d="M0 50 Q 75 80 150 50 T 300 50 L 300 80 L 0 80 Z" fill={isDark ? 'rgba(0,173,193,0.05)' : '#F2FAF9'} />
+                </Svg>
+                {/* Scattered Dots */}
+                <View style={[styles.scatterDot, { backgroundColor: '#FF9A92', left: '12%', top: '30%' }]} />
+                <View style={[styles.scatterDot, { backgroundColor: '#6DC5C9', left: '38%', top: '70%' }]} />
+                <View style={[styles.scatterDot, { backgroundColor: '#F9CF6E', left: '62%', top: '55%' }]} />
+                <View style={[styles.scatterDot, { backgroundColor: '#FF9A92', left: '88%', top: '35%' }]} />
+                <View style={[styles.scatterDot, { backgroundColor: '#92D7B4', left: '85%', top: '80%' }]} />
+              </View>
+
             </View>
           </View>
         ))}
@@ -2438,9 +2486,11 @@ const styles = StyleSheet.create({
   },
   reflectionOptionText: {
     flex: 1,
-    fontSize: rs(13.5),
-    lineHeight: rs(20),
+    fontSize: rs(18.5),
+    fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif',
     fontWeight: '500',
+    textAlign: 'center',
+    lineHeight: rs(28),
   },
 
   // ── Quiz Input ──
