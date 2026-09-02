@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import NetInfo from '@react-native-community/netinfo';
 import Toast from 'react-native-toast-message';
 import { FONTS } from '../theme';
+import errornetworkImg from '../../assets/network/errornetwork.png';
 
 const { width } = Dimensions.get('window');
 
@@ -89,7 +90,7 @@ const NetworkScreen = ({ onConnectionRestored }) => {
 
       {/* ── Illustration ── */}
       <Image
-        source={require('../../assets/network/network.png')}
+        source={errornetworkImg}
         style={styles.image}
         resizeMode="contain"
       />
@@ -130,8 +131,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   image: {
-    width: Math.round(width * 0.52),
-    height: Math.round(width * 0.52),
+    width: Math.round(width * 0.75),
+    height: Math.round(width * 0.75),
     marginBottom: 24,
   },
   title: {
