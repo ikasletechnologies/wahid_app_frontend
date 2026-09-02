@@ -885,20 +885,25 @@ const NameDetailScreen = ({ route, navigation }) => {
   const safeStepIndex = Math.max(0, Math.min(currentStepIndex, steps.length - 1));
   const currentStep = steps[safeStepIndex];
 
-  // The name header + step tracker start visible on each card, then fade
-  // fully away after a few seconds so the reading card gets the full screen.
-  // Bottom nav (Previous/Continue) is never affected — swipe navigation
-  // must always stay reachable.
-  useEffect(() => {
-    chromeOpacity.setValue(1);
+  const enableFocusMode = useCallback(() => {
+    if (!isChromeVisible) return;
+    setIsChromeVisible(false);
+    Animated.timing(chromeOpacity, {
+      toValue: 0,
+      duration: 350,
+      useNativeDriver: true,
+    }).start();
+  }, [chromeOpacity, isChromeVisible]);
+
+  const disableFocusMode = useCallback(() => {
+    if (isChromeVisible) return;
     setIsChromeVisible(true);
-    if (currentStep?.type === 'reflection') return;
-    const timer = setTimeout(() => {
-      setIsChromeVisible(false);
-      Animated.timing(chromeOpacity, { toValue: 0, duration: 350, useNativeDriver: true }).start();
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [safeStepIndex, chromeOpacity, currentStep?.type]);
+    Animated.timing(chromeOpacity, {
+      toValue: 1,
+      duration: 350,
+      useNativeDriver: true,
+    }).start();
+  }, [chromeOpacity, isChromeVisible]);
 
   // Circle progress ring animation state and effect
   const [ringProgress, setRingProgress] = useState(0);
@@ -1219,6 +1224,7 @@ const NameDetailScreen = ({ route, navigation }) => {
   }, [markAsLearned, name.id, name.number, journeyOpacity, journeyTranslate, removeDraft]);
 
   const handleNext = useCallback(() => {
+    enableFocusMode();
     let ans = 0;
     if (name.mcq && name.mcq.length > 0) ans = name.mcq[0].ans;
 
@@ -1301,7 +1307,7 @@ const NameDetailScreen = ({ route, navigation }) => {
     } else {
       goNext();
     }
-  }, [goJourney, currentStep.type, masteryDone, masteryAnswer, name.mcq, goNext, refSubStep, giftSubStep, practicalSubStep, scholarSubStep, name.gifts, name.practicalWays, name.scholarlyViews, reflection1, reflection2, reflection3, meaningSubStep, name, currentStep.data, triggerFlip]);
+  }, [goJourney, currentStep.type, masteryDone, masteryAnswer, name.mcq, goNext, refSubStep, giftSubStep, practicalSubStep, scholarSubStep, name.gifts, name.practicalWays, name.scholarlyViews, reflection1, reflection2, reflection3, meaningSubStep, name, currentStep.data, triggerFlip, enableFocusMode]);
 
 
 
@@ -2098,7 +2104,8 @@ const NameDetailScreen = ({ route, navigation }) => {
             />
             <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top', 'left', 'right']}>
               <KeyboardAvoidingView style={{ flex: 1, backgroundColor: 'transparent' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
-                <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+                <TouchableWithoutFeedback onPress={() => { if (!isChromeVisible) disableFocusMode(); }}>
+                  <View style={{ flex: 1, backgroundColor: 'transparent' }}>
 
                   <Animated.View
                     style={{
@@ -2136,32 +2143,36 @@ const NameDetailScreen = ({ route, navigation }) => {
                     );
                   })()}
 
-                  <View style={{ flex: 1, paddingHorizontal: rs(16), paddingTop: hs(4), paddingBottom: hs(8), zIndex: 60 }}>
-                    {/* Outer card with border animates scale, translation, rotation, and opacity synchronously */}
-                    <Animated.View
-                      style={[
-                        styles.focusGlow,
-                        {
-                          opacity: contentOpacity,
-                          transform: [
-                            { scale: chromeOpacity.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) },
-                            { translateY: contentTranslateY },
-                            { rotateY: flipAnim.interpolate({ inputRange: [-90, 0, 90], outputRange: ['-90deg', '0deg', '90deg'] }) },
-                          ],
-                        },
-                      ]}
-                    >
-                      <View style={{ flex: 1 }}>
-                        {currentStep.type === 'meaning' && renderMeaning()}
-                        {(currentStep.type === 'quran' || currentStep.type === 'hadith') && renderReference(currentStep.data, currentStep.type)}
-                        {currentStep.type === 'gifts' && renderGifts()}
-                        {currentStep.type === 'practical' && renderPractical()}
-                        {currentStep.type === 'scholarly' && renderScholarly()}
-                        {currentStep.type === 'reflection' && renderReflection()}
-                        {currentStep.type === 'mastery' && renderMastery()}
-                      </View>
-                    </Animated.View>
-                  </View>
+                  <TouchableWithoutFeedback onPress={() => { if (!isChromeVisible) disableFocusMode(); }}>
+                    <View style={{ flex: 1, paddingHorizontal: rs(16), paddingTop: hs(4), paddingBottom: hs(8), zIndex: 60 }}>
+                      {/* Outer card with border animates scale, translation, rotation, and opacity synchronously */}
+                      <TouchableWithoutFeedback onPress={() => {}}>
+                        <Animated.View
+                          style={[
+                            styles.focusGlow,
+                            {
+                              opacity: contentOpacity,
+                              transform: [
+                                { scale: chromeOpacity.interpolate({ inputRange: [0, 1], outputRange: [0.94, 1] }) },
+                                { translateY: contentTranslateY },
+                                { rotateY: flipAnim.interpolate({ inputRange: [-90, 0, 90], outputRange: ['-90deg', '0deg', '90deg'] }) },
+                              ],
+                            },
+                          ]}
+                        >
+                          <View style={{ flex: 1 }}>
+                            {currentStep.type === 'meaning' && renderMeaning()}
+                            {(currentStep.type === 'quran' || currentStep.type === 'hadith') && renderReference(currentStep.data, currentStep.type)}
+                            {currentStep.type === 'gifts' && renderGifts()}
+                            {currentStep.type === 'practical' && renderPractical()}
+                            {currentStep.type === 'scholarly' && renderScholarly()}
+                            {currentStep.type === 'reflection' && renderReflection()}
+                            {currentStep.type === 'mastery' && renderMastery()}
+                          </View>
+                        </Animated.View>
+                      </TouchableWithoutFeedback>
+                    </View>
+                  </TouchableWithoutFeedback>
 
                   {/* ── Bottom Navigation ── */}
                   <View style={[
@@ -2202,6 +2213,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                     </View>
                   </View>
                 </View>
+                </TouchableWithoutFeedback>
               </KeyboardAvoidingView>
             </SafeAreaView>
 

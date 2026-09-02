@@ -99,7 +99,7 @@ const NetworkScreen = ({ onConnectionRestored }) => {
 
       {/* ── Subtitle ── */}
       <Text style={styles.subtitle}>
-        Your internet connection is down, please fix it{"\n"}and then you can continue using{' '}
+        Please check your internet connection and try{"\n"}again to continue using{' '}
         <Text style={styles.boldBrand}>WAHID</Text>
       </Text>
 
@@ -130,8 +130,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   image: {
-    width: width * 0.72,
-    height: width * 0.72,
+    width: Math.round(width * 0.52),
+    height: Math.round(width * 0.52),
     marginBottom: 24,
   },
   title: {
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   },
   boldBrand: {
     fontFamily: FONTS.bold,
-    color: '#0F172A',
+    color: '#06B6D4',
   },
   buttonContainer: {
     width: 60,
