@@ -432,9 +432,9 @@ const HomeScreen = ({ navigation }) => {
           >
             <Text style={[styles.avatarText, { color: teal }]}>{initial}</Text>
           </TouchableOpacity>
-          <View>
-            <Text style={[styles.helloText, { color: textSec }]}>Hello {user?.name || 'Demo User'},</Text>
-            <Text style={[styles.greetingText, { color: textPrimary }]}>{greeting}</Text>
+          <View style={{ flexShrink: 1 }}>
+            <Text style={[styles.helloText, { color: textSec }]} numberOfLines={1}>Hello {user?.name || 'Demo User'},</Text>
+            <Text style={[styles.greetingText, { color: textPrimary }]} numberOfLines={1}>{greeting}</Text>
           </View>
         </View>
         <View style={styles.headerRight}>
@@ -696,9 +696,6 @@ const HomeScreen = ({ navigation }) => {
                 <Text style={[styles.dualStatSubtitleLeft, { color: textSec }]}>Keep learning{"\n"}every day</Text>
               </View>
             </View>
-            <View style={[styles.sparkDotGreen, { top: -rs(4), left: rs(10) }]} />
-            <View style={[styles.sparkDotGreen, { top: rs(6), left: -rs(4), width: rs(3), height: rs(3) }]} />
-            <View style={[styles.sparkDotGreen, { bottom: rs(10), right: -rs(4), width: rs(2), height: rs(2) }]} />
           </TouchableOpacity>
 
           {/* Right Panel: Mastered */}
@@ -714,15 +711,12 @@ const HomeScreen = ({ navigation }) => {
                 <Ionicons name="trophy-outline" size={rs(24)} color="#F59E0B" />
               </View>
             </View>
-            <View style={[styles.sparkDotGold, { top: -rs(2), right: rs(14) }]} />
-            <View style={[styles.sparkDotGold, { top: rs(10), right: -rs(6), width: rs(2), height: rs(2) }]} />
-            <View style={[styles.sparkDotGold, { bottom: rs(6), left: -rs(2), width: rs(3), height: rs(3) }]} />
           </TouchableOpacity>
 
           {/* Center >> Button */}
-          <View style={[styles.centerSlantBtn, { backgroundColor: isDark ? '#0F172A' : '#FFFFFF', borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-            <Ionicons name="chevron-forward" size={rs(16)} color={isDark ? '#FFFFFF' : '#0F172A'} style={{ marginLeft: rs(2) }} />
-            <Ionicons name="chevron-forward" size={rs(16)} color={isDark ? '#FFFFFF' : '#0F172A'} style={{ marginLeft: rs(-10) }} />
+          <View style={[styles.centerSlantBtn, { backgroundColor: isDark ? '#0F172A' : '#10B981', borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+            <Ionicons name="chevron-forward" size={rs(16)} color="#FFFFFF" style={{ marginLeft: rs(2) }} />
+            <Ionicons name="chevron-forward" size={rs(16)} color="#FFFFFF" style={{ marginLeft: rs(-10) }} />
           </View>
         </View>
 
@@ -774,7 +768,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(20),
     paddingVertical: rs(14),
   },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: rs(12) },
+  headerLeft: { flex: 1, flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: rs(12), marginRight: rs(8) },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: rs(10) },
   avatar: { width: rs(44), height: rs(44), borderRadius: rs(22), justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontFamily: FONTS.bold, fontSize: rs(18) },
@@ -925,8 +919,6 @@ const styles = StyleSheet.create({
   dualStatDashGold: { width: rs(12), height: rs(3), backgroundColor: '#F59E0B', borderRadius: rs(2), marginTop: rs(2), marginBottom: rs(2) },
   dualStatSubtitleLeft: { fontSize: rs(9), fontFamily: FONTS.regular, textAlign: 'center' },
   dualStatSubtitleRight: { fontSize: rs(9), fontFamily: FONTS.regular, textAlign: 'center' },
-  sparkDotGreen: { position: 'absolute', width: rs(4), height: rs(4), borderRadius: rs(2), backgroundColor: '#10B981', shadowColor: '#10B981', shadowOpacity: 1, shadowRadius: 4 },
-  sparkDotGold: { position: 'absolute', width: rs(4), height: rs(4), borderRadius: rs(2), backgroundColor: '#F59E0B', shadowColor: '#F59E0B', shadowOpacity: 1, shadowRadius: 4 },
   centerSlantBtn: {
     position: 'absolute',
     left: '50%',

@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
+import { GoogleLogo, FacebookLogo } from '../components/SocialLogos';
 import { useGoogleAuth } from '../hooks/useGoogleAuth';
 import { authenticateWithGoogle } from '../services/auth/googleAuth';
 import { useFacebookAuth } from '../hooks/useFacebookAuth';
@@ -227,7 +228,7 @@ const PhoneScreen = ({ navigation }) => {
                     <View style={[styles.divider, isDark && { backgroundColor: 'rgba(255, 255, 255, 0.12)' }]} />
                     <TextInput
                       ref={phoneInput}
-                      style={[styles.input, { color: isDark ? '#FFFFFF' : '#1A202C', fontSize: phone.length > 0 ? 18 : 14 }]}
+                      style={[styles.input, { color: isDark ? '#FFFFFF' : '#1A202C', fontSize: phone.length > 0 ? 16 : 13 }]}
                       placeholder="Enter Mobile Number"
                       placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
                       value={phone}
@@ -295,7 +296,7 @@ const PhoneScreen = ({ navigation }) => {
                 </View>
               ) : (
                 <>
-                  <Ionicons name="logo-google" size={20} color="#EA4335" style={styles.socialIcon} />
+                  <GoogleLogo size={20} style={styles.socialIcon} />
                   <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>Continue with Google</Text>
                 </>
               )}
@@ -320,7 +321,7 @@ const PhoneScreen = ({ navigation }) => {
                 </View>
               ) : (
                 <>
-                  <Ionicons name="logo-facebook" size={20} color="#1877F2" style={styles.socialIcon} />
+                  <FacebookLogo size={20} style={styles.socialIcon} />
                   <Text style={[styles.socialBtnText, { color: isDark ? '#FFFFFF' : '#1A202C' }]}>Continue with Facebook</Text>
                 </>
               )}
@@ -363,7 +364,7 @@ const styles = StyleSheet.create({
     transform: [{ translateY: -40 }],
   },
   logoTitle: {
-    fontSize: 34,
+    fontSize: 30,
     fontWeight: '700',
     color: '#0F203C',
     letterSpacing: 1,
@@ -392,13 +393,13 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     color: '#0F203C',
     marginBottom: 6,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#718096',
     fontWeight: '500',
   },
@@ -409,7 +410,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1.5,
     borderColor: '#F1F5F9',
     paddingVertical: 12,
@@ -435,7 +436,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   inputLabel: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#1A202C',
     fontWeight: '700',
     marginBottom: 4,
@@ -451,7 +452,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   countryCode: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: '#1A202C',
   },
@@ -463,7 +464,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     color: '#1A202C',
     padding: 0,
     margin: 0,
@@ -471,7 +472,7 @@ const styles = StyleSheet.create({
   },
   picker: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 10,
     marginTop: -16,
     marginBottom: 24,
     borderWidth: 1,
@@ -491,8 +492,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     gap: 12,
   },
-  pickerCode: { color: '#1A202C', fontSize: 13, fontWeight: '600', width: 40 },
-  pickerName: { color: '#718096', fontSize: 13 },
+  pickerCode: { color: '#1A202C', fontSize: 12, fontWeight: '600', width: 40 },
+  pickerName: { color: '#718096', fontSize: 12 },
   existsBox: {
     backgroundColor: '#FAFDFF',
     borderWidth: 1,
@@ -504,13 +505,13 @@ const styles = StyleSheet.create({
   },
   existsTitle: {
     color: '#1A202C',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     marginBottom: 4,
   },
   existsSubtitle: {
     color: '#718096',
-    fontSize: 13,
+    fontSize: 12,
   },
   signInButton: {
     flexDirection: 'row',
@@ -522,7 +523,7 @@ const styles = StyleSheet.create({
   },
   signInText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
   },
   orContainer: {
@@ -538,7 +539,7 @@ const styles = StyleSheet.create({
   orText: {
     marginHorizontal: 16,
     color: '#A0AEC0',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
   },
   socialContainer: {
@@ -561,7 +562,7 @@ const styles = StyleSheet.create({
   socialBtnText: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: '#1A202C',
   },
@@ -572,7 +573,7 @@ const styles = StyleSheet.create({
   },
   promptText: {
     color: '#718096',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
   },
   promptLinkContainer: {
@@ -581,7 +582,7 @@ const styles = StyleSheet.create({
   },
   promptLink: {
     color: '#03B7CE',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
 });

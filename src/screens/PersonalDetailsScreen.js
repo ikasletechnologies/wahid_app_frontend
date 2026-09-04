@@ -84,19 +84,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     marginLeft: 4,
   },
   formContainer: {
     paddingHorizontal: 20,
-    gap: 16,
+    gap: 14,
     marginTop: 10,
   },
   inputContainer: {
     borderRadius: 8,
-    paddingHorizontal: 16,
-    height: 52,
+    paddingHorizontal: 14,
+    height: 46,
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   input: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
   },
   passwordContainerWrapper: {
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveBtnText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
 });

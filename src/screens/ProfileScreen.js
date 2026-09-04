@@ -125,7 +125,11 @@ export default function ProfileScreen({ navigation }) {
                                 <Text style={[styles.headerTitle, { color: t.headerText }]}>Profile</Text>
                             </View>
 
-                            <View>
+                            <ScrollView
+                                style={{ flex: 1 }}
+                                contentContainerStyle={styles.scrollContent}
+                                showsVerticalScrollIndicator={false}
+                            >
 
                                 {/* PROFILE SECTION */}
                                 <View style={styles.profileSection}>
@@ -336,7 +340,7 @@ export default function ProfileScreen({ navigation }) {
                                         </View>
                                     </LinearGradient>
                                 </TouchableOpacity>
-                            </View>
+                            </ScrollView>
 
                             <ReadingSettingsModal
                                 visible={readingSettingsVisible}
@@ -492,6 +496,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         marginTop: -3,
     },
+    scrollContent: {
+        paddingBottom: 40,
+    },
 
     headerContainer: {
         flexDirection: 'row',
@@ -503,7 +510,7 @@ const styles = StyleSheet.create({
         padding: 5,
     },
     headerTitle: {
-        fontSize: 22,
+        fontSize: 20,
         fontWeight: 'bold',
     },
 
@@ -521,18 +528,18 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     avatarInitial: {
-        fontSize: 36,
+        fontSize: 32,
         fontWeight: 'bold',
         color: '#06b6d4',
     },
     profileName: {
         marginTop: 0,
-        fontSize: 24,
+        fontSize: 21,
         fontWeight: 'bold',
     },
     profileEmail: {
         marginTop: 0,
-        fontSize: 14,
+        fontSize: 13,
     },
 
     card: {
@@ -560,11 +567,11 @@ const styles = StyleSheet.create({
         marginRight: 12,
     },
     cardTitle: {
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: "600",
     },
     versionText: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '600',
         color: 'transparent',
     },
@@ -595,21 +602,21 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     modalTitle: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '700',
     },
     privacyScroll: {
         flexGrow: 0,
     },
     privacySectionTitle: {
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: '700',
         marginTop: 16,
         marginBottom: 6,
     },
     privacyParagraph: {
-        fontSize: 14,
-        lineHeight: 22,
+        fontSize: 13,
+        lineHeight: 20,
     },
     logoutOverlay: {
         flex: 1,
@@ -636,15 +643,15 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     logoutModalTitle: {
-        fontSize: 22,
+        fontSize: 19,
         fontWeight: '900',
         marginBottom: 10,
     },
     logoutModalMessage: {
-        fontSize: 14,
+        fontSize: 13,
         textAlign: 'center',
         marginBottom: 30,
-        lineHeight: 20,
+        lineHeight: 19,
         paddingHorizontal: 10,
     },
     logoutButtonRow: {
@@ -663,8 +670,8 @@ const styles = StyleSheet.create({
     },
     cancelButtonText: {
         fontWeight: 'bold',
-        fontSize: 16,
-        lineHeight: 20,
+        fontSize: 15,
+        lineHeight: 19,
     },
     logoutButtonModal: {
         flex: 1,
@@ -690,6 +697,6 @@ const styles = StyleSheet.create({
     logoutButtonText: {
         color: '#FF5252',
         fontWeight: 'bold',
-        fontSize: 16,
+        fontSize: 15,
     },
 });

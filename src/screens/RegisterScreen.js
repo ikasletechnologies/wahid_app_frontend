@@ -210,9 +210,9 @@ const RegisterScreen = ({ navigation, route }) => {
           </TouchableOpacity>
 
           {/* Title Area */}
-          <View style={[styles.titleArea, { marginTop: 90 }]}>
-            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>Create Account</Text>
-            <Text style={[styles.subtitle, { color: isDark ? '#A0AEC0' : '#718096' }]}>Complete your profile to start{'\n'}your learning journey</Text>
+          <View style={styles.titleArea}>
+            <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#0F203C' }]} numberOfLines={1}>Create Account</Text>
+            <Text style={[styles.subtitle, { color: isDark ? '#A0AEC0' : '#718096' }]} numberOfLines={2}>Complete your profile to start{'\n'}your learning journey</Text>
           </View>
 
           {/* Form */}
@@ -269,53 +269,46 @@ const RegisterScreen = ({ navigation, route }) => {
               {renderUsernameStatus()}
             </View>
 
-            {/* DOB & Gender Side-by-Side */}
-            <View style={styles.halfRowContainer}>
-              {/* DOB */}
-              <View style={styles.halfCol}>
-                <Text style={[styles.label, { color: isDark ? '#E2E8F0' : '#0F203C' }]}>Date of Birth</Text>
-                <TouchableOpacity
-                  style={[
-                    styles.inputRow,
-                    {
-                      backgroundColor: isDark ? '#111111' : '#FFFFFF',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
-                    },
-                    focused === 'dob' && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#161616' } : styles.inputRowFocused)
-                  ]}
-                  onPress={() => { setFocused('dob'); setShowDatePicker(true); }}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="calendar-outline" size={20} color="#03B7CE" style={styles.inputIcon} />
-                  <Text style={[styles.dobText, { color: formattedDob ? (isDark ? '#FFFFFF' : '#0F203C') : (isDark ? '#64748B' : '#A0AEC0') }]}>
-                    {formattedDob || 'DD / MM / YYYY'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+            {/* Date of Birth */}
+            <Text style={[styles.label, { color: isDark ? '#E2E8F0' : '#0F203C' }]}>Date of Birth</Text>
+            <TouchableOpacity
+              style={[
+                styles.inputRow,
+                {
+                  backgroundColor: isDark ? '#111111' : '#FFFFFF',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
+                },
+                focused === 'dob' && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#161616' } : styles.inputRowFocused)
+              ]}
+              onPress={() => { setFocused('dob'); setShowDatePicker(true); }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="calendar-outline" size={20} color="#03B7CE" style={styles.inputIcon} />
+              <Text style={[styles.dobText, { color: formattedDob ? (isDark ? '#FFFFFF' : '#0F203C') : (isDark ? '#64748B' : '#A0AEC0') }]}>
+                {formattedDob || 'DD / MM / YYYY'}
+              </Text>
+            </TouchableOpacity>
 
-              {/* Gender */}
-              <View style={styles.halfCol}>
-                <Text style={[styles.label, { color: isDark ? '#E2E8F0' : '#0F203C' }]}>Gender</Text>
-                <TouchableOpacity
-                  style={[
-                    styles.inputRow,
-                    {
-                      backgroundColor: isDark ? '#111111' : '#FFFFFF',
-                      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
-                    },
-                    focused === 'gender' && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#161616' } : styles.inputRowFocused)
-                  ]}
-                  onPress={() => { setFocused('gender'); setShowGenderModal(true); }}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="people-outline" size={20} color="#03B7CE" style={styles.inputIcon} />
-                  <Text style={[styles.dobText, { color: gender ? (isDark ? '#FFFFFF' : '#0F203C') : (isDark ? '#64748B' : '#A0AEC0') }]} numberOfLines={1}>
-                    {gender || 'Select gender'}
-                  </Text>
-                  <Ionicons name="chevron-down" size={16} color={isDark ? '#64748B' : '#A0AEC0'} />
-                </TouchableOpacity>
-              </View>
-            </View>
+            {/* Gender */}
+            <Text style={[styles.label, { color: isDark ? '#E2E8F0' : '#0F203C' }]}>Gender</Text>
+            <TouchableOpacity
+              style={[
+                styles.inputRow,
+                {
+                  backgroundColor: isDark ? '#111111' : '#FFFFFF',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
+                },
+                focused === 'gender' && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#161616' } : styles.inputRowFocused)
+              ]}
+              onPress={() => { setFocused('gender'); setShowGenderModal(true); }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="people-outline" size={20} color="#03B7CE" style={styles.inputIcon} />
+              <Text style={[styles.dobText, { color: gender ? (isDark ? '#FFFFFF' : '#0F203C') : (isDark ? '#64748B' : '#A0AEC0') }]} numberOfLines={1}>
+                {gender || 'Select gender'}
+              </Text>
+              <Ionicons name="chevron-down" size={16} color={isDark ? '#64748B' : '#A0AEC0'} />
+            </TouchableOpacity>
 
             {/* Email */}
             <Text style={[styles.label, { color: isDark ? '#E2E8F0' : '#0F203C' }]}>Email <Text style={styles.optionalText}>(Optional)</Text></Text>
@@ -343,71 +336,59 @@ const RegisterScreen = ({ navigation, route }) => {
             </View>
 
             {/* Password */}
+            <Text style={[styles.label, { color: isDark ? '#E2E8F0' : '#0F203C' }]}>Password</Text>
             <View style={[
-              styles.pwdInputContainer,
+              styles.inputRow,
               {
                 backgroundColor: isDark ? '#111111' : '#FFFFFF',
                 borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
               },
-              focused === 'password' && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#151515' } : styles.pwdInputFocused)
+              focused === 'password' && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#161616' } : styles.inputRowFocused)
             ]}>
-              <View style={[styles.pwdIconBox, isDark && { backgroundColor: 'rgba(3, 183, 206, 0.15)' }]}>
-                <Ionicons name="lock-closed-outline" size={18} color="#03B7CE" />
-              </View>
-              <View style={styles.pwdInputContentWrapper}>
-                <Text style={[styles.pwdInputLabel, { color: isDark ? '#E2E8F0' : '#1A202C' }]}>Password</Text>
-                <View style={styles.pwdInputContent}>
-                  <TextInput
-                    style={[styles.pwdInput, { color: isDark ? '#FFFFFF' : '#1A202C' }]}
-                    placeholder="Create a password"
-                    placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
-                    value={password}
-                    onChangeText={setPassword}
-                    onFocus={() => setFocused('password')}
-                    onBlur={() => setFocused(null)}
-                    secureTextEntry={!showPassword}
-                    returnKeyType="next"
-                    selectionColor="#03B7CE"
-                  />
-                  <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn}>
-                    <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={isDark ? '#64748B' : '#A0AEC0'} />
-                  </TouchableOpacity>
-                </View>
-              </View>
+              <Ionicons name="lock-closed-outline" size={20} color="#03B7CE" style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, { color: isDark ? '#FFFFFF' : '#0F203C' }]}
+                placeholder="Create a password"
+                placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
+                value={password}
+                onChangeText={setPassword}
+                onFocus={() => setFocused('password')}
+                onBlur={() => setFocused(null)}
+                secureTextEntry={!showPassword}
+                returnKeyType="next"
+                selectionColor="#03B7CE"
+              />
+              <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn}>
+                <Ionicons name={showPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={isDark ? '#64748B' : '#A0AEC0'} />
+              </TouchableOpacity>
             </View>
 
             {/* Confirm Password */}
+            <Text style={[styles.label, { color: isDark ? '#E2E8F0' : '#0F203C' }]}>Confirm Password</Text>
             <View style={[
-              styles.pwdInputContainer,
+              styles.inputRow,
               {
                 backgroundColor: isDark ? '#111111' : '#FFFFFF',
                 borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F1F5F9'
               },
-              focused === 'confirm' && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#151515' } : styles.pwdInputFocused)
+              focused === 'confirm' && (isDark ? { borderColor: '#03B7CE', backgroundColor: '#161616' } : styles.inputRowFocused)
             ]}>
-              <View style={[styles.pwdIconBox, isDark && { backgroundColor: 'rgba(3, 183, 206, 0.15)' }]}>
-                <Ionicons name="lock-closed-outline" size={18} color="#03B7CE" />
-              </View>
-              <View style={styles.pwdInputContentWrapper}>
-                <Text style={[styles.pwdInputLabel, { color: isDark ? '#E2E8F0' : '#1A202C' }]}>Confirm Password</Text>
-                <View style={styles.pwdInputContent}>
-                  <TextInput
-                    style={[styles.pwdInput, { color: isDark ? '#FFFFFF' : '#1A202C' }]}
-                    placeholder="Confirm your password"
-                    placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    onFocus={() => setFocused('confirm')}
-                    onBlur={() => setFocused(null)}
-                    secureTextEntry={!showConfirmPassword}
-                    returnKeyType="done"
-                    selectionColor="#03B7CE"
-                  />
-                  <TouchableOpacity onPress={() => setShowConfirmPassword(v => !v)} style={styles.eyeBtn}>
-                    <Ionicons name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={isDark ? '#64748B' : '#A0AEC0'} />
-                  </TouchableOpacity>
-                </View>
-              </View>
+              <Ionicons name="lock-closed-outline" size={20} color="#03B7CE" style={styles.inputIcon} />
+              <TextInput
+                style={[styles.input, { color: isDark ? '#FFFFFF' : '#0F203C' }]}
+                placeholder="Confirm your password"
+                placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                onFocus={() => setFocused('confirm')}
+                onBlur={() => setFocused(null)}
+                secureTextEntry={!showConfirmPassword}
+                returnKeyType="done"
+                selectionColor="#03B7CE"
+              />
+              <TouchableOpacity onPress={() => setShowConfirmPassword(v => !v)} style={styles.eyeBtn}>
+                <Ionicons name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'} size={20} color={isDark ? '#64748B' : '#A0AEC0'} />
+              </TouchableOpacity>
             </View>
 
             {/* Password Strength Section */}
@@ -532,10 +513,10 @@ const styles = StyleSheet.create({
   kav: { flex: 1 },
   headerImage: {
     position: 'absolute',
-    top: -15,
-    right: -50,
-    width: 350,
-    height: 350,
+    top: 0,
+    right: 0,
+    width: 120,
+    height: 120,
     zIndex: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 15 },
@@ -568,19 +549,19 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   titleArea: {
-    marginBottom: 40,
+    marginBottom: 32,
     zIndex: 10,
-    width: '65%', // restrict width to avoid overlapping graphic if needed
+    width: '78%',
   },
   title: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '900',
     color: '#0F203C',
     marginBottom: 8,
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     color: '#718096',
     lineHeight: 20,
@@ -590,7 +571,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   label: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: '#0F203C',
     marginBottom: 4,
@@ -606,7 +587,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
     borderColor: '#F1F5F9',
-    borderRadius: 12,
+    borderRadius: 10,
     height: 46,
     paddingHorizontal: 16,
   },
@@ -621,7 +602,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   atSymbol: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#03B7CE',
     fontWeight: '600',
     marginRight: 10,
@@ -629,59 +610,12 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     color: '#0F203C',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     height: '100%',
   },
   eyeBtn: {
     padding: 4,
-  },
-  pwdInputContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#F1F5F9',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    marginBottom: 16,
-    marginTop: 8,
-    alignItems: 'center',
-  },
-  pwdInputFocused: {
-    borderColor: '#03B7CE',
-    backgroundColor: '#FAFDFF',
-  },
-  pwdIconBox: {
-    width: 36,
-    height: 46,
-    borderRadius: 10,
-    backgroundColor: '#E6F8FA',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  pwdInputContentWrapper: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  pwdInputLabel: {
-    fontSize: 13,
-    color: '#1A202C',
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  pwdInputContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  pwdInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1A202C',
-    padding: 0,
-    margin: 0,
-    fontWeight: '600',
   },
   usernameAvailableBox: {
     flexDirection: 'row',
@@ -690,23 +624,16 @@ const styles = StyleSheet.create({
   },
   usernameAvailableText: {
     color: '#22C55E',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   statusIcon: {
     marginLeft: 8,
   },
-  halfRowContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  halfCol: {
-    flex: 1,
-  },
   dobText: {
     flex: 1,
     color: '#0F203C',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
   },
   placeholderText: {
@@ -720,12 +647,12 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   strengthTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: '#718096',
   },
   strengthLevel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
   },
   strengthBars: {
@@ -750,7 +677,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   strengthCheckText: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#718096',
     fontWeight: '500',
   },
@@ -778,7 +705,7 @@ const styles = StyleSheet.create({
   },
   checkboxText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 12,
     color: '#718096',
     lineHeight: 20,
   },
@@ -802,7 +729,7 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
   footerRow: {
@@ -812,11 +739,11 @@ const styles = StyleSheet.create({
   },
   footerText: {
     color: '#718096',
-    fontSize: 13,
+    fontSize: 12,
   },
   footerLink: {
     color: '#01A7C2',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
   },
   modalOverlay: {
@@ -832,7 +759,7 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     color: '#0F203C',
     marginBottom: 20,
@@ -847,7 +774,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F1F5F9',
   },
   modalOptionText: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#1A202C',
     fontWeight: '500',
   },

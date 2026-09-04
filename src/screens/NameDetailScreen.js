@@ -885,6 +885,17 @@ const NameDetailScreen = ({ route, navigation }) => {
   const safeStepIndex = Math.max(0, Math.min(currentStepIndex, steps.length - 1));
   const currentStep = steps[safeStepIndex];
 
+  // True on a section's intro cover (where the "Start Reading" pill is shown) —
+  // the bottom prev/next nav is hidden there since Start Reading already acts as next.
+  const isIntroSubStep = useMemo(() => {
+    if (currentStep.type === 'meaning') return meaningSubStep === -1;
+    if (currentStep.type === 'quran' || currentStep.type === 'hadith') return refSubStep === -1;
+    if (currentStep.type === 'gifts') return giftSubStep === -1;
+    if (currentStep.type === 'practical') return practicalSubStep === -1;
+    if (currentStep.type === 'scholarly') return scholarSubStep === -1;
+    return false;
+  }, [currentStep.type, meaningSubStep, refSubStep, giftSubStep, practicalSubStep, scholarSubStep]);
+
   const enableFocusMode = useCallback(() => {
     if (!isChromeVisible) return;
     setIsChromeVisible(false);
@@ -2175,43 +2186,46 @@ const NameDetailScreen = ({ route, navigation }) => {
                   </TouchableWithoutFeedback>
 
                   {/* ── Bottom Navigation ── */}
-                  <View style={[
-                    styles.bottomNavWrapper,
-                    {
-                      zIndex: 10,
-                      backgroundColor: 'transparent',
-                      paddingBottom: Math.max((insets.bottom || 0) + hs(10), Platform.OS === 'android' ? hs(30) : hs(20)),
-                    }
-                  ]}>
-                    <View style={[styles.bottomNavInner, {
-                      backgroundColor: !isChromeVisible ? '#000000' : (isDark ? '#1E293B' : '#FFFFFF'),
-                      borderColor: !isChromeVisible ? '#000000' : (isDark ? 'rgba(255,255,255,0.08)' : '#DCEFF2'),
-                      borderWidth: !isChromeVisible ? 0 : 1,
-                      shadowOpacity: !isChromeVisible ? 0 : 0.05,
-                      elevation: !isChromeVisible ? 0 : 2,
-                      shadowColor: '#000000',
-                    }]}>
-                      {/* Previous */}
-                      <TouchableOpacity
-                        style={[styles.squircleNavBtn, { opacity: isBackDisabled ? 0.4 : 1 }]}
-                        disabled={isBackDisabled}
-                        onPress={goPrev}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="arrow-back" size={rs(20)} color="#FFFFFF" />
-                      </TouchableOpacity>
+                  {/* Hidden on a section's intro cover, where "Start Reading" is already the primary action */}
+                  {!isIntroSubStep && (
+                    <View style={[
+                      styles.bottomNavWrapper,
+                      {
+                        zIndex: 10,
+                        backgroundColor: 'transparent',
+                        paddingBottom: Math.max((insets.bottom || 0) + hs(10), Platform.OS === 'android' ? hs(30) : hs(20)),
+                      }
+                    ]}>
+                      <View style={[styles.bottomNavInner, {
+                        backgroundColor: !isChromeVisible ? '#000000' : (isDark ? '#1E293B' : '#FFFFFF'),
+                        borderColor: !isChromeVisible ? '#000000' : (isDark ? 'rgba(255,255,255,0.08)' : '#DCEFF2'),
+                        borderWidth: !isChromeVisible ? 0 : 1,
+                        shadowOpacity: !isChromeVisible ? 0 : 0.05,
+                        elevation: !isChromeVisible ? 0 : 2,
+                        shadowColor: '#000000',
+                      }]}>
+                        {/* Previous */}
+                        <TouchableOpacity
+                          style={[styles.squircleNavBtn, { opacity: isBackDisabled ? 0.4 : 1 }]}
+                          disabled={isBackDisabled}
+                          onPress={goPrev}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="arrow-back" size={rs(20)} color="#FFFFFF" />
+                        </TouchableOpacity>
 
-                      {/* Continue */}
-                      <TouchableOpacity
-                        style={[styles.squircleNavBtn, { opacity: isSlideDisabled ? 0.4 : 1 }]}
-                        disabled={isSlideDisabled}
-                        onPress={handleNext}
-                        activeOpacity={0.7}
-                      >
-                        <Ionicons name="arrow-forward" size={rs(20)} color="#FFFFFF" />
-                      </TouchableOpacity>
+                        {/* Continue */}
+                        <TouchableOpacity
+                          style={[styles.squircleNavBtn, { opacity: isSlideDisabled ? 0.4 : 1 }]}
+                          disabled={isSlideDisabled}
+                          onPress={handleNext}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="arrow-forward" size={rs(20)} color="#FFFFFF" />
+                        </TouchableOpacity>
+                      </View>
                     </View>
-                  </View>
+                  )}
                 </View>
                 </TouchableWithoutFeedback>
               </KeyboardAvoidingView>
@@ -2372,7 +2386,7 @@ const styles = StyleSheet.create({
   squircleNavBtn: {
     width: rs(34), height: rs(34),
     borderRadius: rs(10),
-    backgroundColor: '#3CA2A5',
+    backgroundColor: '#00ADC1',
     borderWidth: rs(2),
     borderColor: '#FFFFFF',
     justifyContent: 'center', alignItems: 'center',

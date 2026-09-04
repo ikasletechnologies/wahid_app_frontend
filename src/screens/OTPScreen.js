@@ -246,8 +246,8 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   illustrationImage: {
-    width: 320,
-    height: 320,
+    width: Math.min(320, width - 48),
+    height: Math.min(320, width - 48),
   },
   header: {
     alignItems: 'center',
