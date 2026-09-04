@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import http from '../config/http';
 import { ENDPOINTS } from '../config/api';
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from '../utils/secureTokenStorage';
+import { getAndroidAppHash } from '../utils/otpAutofill';
 
 const AuthContext = createContext();
 
@@ -62,7 +63,11 @@ export const AuthProvider = ({ children }) => {
 
   const sendOTP = async (phone) => {
     try {
-      const response = await http.post(ENDPOINTS.sendOtp, { phone });
+      // On Android, tell Twilio which app-signature hash to append to the SMS body
+      // so the OS/SMS Retriever API can auto-detect and auto-fill the code. No-op
+      // (resolves to null) on iOS, where autofill works entirely via the keyboard.
+      const appHash = await getAndroidAppHash();
+      const response = await http.post(ENDPOINTS.sendOtp, { phone, ...(appHash ? { appHash } : {}) });
       return { success: response.data?.success };
     } catch (error) {
       return {
@@ -92,7 +97,7 @@ export const AuthProvider = ({ children }) => {
 
   // ── Signup (Collect Credentials after Phone is verified) ─────────────────
   
-  const signup = async (verificationToken, username, password, name, gender, dob) => {
+  const signup = async (verificationToken, username, password, name, gender, dob, email) => {
     try {
       const response = await http.post(ENDPOINTS.signup, {
         verificationToken,
@@ -101,6 +106,7 @@ export const AuthProvider = ({ children }) => {
         name,
         ...(gender && { gender }),
         ...(dob    && { dob }),
+        ...(email  && { email }),
       });
 
       const { user: u, accessToken, refreshToken } = response.data;

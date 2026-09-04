@@ -15,6 +15,8 @@ const { width, height } = Dimensions.get('window');
 
 const GENDERS = ['Male', 'Female', 'Other'];
 const US = { IDLE: 'idle', CHECKING: 'checking', AVAILABLE: 'available', TAKEN: 'taken' };
+// Letters (incl. accented/Unicode) and spaces only — no digits, symbols, or punctuation.
+const NAME_REGEX = /^[\p{L} ]+$/u;
 
 const RegisterScreen = ({ navigation, route }) => {
   const { verificationToken } = route.params || {};
@@ -104,6 +106,10 @@ const RegisterScreen = ({ navigation, route }) => {
       Toast.show({ type: 'error', text1: 'Missing Info', text2: 'Please enter your full name.' });
       return;
     }
+    if (!NAME_REGEX.test(name.trim())) {
+      Toast.show({ type: 'error', text1: 'Invalid Name', text2: 'Name can only contain letters and spaces.' });
+      return;
+    }
     if (!username.trim()) {
       Toast.show({ type: 'error', text1: 'Missing Info', text2: 'Please enter a username.' });
       return;
@@ -131,14 +137,14 @@ const RegisterScreen = ({ navigation, route }) => {
     }
 
     setLoading(true);
-    // Note: email is not currently tracked in signup context, but we collect it in UI
     const result = await signup(
       verificationToken,
       username.trim(),
       password,
       name.trim(),
       gender || 'Other',
-      formattedDob,
+      dob ? dob.toISOString() : null, // ISO for the API — formattedDob (DD/MM/YYYY) is display-only
+      email.trim() || undefined,
     );
     setLoading(false);
 

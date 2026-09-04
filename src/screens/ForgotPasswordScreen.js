@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, StatusBar, Dimensions, Animated, Image } from 'react-native';
 import Text from '../components/AppText';
 import TextInput from '../components/AppTextInput';
@@ -10,6 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { COUNTRIES, MAX_PHONE_INPUT_LENGTH } from '../config/countries';
 import { normalizePhoneNumber, phoneErrorMessage } from '../utils/phone';
+import { useAndroidOtpAutofill } from '../utils/otpAutofill';
 
 const { width, height } = Dimensions.get('window');
 
@@ -165,6 +166,13 @@ const ForgotPasswordScreen = ({ navigation }) => {
     setOtpValue(digits);
     if (digits.length === OTP_LENGTH) handleVerifyOTP(digits);
   };
+
+  // Android SMS Retriever autofill, active only during the 'otp' step — reuses
+  // handleOtpChange so verification (and its existing error handling) triggers
+  // identically whether the code was typed or auto-detected.
+  useAndroidOtpAutofill(OTP_LENGTH, useCallback((code) => {
+    handleOtpChange(code);
+  }, []), step === 'otp');
 
   const handleResend = async () => {
     if (timer > 0) return;
