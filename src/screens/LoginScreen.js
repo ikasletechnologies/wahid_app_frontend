@@ -245,7 +245,7 @@ const LoginScreen = ({ navigation, route }) => {
                       onFocus={() => setFocused('phone')}
                       onBlur={() => setFocused(null)}
                       keyboardType="phone-pad"
-                      maxLength={MAX_PHONE_INPUT_LENGTH}
+                      maxLength={country.nsn}
                       returnKeyType="next"
                       onSubmitEditing={() => passwordInput.current?.focus()}
                       selectionColor="#03B7CE"

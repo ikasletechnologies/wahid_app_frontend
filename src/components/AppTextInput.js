@@ -7,7 +7,7 @@ import { useFontSettings } from '../context/FontSettingsContext';
 // here fixes both at once. Mirrors AppText's Arabic-style routing.
 const ARABIC_FONT_FAMILIES = ['NotoNaskhArabic-Regular', 'NotoNaskhArabic-Bold'];
 
-const AppTextInput = ({ style, ...props }) => {
+const AppTextInput = React.forwardRef(({ style, ...props }, ref) => {
   const { resolveFontFamily, resolveArabicFontFamily, scaleFontSize } = useFontSettings();
   const flatStyle = StyleSheet.flatten(style) || {};
   const isArabicFont = ARABIC_FONT_FAMILIES.includes(flatStyle.fontFamily);
@@ -25,7 +25,7 @@ const AppTextInput = ({ style, ...props }) => {
     overrideStyle.fontSize = scaleFontSize(flatStyle.fontSize);
   }
 
-  return <RNTextInput {...props} style={[style, overrideStyle]} />;
-};
+  return <RNTextInput ref={ref} {...props} style={[style, overrideStyle]} />;
+});
 
 export default AppTextInput;

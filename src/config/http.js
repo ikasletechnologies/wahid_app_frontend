@@ -25,6 +25,20 @@ http.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 // ── Response interceptor ───────────────────────────────────────────────────
 // Handles automatic token refresh on 401 errors
 http.interceptors.response.use(
@@ -38,7 +52,7 @@ http.interceptors.response.use(
     const originalRequest = error.config;
 
     // If error is 401, we haven't retried yet, and it's NOT an authentication request
-    const isAuthRequest = originalRequest.url && (
+    const isAuthRequest = originalRequest?.url && (
       originalRequest.url.includes('/api/auth/login') ||
       originalRequest.url.includes('/api/admin/auth/login') ||
       originalRequest.url.includes('/api/auth/signup') ||
@@ -46,7 +60,21 @@ http.interceptors.response.use(
     );
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
+      if (isRefreshing) {
+        return new Promise(function(resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers['Authorization'] = `Bearer ${token}`;
+            return http(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
         const refreshToken = await getRefreshToken();
@@ -66,13 +94,20 @@ http.interceptors.response.use(
           // Update the original request header and retry
           originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
           console.log('[AUTH] Token refreshed successfully. Retrying request.');
+          
+          processQueue(null, accessToken);
           return http(originalRequest);
+        } else {
+            throw new Error('Refresh failed');
         }
       } catch (refreshError) {
+        processQueue(refreshError, null);
         console.warn('[AUTH] Session expired. Logging out.');
         // Optional: Trigger a logout by clearing storage
         await Promise.all([AsyncStorage.removeItem('user'), clearTokens()]);
         // The app will naturally redirect if AuthContext state is updated via a listener (or manual check)
+      } finally {
+        isRefreshing = false;
       }
     }
 

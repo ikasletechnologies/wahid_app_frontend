@@ -48,6 +48,7 @@ const SubscriptionScreen = () => {
   const [subStatus, setSubStatus] = useState(null);
   const [plans, setPlans] = useState(null);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [cancelModalVisible, setCancelModalVisible] = useState(false);
 
   useEffect(() => {
     fetchSubscriptionData();
@@ -116,10 +117,8 @@ const SubscriptionScreen = () => {
       } catch (checkoutErr) {
         // User cancelled or the gateway rejected the payment — nothing to verify.
         setProcessingPayment(false);
-        if (checkoutErr?.code !== 'PAYMENT_CANCELLED') {
-          console.error('[RAZORPAY CHECKOUT ERROR]', checkoutErr);
-          Alert.alert('Payment Cancelled', checkoutErr?.description || checkoutErr?.message || 'Payment was not completed.');
-        }
+        console.error('[RAZORPAY CHECKOUT ERROR]', checkoutErr);
+        setCancelModalVisible(true);
         return;
       }
 
@@ -436,6 +435,30 @@ const SubscriptionScreen = () => {
                     activeOpacity={0.85}
                   >
                     <Text style={[styles.ctaButtonText, { fontSize: rs(15) }]}>Start Learning</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
+
+            {/* Cancel Notification Modal */}
+            <Modal visible={cancelModalVisible} transparent={true} animationType="fade" onRequestClose={() => setCancelModalVisible(false)}>
+              <View style={styles.modalOverlay}>
+                <View style={[styles.modalBox, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF', alignItems: 'center', borderRadius: rs(20), padding: rs(24) }]}>
+                  <View style={[styles.successIconCircle, { backgroundColor: '#EF4444', width: rs(64), height: rs(64), borderRadius: rs(32), marginBottom: rs(14) }]}>
+                    <Ionicons name="close-sharp" size={rs(36)} color="#FFFFFF" />
+                  </View>
+
+                  <Text style={[styles.successTitle, { color: colors.text, fontSize: rs(20), marginBottom: rs(6) }]}>Payment Cancelled</Text>
+                  <Text style={[styles.successSubtitle, { color: isDark ? '#94A3B8' : '#64748B', fontSize: rs(13), lineHeight: rs(18), textAlign: 'center' }]}>
+                    Your payment is cancelled.
+                  </Text>
+
+                  <TouchableOpacity
+                    style={[styles.ctaButton, { backgroundColor: primaryColor, width: '100%', height: rs(48), borderRadius: rs(14), marginTop: rs(16) }]}
+                    onPress={() => setCancelModalVisible(false)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[styles.ctaButtonText, { fontSize: rs(15) }]}>Okay</Text>
                   </TouchableOpacity>
                 </View>
               </View>

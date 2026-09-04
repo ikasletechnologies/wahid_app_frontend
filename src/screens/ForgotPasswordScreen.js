@@ -264,11 +264,11 @@ const ForgotPasswordScreen = ({ navigation }) => {
                   placeholderTextColor={isDark ? '#64748B' : '#A0AEC0'}
                   value={phone}
                   numberOfLines={1}
-                  onChangeText={setPhone}
+                  onChangeText={(text) => setPhone(text.replace(/\D/g, ''))}
                   onFocus={() => setPhoneFocused(true)}
                   onBlur={() => setPhoneFocused(false)}
                   keyboardType="phone-pad"
-                  maxLength={MAX_PHONE_INPUT_LENGTH}
+                  maxLength={country.nsn}
                   returnKeyType="done"
                   onSubmitEditing={handleSendOTP}
                   selectionColor="#03B7CE"

@@ -344,7 +344,7 @@ export default function ProfileScreen({ navigation }) {
                             />
 
                             {/* Privacy Policy Modal */}
-                            <Modal visible={privacyVisible} animationType="slide" transparent={true}>
+                            <Modal visible={privacyVisible} animationType="slide" transparent={true} onRequestClose={() => setPrivacyVisible(false)}>
                                 <View style={styles.modalOverlay}>
                                     <View style={[styles.modalContent, { backgroundColor: isDark ? '#1E293B' : '#FFFFFF' }]}>
                                         <View style={[styles.modalHandle, { backgroundColor: isDark ? '#334155' : '#E0E0E0' }]} />

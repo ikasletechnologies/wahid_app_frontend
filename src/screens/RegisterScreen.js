@@ -51,12 +51,13 @@ const RegisterScreen = ({ navigation, route }) => {
   // Password Strength Logic
   const hasMinLength = password.length >= 8;
   const hasNumber = /\d/.test(password);
+  const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
   let strengthScore = 0;
   if (password.length > 0) strengthScore += 1;
   if (hasMinLength) strengthScore += 1;
-  if (hasNumber) strengthScore += 1;
-  if (hasMinLength && hasNumber && password.length > 10) strengthScore += 1; // 4th bar
+  if (hasNumber && hasSymbol) strengthScore += 1;
+  if (hasMinLength && hasNumber && hasSymbol && password.length > 10) strengthScore += 1; // 4th bar
 
   let strengthText = '';
   let strengthColor = '#E2E8F0';
@@ -434,6 +435,10 @@ const RegisterScreen = ({ navigation, route }) => {
               <View style={styles.strengthCheckItem}>
                 <Ionicons name="checkmark-circle-outline" size={16} color={hasNumber ? "#22C55E" : (isDark ? "#64748B" : "#A0AEC0")} />
                 <Text style={[styles.strengthCheckText, isDark && { color: '#A0AEC0' }]}>At least 1 number</Text>
+              </View>
+              <View style={styles.strengthCheckItem}>
+                <Ionicons name="checkmark-circle-outline" size={16} color={hasSymbol ? "#22C55E" : (isDark ? "#64748B" : "#A0AEC0")} />
+                <Text style={[styles.strengthCheckText, isDark && { color: '#A0AEC0' }]}>At least one $ symbol</Text>
               </View>
             </View>
 

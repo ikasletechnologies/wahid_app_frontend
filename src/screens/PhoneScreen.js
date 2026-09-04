@@ -236,7 +236,7 @@ const PhoneScreen = ({ navigation }) => {
                       onFocus={() => setFocused(true)}
                       onBlur={() => setFocused(false)}
                       keyboardType="phone-pad"
-                      maxLength={MAX_PHONE_INPUT_LENGTH}
+                      maxLength={country.nsn}
                       returnKeyType="done"
                       onSubmitEditing={handleSend}
                       selectionColor="#03B7CE"
