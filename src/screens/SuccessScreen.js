@@ -3,7 +3,6 @@ import { View, StyleSheet, Image, TouchableOpacity, StatusBar, Dimensions, Anima
 import Text from '../components/AppText';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, Feather } from '@expo/vector-icons';
-import Svg, { Circle } from 'react-native-svg';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 
@@ -13,24 +12,6 @@ const DecorativeBackground = ({ isDark }) => (
   <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
     {/* Soft top-left glow */}
     <View style={[styles.topLeftGlow, isDark && { backgroundColor: '#00ACC1', opacity: 0.05 }]} />
-
-    {/* Soft top-right grid of dots */}
-    <View style={styles.topRightDots}>
-      <Svg width={120} height={120} viewBox="0 0 120 120" fill="none">
-        {Array.from({ length: 6 }).map((_, r) =>
-          Array.from({ length: 6 }).map((_, c) => (
-            <Circle
-              key={`${r}-${c}`}
-              cx={20 + c * 16}
-              cy={20 + r * 16}
-              r={2}
-              fill="#03B7CE"
-              opacity={isDark ? 0.08 - (r + c) * 0.005 : 0.15 - (r + c) * 0.01}
-            />
-          ))
-        )}
-      </Svg>
-    </View>
   </View>
 );
 
@@ -177,11 +158,6 @@ const SuccessScreen = ({ route }) => {
           styles.checkmarkWrapper,
           { opacity: checkmarkOpacity, transform: [{ scale: checkmarkScale }] }
         ]}>
-          <Ionicons name="sparkles" size={14} color="#00ACC1" style={[styles.sparkle, { top: -2, left: 20, opacity: 0.5 }]} />
-          <Ionicons name="sparkles" size={10} color="#00ACC1" style={[styles.sparkle, { bottom: 10, right: 10, opacity: 0.4 }]} />
-          <Ionicons name="sparkles" size={12} color="#00ACC1" style={[styles.sparkle, { top: 30, right: -12, opacity: 0.5 }]} />
-          <Ionicons name="sparkles" size={8} color="#00ACC1" style={[styles.sparkle, { bottom: 30, left: -8, opacity: 0.4 }]} />
-
           <View style={styles.checkmarkOuterRingContainer}>
             {/* Pulsing Ripple Circle */}
             <Animated.View style={[
@@ -196,7 +172,7 @@ const SuccessScreen = ({ route }) => {
             {/* Spinning Dashed Ring */}
             <Animated.View style={[
               styles.checkmarkOuterRing,
-              isDark && { borderColor: 'rgba(255, 255, 255, 0.12)' },
+              isDark && { borderColor: 'rgba(255, 255, 255, 0.22)' },
               { transform: [{ rotate: spin }] }
             ]} />
 
@@ -325,12 +301,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#03B7CE',
     opacity: 0.08,
   },
-  topRightDots: {
-    position: 'absolute',
-    top: 20,
-    right: -20,
-  },
-
   // Checkmark styles
   checkmarkWrapper: {
     justifyContent: 'center',
@@ -349,8 +319,8 @@ const styles = StyleSheet.create({
     width: 106,
     height: 106,
     borderRadius: 53,
-    borderWidth: 1.5,
-    borderColor: '#D4F1F4',
+    borderWidth: 2,
+    borderColor: '#9FE0E8',
     borderStyle: 'dashed',
     zIndex: 1,
   },
@@ -379,11 +349,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#EBF8FA',
     zIndex: 0,
   },
-  sparkle: {
-    position: 'absolute',
-    zIndex: 1,
-  },
-
   // Text section
   textSection: {
     alignItems: 'center',

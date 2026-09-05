@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, StatusBar, Dimensions, Image } from 'react-native';
 import Text from '../components/AppText';
 import TextInput from '../components/AppTextInput';
@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle } from 'react-native-svg';
+import { useAndroidOtpAutofill } from '../utils/otpAutofill';
 
 const { width, height } = Dimensions.get('window');
 
@@ -60,6 +61,14 @@ const OTPScreen = ({ navigation, route }) => {
       verifyAndNavigate(digits);
     }
   };
+
+  // Android SMS Retriever autofill — reuses the same manual-entry path above,
+  // so verification (and its existing error handling) triggers identically
+  // whether the code was typed or auto-detected. No-op on iOS (handled by the
+  // keyboard via TextInput's textContentType="oneTimeCode" below).
+  useAndroidOtpAutofill(OTP_LENGTH, useCallback((code) => {
+    handleOtpChange(code);
+  }, []));
 
   const handleVerify = async () => {
     if (otpValue.length < OTP_LENGTH) {
@@ -246,8 +255,8 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   illustrationImage: {
-    width: 320,
-    height: 320,
+    width: Math.min(320, width - 48),
+    height: Math.min(320, width - 48),
   },
   header: {
     alignItems: 'center',
