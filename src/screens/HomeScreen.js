@@ -75,7 +75,6 @@ const HomeScreen = ({ navigation }) => {
   const [suggestedNames, setSuggestedNames] = React.useState([]);
   const [suggestedOffset, setSuggestedOffset] = React.useState(0);
   const [draftLimitModalVisible, setDraftLimitModalVisible] = React.useState(false);
-  const [pendingDraft, setPendingDraft] = React.useState(null);
   const [progressMap, setProgressMap] = React.useState({});
   const lastNotifFetchRef = React.useRef(0);
 
@@ -240,7 +239,7 @@ const HomeScreen = ({ navigation }) => {
     if (lastReadName) {
       filteredDraftIds = activeDraftIds.filter(id => id !== lastReadName.number);
     }
-    return filteredDraftIds.slice(0, 4).map(id => names.find(n => n.number === id)).filter(Boolean);
+    return filteredDraftIds.slice(0, 5).map(id => names.find(n => n.number === id)).filter(Boolean);
   }, [activeDraftIds, names, lastReadName]);
 
   useFocusEffect(
@@ -398,8 +397,7 @@ const HomeScreen = ({ navigation }) => {
                   return;
                 }
 
-                if (visibleDraftsCount === 4) {
-                  setPendingDraft(item.number);
+                if (visibleDraftsCount >= 5) {
                   setDraftLimitModalVisible(true);
                 } else {
                   markAsDraft(item.number);
@@ -545,13 +543,14 @@ const HomeScreen = ({ navigation }) => {
             </View>
           </View>
           <View style={styles.draftList}>
-            {Array.from({ length: 4 }).map((_, i) => {
+            {Array.from({ length: Math.max(4, draftNames.length) }).map((_, i) => {
               if (i < draftNames.length) {
                 const item = draftNames[i];
                 return renderDraftCard({ item });
               } else {
                 const isStartedInProgressActive = lastReadName && lastReadTimestamp;
-                const allowedVisibleDrafts = 4 - (isStartedInProgressActive ? 1 : 0);
+                const totalSlots = Math.max(4, draftNames.length);
+                const allowedVisibleDrafts = totalSlots - (isStartedInProgressActive ? 1 : 0);
                 const isLocked = i >= allowedVisibleDrafts;
 
                 if (isLocked) {
@@ -739,16 +738,12 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContainer, { backgroundColor: cardBg, borderColor }]}>
             <Text style={[styles.modalText, { color: textPrimary }]}>
-              Draft Complete
+              Read the Draft card 1st.
             </Text>
             <TouchableOpacity
               style={[styles.modalButton, { backgroundColor: teal }]}
               onPress={() => {
                 setDraftLimitModalVisible(false);
-                if (pendingDraft) {
-                  markAsDraft(pendingDraft);
-                  setPendingDraft(null);
-                }
               }}
               activeOpacity={0.8}
             >

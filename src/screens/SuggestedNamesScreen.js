@@ -16,7 +16,6 @@ const SuggestedNamesScreen = ({ navigation }) => {
   const { isDark } = useAppTheme();
   
   const [draftLimitModalVisible, setDraftLimitModalVisible] = useState(false);
-  const [pendingDraft, setPendingDraft] = useState(null);
   const [lastReadNameId, setLastReadNameId] = useState(null);
 
   React.useEffect(() => {
@@ -79,8 +78,7 @@ const SuggestedNamesScreen = ({ navigation }) => {
                   return;
                 }
                 
-                if (visibleDraftsCount === 4) {
-                  setPendingDraft(item.number);
+                if (visibleDraftsCount >= 5) {
                   setDraftLimitModalVisible(true);
                 } else {
                   markAsDraft(item.number);
@@ -128,16 +126,12 @@ const SuggestedNamesScreen = ({ navigation }) => {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContainer, { backgroundColor: cardBg, borderColor }]}>
             <Text style={[styles.modalText, { color: textPrimary }]}>
-              Draft Complete
+              Read the Draft card 1st.
             </Text>
             <TouchableOpacity
               style={[styles.modalButton, { backgroundColor: teal }]}
               onPress={() => {
                 setDraftLimitModalVisible(false);
-                if (pendingDraft) {
-                  markAsDraft(pendingDraft);
-                  setPendingDraft(null);
-                }
               }}
               activeOpacity={0.8}
             >

@@ -235,6 +235,10 @@ export const NamesProvider = ({ children }) => {
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   const fetchSubscriptionStatus = useCallback(async () => {
+    if (!token) {
+      setIsSubscribed(false);
+      return;
+    }
     try {
       const res = await http.get(ENDPOINTS.subscriptionStatus);
       if (res.data?.success) {
@@ -243,7 +247,7 @@ export const NamesProvider = ({ children }) => {
     } catch (e) {
       console.warn('[SUBSCRIPTION STATUS CHECK ERROR]', e);
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     fetchSubscriptionStatus();
