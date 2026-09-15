@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Image, TouchableOpacity, StatusBar, Dimensions, Animated, Easing } from 'react-native';
+import { View, StyleSheet, Image, TouchableOpacity, StatusBar, Dimensions, Animated, Easing, Platform } from 'react-native';
 import Text from '../components/AppText';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useAppTheme } from '../context/ThemeContext';
 
@@ -33,6 +34,7 @@ const SuccessScreen = ({ route }) => {
   };
   const { completeLogin } = useAuth();
   const { isDark, colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
 
   // Entrance animations
   const checkmarkScale = useRef(new Animated.Value(0.4)).current;
@@ -191,13 +193,13 @@ const SuccessScreen = ({ route }) => {
           <Text style={[styles.welcomeText, { color: isDark ? '#FFFFFF' : '#0F203C' }]}>
             Welcome, <Text style={styles.nameText}>{displayName}</Text>
           </Text>
-          <Text style={[styles.accountReadyText, { color: isDark ? '#A0AEC0' : '#718096' }]}>Your account is ready</Text>
+
 
           <CustomDivider isDark={isDark} />
 
-          <Text style={[styles.journeyText, { color: isDark ? '#A0AEC0' : '#718096' }]}>
-            Let's begin your learning journey{'\n'}with the 99 Beautiful Names of Allah.
-          </Text>
+          {/* <Text style={[styles.journeyText, { color: isDark ? '#A0AEC0' : '#718096' }]}>
+            We have 
+          </Text> */}
         </Animated.View>
 
         {/* Menu Cards */}
@@ -259,7 +261,7 @@ const SuccessScreen = ({ route }) => {
         </Animated.View>
 
         {/* Button */}
-        <Animated.View style={[styles.btnWrap, { opacity: btnOpacity }]}>
+        <Animated.View style={[styles.btnWrap, { opacity: btnOpacity, paddingBottom: Math.max(insets.bottom + 16, Platform.OS === 'ios' ? 36 : 24) }]}>
           <TouchableOpacity onPress={handleContinue} activeOpacity={0.85} style={styles.buttonContainer}>
             <LinearGradient
               colors={['#00BAD4', '#0097AB']}
@@ -469,7 +471,7 @@ const styles = StyleSheet.create({
   // Button wrapping
   btnWrap: {
     width: '100%',
-    paddingBottom: 24,
+    paddingBottom: 0,
   },
   buttonContainer: {
     width: '100%',

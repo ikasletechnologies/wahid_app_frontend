@@ -15,6 +15,7 @@ import {
   LayoutAnimation,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { Text as RNText } from 'react-native';
 import Text from './AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme, THEME_MODES } from '../context/ThemeContext';
@@ -386,15 +387,15 @@ const ReadingSettingsModal = ({ visible, onClose }) => {
                             <Ionicons name="checkmark-circle" size={rs(18)} color={primaryColor} />
                           </View>
                         )}
-                        <Text
+                        <RNText
                           style={[
                             styles.fontCardPreview,
                             { color: selected ? primaryColor : (isDark ? '#F1F5F9' : '#0F172A') },
-                            key === 'times' && { fontFamily: 'serif' },
+                            { fontFamily: FONT_FAMILIES[key].regular },
                           ]}
                         >
                           Aa
-                        </Text>
+                        </RNText>
                         <Text
                           style={[
                             styles.fontCardLabel,
@@ -437,7 +438,7 @@ const ReadingSettingsModal = ({ visible, onClose }) => {
                             <Ionicons name="checkmark-circle" size={rs(18)} color={primaryColor} />
                           </View>
                         )}
-                        <Text
+                        <RNText
                           style={[
                             styles.arabicCardPreview,
                             { color: isDark ? primaryColor : '#0F172A' },
@@ -445,7 +446,7 @@ const ReadingSettingsModal = ({ visible, onClose }) => {
                           ]}
                         >
                           ابجد
-                        </Text>
+                        </RNText>
                         <Text
                           style={[
                             styles.fontCardLabel,

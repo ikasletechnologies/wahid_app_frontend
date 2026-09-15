@@ -10,9 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Polygon } from 'react-native-svg';
 import { GoogleLogo, FacebookLogo } from '../components/SocialLogos';
 import { useGoogleAuth } from '../hooks/useGoogleAuth';
-import { authenticateWithGoogle } from '../services/auth/googleAuth';
 import { useFacebookAuth } from '../hooks/useFacebookAuth';
-import { loginWithFacebook } from '../services/auth/facebookAuth';
 import { COUNTRIES, MAX_PHONE_INPUT_LENGTH } from '../config/countries';
 import { normalizePhoneNumber, phoneErrorMessage } from '../utils/phone';
 
@@ -40,7 +38,7 @@ const DecorativeBackground = ({ isDark }) => (
 );
 
 const LoginScreen = ({ navigation, route }) => {
-  const { login, completeLogin } = useAuth();
+  const { login, socialLogin } = useAuth();
   const { isDark, colors } = useAppTheme();
   const { identifier: initialIdentifier } = route.params || {};
 
@@ -62,29 +60,35 @@ const LoginScreen = ({ navigation, route }) => {
     setGoogleLoading(true);
     try {
       const result = await signInWithGoogle();
-      if (result?.accessToken) {
-        const response = await authenticateWithGoogle(result.accessToken);
-        if (response.success) {
-          await completeLogin(response.user, response.token || response.accessToken, response.refreshToken);
-          Toast.show({
-            type: 'success',
-            text1: 'Welcome back!',
-            text2: 'Signed in with Google successfully.'
-          });
-          navigation.navigate('Main', { screen: 'Home' });
-        } else {
-          Toast.show({
-            type: 'error',
-            text1: 'Google Auth Error',
-            text2: response.message || 'Verification failed.'
-          });
-        }
+      // null means the user cancelled — silently ignore
+      if (!result?.accessToken) return;
+
+      const response = await socialLogin('google', result.accessToken);
+      if (response.success) {
+        Toast.show({
+          type: 'success',
+          text1: 'Welcome!',
+          text2: 'Signed in with Google successfully.'
+        });
+        navigation.navigate('Main', { screen: 'Home' });
+      } else if (response.conflict) {
+        Toast.show({
+          type: 'error',
+          text1: 'Account Conflict',
+          text2: response.message,
+        });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Google Sign-In Failed',
+          text2: response.message,
+        });
       }
     } catch (err) {
       Toast.show({
         type: 'error',
-        text1: 'Google Auth Error',
-        text2: err.response?.data?.message || err.message || 'Something went wrong.'
+        text1: 'Google Sign-In Error',
+        text2: err.message || 'Something went wrong.',
       });
     } finally {
       setGoogleLoading(false);
@@ -109,29 +113,35 @@ const LoginScreen = ({ navigation, route }) => {
     setFacebookLoading(true);
     try {
       const result = await signInWithFacebook();
-      if (result?.accessToken) {
-        const response = await loginWithFacebook(result.accessToken);
-        if (response.success) {
-          await completeLogin(response.user, response.token || response.accessToken, response.refreshToken);
-          Toast.show({
-            type: 'success',
-            text1: 'Welcome back!',
-            text2: 'Signed in with Facebook successfully.'
-          });
-          navigation.navigate('Main', { screen: 'Home' });
-        } else {
-          Toast.show({
-            type: 'error',
-            text1: 'Facebook Auth Error',
-            text2: response.message || 'Verification failed.'
-          });
-        }
+      // null means the user cancelled — silently ignore
+      if (!result?.accessToken) return;
+
+      const response = await socialLogin('facebook', result.accessToken);
+      if (response.success) {
+        Toast.show({
+          type: 'success',
+          text1: 'Welcome!',
+          text2: 'Signed in with Facebook successfully.'
+        });
+        navigation.navigate('Main', { screen: 'Home' });
+      } else if (response.conflict) {
+        Toast.show({
+          type: 'error',
+          text1: 'Account Conflict',
+          text2: response.message,
+        });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Facebook Sign-In Failed',
+          text2: response.message,
+        });
       }
     } catch (err) {
       Toast.show({
         type: 'error',
-        text1: 'Facebook Auth Error',
-        text2: err.response?.data?.message || err.message || 'Something went wrong.'
+        text1: 'Facebook Sign-In Error',
+        text2: err.message || 'Something went wrong.',
       });
     } finally {
       setFacebookLoading(false);

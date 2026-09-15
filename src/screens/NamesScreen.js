@@ -986,10 +986,6 @@ const NamesScreen = ({ navigation, route }) => {
                             return;
                           }
 
-                          if (checkCardAccess && !checkCardAccess(item, navigation)) {
-                            return;
-                          }
-
                           AsyncStorage.setItem('last_viewed_name', String(item.number)).catch(() => { });
                           markAsViewed(item.number);
 

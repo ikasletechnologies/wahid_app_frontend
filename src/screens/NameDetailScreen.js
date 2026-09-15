@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { View, StyleSheet, Dimensions, Animated, Easing, Image, TouchableOpacity, StatusBar, PanResponder, ScrollView, TouchableWithoutFeedback, LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform, Keyboard, Share, Alert } from 'react-native';
+import { View, StyleSheet, Dimensions, Animated, Easing, Image, TouchableOpacity, StatusBar, PanResponder, ScrollView, TouchableWithoutFeedback, LayoutAnimation, ImageBackground, KeyboardAvoidingView, Platform, Keyboard, Share, Alert, ActivityIndicator } from 'react-native';
 import Text from '../components/AppText';
 import TextInput from '../components/AppTextInput';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle as SvgCircle, Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNames } from '../context/NamesContext';
+import { useNames, withCategory } from '../context/NamesContext';
 import { usePlaylist } from '../context/PlaylistContext';
 import { useAppTheme } from '../context/ThemeContext';
 import { useIsFocused } from '@react-navigation/native';
@@ -15,6 +15,7 @@ import NameDetailHeader from '../components/NameDetailHeader';
 import TimeBasedBackground from '../components/TimeBasedBackground';
 import ReadingSettingsModal from '../components/ReadingSettingsModal';
 import http from '../config/http';
+import { ENDPOINTS } from '../config/api';
 import { FONTS } from '../theme';
 
 const { width: SW, height: SH } = Dimensions.get('window');
@@ -649,15 +650,75 @@ const getReflectionAnswers = (nameObj) => {
 
 const NameDetailScreen = ({ route, navigation }) => {
   const insets = useSafeAreaInsets();
-  const { name, initialStepIndex = 0, draftProgress } = route.params;
-  const { markAsLearned, masteredIds, revisitCounts, userReflections, incrementReadingTime, markAsDraft, removeDraft, reviewLaterIds, toggleReviewLater, isSubscribed } = useNames();
+  const { name: paramName, initialStepIndex = 0, draftProgress } = route.params || {};
+  const { markAsLearned, masteredIds, revisitCounts, userReflections, incrementReadingTime, markAsDraft, removeDraft, reviewLaterIds, toggleReviewLater, isSubscribed, markAsEverRead } = useNames();
   const { favouriteIds, toggleFavourite } = usePlaylist();
   const isFocused = useIsFocused();
   const { isDark, themeMode } = useAppTheme();
 
-  // Subscription access check is now handled globally via checkCardAccess in NamesContext
+  // Canonical Name Card identifier
+  const cardNumber = Number(
+    paramName?.number ??
+    paramName?.id ??
+    route.params?.cardNumber ??
+    route.params?.nameNumber ??
+    route.params?.id
+  );
+  const nameNumber = cardNumber;
+
+
+  const [fullCardData, setFullCardData] = useState(null);
+  const [loadingCard, setLoadingCard] = useState(true);
+  const [cardError, setCardError] = useState(null);
+
+  // Authoritative server-side entitlement check and detail fetch
+  const fetchAuthoritativeCard = useCallback(async () => {
+    if (!cardNumber || isNaN(cardNumber)) {
+      setCardError('Invalid card number.');
+      setLoadingCard(false);
+      return;
+    }
+
+    setLoadingCard(true);
+    setCardError(null);
+
+    try {
+      const url = ENDPOINTS.nameDetail ? ENDPOINTS.nameDetail(cardNumber) : `${ENDPOINTS.names}/${cardNumber}`;
+      const res = await http.get(url);
+
+      if (res.data?.success && res.data?.data) {
+        const normalizedCard = withCategory(res.data.data);
+        setFullCardData(normalizedCard);
+        setLoadingCard(false);
+        if (markAsEverRead) markAsEverRead(cardNumber);
+      } else {
+        setCardError('Failed to load card details.');
+        setLoadingCard(false);
+      }
+    } catch (err) {
+      const status = err.response?.status;
+      const code = err.response?.data?.code;
+
+      if (status === 403 || code === 'SUBSCRIPTION_REQUIRED') {
+        // HTTP 403 SUBSCRIPTION_REQUIRED -> Navigate to Subscription screen
+        navigation.replace('Subscription');
+        return;
+      }
+
+      // Network / Server errors: NEVER grant permission or render protected content
+      setCardError('Unable to load card. Please check your network connection.');
+      setLoadingCard(false);
+    }
+  }, [cardNumber, navigation, markAsEverRead]);
+
+  useEffect(() => {
+    fetchAuthoritativeCard();
+  }, [fetchAuthoritativeCard]);
+
+  const name = useMemo(() => withCategory(fullCardData || paramName || {}), [fullCardData, paramName]);
+
   const [readingSettingsVisible, setReadingSettingsVisible] = useState(false);
-  const isMastered = masteredIds ? masteredIds.includes(name.id) : false;
+  const isMastered = masteredIds ? masteredIds.includes(cardNumber) : false;
   const isFavorite = favouriteIds ? favouriteIds.has(name.number || name.id) : false;
   const isReviewLater = reviewLaterIds ? reviewLaterIds.includes(name.number || name.id) : false;
   const revisits = revisitCounts[name.id] || 0;
@@ -729,59 +790,63 @@ const NameDetailScreen = ({ route, navigation }) => {
   }, [isDark, themeMode]);
 
   // Determine if this is a Qur'anic name or Sunnah name
-  // The first 81 are Qur'anic, the last 18 are Sunnah. We can also check if quranic array exists and has items.
   const isSunnah = name.sunnah && name.sunnah.length > 0 && (!name.quranic || name.quranic.length === 0);
   const categoryPillText = isSunnah ? 'Sunnah' : "Qur'anic";
 
-  // Build the dynamic steps array
+  // Build the dynamic steps array with support for all 6 core content sections
   const steps = useMemo(() => {
-    const s = [];    // 1. Meaning Step
-    s.push({ type: 'meaning' });
+    const s = [];
 
-    // 2. Gifts Step (Moved right after Meaning as requested)
-    if (name.gifts && name.gifts.length > 0) {
+    // 1. Simple Meaning
+    if (name.meaning || name.description || name.shortMeaning) {
+      s.push({ type: 'meaning' });
+    }
+
+    // 2. Gift of the Name
+    if (name.gifts && Array.isArray(name.gifts) && name.gifts.length > 0) {
       s.push({ type: 'gifts' });
     }
 
-    // 3. Qur'an References
-    if (name.quran && name.quran.length > 0) {
-      const formattedRefs = name.quran.map((ref) => {
+    // 3. Parts from Quran
+    const rawQuran = (name.quran && Array.isArray(name.quran) && name.quran.length > 0) ? name.quran : name.quranic;
+    if (rawQuran && Array.isArray(rawQuran) && rawQuran.length > 0) {
+      const formattedRefs = rawQuran.map((ref) => {
         if (typeof ref === 'string') return ref;
         return {
-          arabic: ref?.ar,
-          simpleMeaning: ref?.tr,
-          reference: ref?.ref,
-          significance: ref?.whyThisVerse || ref?.significance
+          arabic: ref?.ar || ref?.arabic || '',
+          simpleMeaning: ref?.simpleMeaning || ref?.tr || '',
+          reference: ref?.ref || ref?.reference || '',
+          significance: ref?.whyThisVerse || ref?.significance || ''
         };
       });
       s.push({ type: 'quran', data: formattedRefs });
-    } else if (name.quranic && name.quranic.length > 0) {
-      s.push({ type: 'quran', data: name.quranic });
     }
 
-    // 4. Hadith / Sunnah References
-    if (name.hadith && name.hadith.length > 0) {
-      const formattedRefs = name.hadith.map((ref) => {
+    // 4. Parts from Hadith
+    const rawHadith = (name.hadith && Array.isArray(name.hadith) && name.hadith.length > 0) ? name.hadith : name.sunnah;
+    if (rawHadith && Array.isArray(rawHadith) && rawHadith.length > 0) {
+      const formattedRefs = rawHadith.map((ref) => {
         if (typeof ref === 'string') return ref;
         return {
-          arabic: ref?.ar,
-          simpleMeaning: ref?.tr,
-          reference: ref?.ref,
-          significance: ref?.whyThisVerse || ref?.significance
+          arabic: ref?.ar || ref?.arabic || '',
+          simpleMeaning: ref?.simpleMeaning || ref?.tr || '',
+          reference: ref?.ref || ref?.reference || '',
+          significance: ref?.whyThisVerse || ref?.significance || ''
         };
       });
       s.push({ type: 'hadith', data: formattedRefs });
-    } else if (name.sunnah && name.sunnah.length > 0) {
-      s.push({ type: 'hadith', data: name.sunnah });
     }
-    if (name.practicalWays && name.practicalWays.length > 0) {
+
+    // 5. How to Live by It
+    if (name.practicalWays && Array.isArray(name.practicalWays) && name.practicalWays.length > 0) {
       s.push({ type: 'practical' });
     }
 
-
+    // 6. Reflection
     s.push({ type: 'reflection' });
+
     return s;
-  }, [name, isSunnah, revisits, isSaturated]);
+  }, [name]);
 
   const [currentStepIndex, setCurrentStepIndex] = useState(() => {
     const clamped = Math.max(0, Math.min(initialStepIndex, steps.length - 1));
@@ -1223,7 +1288,7 @@ const NameDetailScreen = ({ route, navigation }) => {
 
   const goJourney = useCallback((reflectionData = null) => {
     const nameNumber = name.number || name.id;
-    markAsLearned(name.id, reflectionData);
+    markAsLearned(nameNumber, reflectionData);
     removeDraft(nameNumber);
     // Keep last_reading_progress so HomeScreen can detect completion and automatically promote the next draft
     AsyncStorage.removeItem(`draft_progress_${nameNumber}`).catch(() => { });
@@ -2093,8 +2158,35 @@ const NameDetailScreen = ({ route, navigation }) => {
     );
   }
 
-  const handX = handAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 8] });
+  if (loadingCard) {
+    return (
+      <View style={{ flex: 1, backgroundColor: isDark ? '#0F172A' : '#FFFFFF', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+        <ActivityIndicator size="large" color="#00ADC1" />
+        <Text style={{ marginTop: 16, color: isDark ? '#9EAAB8' : '#5A4A42', fontFamily: FONTS.medium, fontSize: 15 }}>
+          Verifying card access...
+        </Text>
+      </View>
+    );
+  }
 
+  if (cardError && !fullCardData) {
+    return (
+      <View style={{ flex: 1, backgroundColor: isDark ? '#0F172A' : '#FFFFFF', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+        <Ionicons name="alert-circle-outline" size={56} color="#FF6B6B" />
+        <Text style={{ marginTop: 16, textAlign: 'center', color: isDark ? '#E8EDF2' : '#2C221E', fontFamily: FONTS.bold, fontSize: 16 }}>
+          {cardError}
+        </Text>
+        <TouchableOpacity
+          style={{ marginTop: 24, backgroundColor: '#00ADC1', paddingHorizontal: 28, paddingVertical: 12, borderRadius: 10 }}
+          onPress={fetchAuthoritativeCard}
+        >
+          <Text style={{ color: '#FFFFFF', fontFamily: FONTS.bold, fontSize: 15 }}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <Animated.View style={[styles.root, { transform: [{ translateY: exitAnim }] }]}>
@@ -2113,7 +2205,7 @@ const NameDetailScreen = ({ route, navigation }) => {
                 },
               ]}
             />
-            <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top', 'left', 'right']}>
+            <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} edges={['top', 'left', 'right', 'bottom']}>
               <KeyboardAvoidingView style={{ flex: 1, backgroundColor: 'transparent' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
                 <TouchableWithoutFeedback onPress={() => { if (!isChromeVisible) disableFocusMode(); }}>
                   <View style={{ flex: 1, backgroundColor: 'transparent' }}>
@@ -2155,7 +2247,16 @@ const NameDetailScreen = ({ route, navigation }) => {
                   })()}
 
                   <TouchableWithoutFeedback onPress={() => { if (!isChromeVisible) disableFocusMode(); }}>
-                    <View style={{ flex: 1, paddingHorizontal: rs(16), paddingTop: hs(4), paddingBottom: hs(8), zIndex: 60 }}>
+                    <View style={{
+                      flex: 1,
+                      paddingHorizontal: rs(16),
+                      paddingTop: hs(4),
+                      // When the Prev/Continue bottom nav is hidden (intro/cover cards), this is the
+                      // last thing above the raw screen edge — however, with 'bottom' SafeAreaView
+                      // edge now included above, we only need a small visual breathing room here.
+                      paddingBottom: isIntroSubStep ? hs(16) : hs(8),
+                      zIndex: 60
+                    }}>
                       {/* Outer card with border animates scale, translation, rotation, and opacity synchronously */}
                       <TouchableWithoutFeedback onPress={() => {}}>
                         <Animated.View
@@ -2193,7 +2294,10 @@ const NameDetailScreen = ({ route, navigation }) => {
                       {
                         zIndex: 10,
                         backgroundColor: 'transparent',
-                        paddingBottom: Math.max((insets.bottom || 0) + hs(10), Platform.OS === 'android' ? hs(30) : hs(20)),
+                        // With SafeAreaView 'bottom' edge active, insets.bottom is already consumed
+                        // by the container. We just need visual breathing room between the nav
+                        // buttons and the safe-area boundary.
+                        paddingBottom: hs(10),
                       }
                     ]}>
                       <View style={[styles.bottomNavInner, {
@@ -2367,7 +2471,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: rs(16),
     paddingTop: hs(6),
-    paddingBottom: Platform.OS === 'ios' ? hs(24) : hs(16),
+    paddingBottom: hs(8),
   },
   bottomNavInner: {
     flexDirection: 'row',

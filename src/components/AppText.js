@@ -5,7 +5,7 @@ import { useFontSettings } from '../context/FontSettingsContext';
 // Arabic text styles hardcode one of these two font families directly in
 // their StyleSheet (see src/theme/index.js FONTS.arabic/arabicBold). These
 // act as markers, not fixed fonts — a style using one of them gets routed to
-// the user's selected Arabic script style (Indo-Pak / Uthmani / Naskh)
+// the user's selected Arabic script style (Indo-Pak / Al Qalam / Me Quran)
 // instead of the English font family picker.
 const ARABIC_FONT_FAMILIES = ['NotoNaskhArabic-Regular', 'NotoNaskhArabic-Bold'];
 

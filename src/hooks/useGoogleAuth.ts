@@ -38,11 +38,10 @@ export const useGoogleAuth = () => {
         setGoogleAccessToken(accessToken);
         return { accessToken, idToken: result.authentication?.idToken ?? null };
       }
-      if (result.type === 'cancel' || result.type === 'dismiss') {
-        setError('User cancelled the login flow');
-      } else if (result.type === 'error') {
+      if (result.type === 'error') {
         setError(result.error?.description || 'Something went wrong');
       }
+      // cancel / dismiss — intentional user action, no error toast
       return null;
     } finally {
       setLoading(false);

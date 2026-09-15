@@ -99,7 +99,6 @@ const MasteredScreen = ({ navigation }) => {
         ]}
         activeOpacity={0.7}
         onPress={async () => {
-          if (checkCardAccess && !checkCardAccess(item, navigation)) return;
           let extraParams = { initialStepIndex: 0 };
           try {
             const saved = await AsyncStorage.getItem(`draft_progress_${item.number ?? item.id}`);

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, StatusBar, Animated, Dimensions, Easing, Modal, Alert } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, StatusBar, Animated, Dimensions, Easing, Modal } from 'react-native';
 import Text from '../components/AppText';
 import TextInput from '../components/AppTextInput';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -184,25 +184,7 @@ const NamesListScreen = ({ navigation, route }) => {
         style={[styles.row, { backgroundColor: cardBg, borderColor: cardBorder }]}
         activeOpacity={0.7}
         onPress={async () => {
-          const isDraftLimitReached = draftIds && draftIds.length >= 5;
-          const isNew = !learnedIds.includes(item.number) && !masteredIds.includes(item.number) && (!draftIds || !draftIds.includes(item.number));
-
-          if (isDraftLimitReached && isNew) {
-            Alert.alert(
-              "Draft Limit Reached",
-              "You have 5 pending drafts. Please complete them before starting a new name.",
-              [
-                { text: "Cancel", style: "cancel" },
-                { text: "Study Drafts", onPress: () => navigation.navigate('NamesList', { statusFilter: 'drafts' }) }
-              ]
-            );
-            return;
-          }
-
           const num = item.number ?? item.id;
-          if (checkCardAccess && !checkCardAccess(num, navigation)) {
-            return;
-          }
 
           let extraParams = { initialStepIndex: 0 };
           if (statusFilter === 'drafts' || statusFilter === 'learned') {

@@ -156,6 +156,58 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ── Social Login (Google / Facebook) ────────────────────────────────────
+  // provider: 'google' | 'facebook'
+  // providerToken: the access token returned by the provider SDK
+  //
+  // Returns:
+  //   { success: true }                         — authenticated & state committed
+  //   { success: false, cancelled: true }        — user dismissed the provider UI
+  //   { success: false, conflict: true, message} — 409 ACCOUNT_LINK_REQUIRED
+  //   { success: false, message }               — any other backend / network error
+
+  const socialLogin = async (provider, providerToken) => {
+    // Cancelled before we even reached the backend
+    if (!providerToken) {
+      return { success: false, cancelled: true };
+    }
+
+    const endpoint = provider === 'google' ? ENDPOINTS.google : ENDPOINTS.facebook;
+
+    try {
+      const response = await http.post(endpoint, { accessToken: providerToken });
+      const { user: u, accessToken, refreshToken } = response.data;
+
+      setUser(u);
+      setToken(accessToken);
+
+      await Promise.all([
+        AsyncStorage.setItem('user', JSON.stringify(u)),
+        setTokens(accessToken, refreshToken),
+      ]);
+
+      return { success: true };
+    } catch (error) {
+      if (error.response?.status === 409) {
+        // The email already belongs to a different provider — surface this
+        // distinctly so the UI can offer a helpful resolution message.
+        return {
+          success: false,
+          conflict: true,
+          message:
+            error.response?.data?.message ||
+            'An account already exists with this email. Please sign in with your original method.',
+        };
+      }
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          `${provider === 'google' ? 'Google' : 'Facebook'} sign-in failed. Please try again.`,
+      };
+    }
+  };
+
   const resetPassword = async (verificationToken, newPassword) => {
     try {
       await http.post(ENDPOINTS.resetPassword, { verificationToken, newPassword });
@@ -179,10 +231,31 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setToken(null);
 
+      // Clear every locally-cached per-account key so the next login on this
+      // device (a different account, or the same one) never inherits stale
+      // Names/Draft/reading-progress state. 'names_cache' (no suffix) was the
+      // old cache key name — kept here only so any legacy install still gets
+      // it cleaned up; the live cache key is 'names_cache_v14'.
+      const staticKeys = [
+        'user',
+        'names_cache',
+        'names_cache_v14',
+        'progress_cache',
+        'streak_details_cache',
+        'draft_ids_v1',
+        'review_later_ids_v1',
+        'viewed_name_ids',
+        'ever_read_card_ids_v1',
+        'draft_seeded_v1',
+        'last_reading_progress',
+      ];
+      const allKeys = await AsyncStorage.getAllKeys().catch(() => []);
+      const dynamicKeys = allKeys.filter(
+        (k) => k.startsWith('reading_time_') || k.startsWith('draft_progress_')
+      );
+
       await Promise.all([
-        AsyncStorage.removeItem('user'),
-        AsyncStorage.removeItem('names_cache'),
-        AsyncStorage.removeItem('progress_cache'),
+        AsyncStorage.multiRemove([...staticKeys, ...dynamicKeys]),
         clearTokens(),
       ]);
     } catch (error) {
@@ -216,6 +289,7 @@ export const AuthProvider = ({ children }) => {
       signup,
       completeLogin,
       login,
+      socialLogin,
       resetPassword,
       updateProfile,
       logout

@@ -38,10 +38,9 @@ export default function App() {
     Carlito_400Regular,
     Carlito_700Bold,
     // Quran script styles — see src/context/FontSettingsContext.js ARABIC_STYLES.
-    // Files are placeholders until the real font files are dropped into assets/fonts/.
+    IndoPak: require('./assets/fonts/IndoPak.ttf'),
     AlQalamQuran: require('./assets/fonts/AlQalamQuran.ttf'),
-    KFGQPCUthmanic: require('./assets/fonts/KFGQPCUthmanic.otf'),
-    AmiriQuran: require('./assets/fonts/AmiriQuran.ttf'),
+    MeQuran: require('./assets/fonts/MeQuran.ttf'),
   });
 
   React.useEffect(() => {

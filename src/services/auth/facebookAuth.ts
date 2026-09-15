@@ -1,32 +1,22 @@
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import http from '../../config/http';
 import { ENDPOINTS } from '../../config/api';
 import { FacebookAuthResponse } from '../../types/auth';
-import { setTokens } from '../../utils/secureTokenStorage';
 
 /**
- * Authenticates with the backend API using the Facebook OAuth Access Token.
- * Stores system access and refresh tokens upon successful verification.
- * 
- * @param facebookAccessToken The access token received from Facebook Auth
- * @returns The authentication response from the backend API
+ * Thin utility: exchanges a Facebook OAuth access token for a backend session.
+ * Does NOT write to AsyncStorage or SecureStore — that is handled by
+ * AuthContext.socialLogin(), which owns all session state.
+ *
+ * @param facebookAccessToken The access token received from the Facebook OAuth flow
+ * @returns Raw backend response (FacebookAuthResponse)
  */
 export const loginWithFacebook = async (
   facebookAccessToken: string
 ): Promise<FacebookAuthResponse> => {
-  const response = await axios.post(ENDPOINTS.facebook, {
+  const response = await http.post(ENDPOINTS.facebook, {
     accessToken: facebookAccessToken,
   });
-
-  const data: FacebookAuthResponse = response.data;
-
-  if (data && data.success) {
-    const { token, refreshToken, user } = data;
-
-    await setTokens(token, refreshToken);
-    await AsyncStorage.setItem('user', JSON.stringify(user));
-  }
-
-  return data;
+  return response.data as FacebookAuthResponse;
 };
+
 export type { FacebookAuthResponse };

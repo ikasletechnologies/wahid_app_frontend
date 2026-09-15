@@ -16,13 +16,14 @@ export const FONT_FAMILIES = {
 
 // Quran script styles. Each one file, no separate bold cut — boldness is
 // baked into the design of these display fonts, so the same family name
-// covers regular and bold text. Files are loaded in App.js from
-// assets/fonts/ (placeholders until the real font files are dropped in).
+// covers regular and bold text. Files are loaded in App.js from assets/fonts/.
+// Indo-Pak is the app's default script; the other two are user-selectable
+// alternatives in Settings > Text > Arabic Script Style.
 export const ARABIC_STYLES = {
-  indoPak: { label: 'Indo-Pak', family: 'AlQalamQuran' },
-  uthmani: { label: 'Uthmani (Madinah)', family: 'KFGQPCUthmanic' },
-  naskh: { label: 'Naskh', family: 'AmiriQuran' },
-}; 
+  indoPak: { label: 'Indo-Pak', family: 'IndoPak' },
+  alQalam: { label: 'Al Qalam', family: 'AlQalamQuran' },
+  meQuran: { label: 'Me Quran', family: 'MeQuran' },
+};
 
 // `scale` drives small text (labels, captions); `maxDelta` caps how many
 // pixels any single piece of text can grow/shrink by. The cap keeps large
@@ -42,7 +43,7 @@ const STORAGE_KEY_ARABIC_STYLE = 'appArabicFontStyle';
 export const FontSettingsProvider = ({ children }) => {
   const [fontFamily, setFontFamilyState] = useState('roboto');
   const [fontSize, setFontSizeState] = useState('medium');
-  const [arabicFontStyle, setArabicFontStyleState] = useState('naskh');
+  const [arabicFontStyle, setArabicFontStyleState] = useState('indoPak');
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -105,7 +106,7 @@ export const FontSettingsProvider = ({ children }) => {
 
   // Resolves the loaded font-family name for the current Arabic script style.
   const resolveArabicFontFamily = () => {
-    const style = ARABIC_STYLES[arabicFontStyle] || ARABIC_STYLES.naskh;
+    const style = ARABIC_STYLES[arabicFontStyle] || ARABIC_STYLES.indoPak;
     return style.family;
   };
 

@@ -74,15 +74,9 @@ const SuggestedNamesScreen = ({ navigation }) => {
               if (isDraft) {
                 removeDraft(item.number);
               } else {
-                if (checkCardAccess && !checkCardAccess(item, navigation)) {
-                  return;
-                }
-                
-                if (visibleDraftsCount >= 5) {
-                  setDraftLimitModalVisible(true);
-                } else {
-                  markAsDraft(item.number);
-                }
+                // Adding to Draft is independent of subscription/reading
+                // entitlement — no checkCardAccess, no capacity cap here.
+                markAsDraft(item.number);
               }
             }}
           >

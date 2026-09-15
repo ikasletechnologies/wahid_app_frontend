@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions, LayoutAnimation, Modal } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions, LayoutAnimation } from 'react-native';
 import Text from '../components/AppText';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNames, CATEGORIES } from '../context/NamesContext';
@@ -13,59 +12,36 @@ const { width: SW } = Dimensions.get('window');
 const rs = (size) => Math.round(size * (SW / 393));
 
 const CategoriesScreen = ({ navigation }) => {
-  const { names, learnedIds, masteredIds, draftIds, markAsDraft, removeDraft, isSubscribed } = useNames();
+  const { names, learnedIds, masteredIds, draftIds, markAsDraft, removeDraft, checkCardAccess } = useNames();
   const { isDark } = useAppTheme();
 
   const [expandedCategories, setExpandedCategories] = useState({});
-  const [draftLimitModalVisible, setDraftLimitModalVisible] = useState(false);
-  const [lastReadNameId, setLastReadNameId] = useState(null);
-
-  React.useEffect(() => {
-    AsyncStorage.getItem('last_reading_progress')
-      .then(saved => {
-        if (saved) {
-          const progress = JSON.parse(saved);
-          const isCompleted = learnedIds.includes(progress.nameNumber) || masteredIds.includes(progress.nameNumber);
-          if (!isCompleted) {
-            setLastReadNameId(progress.nameNumber);
-          }
-        }
-      })
-      .catch(() => {});
-  }, [learnedIds, masteredIds]);
 
   const activeDraftIds = React.useMemo(() => {
     return (draftIds || []).filter(id => !learnedIds.includes(id) && !masteredIds.includes(id));
   }, [draftIds, learnedIds, masteredIds]);
-
-  const visibleDraftsCount = React.useMemo(() => {
-    let count = activeDraftIds.length;
-    if (lastReadNameId && activeDraftIds.includes(lastReadNameId)) {
-      count -= 1;
-    }
-    return count;
-  }, [activeDraftIds, lastReadNameId]);
 
   const toggleCategory = (id) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedCategories(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  // Adding to Draft is independent of subscription/reading entitlement —
+  // no checkCardAccess, no capacity cap here.
   const handleAddToDraft = (item) => {
     const isDraft = activeDraftIds.includes(item.number);
     if (isDraft) {
       removeDraft(item.number);
     } else {
-      if (!isSubscribed) {
-        navigation.navigate('Subscription');
-        return;
-      }
-      if (visibleDraftsCount >= 4) {
-        setDraftLimitModalVisible(true);
-      } else {
-        markAsDraft(item.number);
-      }
+      markAsDraft(item.number);
     }
+  };
+
+  const handleOpenCard = (item) => {
+    navigation.navigate('NameDetail', {
+      name: { ...item, id: item.id ?? item.number },
+      initialStepIndex: 0,
+    });
   };
 
   const bg = isDark ? '#0F172A' : '#F0FBFC';
@@ -137,7 +113,11 @@ const CategoriesScreen = ({ navigation }) => {
 
                     return (
                       <View key={item.number}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: rs(12) }}>
+                        <TouchableOpacity
+                          style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: rs(12) }}
+                          activeOpacity={0.7}
+                          onPress={() => handleOpenCard(item)}
+                        >
                           <View style={{ width: rs(65), marginRight: rs(12) }}>
                             <Text style={{ color: teal, fontFamily: FONTS.bold, fontSize: rs(22) }}>{item.arabic}</Text>
                           </View>
@@ -164,7 +144,7 @@ const CategoriesScreen = ({ navigation }) => {
                               </TouchableOpacity>
                             )}
                           </View>
-                        </View>
+                        </TouchableOpacity>
                         {idx < catNames.length - 1 && (
                           <View style={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#E6F4F6' }} />
                         )}
@@ -177,29 +157,6 @@ const CategoriesScreen = ({ navigation }) => {
           );
         })}
       </ScrollView>
-
-      {/* --- Draft Limit Modal --- */}
-      <Modal
-        transparent
-        visible={draftLimitModalVisible}
-        animationType="fade"
-        onRequestClose={() => setDraftLimitModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContainer, { backgroundColor: cardBg, borderColor }]}>
-            <Text style={[styles.modalText, { color: textPrimary }]}>
-              Please read the existing Draft cards before adding the next card.
-            </Text>
-            <TouchableOpacity
-              style={[styles.modalButton, { backgroundColor: teal }]}
-              onPress={() => setDraftLimitModalVisible(false)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.modalButtonText}>OK</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };

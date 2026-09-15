@@ -1,32 +1,22 @@
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import http from '../../config/http';
 import { ENDPOINTS } from '../../config/api';
 import { GoogleAuthResponse } from '../../types/auth';
-import { setTokens } from '../../utils/secureTokenStorage';
 
 /**
- * Authenticates with the backend API using the Google OAuth Access Token.
- * Stores system access and refresh tokens upon successful verification.
- * 
- * @param googleAccessToken The access token received from Google Auth
- * @returns The authentication response from the backend API
+ * Thin utility: exchanges a Google OAuth access token for a backend session.
+ * Does NOT write to AsyncStorage or SecureStore — that is handled by
+ * AuthContext.socialLogin(), which owns all session state.
+ *
+ * @param googleAccessToken The access token received from the Google OAuth flow
+ * @returns Raw backend response (GoogleAuthResponse)
  */
 export const authenticateWithGoogle = async (
   googleAccessToken: string
 ): Promise<GoogleAuthResponse> => {
-  const response = await axios.post(ENDPOINTS.google, {
+  const response = await http.post(ENDPOINTS.google, {
     accessToken: googleAccessToken,
   });
-
-  const data: GoogleAuthResponse = response.data;
-
-  if (data && data.success) {
-    const { token, refreshToken, user } = data;
-
-    await setTokens(token, refreshToken);
-    await AsyncStorage.setItem('user', JSON.stringify(user));
-  }
-
-  return data;
+  return response.data as GoogleAuthResponse;
 };
+
 export type { GoogleAuthResponse };

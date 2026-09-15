@@ -25,10 +25,12 @@ export const ENDPOINTS = {
   facebook: `${API_BASE_URL}/api/auth/facebook`,
 
   // Core
-  names:    `${API_BASE_URL}/api/names`,
-  progress: `${API_BASE_URL}/api/progress`,
-  learn:    `${API_BASE_URL}/api/progress/learn`,
-  streak:   `${API_BASE_URL}/api/progress/streak`,
+  names:        `${API_BASE_URL}/api/names`,
+  nameDetail:   (id) => `${API_BASE_URL}/api/names/${id}`,
+  progress:     `${API_BASE_URL}/api/progress`,
+  progressRead: `${API_BASE_URL}/api/progress/read`,
+  learn:        `${API_BASE_URL}/api/progress/learn`,
+  streak:       `${API_BASE_URL}/api/progress/streak`,
 
   // Content cards (admin-managed)
   content:       `${API_BASE_URL}/api/content`,          // GET all published cards

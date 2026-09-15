@@ -53,25 +53,43 @@ export const NUMBER_TO_CATEGORY = {
 import { ENHANCED_NAMES } from '../data/namesData';
 
 // Helper: inject category into a name object from the API and map fields
-const withCategory = (name) => {
+export const withCategory = (name) => {
+  if (!name) return name;
+
   const nameId = name.number || name.id;
   
+  let gifts = [];
+  if (name.gifts && Array.isArray(name.gifts) && name.gifts.length > 0) {
+    gifts = name.gifts;
+  } else if (name.benefits) {
+    gifts = Array.isArray(name.benefits) ? name.benefits : [name.benefits];
+  }
+
   let practicalWays = [];
-  if (name.practicalWays && Array.isArray(name.practicalWays)) {
+  if (name.practicalWays && Array.isArray(name.practicalWays) && name.practicalWays.length > 0) {
     practicalWays = name.practicalWays;
   } else if (name.learningInsight) {
     try {
       practicalWays = typeof name.learningInsight === 'string'
         ? JSON.parse(name.learningInsight)
         : name.learningInsight;
+      if (!Array.isArray(practicalWays)) {
+        practicalWays = [practicalWays];
+      }
     } catch (e) {
       console.warn('Error parsing learningInsight for name ' + nameId, e);
+      practicalWays = [];
     }
   }
 
   const meaningObj = typeof name.meaning === 'object' ? name.meaning : null;
+  const rawMeaning = meaningObj ? (meaningObj.core || meaningObj.short || '') : (typeof name.meaning === 'string' ? name.meaning : '');
+  const rawShortMeaning = meaningObj ? (meaningObj.short || meaningObj.core || '') : (name.shortMeaning || rawMeaning || '');
+  const rawDescription = name.description || (meaningObj ? meaningObj.core : '') || rawMeaning || '';
 
   let sunnah = name.hadith || name.sunnah || [];
+  if (!Array.isArray(sunnah)) sunnah = [sunnah];
+
   if (Number(nameId) === 5) {
     let containsTirmidhiCombined = false;
     sunnah.forEach(item => {
@@ -120,35 +138,41 @@ const withCategory = (name) => {
     name.arabic = 'الْغَنِيُّ';
   }
 
-    let quranic = name.quran || name.quranic || [];
-    quranic = quranic.map(item => {
-      if (item && item.simpleMeaning && item.simpleMeaning.includes("Why this verse:")) {
-        const parts = item.simpleMeaning.split(/["']?\s*Why this verse:\s*/i);
-        if (parts.length > 1) {
-          return {
-            ...item,
-            simpleMeaning: parts[0].trim(),
-            whyThisVerse: parts[1].trim()
-          };
-        }
+  let quranic = name.quran || name.quranic || [];
+  if (!Array.isArray(quranic)) quranic = [quranic];
+  quranic = quranic.map(item => {
+    if (item && item.simpleMeaning && item.simpleMeaning.includes("Why this verse:")) {
+      const parts = item.simpleMeaning.split(/["']?\s*Why this verse:\s*/i);
+      if (parts.length > 1) {
+        return {
+          ...item,
+          simpleMeaning: parts[0].trim(),
+          whyThisVerse: parts[1].trim()
+        };
       }
-      return item;
-    });
+    }
+    return item;
+  });
 
-    return {
-      ...name,
-      number: nameId,
-      arabic: name.arabic || name.ar || '',
-      transliteration: name.transliteration || name.tr || '',
-      translation: name.translation || name.en || '',
-      meaning: meaningObj ? (meaningObj.core || meaningObj.short || '') : (name.meaning || ''),
-      shortMeaning: meaningObj ? (meaningObj.short || meaningObj.core || '') : (name.shortMeaning || name.meaning || ''),
-      gifts: name.benefits || name.gifts || [],
-      practicalWays: practicalWays || [],
-      quranic: quranic,
+  return {
+    ...name,
+    number: nameId,
+    arabic: name.arabic || name.ar || '',
+    transliteration: name.transliteration || name.tr || '',
+    translation: name.translation || name.en || '',
+    meaning: rawMeaning,
+    shortMeaning: rawShortMeaning,
+    description: rawDescription,
+    gifts: gifts || [],
+    benefits: gifts || [],
+    practicalWays: practicalWays || [],
+    learningInsight: practicalWays || [],
+    quranic: quranic,
+    quran: quranic,
     sunnah: sunnah,
+    hadith: sunnah,
     scholarlyViews: name.scholarlyViews || [],
-    category: NUMBER_TO_CATEGORY[nameId] || 'mercy',
+    category: NUMBER_TO_CATEGORY[nameId] || name.category || 'mercy',
   };
 };
 
@@ -233,21 +257,36 @@ export const NamesProvider = ({ children }) => {
   const [draftIds, setDraftIds] = useState([]);
   const [reviewLaterIds, setReviewLaterIds] = useState([]);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [readCount, setReadCount] = useState(0);
+  // Permanent, append-only record of every Name Card this user has ever opened.
+  // This — not draftIds/learnedIds — is the sole input to the reading-entitlement
+  // check. Cards are never removed from this set (see markAsEverRead below).
+  const [everReadCardIds, setEverReadCardIds] = useState([]);
 
   const fetchSubscriptionStatus = useCallback(async () => {
     if (!token) {
       setIsSubscribed(false);
+      setReadCount(0);
+      setSubscriptionLoading(false);
       return;
     }
+    setSubscriptionLoading(true);
     try {
       const res = await http.get(ENDPOINTS.subscriptionStatus);
       if (res.data?.success) {
         setIsSubscribed(!!res.data.data?.isSubscribed);
+        if (typeof res.data.data?.unlockedCount === 'number') {
+          setReadCount(res.data.data.unlockedCount);
+        }
       }
     } catch (e) {
       console.warn('[SUBSCRIPTION STATUS CHECK ERROR]', e);
+    } finally {
+      setSubscriptionLoading(false);
     }
   }, [token]);
+
 
   useEffect(() => {
     fetchSubscriptionStatus();
@@ -265,29 +304,29 @@ export const NamesProvider = ({ children }) => {
     return totalReadCards >= 5 && !isSubscribed;
   }, [totalReadCards, isSubscribed]);
 
-  const checkCardAccess = useCallback((nameOrNumber, navigation) => {
-    const num = typeof nameOrNumber === 'object' ? (nameOrNumber.number || nameOrNumber.id) : nameOrNumber;
-    const cardNumber = Number(num);
+  // ── Client UI Reading Indicator Helper ─────────────────────────────────
+  // Note: Backend (GET /api/names/:id) is the SOLE authoritative entitlement gate.
+  // This helper returns true so navigation always proceeds to NameDetailScreen,
+  // where the server decides access and records the read event.
+  const checkCardAccess = useCallback(() => {
+    return true;
+  }, []);
 
-    const uniqueLearnedCount = new Set([...learnedIds.map(String), ...draftIds.map(String)]).size;
+  // Permanently records a card as read. Idempotent — safe to call every time
+  // a card is opened, including re-opens of already-read cards. Never call
+  // this from Draft add/remove; only from the point where a card is actually
+  // granted access and opened (NameDetailScreen).
+  const markAsEverRead = useCallback((nameNumber) => {
+    const num = Number(nameNumber);
+    setReadCount(prev => Math.max(prev, 1));
+    setEverReadCardIds(prev => {
+      if (prev.includes(num)) return prev;
+      const next = [...prev, num];
+      AsyncStorage.setItem('ever_read_card_ids_v1', JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  }, []);
 
-    if (uniqueLearnedCount < 5) {
-      return true;
-    }
-
-    if (learnedIds.includes(cardNumber) || learnedIds.includes(String(cardNumber)) || draftIds.includes(cardNumber) || draftIds.includes(String(cardNumber))) {
-      return true;
-    }
-
-    if (isSubscribed) {
-      return true; // Subscribed user
-    }
-
-    if (navigation) {
-      navigation.navigate('Subscription');
-    }
-    return false;
-  }, [isSubscribed, learnedIds, draftIds]);
 
   // Load today's reading time, drafts, and review later IDs
   useEffect(() => {
@@ -303,6 +342,10 @@ export const NamesProvider = ({ children }) => {
 
     AsyncStorage.getItem('review_later_ids_v1').then(val => {
       if (val) setReviewLaterIds(JSON.parse(val));
+    }).catch(() => {});
+
+    AsyncStorage.getItem('ever_read_card_ids_v1').then(val => {
+      if (val) setEverReadCardIds(JSON.parse(val));
     }).catch(() => {});
   }, []);
 
@@ -401,11 +444,18 @@ export const NamesProvider = ({ children }) => {
       setMasteredIds([]);
       setViewedIds([]);
       setDraftIds([]);
+      setEverReadCardIds([]);
+      setReadCount(0);
       setStreak(0);
+
       setStreakDetails({
         activeDates: [],
         weeklyProgress: { Sun: false, Mon: false, Tue: false, Wed: false, Thu: false, Fri: false, Sat: false },
       });
+      AsyncStorage.removeItem('ever_read_card_ids_v1').catch(() => {});
+      AsyncStorage.removeItem('draft_ids_v1').catch(() => {});
+      AsyncStorage.removeItem('progress_cache').catch(() => {});
+      AsyncStorage.removeItem('viewed_name_ids').catch(() => {});
     }
   }, [token]);
 
@@ -454,6 +504,25 @@ export const NamesProvider = ({ children }) => {
     }
   };
 
+  // Seeds Draft with Card 1 exactly once per account, only for a genuinely
+  // fresh account (no learned/mastered/draft history yet). Guarded by a
+  // persisted marker so it never re-fires on later app starts, and never
+  // re-adds Card 1 after the user has since removed it from Draft.
+  const maybeSeedInitialDraft = useCallback(async (learned, mastered, draft) => {
+    const SEEDED_KEY = 'draft_seeded_v1';
+    try {
+      const seeded = await AsyncStorage.getItem(SEEDED_KEY);
+      if (seeded) return;
+      const isFreshAccount = (learned || []).length === 0 && (mastered || []).length === 0 && (draft || []).length === 0;
+      if (isFreshAccount) {
+        markAsDraft(1);
+      }
+      await AsyncStorage.setItem(SEEDED_KEY, '1');
+    } catch (e) {
+      console.warn('[NamesContext] Draft Seed Error:', e.message);
+    }
+  }, [markAsDraft]);
+
   const syncWithBackend = async () => {
     if (!token) return;
     try {
@@ -481,6 +550,7 @@ export const NamesProvider = ({ children }) => {
           setDraftIds(draftIds);
           AsyncStorage.setItem('draft_ids_v1', JSON.stringify(draftIds)).catch(() => {});
         }
+        maybeSeedInitialDraft(learned, mastered, draftIds);
         if (readingTimeToday !== undefined) {
           setReadingTimeToday(readingTimeToday);
           AsyncStorage.setItem(`reading_time_${todayStr}`, String(readingTimeToday)).catch(() => {});
@@ -539,25 +609,35 @@ export const NamesProvider = ({ children }) => {
 
   const markAsLearned = async (nameNumber, reflectionData = null) => {
     try {
-      if (!learnedIds.includes(nameNumber)) {
-        setLearnedIds(prev => [...prev, nameNumber]);
-      }
       const todayStr = new Date().toISOString().slice(0, 10);
       const payload = { nameNumber, localDate: todayStr };
       if (reflectionData) {
         payload.reflectionData = reflectionData;
-        setUserReflections(prev => ({ ...prev, [nameNumber]: reflectionData }));
       }
       const res = await http.post(ENDPOINTS.learn, payload);
       if (res.data?.success) {
+        if (!learnedIds.includes(nameNumber)) {
+          setLearnedIds(prev => [...prev, nameNumber]);
+        }
+        if (reflectionData) {
+          setUserReflections(prev => ({ ...prev, [nameNumber]: reflectionData }));
+        }
         if (res.data.data?.streak !== undefined) setStreak(res.data.data.streak);
         if (res.data.data?.mastered && !masteredIds.includes(nameNumber)) {
           setMasteredIds(prev => [...prev, nameNumber]);
         }
         await syncWithBackend();
+        return { success: true, data: res.data.data };
       }
+      return { success: false, error: res.data?.message || 'Failed to mark as learned' };
     } catch (error) {
       console.warn('[NamesContext] Mark Learned Error:', error.message);
+      const isSubscriptionRequired = error.response?.status === 403 || error.response?.data?.code === 'SUBSCRIPTION_REQUIRED';
+      return {
+        success: false,
+        isSubscriptionRequired,
+        error: error.response?.data?.message || error.message,
+      };
     }
   };
 
@@ -706,10 +786,15 @@ export const NamesProvider = ({ children }) => {
       getDailyPlaylist,
       getNameOfDay,
       isSubscribed,
+      subscriptionLoading,
+      readCount,
       totalReadCards,
+
       isSuggestedPlusDisabled,
       fetchSubscriptionStatus,
       checkCardAccess,
+      everReadCardIds,
+      markAsEverRead,
       categories: CATEGORIES,
       moods: MOODS,
     }}>

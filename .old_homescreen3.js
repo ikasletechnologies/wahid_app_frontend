@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+﻿import React, { useMemo } from 'react';
 import {
   View, StyleSheet, ScrollView, TouchableOpacity,
   Dimensions, StatusBar, RefreshControl, Image,
@@ -57,17 +57,16 @@ const getRelativeTime = (timestamp) => {
   return `${months[d.getMonth()]} ${d.getDate()}`;
 };
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Component ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const HomeScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { isDark } = useAppTheme();
   const { scaleFontSize } = useFontSettings();
-  const { names, learnedIds, masteredIds, refresh, refreshing, draftIds, markAsDraft, removeDraft, checkCardAccess, fetchSubscriptionStatus, isSubscribed, readCount } = useNames();
-
+  const { names, learnedIds, masteredIds, refresh, refreshing, draftIds, markAsDraft, removeDraft, checkCardAccess, fetchSubscriptionStatus, isSubscribed } = useNames();
   const { favouriteIds } = usePlaylist();
 
-  // ── State ──────────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ State ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const [lastReadName, setLastReadName] = React.useState(null);
   const [isNewName, setIsNewName] = React.useState(false);
   const [lastReadTimestamp, setLastReadTimestamp] = React.useState(null);
@@ -92,7 +91,7 @@ const HomeScreen = ({ navigation }) => {
     return () => clearInterval(interval);
   }, [lastReadTimestamp]);
 
-  // ── Floating book animation ────────────────────────────────────────────────
+  // ΓöÇΓöÇ Floating book animation ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const floatAnim = React.useRef(new Animated.Value(0)).current;
   React.useEffect(() => {
     Animated.loop(
@@ -103,7 +102,7 @@ const HomeScreen = ({ navigation }) => {
     ).start();
   }, []);
 
-  // ── Notifications ──────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Notifications ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   useFocusEffect(
     React.useCallback(() => {
       if (fetchSubscriptionStatus) fetchSubscriptionStatus();
@@ -116,7 +115,7 @@ const HomeScreen = ({ navigation }) => {
     }, [fetchSubscriptionStatus])
   );
 
-  // ── Last read name ─────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Last read name ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   useFocusEffect(
     React.useCallback(() => {
       if (!names || names.length === 0) return;
@@ -168,15 +167,12 @@ const HomeScreen = ({ navigation }) => {
     }, [names, learnedIds, masteredIds, draftIds])
   );
 
-  // ── Suggested names ────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Suggested names ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const activeDraftIds = React.useMemo(() => {
     return (draftIds || []).filter(id => !learnedIds.includes(id) && !masteredIds.includes(id));
   }, [draftIds, learnedIds, masteredIds]);
 
-  // First-time user detection is strictly based on server read count (readCount === 0)
-  const isFirstTimeUser = (readCount ?? 0) === 0;
-  const card1 = useMemo(() => (names && names.length > 0 ? names.find(n => (n.number || n.id) === 1) || names[0] : null), [names]);
-
+  const isFreshUser = learnedIds.length === 0 && masteredIds.length === 0 && (draftIds || []).length === 0;
 
   const visibleDraftsCount = React.useMemo(() => {
     let count = activeDraftIds.length;
@@ -209,7 +205,7 @@ const HomeScreen = ({ navigation }) => {
     setSuggestedOffset(prev => prev + 3);
   };
 
-  // ── Match % ────────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Match % ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const getMatchPercent = React.useCallback((name, idx = 0) => {
     const known = [...learnedIds, ...masteredIds];
     if (known.length === 0) return Math.max(40, 60 - idx * 10);
@@ -225,7 +221,7 @@ const HomeScreen = ({ navigation }) => {
     return Math.min(95, Math.max(35, pct || 35));
   }, [names, learnedIds, masteredIds]);
 
-  // ── Dynamic Progress Helper ────────────────────────────────────────────────
+  // ΓöÇΓöÇ Dynamic Progress Helper ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const getTotalSteps = React.useCallback((name) => {
     let count = 1; // meaning
     if (name.gifts && name.gifts.length > 0) count++;
@@ -236,7 +232,7 @@ const HomeScreen = ({ navigation }) => {
     return count;
   }, []);
 
-  // ── Draft names ────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Draft names ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const draftNames = useMemo(() => {
     if (!activeDraftIds || !names) return [];
     let filteredDraftIds = activeDraftIds;
@@ -273,10 +269,10 @@ const HomeScreen = ({ navigation }) => {
     }, [draftNames, suggestedNames])
   );
 
-  // ── Refresh ────────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Refresh ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const handleRefresh = async () => { await refresh(); };
 
-  // ── Greeting & initial ─────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Greeting & initial ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const greeting = useMemo(() => {
     const h = new Date().getHours();
     if (h < 12) return 'Good Morning!';
@@ -286,7 +282,7 @@ const HomeScreen = ({ navigation }) => {
 
   const initial = useMemo(() => (user?.name || 'Wahid').charAt(0).toUpperCase(), [user]);
 
-  // ── Stats ──────────────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Stats ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const stats = useMemo(() => {
     const total = 99;
     const learned = learnedIds.length;
@@ -294,23 +290,17 @@ const HomeScreen = ({ navigation }) => {
     return { learned, mastered, progress: total > 0 ? Math.round((learned / total) * 100) : 0 };
   }, [learnedIds, masteredIds]);
 
-  // ── Start your journey (first-time user action) ──────────────────────────
-  const handleStartJourney = () => {
-    // Navigate passing ONLY the cardNumber parameter (no complete card object)
-    // NameDetailScreen will fetch Card 1 through GET /api/names/1
-    navigation.navigate('NameDetail', { cardNumber: 1 });
-  };
-
-  // ── Continue reading ───────────────────────────────────────────────────────
-
+  // ΓöÇΓöÇ Continue reading ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const handleContinueReading = async () => {
     if (!lastReadName) {
       const def = names.find(n => n.number === 1) || names[0];
       if (def) {
+        if (checkCardAccess && !checkCardAccess(def, navigation)) return;
         navigation.navigate('NameDetail', { name: def, initialStepIndex: 0 });
       }
       return;
     }
+    if (checkCardAccess && !checkCardAccess(lastReadName, navigation)) return;
     const nameNumber = lastReadName.number || lastReadName.id;
     try {
       const [savedProgress, savedDraft] = await Promise.all([
@@ -326,7 +316,7 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  // ── Color tokens ───────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Color tokens ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
   const bg = isDark ? '#0F172A' : '#F0FBFC';
   const cardBg = isDark ? '#1E293B' : '#FFFFFF';
   const textPrimary = isDark ? '#F0F4F8' : '#0F172A';
@@ -335,7 +325,7 @@ const HomeScreen = ({ navigation }) => {
   const tealLight = isDark ? 'rgba(0,173,193,0.15)' : '#E0F8FA';
   const borderColor = isDark ? 'rgba(255,255,255,0.08)' : '#E2EEF0';
 
-  // ── Render helpers ─────────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Render helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   const SUGGEST_FALLBACK = [
     { number: -10, arabic: '\u0627\u0644\u0652\u0639\u064e\u062f\u0652\u0644', transliteration: "Al-'Adl", meaning: 'The Just', matchPercent: 60 },
@@ -355,6 +345,7 @@ const HomeScreen = ({ navigation }) => {
         activeOpacity={0.8}
         onPress={async () => {
           if (item.number > 0) {
+            if (checkCardAccess && !checkCardAccess(item, navigation)) return;
             const now = Date.now();
             const draftStepIndex = progressMap[item.number] || 0;
             await AsyncStorage.setItem('last_reading_progress', JSON.stringify({
@@ -402,9 +393,15 @@ const HomeScreen = ({ navigation }) => {
               if (isDraft) {
                 removeDraft(item.number);
               } else {
-                // Adding to Draft is independent of subscription/reading
-                // entitlement — no checkCardAccess, no capacity cap here.
-                markAsDraft(item.number);
+                if (checkCardAccess && !checkCardAccess(item, navigation)) {
+                  return;
+                }
+
+                if (visibleDraftsCount >= 5) {
+                  setDraftLimitModalVisible(true);
+                } else {
+                  markAsDraft(item.number);
+                }
               }
             }}
           >
@@ -423,7 +420,7 @@ const HomeScreen = ({ navigation }) => {
     <SafeAreaView style={[styles.root, { backgroundColor: bg, paddingBottom: insets.bottom }]} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
-      {/* ── HEADER ── */}
+      {/* ΓöÇΓöÇ HEADER ΓöÇΓöÇ */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity
@@ -433,9 +430,9 @@ const HomeScreen = ({ navigation }) => {
           >
             <Text style={[styles.avatarText, { color: teal }]}>{initial}</Text>
           </TouchableOpacity>
-          <View style={{ flexShrink: 1 }}>
-            <Text style={[styles.helloText, { color: textSec }]} numberOfLines={1}>Hello {user?.name || 'Demo User'},</Text>
-            <Text style={[styles.greetingText, { color: textPrimary }]} numberOfLines={1}>{greeting}</Text>
+          <View>
+            <Text style={[styles.helloText, { color: textSec }]}>Hello {user?.name || 'Demo User'},</Text>
+            <Text style={[styles.greetingText, { color: textPrimary }]}>{greeting}</Text>
           </View>
         </View>
         <View style={styles.headerRight}>
@@ -458,7 +455,7 @@ const HomeScreen = ({ navigation }) => {
         </View>
       </View>
 
-      {/* ── SCROLL BODY ── */}
+      {/* ΓöÇΓöÇ SCROLL BODY ΓöÇΓöÇ */}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[styles.scroll, { paddingBottom: Math.max(insets.bottom + rs(20), rs(40)) }]}
@@ -468,54 +465,44 @@ const HomeScreen = ({ navigation }) => {
         }
       >
 
-        {/* ── IN PROGRESS / FIRST-TIME CARD ── */}
+        {/* ΓöÇΓöÇ IN PROGRESS CARD ΓöÇΓöÇ */}
         <View style={[styles.card, { backgroundColor: cardBg, borderColor, paddingBottom: 0 }]}>
           {/* Top row */}
           <View style={[styles.cardHeaderRow, { marginBottom: rs(25) }]}>
             <View style={styles.cardHeaderLeft}>
               <View style={[styles.cardIconWrap, { backgroundColor: tealLight }]}>
-                <Ionicons name={isFirstTimeUser ? 'sparkles-outline' : 'book-outline'} size={rs(18)} color={teal} />
+                <Ionicons name="book-outline" size={rs(18)} color={teal} />
               </View>
               <View>
                 <Text style={[styles.cardBadgeText, { color: teal }]}>
-                  {isFirstTimeUser ? 'New here' : 'IN PROGRESS'}
+                  {isFreshUser ? 'NEW' : 'IN PROGRESS'}
                 </Text>
                 <Text style={[styles.cardSubText, { color: textSec }]}>
-                  {isFirstTimeUser ? 'Start Your Journey' : 'Continue your journey'}
+                  {isFreshUser ? 'Start Your Journey' : 'Continue your journey'}
                 </Text>
               </View>
             </View>
-            {!isFirstTimeUser && timeAgo ? (
-              <View style={[styles.timeBadge, { borderWidth: 1, borderColor: teal, borderRadius: rs(20), paddingHorizontal: rs(10), paddingVertical: rs(5) }]}>
-                <Ionicons name="time-outline" size={rs(12)} color={teal} style={{ fontWeight: '600' }} />
-                <Text style={[styles.timeText, { color: teal }]}>{timeAgo}</Text>
-              </View>
-            ) : null}
+            <View style={[styles.timeBadge, { borderWidth: 1, borderColor: teal, borderRadius: rs(20), paddingHorizontal: timeAgo ? rs(10) : rs(5), paddingVertical: rs(5) }]}>
+              <Ionicons name="time-outline" size={rs(12)} color={teal} style={{ fontWeight: '600' }} />
+              {!isFreshUser && timeAgo ? <Text style={[styles.timeText, { color: teal }]}>{timeAgo}</Text> : null}
+            </View>
           </View>
 
           {/* Name + book image */}
           <View style={styles.inProgressContent}>
             <View style={styles.inProgressLeft}>
               <View style={styles.inProgressTextGroup}>
-                <Text style={[styles.inProgressArabic, { color: teal }]}>
-                  {isFirstTimeUser ? (card1?.arabic || 'الرَّحْمَنُ') : (lastReadName?.arabic || 'الأعلى')}
-                </Text>
+                <Text style={[styles.inProgressArabic, { color: teal }]}>{lastReadName?.arabic || '╪º┘ä╪ú╪╣┘ä┘ë'}</Text>
                 <Text style={[styles.inProgressTrans, { color: textPrimary }]}>
-                  {isFirstTimeUser ? (card1?.transliteration || 'Ar-Rahman') : (lastReadName?.transliteration || "Al-A'lā")}
+                  {lastReadName?.transliteration || "Al-A'l─ü"}
                 </Text>
                 <Text style={[styles.inProgressMeaning, { color: textSec }]} numberOfLines={1}>
-                  {isFirstTimeUser
-                    ? (card1?.shortMeaning || card1?.meaning || 'The Most Compassionate')
-                    : (lastReadName?.shortMeaning || lastReadName?.meaning || 'The Most High')}
+                  {lastReadName?.shortMeaning || lastReadName?.meaning || 'The Most High'}
                 </Text>
               </View>
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={isFirstTimeUser ? handleStartJourney : handleContinueReading}
-                style={[styles.continueBtn, { backgroundColor: teal }]}
-              >
+              <TouchableOpacity activeOpacity={0.85} onPress={handleContinueReading} style={[styles.continueBtn, { backgroundColor: teal }]}>
                 <Text style={styles.continueBtnText}>
-                  {isFirstTimeUser ? 'Start Your Journey' : 'Continue Reading'}
+                  {isFreshUser ? 'Start Journey' : 'Continue Reading'}
                 </Text>
                 <View style={[styles.continueBtnIconWrap, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
                   <Ionicons name="arrow-forward" size={rs(14)} color="#FFFFFF" />
@@ -542,8 +529,7 @@ const HomeScreen = ({ navigation }) => {
           </View>
         </View>
 
-
-        {/* ── DRAFT SECTION ── */}
+        {/* ΓöÇΓöÇ DRAFT SECTION ΓöÇΓöÇ */}
         <View style={[styles.card, { backgroundColor: cardBg, borderColor, paddingBottom: rs(16) }]}>
           <View style={styles.sectionHeaderRow}>
             <View style={styles.cardHeaderLeft}>
@@ -615,7 +601,7 @@ const HomeScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* ── INVITE FRIENDS ── */}
+        {/* ΓöÇΓöÇ INVITE FRIENDS ΓöÇΓöÇ */}
         <View style={[styles.card, styles.inviteCard, {
           backgroundColor: isDark ? '#0B2027' : '#E6F9FA',
           borderColor: isDark ? 'rgba(0,173,193,0.2)' : '#B2E8EE',
@@ -639,7 +625,7 @@ const HomeScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* ── SUGGESTED FOR YOU ── */}
+        {/* ΓöÇΓöÇ SUGGESTED FOR YOU ΓöÇΓöÇ */}
         <View style={[styles.card, { backgroundColor: cardBg, borderColor }]}>
           <View style={styles.sectionHeaderRow}>
             <View style={[styles.cardHeaderLeft, { flex: 1, marginRight: rs(8) }]}>
@@ -678,7 +664,7 @@ const HomeScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* ── STATS ROW ── */}
+        {/* ΓöÇΓöÇ STATS ROW ΓöÇΓöÇ */}
         <View style={[styles.dualStatsContainer, { borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', backgroundColor: isDark ? '#0F172A' : '#F8FAFC' }]}>
           <Svg style={{ position: 'absolute', width: '100%', height: '100%' }} viewBox="0 0 100 100" preserveAspectRatio="none">
             <Defs>
@@ -709,6 +695,9 @@ const HomeScreen = ({ navigation }) => {
                 <Text style={[styles.dualStatSubtitleLeft, { color: textSec }]}>Keep learning{"\n"}every day</Text>
               </View>
             </View>
+            <View style={[styles.sparkDotGreen, { top: -rs(4), left: rs(10) }]} />
+            <View style={[styles.sparkDotGreen, { top: rs(6), left: -rs(4), width: rs(3), height: rs(3) }]} />
+            <View style={[styles.sparkDotGreen, { bottom: rs(10), right: -rs(4), width: rs(2), height: rs(2) }]} />
           </TouchableOpacity>
 
           {/* Right Panel: Mastered */}
@@ -724,12 +713,15 @@ const HomeScreen = ({ navigation }) => {
                 <Ionicons name="trophy-outline" size={rs(24)} color="#F59E0B" />
               </View>
             </View>
+            <View style={[styles.sparkDotGold, { top: -rs(2), right: rs(14) }]} />
+            <View style={[styles.sparkDotGold, { top: rs(10), right: -rs(6), width: rs(2), height: rs(2) }]} />
+            <View style={[styles.sparkDotGold, { bottom: rs(6), left: -rs(2), width: rs(3), height: rs(3) }]} />
           </TouchableOpacity>
 
           {/* Center >> Button */}
-          <View style={[styles.centerSlantBtn, { backgroundColor: isDark ? '#0F172A' : '#10B981', borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-            <Ionicons name="chevron-forward" size={rs(16)} color="#FFFFFF" style={{ marginLeft: rs(2) }} />
-            <Ionicons name="chevron-forward" size={rs(16)} color="#FFFFFF" style={{ marginLeft: rs(-10) }} />
+          <View style={[styles.centerSlantBtn, { backgroundColor: isDark ? '#0F172A' : '#FFFFFF', borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+            <Ionicons name="chevron-forward" size={rs(16)} color={isDark ? '#FFFFFF' : '#0F172A'} style={{ marginLeft: rs(2) }} />
+            <Ionicons name="chevron-forward" size={rs(16)} color={isDark ? '#FFFFFF' : '#0F172A'} style={{ marginLeft: rs(-10) }} />
           </View>
         </View>
 
@@ -765,7 +757,7 @@ const HomeScreen = ({ navigation }) => {
   );
 };
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Styles ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 const styles = StyleSheet.create({
   root: { flex: 1 },
 
@@ -777,7 +769,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: rs(20),
     paddingVertical: rs(14),
   },
-  headerLeft: { flex: 1, flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: rs(12), marginRight: rs(8) },
+  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: rs(12) },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: rs(10) },
   avatar: { width: rs(44), height: rs(44), borderRadius: rs(22), justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontFamily: FONTS.bold, fontSize: rs(18) },
@@ -928,6 +920,8 @@ const styles = StyleSheet.create({
   dualStatDashGold: { width: rs(12), height: rs(3), backgroundColor: '#F59E0B', borderRadius: rs(2), marginTop: rs(2), marginBottom: rs(2) },
   dualStatSubtitleLeft: { fontSize: rs(9), fontFamily: FONTS.regular, textAlign: 'center' },
   dualStatSubtitleRight: { fontSize: rs(9), fontFamily: FONTS.regular, textAlign: 'center' },
+  sparkDotGreen: { position: 'absolute', width: rs(4), height: rs(4), borderRadius: rs(2), backgroundColor: '#10B981', shadowColor: '#10B981', shadowOpacity: 1, shadowRadius: 4 },
+  sparkDotGold: { position: 'absolute', width: rs(4), height: rs(4), borderRadius: rs(2), backgroundColor: '#F59E0B', shadowColor: '#F59E0B', shadowOpacity: 1, shadowRadius: 4 },
   centerSlantBtn: {
     position: 'absolute',
     left: '50%',
