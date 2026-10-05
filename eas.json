@@ -11,7 +11,7 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://wahid-mobile-backend.vercel.app",
+        "EXPO_PUBLIC_API_URL": "https://api.wahidapp.com",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "631034591604-6f8uu1iob8csukdgqapoa3l7l9f6qm7n.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "631034591604-8kad2efirpvrp5tsaojvo2sa1hodbbs2.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "631034591604-r0ojlsc70h38eoivf7d2442qgt8vim5q.apps.googleusercontent.com",
@@ -21,7 +21,7 @@
     },
     "production": {
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://wahid-mobile-backend.vercel.app",
+        "EXPO_PUBLIC_API_URL": "https://api.wahidapp.com",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "631034591604-6f8uu1iob8csukdgqapoa3l7l9f6qm7n.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "631034591604-8kad2efirpvrp5tsaojvo2sa1hodbbs2.apps.googleusercontent.com",
         "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "631034591604-r0ojlsc70h38eoivf7d2442qgt8vim5q.apps.googleusercontent.com",
