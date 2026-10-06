@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "wahid",
-    "slug": "Wahid_Mobile_Frontend",
+    "slug": "wahidapp",
     "scheme": "wahid",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,7 +9,10 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.wahid.mobile"
+      "bundleIdentifier": "com.wahid.mobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.wahid.mobile",
@@ -22,10 +25,10 @@
     },
     "extra": {
       "eas": {
-        "projectId": "bf41a0b5-c4db-419f-bf01-a4f6dd92f3cd"
+        "projectId": "bfba7673-ce18-48a0-b9cb-befbbf8ecb65"
       }
     },
-    "owner": "ikasle",
+    "owner": "ikasletechnologies",
     "plugins": [
       "@react-native-community/datetimepicker",
       "expo-web-browser",
