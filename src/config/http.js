@@ -6,7 +6,8 @@ import { getAccessToken, getRefreshToken, setAccessToken, clearTokens } from '..
 // Shared Axios instance
 const http = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 8000,
+  // Payment/order APIs can take longer on a physical device or mobile network.
+  timeout: 20000,
 });
 
 // ── Request interceptor ────────────────────────────────────────────────────

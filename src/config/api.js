@@ -2,7 +2,11 @@
 //   Physical device (same Wi-Fi):  http://<your-PC-LAN-IP>:3000
 //   Android emulator:              http://10.0.2.2:3000
 //   Production:                    https://api.wahidapp.com
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.wahidapp.com';
+const configuredApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+
+// Keep every endpoint consistent and avoid accidental `//api/...` URLs when an
+// EAS environment value is configured with a trailing slash.
+export const API_BASE_URL = (configuredApiUrl || 'https://api.wahidapp.com').replace(/\/+$/, '');
 
 export const ENDPOINTS = {
   // Auth — OTP flow (Twilio Verify)

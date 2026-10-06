@@ -47,6 +47,7 @@ const SubscriptionScreen = () => {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [subStatus, setSubStatus] = useState(null);
   const [plans, setPlans] = useState(null);
+  const [loadError, setLoadError] = useState('');
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
 
@@ -57,6 +58,7 @@ const SubscriptionScreen = () => {
   const fetchSubscriptionData = async () => {
     try {
       setLoading(true);
+      setLoadError('');
       const [statusRes, plansRes] = await Promise.all([
         http.get(ENDPOINTS.subscriptionStatus),
         http.get(`${ENDPOINTS.subscriptionPlans}?region=${selectedRegion}`),
@@ -70,6 +72,11 @@ const SubscriptionScreen = () => {
       }
     } catch (err) {
       console.warn('[SUBSCRIPTION FETCH ERROR]', err);
+      const message = err.response?.data?.message
+        || (err.response?.status === 401 ? 'Your session has expired. Please sign in again.' : null)
+        || (err.code === 'ECONNABORTED' ? 'The server took too long to respond. Please try again.' : null)
+        || 'Could not connect to the payment server. Check your internet connection and try again.';
+      setLoadError(message);
     } finally {
       setLoading(false);
     }
@@ -87,6 +94,10 @@ const SubscriptionScreen = () => {
       }
 
       const orderData = response.data.data;
+
+      if (!orderData?.keyId || !orderData?.orderId || !orderData?.amount || !orderData?.currency) {
+        throw new Error('The payment server returned an incomplete order. Please contact support.');
+      }
 
       const checkoutOptions = {
         key: orderData.keyId,
@@ -129,7 +140,12 @@ const SubscriptionScreen = () => {
       });
     } catch (err) {
       console.error('[CREATE ORDER ERROR]', err);
-      Alert.alert('Payment Error', err.response?.data?.message || 'Network error initializing checkout.');
+      const message = err.response?.data?.message
+        || (err.response?.status === 401 ? 'Your session has expired. Please sign in again.' : null)
+        || (err.code === 'ECONNABORTED' ? 'The payment server took too long to respond. Please try again.' : null)
+        || err.message
+        || 'Could not connect to the payment server. Check your internet connection.';
+      Alert.alert('Payment Error', message);
       setProcessingPayment(false);
     }
   };
@@ -322,6 +338,15 @@ const SubscriptionScreen = () => {
               </View>
 
               {/* Main Plan Card */}
+              {!!loadError && (
+                <View style={[styles.errorCard, { borderRadius: rs(12), padding: rs(12), marginBottom: rs(16) }]}>
+                  <Ionicons name="cloud-offline-outline" size={rs(20)} color="#DC2626" />
+                  <Text style={[styles.errorText, { fontSize: rs(12) }]}>{loadError}</Text>
+                  <TouchableOpacity onPress={fetchSubscriptionData} style={styles.retryButton}>
+                    <Text style={styles.retryText}>Retry</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
               <View
                 style={[
                   styles.planCard,
@@ -392,7 +417,7 @@ const SubscriptionScreen = () => {
                     processingPayment && { opacity: 0.7 },
                   ]}
                   onPress={handleCreateOrder}
-                  disabled={processingPayment}
+                  disabled={processingPayment || !!loadError || !plans}
                   activeOpacity={0.85}
                 >
                   {processingPayment ? (
@@ -542,6 +567,17 @@ const styles = StyleSheet.create({
   },
   ctaButtonText: { color: '#FFFFFF', fontWeight: '700' },
   guaranteeText: { textAlign: 'center' },
+  errorCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  errorText: { color: '#991B1B', flex: 1, lineHeight: 17 },
+  retryButton: { paddingHorizontal: 8, paddingVertical: 6 },
+  retryText: { color: '#0891B2', fontWeight: '700' },
 
   modalOverlay: {
     flex: 1,
